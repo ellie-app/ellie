@@ -1,0 +1,7 @@
+require('../index.html')
+require('muicss/dist/css/mui.css')
+require('codemirror/lib/codemirror.css')
+window.CodeMirror = require('codemirror/lib/codemirror')
+require('codemirror/mode/elm/elm')
+const Elm = require('../elm/Main.elm')
+const app = Elm.Main.fullscreen()
