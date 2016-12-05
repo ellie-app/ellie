@@ -5,14 +5,20 @@ module Api
         , Session
         , createSession
         , removeSession
+        , Location
+        , Region
+        , CompileError
         , compile
         )
 
 import Json.Encode as Encode exposing (Value)
-import Json.Decode as Decode
+import Json.Decode as Decode exposing (Decoder)
+import Json.Decode.Pipeline as Decode
 import Http exposing (Request, Expect)
-import LoadState exposing (LoadState)
 import HttpBuilder exposing (..)
+import RemoteData exposing (RemoteData)
+import SemVer.Version as Version exposing (Version)
+import SemVer.VersionRange as VersionRange exposing (VersionRange)
 
 
 -- ERRORS
@@ -27,15 +33,15 @@ upgradeError error =
     Badness
 
 
-handleError : Result Http.Error a -> LoadState Error a
+handleError : Result Http.Error a -> RemoteData Error a
 handleError result =
     result
         |> Result.mapError upgradeError
-        |> LoadState.fromResult
+        |> RemoteData.fromResult
 
 
 
--- API
+-- SESSIONS
 
 
 type Session
@@ -65,6 +71,55 @@ removeSession (Session sessionId) =
         |> toRequest
 
 
+
+-- COMPILATION
+
+
+type alias Location =
+    { line : Int
+    , column : Int
+    }
+
+
+type alias Region =
+    { start : Location
+    , end : Location
+    }
+
+
+type alias CompileError =
+    { tag : String
+    , overview : String
+    , subregion : Maybe Region
+    , region : Region
+    , level : String
+    }
+
+
+decodeLocation : Decoder Location
+decodeLocation =
+    Decode.succeed Location
+        |> Decode.required "line" Decode.int
+        |> Decode.required "column" Decode.int
+
+
+decodeRegion : Decoder Region
+decodeRegion =
+    Decode.succeed Region
+        |> Decode.required "start" decodeLocation
+        |> Decode.required "end" decodeLocation
+
+
+decodeCompileError : Decoder CompileError
+decodeCompileError =
+    Decode.succeed CompileError
+        |> Decode.required "tag" Decode.string
+        |> Decode.required "overview" Decode.string
+        |> Decode.required "subregion" (Decode.nullable decodeRegion)
+        |> Decode.required "region" decodeRegion
+        |> Decode.required "type" Decode.string
+
+
 compilePayload : String -> Value
 compilePayload source =
     Encode.object
@@ -72,16 +127,33 @@ compilePayload source =
         ]
 
 
-compileExpect : Expect String
+compileExpect : Expect (List CompileError)
 compileExpect =
-    Decode.field "result" Decode.string
+    Decode.list decodeCompileError
         |> Http.expectJson
 
 
-compile : Session -> String -> Request String
+compile : Session -> String -> Request (List CompileError)
 compile (Session sessionId) source =
     post ("http://localhost:1337/session/" ++ sessionId ++ "/compile")
         |> withHeader "Accept" "application/json"
         |> withJsonBody (compilePayload source)
         |> withExpect compileExpect
         |> toRequest
+
+
+
+-- DEPENDENCIES
+
+
+type alias Dependency =
+    { username : String
+    , name : String
+    , range : VersionRange
+    }
+
+
+addDependenciesPayload : List Dependency -> Value
+addDependenciesPayload dependencies =
+    dependencies
+        |> List.map
