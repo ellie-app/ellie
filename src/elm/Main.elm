@@ -1,45 +1,25 @@
 module Main exposing (main)
 
-import String
 import Html exposing (Html, div, text, textarea, iframe, button)
 import Html.Attributes exposing (value, style, srcdoc, sandbox, disabled, class)
-import Html.Events exposing (onClick, onInput)
-import Http
-import LoadState exposing (LoadState(..))
-import Api exposing (Session, Error)
-import Effects
+import Html.Events exposing (onClick)
+import RemoteData exposing (RemoteData(..))
+import RemoteData.Infix exposing ((<*>))
+import Api exposing (Session, Error, CompileError)
 import Utils
+import Effects
 import CodeMirror
 
 
 -- MODEL
 
 
-type Language
-    = Elm
-    | Css
-    | Html
-
-
 type alias Model =
-    { session : LoadState Error Session
-    , editors : List ( Language, String, Float, Bool )
-    , result : LoadState Error String
-    , hasChanged : Bool
+    { session : RemoteData Error Session
+    , compileResult : RemoteData Error (List CompileError)
+    , htmlCode : String
+    , elmCode : String
     }
-
-
-canCompile : Model -> Bool
-canCompile model =
-    model.result == Initial || (model.hasChanged && (not <| LoadState.isLoading model.result))
-
-
-contentForLanguage : Language -> Model -> String
-contentForLanguage language model =
-    model.editors
-        |> Utils.listFind (\( l, _, _, _ ) -> l == language)
-        |> Maybe.map (\( _, c, _, _ ) -> c)
-        |> Maybe.withDefault ""
 
 
 
@@ -48,10 +28,11 @@ contentForLanguage language model =
 
 type Msg
     = WindowUnloaded
-    | TypedInEditor Language String
-    | InitComplete (LoadState Error Session)
-    | CompileRequested
-    | CompileComplete (LoadState Error String)
+    | TypedElmCode String
+    | TypedHtmlCode String
+    | InitCompleted (RemoteData Error Session)
+    | Compile
+    | CompileCompleted (RemoteData Error (List CompileError))
     | NoOp
 
 
@@ -63,54 +44,40 @@ update msg model =
                 Success session ->
                     ( model
                     , Api.removeSession session
-                        |> Http.send (\_ -> NoOp)
+                        |> Api.send (\_ -> NoOp)
                     )
 
                 _ ->
                     ( model, Cmd.none )
 
-        TypedInEditor language content ->
-            ( { model
-                | editors =
-                    model.editors
-                        |> List.map
-                            (\( l, c, p, i ) ->
-                                if l == language then
-                                    ( l, content, p, i )
-                                else
-                                    ( l, c, p, i )
-                            )
-                , hasChanged =
-                    if language == Elm then
-                        True
-                    else
-                        model.hasChanged
-              }
-            , Cmd.none
-            )
-
-        InitComplete sessionResult ->
+        InitCompleted sessionResult ->
             ( { model | session = sessionResult }
             , Cmd.none
             )
 
-        CompileRequested ->
-            case ( model.session, canCompile model ) of
-                ( Success session, True ) ->
-                    ( { model | result = Loading }
-                    , model.editors
-                        |> Utils.listFind (\( l, _, _, _ ) -> l == Elm)
-                        |> Maybe.map (\( _, c, _, _ ) -> c)
-                        |> Maybe.withDefault ""
-                        |> Api.compile session
-                        |> Http.send (Api.handleError >> CompileComplete)
+        TypedElmCode nextCode ->
+            ( { model | elmCode = nextCode }
+            , Cmd.none
+            )
+
+        TypedHtmlCode nextCode ->
+            ( { model | htmlCode = nextCode }
+            , Cmd.none
+            )
+
+        Compile ->
+            case model.session of
+                Success session ->
+                    ( { model | compileResult = Loading }
+                    , Api.compile session model.elmCode
+                        |> Api.send CompileCompleted
                     )
 
-                ( _, _ ) ->
+                _ ->
                     ( model, Cmd.none )
 
-        CompileComplete result ->
-            ( { model | result = result, hasChanged = not <| LoadState.isSuccess result }
+        CompileCompleted result ->
+            ( { model | compileResult = result }
             , Cmd.none
             )
 
@@ -125,20 +92,31 @@ update msg model =
 subscriptions : Model -> Sub Msg
 subscriptions model =
     model.session
-        |> LoadState.map (\_ -> Effects.windowUnload WindowUnloaded)
-        |> LoadState.withDefault Sub.none
+        |> RemoteData.map (\_ -> Effects.windowUnload WindowUnloaded)
+        |> RemoteData.withDefault Sub.none
 
 
 
 -- INIT
 
 
-initHtmlContent : String
-initHtmlContent =
+initHtmlCode : String
+initHtmlCode =
     """<html>
   <head>
     <title></title>
     <meta charset="utf8" />
+    <style>
+        html, body {
+          margin: 0;
+          background: #F7F7F7;
+          font-family: sans-serif;
+        }
+
+        main {
+          color: red;
+        }
+    </style>
   </head>
   <body>
     <main></main>
@@ -154,22 +132,8 @@ initHtmlContent =
 """
 
 
-initCssContent : String
-initCssContent =
-    """html, body {
-  margin: 0;
-  background: #F7F7F7;
-  font-family: sans-serif;
-}
-
-main {
-  color: red;
-}
-"""
-
-
-initElmContent : String
-initElmContent =
+initElmCode : String
+initElmCode =
     """port module PortDemo exposing (main)
 
 import Html exposing (text)
@@ -191,16 +155,12 @@ main =
 init : ( Model, Cmd Msg )
 init =
     ( { session = Loading
-      , editors =
-            [ ( Elm, initElmContent, 1 / 3, False )
-            , ( Css, initCssContent, 1 / 3, False )
-            , ( Html, initHtmlContent, 1 / 3, False )
-            ]
-      , result = Initial
-      , hasChanged = False
+      , elmCode = initElmCode
+      , htmlCode = initHtmlCode
+      , compileResult = NotAsked
       }
     , Api.createSession
-        |> Http.send (Api.handleError >> InitComplete)
+        |> Api.send InitCompleted
     )
 
 
@@ -208,57 +168,93 @@ init =
 -- VIEW
 
 
-buildSrcDoc : Model -> String -> String
-buildSrcDoc model result =
+viewElmEditor : String -> RemoteData Error (List CompileError) -> Html Msg
+viewElmEditor content compileResult =
     let
-        css =
-            contentForLanguage Css model
+        compileErrorLevelToSeverity level =
+            case level of
+                "warning" ->
+                    CodeMirror.Warning
 
-        html =
-            contentForLanguage Html model
+                _ ->
+                    CodeMirror.Error
+
+        compileErrorToLinterMessage compileError =
+            CodeMirror.linterMessage
+                (compileErrorLevelToSeverity compileError.level)
+                (compileError.overview ++ "\n\n" ++ compileError.details)
+                (CodeMirror.position (compileError.region.start.line - 1) (compileError.region.start.column - 1))
+                (CodeMirror.position (compileError.region.end.line - 1) (compileError.region.end.column))
+
+        linterMessages =
+            compileResult
+                |> RemoteData.withDefault []
+                |> List.map compileErrorToLinterMessage
     in
-        Utils.stringReplace "</head>"
-            ("<style>" ++ css ++ "</style><script>" ++ result ++ "</script></head>")
-            html
-
-
-viewResult : Model -> Html Msg
-viewResult model =
-    case model.result of
-        Success result ->
-            iframe
-                [ sandbox "allow-scripts"
-                , srcdoc <| buildSrcDoc model result
+        CodeMirror.editor
+            [ value content
+            , CodeMirror.linterMessages linterMessages
+            , CodeMirror.onUpdate TypedElmCode
+            , style
+                [ ( "height", "300px" )
+                , ( "width", "50%" )
+                , ( "display", "inline-block" )
                 ]
-                []
+            ]
 
-        Initial ->
-            div [] [ text "hit the compile button when you're ready!" ]
+
+viewHtmlEditor : String -> Html Msg
+viewHtmlEditor content =
+    CodeMirror.editor
+        [ value content
+        , CodeMirror.onUpdate TypedHtmlCode
+        , style
+            [ ( "height", "300px" )
+            , ( "width", "50%" )
+            , ( "display", "inline-block" )
+            ]
+        ]
+
+
+viewEditors : Model -> Html Msg
+viewEditors model =
+    div [ style [ ( "position", "relative" ) ] ]
+        [ viewElmEditor model.elmCode model.compileResult
+        , viewHtmlEditor model.htmlCode
+        ]
+
+
+viewResult : String -> RemoteData Error Session -> RemoteData Error (List CompileError) -> Html Msg
+viewResult htmlCode sessionData compilerData =
+    case (RemoteData.succeed (,)) <*> sessionData <*> compilerData of
+        NotAsked ->
+            div [] [ text "You ain't seen nothin' yet" ]
 
         Loading ->
-            div [] [ text "compiling! just hang on..." ]
+            div [] [ text "Compiling" ]
 
-        Failure _ ->
-            div [] [ text "something went terribly wrong!" ]
+        Failure error ->
+            div [] [ text "Something bad happened!" ]
 
-
-viewEditors : List ( Language, String, Float, Bool ) -> Html Msg
-viewEditors editorStates =
-    let
-        viewEditor ( language, content, takeover, collapsed ) =
-            CodeMirror.editor
-                [ value content
-                , style
-                    [ ( "height", "300px" )
-                    , ( "width", "33.33%" )
-                    , ( "display", "inline-block" )
+        Success ( session, result ) ->
+            let
+                document =
+                    Utils.stringReplace
+                        ("</head>")
+                        ("<script src=\"http://localhost:1337/sessions/" ++ session.id ++ "/result\"></script></head>")
+                        (htmlCode)
+            in
+                div []
+                    [ iframe
+                        [ srcdoc document
+                        , style
+                            [ ( "height", "calc(100% - 300px)" )
+                            , ( "width", "100%" )
+                            , ( "border", "0" )
+                            ]
+                        ]
+                        []
                     ]
-                , CodeMirror.onUpdate <| TypedInEditor language
-                ]
-    in
-        editorStates
-            |> List.map viewEditor
-            |> div [ style [ ( "position", "relative" ) ] ]
 
 
 viewLoading : Html Msg
@@ -269,16 +265,9 @@ viewLoading =
 viewLoaded : Model -> Html Msg
 viewLoaded model =
     div []
-        [ viewEditors model.editors
-        , div []
-            [ button
-                [ disabled <| not <| canCompile model
-                , class "mui-btn mui-btn--primary"
-                , onClick CompileRequested
-                ]
-                [ text "Compile" ]
-            ]
-        , viewResult model
+        [ viewEditors model
+        , div [] [ button [ onClick Compile ] [ text "Compile" ] ]
+        , viewResult model.htmlCode model.session model.compileResult
         ]
 
 

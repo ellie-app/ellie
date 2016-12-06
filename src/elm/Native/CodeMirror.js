@@ -1,6 +1,11 @@
 var _user$project$Native_CodeMirror = (function () {
   var Nil = _elm_lang$core$Native_List.Nil
+  var toArray = _elm_lang$core$Native_List.toArray
   var CodeMirror = window.CodeMirror
+
+  CodeMirror.registerHelper('lint', 'elm', function (text, options, instance) {
+    return instance.__ellie_errors || []
+  })
 
   function editor(factList) {
     return _elm_lang$virtual_dom$Native_VirtualDom.custom(factList, null, implementation)
@@ -13,12 +18,13 @@ var _user$project$Native_CodeMirror = (function () {
 
   function render() {
     var instance = CodeMirror(null, {
-      lineNumbers: true
+      lineNumbers: true,
+      lint: { lintOnChange: false }
     })
 
-    var element = instance.getWrapperElement()
+    instance.__ellie_errors = [];
 
-    console.log('element', element)
+    var element = instance.getWrapperElement()
 
     Object.defineProperties(element, {
       value: {
@@ -37,6 +43,13 @@ var _user$project$Native_CodeMirror = (function () {
         },
         set: function (value) {
           instance.setOption('mode', value)
+        }
+      },
+      linterMessages: {
+        set: function (errors) {
+          debugger;
+          instance.__ellie_errors = errors
+          instance.performLint()
         }
       }
     })
@@ -58,7 +71,27 @@ var _user$project$Native_CodeMirror = (function () {
     return null
   }
 
+  function position(line, column) {
+    return CodeMirror.Pos(line, column)
+  }
+
+  function linterMessage(severity, message, from, to) {
+    return {
+      from: from,
+      to: to,
+      message: message,
+      severity: severity
+    }
+  }
+
+  function encodeLinterMessage(message) {
+    return message;
+  }
+
   return {
-    editor: editor
+    editor: editor,
+    position: F2(position),
+    linterMessage: F4(linterMessage),
+    encodeLinterMessage: encodeLinterMessage
   }
 }())
