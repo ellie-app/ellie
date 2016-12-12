@@ -2,9 +2,11 @@ var path = require("path");
 var DashboardPlugin = require('webpack-dashboard/plugin');
 
 module.exports = {
+  context: path.join(__dirname, 'src'),
+
   entry: {
     app: [
-      './src/js/Main.js'
+      './js/Main.js'
     ]
   },
 
@@ -16,11 +18,13 @@ module.exports = {
   module: {
     loaders: [
       {
-        test: /\.(css)$/,
-        loaders: [
-          'style-loader',
-          'css-loader',
-        ]
+        test: /\.css$/,
+        loader: 'style!css',
+      },
+      {
+        test: /Stylesheets\.elm$/,
+        loader: 'style!css!elm-css-webpack',
+        exclude: [/node_modules/]
       },
       {
         test:    /\.html$/,
@@ -28,21 +32,19 @@ module.exports = {
         loader:  'file?name=[name].[ext]',
       },
       {
-        test:    /\.elm$/,
+        test:    /Main\.elm$/,
         exclude: [/elm-stuff/, /node_modules/],
         loader:  'elm-webpack',
       },
-      // {
-      //   test: /\.woff(2)?(\?v=[0-9]\.[0-9]\.[0-9])?$/,
-      //   loader: 'url-loader?limit=10000&mimetype=application/font-woff',
-      // },
-      // {
-      //   test: /\.(ttf|eot|svg)(\?v=[0-9]\.[0-9]\.[0-9])?$/,
-      //   loader: 'file-loader',
-      // },
-    ],
-
-    noParse: /\.elm$/,
+      {
+        test: /\.woff(2)?(\?v=[0-9]\.[0-9]\.[0-9])?$/,
+        loader: 'url-loader?limit=10000&mimetype=application/font-woff',
+      },
+      {
+        test: /\.(ttf|eot|svg)(\?v=[0-9]\.[0-9]\.[0-9])?$/,
+        loader: 'file-loader',
+      },
+    ]
   },
 
   plugins: [

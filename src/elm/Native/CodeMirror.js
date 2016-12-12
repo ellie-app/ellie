@@ -19,6 +19,7 @@ var _user$project$Native_CodeMirror = (function () {
   function render() {
     var instance = CodeMirror(null, {
       lineNumbers: true,
+      styleActiveLine: true,
       lint: { lintOnChange: false }
     })
 
@@ -45,11 +46,21 @@ var _user$project$Native_CodeMirror = (function () {
           instance.setOption('mode', value)
         }
       },
+      theme: {
+        get: function () {
+          return instance.getOption('theme')
+        },
+        set: function (value) {
+          instance.setOption('theme', value)
+        }
+      },
       linterMessages: {
         set: function (errors) {
-          debugger;
           instance.__ellie_errors = errors
           instance.performLint()
+        },
+        get: function () {
+          return instance.__ellie_errors
         }
       }
     })

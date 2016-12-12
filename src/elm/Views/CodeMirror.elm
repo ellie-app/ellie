@@ -1,4 +1,4 @@
-module CodeMirror
+module Views.CodeMirror
     exposing
         ( Position
         , LinterMessage
@@ -6,6 +6,7 @@ module CodeMirror
         , position
         , linterMessage
         , mode
+        , theme
         , onUpdate
         , linterMessages
         , editor
@@ -65,6 +66,11 @@ onUpdate tagger =
 mode : String -> Attribute msg
 mode =
     Encode.string >> property "mode"
+
+
+theme : String -> Attribute msg
+theme =
+    Encode.string >> property "theme"
 
 
 editor : List (Attribute msg) -> Html msg
