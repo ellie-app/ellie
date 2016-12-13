@@ -21,38 +21,29 @@ floatToPercentageString float =
 viewEditors : Model -> Html Msg
 viewEditors model =
     let
-        elmEditor =
-            case model.session of
-                Success _ ->
-                    Editors.elm
+        ( elmEditor, htmlEditor ) =
+            case ( model.session, model.currentRevision ) of
+                ( Loading, _ ) ->
+                    ( Editors.loading, Editors.loading )
+
+                ( _, Loading ) ->
+                    ( Editors.loading, Editors.loading )
+
+                ( Success _, _ ) ->
+                    ( Editors.elm
                         (TypedElmCode)
                         (model.elmCode)
                         (model.compileResult |> RemoteData.withDefault [])
-
-                Failure _ ->
-                    div [] [ text "nope!" ]
-
-                Loading ->
-                    Editors.loading
-
-                NotAsked ->
-                    div [] [ text "yo" ]
-
-        htmlEditor =
-            case model.session of
-                Success _ ->
-                    Editors.html
+                    , Editors.html
                         (TypedHtmlCode)
                         (model.htmlCode)
+                    )
 
-                Failure _ ->
-                    div [] [ text "nope!" ]
+                ( Failure _, _ ) ->
+                    ( div [] [ text "nope!" ], div [] [ text "nope!" ] )
 
-                Loading ->
-                    Editors.loading
-
-                NotAsked ->
-                    div [] [ text "yo" ]
+                _ ->
+                    ( div [] [ text "yo" ], div [] [ text "yo!" ] )
     in
         div
             [ class [ EditorsContainer ]
@@ -83,26 +74,29 @@ viewResults : Model -> Html Msg
 viewResults model =
     let
         innerView =
-            case ( model.session, model.compileResult ) of
-                ( Success session, Success _ ) ->
-                    Output.success session.id model.htmlCode
-
-                ( Success _, NotAsked ) ->
-                    Output.waiting
-
-                ( Success _, Loading ) ->
-                    Output.compiling
-
-                ( Success _, _ ) ->
-                    div [] [ text "eh" ]
-
-                ( Failure _, _ ) ->
-                    div [] [ text "ugh" ]
-
-                ( Loading, _ ) ->
+            case ( model.session, model.compileResult, model.currentRevision ) of
+                ( _, _, Loading ) ->
                     Output.loading
 
-                ( NotAsked, _ ) ->
+                ( Success session, Success _, _ ) ->
+                    Output.success session.id model.htmlCode
+
+                ( Success _, NotAsked, _ ) ->
+                    Output.waiting
+
+                ( Success _, Loading, _ ) ->
+                    Output.compiling
+
+                ( Success _, _, _ ) ->
+                    div [] [ text "eh" ]
+
+                ( Failure _, _, _ ) ->
+                    div [] [ text "ugh" ]
+
+                ( Loading, _, _ ) ->
+                    Output.loading
+
+                ( NotAsked, _, _ ) ->
                     div [] [ text "waiting!" ]
     in
         div
@@ -128,12 +122,14 @@ viewMain model =
 headerContext : Model -> Header.Context Msg
 headerContext model =
     { saveButtonOption = Header.Save
-    , saveButtonEnabled = True
-    , compileButtonEnabled =
-        (not (RemoteData.isLoading model.compileResult))
-            && (RemoteData.isSuccess model.session)
-    , onSave = NoOp
+    , onSave = SaveButtonClicked
     , onCompile = Compile
+    , saveButtonEnabled =
+        not (RemoteData.isLoading model.currentRevision)
+            && RemoteData.isSuccess model.session
+    , compileButtonEnabled =
+        not (RemoteData.isLoading model.compileResult)
+            && RemoteData.isSuccess model.session
     }
 
 

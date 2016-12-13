@@ -1,5 +1,7 @@
 var path = require("path");
+var webpack = require('webpack');
 var DashboardPlugin = require('webpack-dashboard/plugin');
+var StringReplacePlugin = require('string-replace-webpack-plugin');
 
 module.exports = {
   context: path.join(__dirname, 'src'),
@@ -34,7 +36,14 @@ module.exports = {
       {
         test:    /Main\.elm$/,
         exclude: [/elm-stuff/, /node_modules/],
-        loader:  'elm-webpack',
+        loaders:  [
+          StringReplacePlugin.replace({
+            replacements: [
+              { pattern: /\%API_BASE\%/g, replacement: () => 'http://localhost:1337' }
+            ]
+          }),
+          'elm-webpack-loader',
+        ]
       },
       {
         test: /\.woff(2)?(\?v=[0-9]\.[0-9]\.[0-9])?$/,
@@ -48,11 +57,13 @@ module.exports = {
   },
 
   plugins: [
-    new DashboardPlugin()
+    new DashboardPlugin(),
+    new StringReplacePlugin()
   ],
 
   devServer: {
     inline: true,
     stats: { colors: true },
+    historyApiFallback: true
   },
 };

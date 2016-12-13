@@ -2,7 +2,8 @@ module App.Model exposing (Model, model)
 
 import Window
 import RemoteData exposing (RemoteData(..))
-import Shared.Api as Api exposing (Error, CompileError, Session)
+import Shared.Api as Api exposing (Error, CompileError, Session, Dependency, ExistingRevision)
+import App.Routing as Routing exposing (Route(..))
 import Components.Sidebar.Model as Sidebar
 
 
@@ -19,6 +20,9 @@ type alias Model =
     , sidebar : Sidebar.Model
     , title : String
     , description : String
+    , currentRoute : Route
+    , currentRevision : RemoteData Error ExistingRevision
+    , dependencies : List Dependency
     }
 
 
@@ -36,6 +40,9 @@ model =
     , sidebar = Sidebar.model
     , title = "Untitled"
     , description = "Description..."
+    , currentRoute = NotFound
+    , dependencies = []
+    , currentRevision = NotAsked
     }
 
 
