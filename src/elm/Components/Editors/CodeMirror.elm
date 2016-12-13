@@ -1,4 +1,4 @@
-module Views.CodeMirror
+module Components.Editors.CodeMirror
     exposing
         ( Position
         , LinterMessage

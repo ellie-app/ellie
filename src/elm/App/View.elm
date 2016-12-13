@@ -1,15 +1,16 @@
-module View exposing (view)
+module App.View exposing (view)
 
 import Html exposing (Html, div, button, text, iframe, main_, header, span)
 import Html.Attributes exposing (value, style, srcdoc)
 import Html.Events exposing (onClick, onMouseDown, onMouseUp)
 import RemoteData exposing (RemoteData(..))
-import Update exposing (Msg(..))
-import Model exposing (Model)
-import Views.Editors as Editors
-import Views.Results as Results
-import Views.Header as Header
-import Classes exposing (..)
+import App.Update exposing (Msg(..))
+import App.Model exposing (Model)
+import Components.Editors.View as Editors
+import Components.Header.View as Header
+import Components.Sidebar.View as Sidebar
+import Components.Output.View as Output
+import App.Classes exposing (..)
 
 
 floatToPercentageString : Float -> String
@@ -82,17 +83,26 @@ viewResults : Model -> Html Msg
 viewResults model =
     let
         innerView =
-            case model.session of
-                Success _ ->
-                    div [] [ text "ready to go" ]
+            case ( model.session, model.compileResult ) of
+                ( Success session, Success _ ) ->
+                    Output.success session.id model.htmlCode
 
-                Failure _ ->
+                ( Success _, NotAsked ) ->
+                    Output.waiting
+
+                ( Success _, Loading ) ->
+                    Output.compiling
+
+                ( Success _, _ ) ->
+                    div [] [ text "eh" ]
+
+                ( Failure _, _ ) ->
                     div [] [ text "ugh" ]
 
-                Loading ->
-                    Results.loading
+                ( Loading, _ ) ->
+                    Output.loading
 
-                NotAsked ->
+                ( NotAsked, _ ) ->
                     div [] [ text "waiting!" ]
     in
         div
@@ -115,42 +125,34 @@ viewMain model =
         ]
 
 
-containerCursor : Model -> String
-containerCursor model =
-    if model.isDraggingEditorsSplit then
-        "ns-resize"
-    else if model.isDraggingResultSplit then
-        "ew-resize"
-    else
-        ""
+headerContext : Model -> Header.Context Msg
+headerContext model =
+    { saveButtonOption = Header.Save
+    , saveButtonEnabled = True
+    , compileButtonEnabled =
+        (not (RemoteData.isLoading model.compileResult))
+            && (RemoteData.isSuccess model.session)
+    , onSave = NoOp
+    , onCompile = Compile
+    }
 
 
-containerUserSelect : Model -> String
-containerUserSelect model =
-    if model.isDraggingEditorsSplit || model.isDraggingResultSplit then
-        "none"
-    else
-        ""
+sidebarContext : Model -> Sidebar.Context Msg
+sidebarContext model =
+    { detailsTitle = model.title
+    , detailsDescription = model.description
+    , onLocalMsg = SidebarMsg
+    , onTitleChange = TitleChanged
+    , onDescriptionChange = DescriptionChanged
+    }
 
 
 view : Model -> Html Msg
 view model =
-    div
-        [ style
-            [ ( "height", "100%" )
-            , ( "position", "relative" )
-            , ( "cursor", containerCursor model )
-            , ( "use-select", containerUserSelect model )
-            ]
-        ]
-        [ Header.view
-        , main_
-            [ style
-                [ ( "height", "calc(100% - 60px)" )
-                , ( "position", "relative" )
-                , ( "display", "flex" )
-                ]
-            ]
-            [ viewMain model
+    div [ class [ TopContainer ] ]
+        [ Header.view (headerContext model)
+        , main_ [ class [ MainContainer ] ]
+            [ Sidebar.view (sidebarContext model) model.sidebar
+            , viewMain model
             ]
         ]

@@ -1,8 +1,8 @@
-module SemVer.VersionRange exposing (..)
+module Shared.SemVer.VersionRange exposing (..)
 
 import Json.Encode as Encode exposing (Value)
 import Json.Decode as Decode exposing (Decoder)
-import SemVer.Version as Version exposing (Version)
+import Shared.SemVer.Version as Version exposing (Version)
 
 
 type alias VersionRange =

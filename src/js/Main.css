@@ -1,9 +1,9 @@
-@keyframes viewsshimmer {
-  0% {
-    transform: translateX(-100%);
-  }
+@keyframes components_editors_shimmer {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}
 
-  100% {
-    transform: translateX(100%);
-  }
+@keyframes components_output_shimmer {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
 }

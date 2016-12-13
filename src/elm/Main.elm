@@ -1,10 +1,10 @@
 module Main exposing (main)
 
 import Html
-import Model exposing (Model)
-import Update exposing (Msg(..))
-import View
-import Subs
+import App.Model as Model exposing (Model)
+import App.Update as Update exposing (Msg(..))
+import App.View as View
+import App.Subs as Subs
 
 
 main : Program Never Model Msg

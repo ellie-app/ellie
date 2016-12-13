@@ -1,4 +1,4 @@
-module Api
+module Shared.Api
     exposing
         ( Error(..)
         , send
@@ -19,7 +19,7 @@ import Json.Decode.Pipeline as Decode
 import Http exposing (Request, Expect)
 import HttpBuilder exposing (..)
 import RemoteData exposing (RemoteData)
-import SemVer.VersionRange as VersionRange exposing (VersionRange)
+import Shared.SemVer.VersionRange as VersionRange exposing (VersionRange)
 
 
 -- TOP LEVEL

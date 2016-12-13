@@ -1,11 +1,11 @@
-port module Subs exposing (subscriptions)
+port module App.Subs exposing (subscriptions)
 
 import Mouse exposing (Position)
 import Window
 import Json.Decode as Decode exposing (Value)
 import RemoteData exposing (RemoteData(..))
-import Model exposing (Model)
-import Update exposing (Msg(..))
+import App.Model as Model exposing (Model)
+import App.Update as Update exposing (Msg(..))
 
 
 port windowUnloadedIn : (() -> msg) -> Sub msg

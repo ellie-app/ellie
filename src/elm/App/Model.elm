@@ -1,8 +1,9 @@
-module Model exposing (Model, model)
+module App.Model exposing (Model, model)
 
 import Window
 import RemoteData exposing (RemoteData(..))
-import Api exposing (Error, CompileError, Session)
+import Shared.Api as Api exposing (Error, CompileError, Session)
+import Components.Sidebar.Model as Sidebar
 
 
 type alias Model =
@@ -15,6 +16,9 @@ type alias Model =
     , isDraggingEditorsSplit : Bool
     , isDraggingResultSplit : Bool
     , windowSize : Window.Size
+    , sidebar : Sidebar.Model
+    , title : String
+    , description : String
     }
 
 
@@ -29,6 +33,9 @@ model =
     , isDraggingEditorsSplit = False
     , isDraggingResultSplit = False
     , windowSize = Window.Size 0 0
+    , sidebar = Sidebar.model
+    , title = "Untitled"
+    , description = "Description..."
     }
 
 

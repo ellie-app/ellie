@@ -1,11 +1,14 @@
-module Update exposing (update, initialize, Msg(..))
+module App.Update exposing (update, initialize, Msg(..))
 
 import Task
 import Window exposing (Size)
 import Mouse exposing (Position)
 import RemoteData exposing (RemoteData(..))
-import Api exposing (Session, Error, CompileError)
-import Model exposing (Model)
+import Components.Sidebar.Update as Sidebar
+import App.Model as Model exposing (Model)
+import Shared.Api as Api exposing (Session, Error, CompileError)
+import Shared.Constants as Constants
+import Shared.Utils as Utils
 
 
 -- UPDATE
@@ -24,6 +27,9 @@ type Msg
     | ResultSplitDrags Position
     | StopDragging
     | WindowSizeChanged Size
+    | SidebarMsg Sidebar.Msg
+    | TitleChanged String
+    | DescriptionChanged String
     | NoOp
 
 
@@ -115,16 +121,16 @@ update msg model =
         ResultSplitDrags position ->
             let
                 adjustedForSidebar =
-                    position.x
+                    position.x - Constants.sidebarWidth
 
                 percentage =
-                    toFloat adjustedForSidebar / (toFloat model.windowSize.width)
+                    toFloat adjustedForSidebar / (toFloat model.windowSize.width - Constants.sidebarWidth)
 
                 clamped =
                     if percentage < 0.1 then
                         0.1
-                    else if percentage > 0.9 then
-                        0.9
+                    else if percentage > 0.7 then
+                        0.7
                     else
                         percentage
             in
@@ -144,6 +150,21 @@ update msg model =
             ( { model | windowSize = size }
             , Cmd.none
             )
+
+        TitleChanged title ->
+            ( { model | title = title }
+            , Cmd.none
+            )
+
+        DescriptionChanged description ->
+            ( { model | description = description }
+            , Cmd.none
+            )
+
+        SidebarMsg subMsg ->
+            Sidebar.update subMsg model.sidebar
+                |> Utils.mapCmd SidebarMsg
+                |> Utils.mapModel (\s -> { model | sidebar = s })
 
         NoOp ->
             ( model, Cmd.none )

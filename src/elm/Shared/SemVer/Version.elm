@@ -1,4 +1,4 @@
-module SemVer.Version exposing (..)
+module Shared.SemVer.Version exposing (..)
 
 import Json.Encode as Encode exposing (Value)
 import Json.Decode as Decode exposing (Decoder)

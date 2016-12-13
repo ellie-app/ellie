@@ -1,4 +1,4 @@
-module Views.Editors
+module Components.Editors.View
     exposing
         ( elm
         , html
@@ -7,9 +7,9 @@ module Views.Editors
 
 import Html exposing (Html, div, span, text)
 import Html.Attributes exposing (style, value)
-import Api exposing (CompileError)
-import Views.CodeMirror as CodeMirror
-import Views.Classes as Classes exposing (Classes(..), class)
+import Shared.Api exposing (CompileError)
+import Components.Editors.CodeMirror as CodeMirror
+import Components.Editors.Classes exposing (Classes(..), class)
 
 
 singleton : a -> List a
@@ -20,7 +20,7 @@ singleton a =
 loadingLine : Float -> Html msg
 loadingLine width =
     div
-        [ class [ LoadingEditorLine ]
+        [ class [ LoadingLine ]
         , style [ ( "width", (toString (width * 100)) ++ "%" ) ]
         ]
         []
@@ -45,14 +45,14 @@ loadingLines =
 
 loadingLineNumber : Int -> Html msg
 loadingLineNumber i =
-    span [ class [ LoadingEditorLineNumber ] ]
+    span [ class [ LoadingLineNumber ] ]
         [ text <| toString i
         ]
 
 
 loadingGutter : Html msg
 loadingGutter =
-    div [ class [ LoadingEditorGutter ] ]
+    div [ class [ LoadingGutter ] ]
         (List.range 1 12 |> List.map loadingLineNumber)
 
 
@@ -64,7 +64,7 @@ loadingShimmer =
 
 loading : Html msg
 loading =
-    div [ class [ LoadingEditor ] ]
+    div [ class [ Loading ] ]
         [ loadingGutter
         , loadingLines
         , loadingShimmer

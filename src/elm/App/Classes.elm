@@ -1,4 +1,4 @@
-module Classes exposing (Classes(..), class, classList)
+module App.Classes exposing (Classes(..), class, classList)
 
 import Html exposing (Attribute)
 import Html.CssHelpers
@@ -6,7 +6,7 @@ import Html.CssHelpers
 
 helpers : Html.CssHelpers.Namespace String class id msg
 helpers =
-    Html.CssHelpers.withNamespace ""
+    Html.CssHelpers.withNamespace "app_"
 
 
 class : List class -> Html.Attribute msg
@@ -26,3 +26,5 @@ type Classes
     | WorkAreaContainer
     | ResultsEditorsSeparator
     | ResultsContainer
+    | MainContainer
+    | TopContainer
