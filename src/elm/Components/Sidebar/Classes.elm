@@ -14,6 +14,19 @@ type Classes
     | DetailsTitle
     | DetailsDescription
     | DetailsInputContainer
+    | Dependencies
+    | InstalledDeps
+    | InstalledDepContainer
+    | InstalledDepDetails
+    | InstalledDepName
+    | InstalledDepRange
+    | InstalledDepMin
+    | InstalledDepMax
+    | InstalledDepRemoveContainer
+    | AddDepButton
+    | AddDepButtonText
+    | AddDepButtonIcon
+    | CloseButton
 
 
 helpers : Html.CssHelpers.Namespace String class id msg

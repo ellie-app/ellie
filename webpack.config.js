@@ -64,6 +64,10 @@ module.exports = {
   devServer: {
     inline: true,
     stats: { colors: true },
-    historyApiFallback: true
+    historyApiFallback: true,
+    watchOptions: {
+      aggregateTimeout: 300,
+      poll: 1000
+    },
   },
 };

@@ -5,10 +5,13 @@ import Window exposing (Size)
 import Mouse exposing (Position)
 import RemoteData exposing (RemoteData(..))
 import Navigation
+import Types.ExistingRevision as ExistingRevision exposing (ExistingRevision)
+import Types.Session as Session exposing (Session)
+import Types.CompileError as CompileError exposing (CompileError)
 import App.Model as Model exposing (Model)
 import App.Routing as Routing exposing (Route(..))
 import Components.Sidebar.Update as Sidebar
-import Shared.Api as Api exposing (Session, Error, CompileError, ExistingRevision, NewRevision)
+import Shared.Api as Api exposing (Error)
 import Shared.Constants as Constants
 import Shared.Utils as Utils
 

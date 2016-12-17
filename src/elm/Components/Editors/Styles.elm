@@ -53,6 +53,7 @@ styles =
             [ height (px 12)
             , margin2 (px 9) (px 0)
             , backgroundColor (hex "e5e1e5")
+            , borderRadius (px 12)
             ]
         , (.) LoadingShimmer
             [ height (pct 120)

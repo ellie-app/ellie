@@ -7,7 +7,7 @@ module Components.Editors.View
 
 import Html exposing (Html, div, span, text)
 import Html.Attributes exposing (style, value)
-import Shared.Api exposing (CompileError)
+import Types.CompileError exposing (CompileError)
 import Components.Editors.CodeMirror as CodeMirror
 import Components.Editors.Classes exposing (Classes(..), class)
 

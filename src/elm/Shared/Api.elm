@@ -2,17 +2,12 @@ module Shared.Api
     exposing
         ( Error(..)
         , send
-        , Session
+        , searchPackages
+        , searchVersions
         , createSession
         , removeSession
-        , Location
-        , Region
-        , CompileError
         , compile
-        , Dependency
         , addDependencies
-        , NewRevision
-        , ExistingRevision
         , latestRevision
         , exactRevision
         , createProjectFromRevision
@@ -21,12 +16,17 @@ module Shared.Api
 
 import Json.Encode as Encode exposing (Value)
 import Json.Decode as Decode exposing (Decoder)
-import Json.Decode.Pipeline as Decode
 import Http exposing (Request, Expect)
 import HttpBuilder exposing (..)
 import RemoteData exposing (RemoteData)
-import Shared.SemVer.VersionRange as VersionRange exposing (VersionRange)
-import Shared.Uuid as Uuid exposing (Uuid)
+import Types.Version as Version exposing (Version)
+import Types.PackageSearchResult as PackageSearchResult exposing (PackageSearchResult)
+import Types.Uuid as Uuid exposing (Uuid)
+import Types.Session as Session exposing (Session)
+import Types.Dependency as Dependency exposing (Dependency)
+import Types.CompileError as CompileError exposing (CompileError)
+import Types.NewRevision as NewRevision exposing (NewRevision)
+import Types.ExistingRevision as ExistingRevision exposing (ExistingRevision)
 import Shared.Constants as Constants
 
 
@@ -71,19 +71,27 @@ handleError result =
 
 
 
+-- SEARCH
+
+
+searchPackages : String -> RequestBuilder (List PackageSearchResult)
+searchPackages searchTerm =
+    get (fullUrl "/packages/search")
+        |> withQueryParams [ ( "q", searchTerm ) ]
+        |> withHeader "Accept" "application/json"
+        |> withExpect (Http.expectJson (Decode.list PackageSearchResult.decode))
+
+
+searchVersions : String -> String -> String -> RequestBuilder (List Version)
+searchVersions username packageName searchTerm =
+    get (fullUrl ("/packages/" ++ username ++ "/" ++ packageName ++ "/versions/search"))
+        |> withQueryParams [ ( "q", searchTerm ) ]
+        |> withHeader "Accept" "application/json"
+        |> withExpect (Http.expectJson (Decode.list Version.decode))
+
+
+
 -- SESSIONS
-
-
-type alias Session =
-    { id : String
-    }
-
-
-createSessionExpect : Expect Session
-createSessionExpect =
-    Decode.succeed Session
-        |> Decode.required "id" Decode.string
-        |> Http.expectJson
 
 
 createSession : RequestBuilder Session
@@ -91,7 +99,7 @@ createSession =
     post (fullUrl "/sessions")
         |> withHeader "Content-Type" "application/json"
         |> withHeader "Accept" "application/json"
-        |> withExpect createSessionExpect
+        |> withExpect (Http.expectJson Session.decode)
 
 
 removeSession : Session -> RequestBuilder ()
@@ -104,53 +112,6 @@ removeSession session =
 -- COMPILATION
 
 
-type alias Location =
-    { line : Int
-    , column : Int
-    }
-
-
-type alias Region =
-    { start : Location
-    , end : Location
-    }
-
-
-type alias CompileError =
-    { tag : String
-    , overview : String
-    , details : String
-    , subregion : Maybe Region
-    , region : Region
-    , level : String
-    }
-
-
-decodeLocation : Decoder Location
-decodeLocation =
-    Decode.succeed Location
-        |> Decode.required "line" Decode.int
-        |> Decode.required "column" Decode.int
-
-
-decodeRegion : Decoder Region
-decodeRegion =
-    Decode.succeed Region
-        |> Decode.required "start" decodeLocation
-        |> Decode.required "end" decodeLocation
-
-
-decodeCompileError : Decoder CompileError
-decodeCompileError =
-    Decode.succeed CompileError
-        |> Decode.required "tag" Decode.string
-        |> Decode.required "overview" Decode.string
-        |> Decode.required "details" Decode.string
-        |> Decode.required "subregion" (Decode.nullable decodeRegion)
-        |> Decode.required "region" decodeRegion
-        |> Decode.required "type" Decode.string
-
-
 compilePayload : String -> Value
 compilePayload source =
     Encode.object
@@ -160,7 +121,7 @@ compilePayload source =
 
 compileExpect : Expect (List CompileError)
 compileExpect =
-    Decode.list decodeCompileError
+    Decode.list CompileError.decode
         |> Http.expectJson
 
 
@@ -176,34 +137,10 @@ compile session source =
 -- DEPENDENCIES
 
 
-type alias Dependency =
-    { username : String
-    , name : String
-    , range : VersionRange
-    }
-
-
-encodeDependency : Dependency -> Value
-encodeDependency dependency =
-    Encode.object
-        [ ( "username", Encode.string dependency.username )
-        , ( "name", Encode.string dependency.name )
-        , ( "range", VersionRange.encode dependency.range )
-        ]
-
-
-decodeDependency : Decoder Dependency
-decodeDependency =
-    Decode.decode Dependency
-        |> Decode.required "username" Decode.string
-        |> Decode.required "name" Decode.string
-        |> Decode.required "range" VersionRange.decode
-
-
 addDependenciesPayload : List Dependency -> Value
 addDependenciesPayload dependencies =
     dependencies
-        |> List.map encodeDependency
+        |> List.map Dependency.encode
         |> Encode.list
         |> (,) "dependencies"
         |> listOf
@@ -221,76 +158,30 @@ addDependencies session dependencies =
 -- REVISIONS AND PROJECTS
 
 
-type alias NewRevision =
-    { htmlCode : String
-    , elmCode : String
-    , dependencies : List Dependency
-    }
-
-
-type alias ExistingRevision =
-    { htmlCode : String
-    , elmCode : String
-    , dependencies : List Dependency
-    , revisionNumber : Int
-    , projectId : Uuid
-    }
-
-
-decodeExistingRevision : Decoder ExistingRevision
-decodeExistingRevision =
-    Decode.decode ExistingRevision
-        |> Decode.required "htmlCode" Decode.string
-        |> Decode.required "elmCode" Decode.string
-        |> Decode.required "dependencies" (Decode.list decodeDependency)
-        |> Decode.required "revisionNumber" Decode.int
-        |> Decode.required "projectId" Uuid.decode
-
-
-encodeNewRevision : NewRevision -> Value
-encodeNewRevision revision =
-    Encode.object
-        [ ( "htmlCode", Encode.string revision.htmlCode )
-        , ( "elmCode", Encode.string revision.elmCode )
-        , ( "dependencies", Encode.list <| List.map encodeDependency revision.dependencies )
-        ]
-
-
-encodeExistingRevision : ExistingRevision -> Value
-encodeExistingRevision revision =
-    Encode.object
-        [ ( "htmlCode", Encode.string revision.htmlCode )
-        , ( "elmCode", Encode.string revision.elmCode )
-        , ( "dependencies", Encode.list <| List.map encodeDependency revision.dependencies )
-        , ( "revisionNumber", Encode.int revision.revisionNumber )
-        , ( "projectId", Uuid.encode revision.projectId )
-        ]
-
-
 latestRevision : Uuid -> RequestBuilder ExistingRevision
 latestRevision projectId =
     get (fullUrl ("/projects/" ++ Uuid.toString projectId ++ "/revisions/latest"))
         |> withHeader "Accept" "appication/json"
-        |> withExpect (Http.expectJson decodeExistingRevision)
+        |> withExpect (Http.expectJson ExistingRevision.decode)
 
 
 exactRevision : Uuid -> Int -> RequestBuilder ExistingRevision
 exactRevision projectId revisionNumber =
     get (fullUrl ("/projects/" ++ Uuid.toString projectId ++ "/revisions/" ++ toString revisionNumber))
         |> withHeader "Accept" "application/json"
-        |> withExpect (Http.expectJson decodeExistingRevision)
+        |> withExpect (Http.expectJson ExistingRevision.decode)
 
 
 createProjectFromRevision : NewRevision -> RequestBuilder ExistingRevision
 createProjectFromRevision revision =
     post (fullUrl "/projects")
         |> withHeader "Accept" "application/json"
-        |> withExpect (Http.expectJson decodeExistingRevision)
-        |> withJsonBody (encodeNewRevision revision)
+        |> withExpect (Http.expectJson ExistingRevision.decode)
+        |> withJsonBody (NewRevision.encode revision)
 
 
 createRevision : ExistingRevision -> RequestBuilder ()
 createRevision revision =
     put (fullUrl "/projects" ++ Uuid.toString revision.projectId ++ "/revisions")
         |> withHeader "Accept" "application/json"
-        |> withJsonBody (encodeExistingRevision revision)
+        |> withJsonBody (ExistingRevision.encode revision)

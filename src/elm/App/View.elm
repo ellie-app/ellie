@@ -121,7 +121,7 @@ viewMain model =
 
 headerContext : Model -> Header.Context Msg
 headerContext model =
-    { saveButtonOption = Header.Save
+    { saveButtonOption = Header.Fork
     , onSave = SaveButtonClicked
     , onCompile = Compile
     , saveButtonEnabled =
@@ -140,6 +140,7 @@ sidebarContext model =
     , onLocalMsg = SidebarMsg
     , onTitleChange = TitleChanged
     , onDescriptionChange = DescriptionChanged
+    , dependencies = model.dependencies
     }
 
 

@@ -1,23 +1,21 @@
-module Components.Header.Classes exposing (..)
+module Components.PackageSearch.Classes
+    exposing
+        ( Classes(..)
+        , class
+        , classList
+        )
 
 import Html exposing (Attribute)
 import Html.CssHelpers
 
 
 type Classes
-    = Header
-    | Logo
-    | LogoText
-    | Status
-    | StatusText
-    | StatusEllipsis
-    | Button
-    | ButtonIcon
+    = ActionIcon
 
 
 helpers : Html.CssHelpers.Namespace String class id msg
 helpers =
-    Html.CssHelpers.withNamespace "components_header_"
+    Html.CssHelpers.withNamespace "components_packageSearch_"
 
 
 class : List class -> Attribute msg

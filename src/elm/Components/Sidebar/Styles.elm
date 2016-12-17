@@ -2,7 +2,6 @@ module Components.Sidebar.Styles exposing (..)
 
 import Css exposing (..)
 import Css.Namespace exposing (..)
-import Css.Elements exposing (..)
 import Components.Sidebar.Classes exposing (..)
 import Shared.Constants as Constants
 
@@ -45,6 +44,63 @@ styles =
             [ property "-webkit-appearance" "none"
             , border zero
             , borderBottom3 (px 1) solid (hex "A7A7A7")
+            , outline zero
+            ]
+        , (.) Dependencies
+            [ displayFlex
+            , flexDirection column
+            , padding2 zero (px 16)
+            ]
+        , (.) InstalledDeps
+            [ padding2 (px 8) zero
+            ]
+        , (.) InstalledDepContainer
+            [ padding2 (px 8) zero
+            , width (pct 100)
+            , displayFlex
+            ]
+        , (.) InstalledDepDetails
+            [ property "width" "calc(100% - 32px)" ]
+        , (.) InstalledDepName
+            [ property "font-family" "monospace"
+            ]
+        , (.) InstalledDepRange
+            [ property "font-family" "monospace"
+            ]
+        , (.) InstalledDepMin
+            []
+        , (.) InstalledDepMax
+            []
+        , (.) AddDepButton
+            [ property "-webkit-appearance" "none"
+            , backgroundColor (hex "A7A7A7")
+            , color (hex "fff")
+            , property "border" "none"
+            , padding (px 12)
+            , outline zero
+            , cursor pointer
+            ]
+        , (.) AddDepButtonText
+            [ fontSize (px 13)
+            , marginLeft (px 8)
+            , textTransform uppercase
+            , display inlineBlock
+            , verticalAlign middle
+            ]
+        , (.) AddDepButtonIcon
+            [ width (px 13)
+            , height (px 13)
+            , display inlineBlock
+            , verticalAlign middle
+            ]
+        , (.) CloseButton
+            [ width (px 32)
+            , height (px 32)
+            , property "-webkit-appearance" "none"
+            , property "background" "none"
+            , property "border" "none"
+            , cursor pointer
+            , padding (px 8)
             , outline zero
             ]
         ]

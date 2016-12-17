@@ -2,7 +2,12 @@ module App.Model exposing (Model, model)
 
 import Window
 import RemoteData exposing (RemoteData(..))
-import Shared.Api as Api exposing (Error, CompileError, Session, Dependency, ExistingRevision)
+import Types.ExistingRevision as ExistingRevision exposing (ExistingRevision)
+import Types.Session as Session exposing (Session)
+import Types.Dependency as Dependency exposing (Dependency)
+import Types.CompileError as CompileError exposing (CompileError)
+import Shared.Api as Api exposing (Error)
+import Shared.Constants as Constants
 import App.Routing as Routing exposing (Route(..))
 import Components.Sidebar.Model as Sidebar
 
@@ -41,8 +46,8 @@ model =
     , title = "Untitled"
     , description = "Description..."
     , currentRoute = NotFound
-    , dependencies = []
     , currentRevision = NotAsked
+    , dependencies = Constants.defaultDependencies
     }
 
 

@@ -1,4 +1,4 @@
-module Shared.Uuid exposing (Uuid, uuid, toString, encode, decode)
+module Types.Uuid exposing (Uuid, uuid, toString, encode, decode)
 
 import Regex
 import Json.Decode as Decode exposing (Decoder)

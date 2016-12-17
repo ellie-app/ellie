@@ -2,7 +2,7 @@ module App.Routing exposing (..)
 
 import Navigation
 import UrlParser exposing ((</>))
-import Shared.Uuid as Uuid exposing (Uuid)
+import Types.Uuid as Uuid exposing (Uuid)
 
 
 type Route

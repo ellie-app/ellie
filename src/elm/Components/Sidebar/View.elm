@@ -4,13 +4,25 @@ module Components.Sidebar.View
         , view
         )
 
-import Html exposing (Html, textarea, aside, div, text, span, input)
+import Html exposing (Html, textarea, button, aside, div, text, span, input)
 import Html.Attributes exposing (type_, value)
 import Html.Events exposing (onClick, onInput)
 import Shared.Icons as Icons
+import Types.Dependency as Dependency exposing (Dependency)
+import Types.Version as Version exposing (Version)
 import Components.Sidebar.Classes exposing (..)
 import Components.Sidebar.Update exposing (..)
-import Components.Sidebar.Model as Model exposing (Model)
+import Components.Sidebar.Model as Model exposing (Model, SearchFlow(..))
+import Components.PackageSearch.View as PackageSearch
+
+
+closeButton : msg -> Html msg
+closeButton msg =
+    button
+        [ class [ CloseButton ]
+        , onClick msg
+        ]
+        [ Icons.close ]
 
 
 details : Context msg -> Html msg
@@ -33,6 +45,49 @@ details context =
                 ]
                 []
             ]
+        ]
+
+
+installedDependency : msg -> Dependency -> Html msg
+installedDependency onRemove dependency =
+    div [ class [ InstalledDepContainer ] ]
+        [ div [ class [ InstalledDepDetails ] ]
+            [ div [ class [ InstalledDepName ] ]
+                [ text <| dependency.username ++ "/" ++ dependency.name ]
+            , div [ class [ InstalledDepRange ] ]
+                [ span [ class [ InstalledDepMin ] ]
+                    [ text <| Version.toString dependency.range.min ]
+                , span [ class [ InstalledDepMax ] ]
+                    [ text <| " <= v < " ++ Version.toString dependency.range.max ]
+                ]
+            ]
+        , div [ class [ InstalledDepRemoveContainer ] ]
+            [ closeButton onRemove
+            ]
+        ]
+
+
+newPackageStuff : SearchFlow -> Html Msg
+newPackageStuff searchFlow =
+    case searchFlow of
+        NotSearching ->
+            button [ class [ AddDepButton ], onClick NewSearchStarted ]
+                [ span [ class [ AddDepButtonIcon ] ] [ Icons.plusEmpty ]
+                , span [ class [ AddDepButtonText ] ] [ text "Add Dependency" ]
+                ]
+
+        NewPackageSearching searchModel ->
+            PackageSearch.view
+                (PackageSearch.Context SearchCanceled (\_ -> NoOp) PackageSearchMsg)
+                (searchModel)
+
+
+dependencies : Context msg -> Model -> Html msg
+dependencies context model =
+    div [ class [ Dependencies ] ]
+        [ div [ class [ InstalledDeps ] ]
+            (List.map (installedDependency (context.onLocalMsg NoOp)) context.dependencies)
+        , Html.map context.onLocalMsg <| newPackageStuff model.searchFlow
         ]
 
 
@@ -70,6 +125,7 @@ type alias Context msg =
     , onLocalMsg : Msg -> msg
     , onTitleChange : String -> msg
     , onDescriptionChange : String -> msg
+    , dependencies : List Dependency
     }
 
 
@@ -85,5 +141,5 @@ view context model =
             (context.onLocalMsg PackagesToggled)
             (model.packagesOpen)
             ("packages")
-            (Html.text "")
+            (dependencies context model)
         ]

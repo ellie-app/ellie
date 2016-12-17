@@ -9,7 +9,7 @@ import Shared.Constants as Constants
 
 styles : Stylesheet
 styles =
-    (stylesheet << namespace "views")
+    (stylesheet << namespace "components_header_")
         [ (.) Header
             [ width (pct 100)
             , height (px 60)
