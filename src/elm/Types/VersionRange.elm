@@ -2,6 +2,7 @@ module Types.VersionRange exposing (..)
 
 import Json.Encode as Encode exposing (Value)
 import Json.Decode as Decode exposing (Decoder)
+import Json.Decode.Pipeline as Decode
 import Types.Version as Version exposing (Version)
 
 
@@ -49,8 +50,8 @@ encode versionRange =
         ]
 
 
-decode : Decoder VersionRange
-decode =
+decodeString : Decoder VersionRange
+decodeString =
     Decode.string
         |> Decode.andThen
             (\string ->
@@ -61,3 +62,18 @@ decode =
                     Nothing ->
                         Decode.fail ("Could not parse version range " ++ string)
             )
+
+
+decodeJson : Decoder VersionRange
+decodeJson =
+    Decode.decode VersionRange
+        |> Decode.required "min" Version.decode
+        |> Decode.required "max" Version.decode
+
+
+decode : Decoder VersionRange
+decode =
+    Decode.oneOf
+        [ decodeString
+        , decodeJson
+        ]

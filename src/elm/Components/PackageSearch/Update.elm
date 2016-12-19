@@ -17,9 +17,12 @@ type Msg
     | PackageQueryUpdated String
     | PackageSearchCompleted String (RemoteData Error (List PackageSearchResult))
     | PackageSelected PackageSearchResult
-    | VersionQueryUpdated String
-    | VersionSearchCompleted String (RemoteData Error (List Version))
-    | VersionSelected Version
+    | VersionSelected Int
+
+
+elmVersion : Version
+elmVersion =
+    Version 0 18 0
 
 
 withNoCmd : Model -> ( Model, Cmd Msg )
@@ -30,20 +33,8 @@ withNoCmd model =
 searchPackages : String -> Model -> ( Model, Cmd Msg )
 searchPackages searchTerm model =
     ( model
-    , Api.searchPackages searchTerm
+    , Api.searchPackages elmVersion searchTerm
         |> Api.send (PackageSearchCompleted searchTerm)
-    )
-
-
-searchVersions : String -> Model -> ( Model, Cmd Msg )
-searchVersions searchTerm model =
-    ( model
-    , model
-        |> Model.asVersions
-        |> Maybe.map (\( p, _, _ ) -> p)
-        |> Maybe.map (\p -> Api.searchVersions p.username p.name searchTerm)
-        |> Maybe.map (Api.send (VersionSearchCompleted searchTerm))
-        |> Maybe.withDefault Cmd.none
     )
 
 
@@ -69,19 +60,9 @@ update msg model =
                 |> Model.selectPackage package
                 |> withNoCmd
 
-        VersionQueryUpdated query ->
+        VersionSelected index ->
             model
-                |> Model.updateVersionsQuery query
-                |> searchVersions query
-
-        VersionSearchCompleted originalTerm data ->
-            model
-                |> Model.receiveVersionSearchResult originalTerm data
-                |> withNoCmd
-
-        VersionSelected version ->
-            model
-                |> Model.selectVersion version
+                |> Model.updateVersionChoice index
                 |> withNoCmd
 
 

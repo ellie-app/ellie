@@ -42,90 +42,106 @@ type Msg
     | NoOp
 
 
+withNoCmd : Model -> ( Model, Cmd Msg )
+withNoCmd model =
+    ( model, Cmd.none )
+
+
+saveRevision : Model -> ( Model, Cmd Msg )
+saveRevision model =
+    ( { model | currentRevision = Loading }
+    , model
+        |> Model.updatedRevision
+        |> Maybe.andThen (Utils.filterMaybe .owned)
+        |> Maybe.map Api.createRevision
+        |> Maybe.withDefault (Api.createProjectFromRevision (Model.newRevision model))
+        |> Api.send SaveCompleted
+    )
+
+
+redirectIfSuccessful : RemoteData Error ExistingRevision -> Model -> ( Model, Cmd Msg )
+redirectIfSuccessful data model =
+    ( model
+    , case data of
+        Success revision ->
+            Navigation.modifyUrl <| Routing.construct (SpecificRevision revision.projectId revision.revisionNumber)
+
+        _ ->
+            Cmd.none
+    )
+
+
+unloadSession : Model -> ( Model, Cmd Msg )
+unloadSession model =
+    case model.session of
+        Success session ->
+            ( model
+            , Api.removeSession session
+                |> Api.send (\_ -> NoOp)
+            )
+
+        _ ->
+            ( model, Cmd.none )
+
+
+compileIfReady : Model -> ( Model, Cmd Msg )
+compileIfReady model =
+    case model.session of
+        Success session ->
+            ( model
+            , Api.compile session model.elmCode
+                |> Api.send CompileCompleted
+            )
+
+        _ ->
+            ( model, Cmd.none )
+
+
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
         LoadRevisionComplete revision ->
-            case revision of
-                Success r ->
-                    ( { model
-                        | htmlCode = r.htmlCode
-                        , elmCode = r.elmCode
-                        , dependencies = r.dependencies
-                        , currentRevision = revision
-                      }
-                    , Cmd.none
-                    )
-
-                _ ->
-                    ( { model | currentRevision = revision }
-                    , Cmd.none
-                    )
+            model
+                |> Model.acceptLoadedRevision revision
+                |> withNoCmd
 
         SaveButtonClicked ->
-            let
-                newRevision =
-                    { htmlCode = model.htmlCode
-                    , elmCode = model.elmCode
-                    , dependencies = model.dependencies
-                    }
-            in
-                ( { model | currentRevision = Loading }
-                , Api.createProjectFromRevision newRevision
-                    |> Api.send SaveCompleted
-                )
+            model
+                |> saveRevision
 
         SaveCompleted currentRevision ->
-            ( { model | currentRevision = currentRevision }
-            , case currentRevision of
-                Success revision ->
-                    Navigation.modifyUrl <| Routing.construct (SpecificRevision revision.projectId revision.revisionNumber)
-
-                _ ->
-                    Cmd.none
-            )
+            model
+                |> Model.acceptSavedRevision currentRevision
+                |> redirectIfSuccessful currentRevision
 
         WindowUnloaded ->
-            case model.session of
-                Success session ->
-                    ( model
-                    , Api.removeSession session
-                        |> Api.send (\_ -> NoOp)
-                    )
-
-                _ ->
-                    ( model, Cmd.none )
+            model
+                |> unloadSession
 
         InitCompleted sessionResult ->
-            ( { model | session = sessionResult }
-            , Cmd.none
-            )
+            model
+                |> Model.acceptSession sessionResult
+                |> withNoCmd
 
         TypedElmCode nextCode ->
-            ( { model | elmCode = nextCode }
-            , Cmd.none
-            )
+            model
+                |> Model.updateElmCode nextCode
+                |> withNoCmd
 
         TypedHtmlCode nextCode ->
-            ( { model | htmlCode = nextCode }
-            , Cmd.none
-            )
+            model
+                |> Model.updateHtmlCode nextCode
+                |> withNoCmd
 
         Compile ->
-            case model.session of
-                Success session ->
-                    ( { model | compileResult = Loading }
-                    , Api.compile session model.elmCode
-                        |> Api.send CompileCompleted
-                    )
-
-                _ ->
-                    ( model, Cmd.none )
+            model
+                |> Model.startCompiling
+                |> compileIfReady
 
         CompileCompleted result ->
-            ( { model | compileResult = result }
-            , Cmd.none
-            )
+            model
+                |> Model.acceptCompileResult result
+                |> withNoCmd
 
         StartDraggingEditors ->
             ( { model | isDraggingEditorsSplit = True }

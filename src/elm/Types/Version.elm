@@ -2,6 +2,7 @@ module Types.Version exposing (..)
 
 import Json.Encode as Encode exposing (Value)
 import Json.Decode as Decode exposing (Decoder)
+import Json.Decode.Pipeline as Decode
 
 
 type alias Version =
@@ -69,8 +70,8 @@ encode version =
         ]
 
 
-decode : Decoder Version
-decode =
+decodeString : Decoder Version
+decodeString =
     Decode.string
         |> Decode.andThen
             (\string ->
@@ -81,3 +82,19 @@ decode =
                     Nothing ->
                         Decode.fail ("Could not parse version " ++ string)
             )
+
+
+decodeJson : Decoder Version
+decodeJson =
+    Decode.decode Version
+        |> Decode.required "major" Decode.int
+        |> Decode.required "minor" Decode.int
+        |> Decode.required "patch" Decode.int
+
+
+decode : Decoder Version
+decode =
+    Decode.oneOf
+        [ decodeString
+        , decodeJson
+        ]

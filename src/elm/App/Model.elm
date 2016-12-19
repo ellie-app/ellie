@@ -1,7 +1,22 @@
-module App.Model exposing (Model, model)
+module App.Model
+    exposing
+        ( Model
+        , model
+        , acceptLoadedRevision
+        , acceptSavedRevision
+        , newRevision
+        , updatedRevision
+        , acceptSession
+        , updateElmCode
+        , updateHtmlCode
+        , startCompiling
+        , acceptCompileResult
+        , hasChanges
+        )
 
 import Window
 import RemoteData exposing (RemoteData(..))
+import Types.NewRevision as NewRevision exposing (NewRevision)
 import Types.ExistingRevision as ExistingRevision exposing (ExistingRevision)
 import Types.Session as Session exposing (Session)
 import Types.Dependency as Dependency exposing (Dependency)
@@ -49,6 +64,87 @@ model =
     , currentRevision = NotAsked
     , dependencies = Constants.defaultDependencies
     }
+
+
+hasChanges : Model -> Bool
+hasChanges model =
+    model.currentRevision
+        |> RemoteData.map (\r -> r.elmCode /= model.elmCode || r.htmlCode /= model.htmlCode)
+        |> RemoteData.withDefault False
+
+
+acceptCompileResult : RemoteData Error (List CompileError) -> Model -> Model
+acceptCompileResult data model =
+    { model | compileResult = data }
+
+
+startCompiling : Model -> Model
+startCompiling model =
+    case model.session of
+        Success session ->
+            { model | compileResult = Loading }
+
+        _ ->
+            model
+
+
+updateElmCode : String -> Model -> Model
+updateElmCode nextCode model =
+    { model | elmCode = nextCode }
+
+
+updateHtmlCode : String -> Model -> Model
+updateHtmlCode nextCode model =
+    { model | htmlCode = nextCode }
+
+
+acceptSession : RemoteData Error Session -> Model -> Model
+acceptSession data model =
+    { model | session = data }
+
+
+acceptLoadedRevision : RemoteData Error ExistingRevision -> Model -> Model
+acceptLoadedRevision revision model =
+    case revision of
+        Success r ->
+            { model
+                | htmlCode = r.htmlCode
+                , elmCode = r.elmCode
+                , dependencies = r.dependencies
+                , currentRevision = revision
+            }
+
+        _ ->
+            { model | currentRevision = revision }
+
+
+acceptSavedRevision : RemoteData Error ExistingRevision -> Model -> Model
+acceptSavedRevision data model =
+    { model | currentRevision = data }
+
+
+newRevision : Model -> NewRevision
+newRevision model =
+    { htmlCode = model.htmlCode
+    , elmCode = model.elmCode
+    , dependencies = model.dependencies
+    }
+
+
+updatedRevision : Model -> Maybe ExistingRevision
+updatedRevision model =
+    model.currentRevision
+        |> RemoteData.toMaybe
+        |> Maybe.map
+            (\r ->
+                ExistingRevision
+                    model.htmlCode
+                    model.elmCode
+                    model.dependencies
+                    (r.revisionNumber + 1)
+                    r.projectId
+                    r.owned
+            )
 
 
 initHtmlCode : String

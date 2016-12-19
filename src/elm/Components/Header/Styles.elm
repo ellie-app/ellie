@@ -2,7 +2,6 @@ module Components.Header.Styles exposing (..)
 
 import Css exposing (..)
 import Css.Namespace exposing (..)
-import Css.Elements exposing (..)
 import Components.Header.Classes exposing (Classes(..))
 import Shared.Constants as Constants
 
@@ -12,11 +11,14 @@ styles =
     (stylesheet << namespace "components_header_")
         [ (.) Header
             [ width (pct 100)
-            , height (px 60)
+            , height (px Constants.headerHeight)
             , backgroundColor (hex "f7f7f7")
             , borderBottom3 (px 1) solid (hex "55B5DB")
             , displayFlex
             , alignItems center
+            , boxShadow5 (px 0) (px 2) (px 15) (px -4) (rgba 0 0 0 0.5)
+            , position relative
+            , property "z-index" "4"
             ]
         , (.) Logo
             [ padding2 zero (px 16)
@@ -53,7 +55,7 @@ styles =
                 [ borderBottomColor (hex "55B5DB") ]
             , disabled
                 [ color (hex "A7A7A7")
-                , cursor wait
+                , cursor notAllowed
                 , hover [ borderBottomColor (hex "A7A7A7") ]
                 ]
             ]

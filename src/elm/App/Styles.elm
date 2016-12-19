@@ -56,7 +56,7 @@ styles =
             , height (pct 100)
             ]
         , (.) MainContainer
-            [ property "height" "calc(100% - 60px)"
+            [ property "height" ("calc(100% - " ++ toString Constants.headerHeight ++ "px)")
             , position relative
             , displayFlex
             ]

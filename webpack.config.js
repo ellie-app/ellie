@@ -42,7 +42,7 @@ module.exports = {
               { pattern: /\%API_BASE\%/g, replacement: () => 'http://localhost:1337' }
             ]
           }),
-          'elm-webpack-loader',
+          'elm-webpack-loader?debug',
         ]
       },
       {

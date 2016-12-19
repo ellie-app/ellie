@@ -3,7 +3,6 @@ module Shared.Api
         ( Error(..)
         , send
         , searchPackages
-        , searchVersions
         , createSession
         , removeSession
         , compile
@@ -50,6 +49,13 @@ fullUrl path =
     Constants.apiBase ++ path
 
 
+withApiHeaders : RequestBuilder a -> RequestBuilder a
+withApiHeaders builder =
+    builder
+        |> withCredentials
+        |> withHeader "Accept" "application/json"
+
+
 
 -- ERRORS
 
@@ -74,20 +80,15 @@ handleError result =
 -- SEARCH
 
 
-searchPackages : String -> RequestBuilder (List PackageSearchResult)
-searchPackages searchTerm =
+searchPackages : Version -> String -> RequestBuilder (List PackageSearchResult)
+searchPackages elmVersion searchTerm =
     get (fullUrl "/packages/search")
-        |> withQueryParams [ ( "q", searchTerm ) ]
-        |> withHeader "Accept" "application/json"
+        |> withQueryParams
+            [ ( "query", searchTerm )
+            , ( "elmVersion", Version.toString elmVersion )
+            ]
+        |> withApiHeaders
         |> withExpect (Http.expectJson (Decode.list PackageSearchResult.decode))
-
-
-searchVersions : String -> String -> String -> RequestBuilder (List Version)
-searchVersions username packageName searchTerm =
-    get (fullUrl ("/packages/" ++ username ++ "/" ++ packageName ++ "/versions/search"))
-        |> withQueryParams [ ( "q", searchTerm ) ]
-        |> withHeader "Accept" "application/json"
-        |> withExpect (Http.expectJson (Decode.list Version.decode))
 
 
 
@@ -97,15 +98,14 @@ searchVersions username packageName searchTerm =
 createSession : RequestBuilder Session
 createSession =
     post (fullUrl "/sessions")
-        |> withHeader "Content-Type" "application/json"
-        |> withHeader "Accept" "application/json"
+        |> withApiHeaders
         |> withExpect (Http.expectJson Session.decode)
 
 
 removeSession : Session -> RequestBuilder ()
 removeSession session =
     delete ("http://localhost:1337/sessions/" ++ session.id)
-        |> withHeader "Content-Type" "application/json"
+        |> withApiHeaders
 
 
 
@@ -128,7 +128,7 @@ compileExpect =
 compile : Session -> String -> RequestBuilder (List CompileError)
 compile session source =
     post (fullUrl ("/sessions/" ++ session.id ++ "/compile"))
-        |> withHeader "Accept" "application/json"
+        |> withApiHeaders
         |> withJsonBody (compilePayload source)
         |> withExpect compileExpect
 
@@ -150,7 +150,7 @@ addDependenciesPayload dependencies =
 addDependencies : Session -> List Dependency -> RequestBuilder ()
 addDependencies session dependencies =
     put (fullUrl ("/sessions/" ++ session.id ++ "/dependencies"))
-        |> withHeader "Accept" "application/json"
+        |> withApiHeaders
         |> withJsonBody (addDependenciesPayload dependencies)
 
 
@@ -161,27 +161,28 @@ addDependencies session dependencies =
 latestRevision : Uuid -> RequestBuilder ExistingRevision
 latestRevision projectId =
     get (fullUrl ("/projects/" ++ Uuid.toString projectId ++ "/revisions/latest"))
-        |> withHeader "Accept" "appication/json"
+        |> withApiHeaders
         |> withExpect (Http.expectJson ExistingRevision.decode)
 
 
 exactRevision : Uuid -> Int -> RequestBuilder ExistingRevision
 exactRevision projectId revisionNumber =
     get (fullUrl ("/projects/" ++ Uuid.toString projectId ++ "/revisions/" ++ toString revisionNumber))
-        |> withHeader "Accept" "application/json"
+        |> withApiHeaders
         |> withExpect (Http.expectJson ExistingRevision.decode)
 
 
 createProjectFromRevision : NewRevision -> RequestBuilder ExistingRevision
 createProjectFromRevision revision =
     post (fullUrl "/projects")
-        |> withHeader "Accept" "application/json"
+        |> withApiHeaders
         |> withExpect (Http.expectJson ExistingRevision.decode)
         |> withJsonBody (NewRevision.encode revision)
 
 
-createRevision : ExistingRevision -> RequestBuilder ()
+createRevision : ExistingRevision -> RequestBuilder ExistingRevision
 createRevision revision =
-    put (fullUrl "/projects" ++ Uuid.toString revision.projectId ++ "/revisions")
-        |> withHeader "Accept" "application/json"
+    put (fullUrl "/projects/" ++ Uuid.toString revision.projectId ++ "/revisions")
+        |> withApiHeaders
         |> withJsonBody (ExistingRevision.encode revision)
+        |> withExpect (Http.expectJson (Decode.succeed revision))

@@ -18,7 +18,7 @@ styles =
             , flexDirection column
             ]
         , (.) SectionHeader
-            [ padding (px 16)
+            [ padding2 (px 12) (px 16)
             , color (hex "fff")
             , backgroundColor (hex "55B5DB")
             , displayFlex
@@ -26,13 +26,13 @@ styles =
             , cursor pointer
             ]
         , (.) SectionHeaderIcon
-            [ width (px 20)
-            , height (px 20)
+            [ width (px 13)
+            , height (px 13)
             , property "fill" "currentColor"
             ]
         , (.) SectionHeaderText
             [ textTransform uppercase
-            , fontSize (px 18)
+            , fontSize (px 13)
             ]
         , (.) Details
             [ padding (px 16)

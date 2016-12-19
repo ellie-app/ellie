@@ -1,10 +1,13 @@
 module Components.PackageSearch.View exposing (view, Context)
 
-import Html exposing (Html, div, text, input, span)
-import Html.Attributes as Attr exposing (type_, value)
-import Html.Events exposing (onInput, onClick)
+import Json.Decode as Decode
+import Html exposing (Html, div, text, input, span, select, option)
+import Html.Attributes as Attr exposing (type_, value, selected)
+import Html.Events exposing (onInput, onClick, on)
+import List.Nonempty as Nonempty exposing (Nonempty)
 import Types.Dependency as Dependency exposing (Dependency)
 import Types.Version as Version exposing (Version)
+import Types.VersionRange as VersionRange exposing (VersionRange)
 import Types.PackageSearchResult as PackageSearchResult exposing (PackageSearchResult)
 import Shared.Icons as Icons
 import Components.PackageSearch.Model exposing (Model(..))
@@ -12,12 +15,29 @@ import Components.PackageSearch.Update exposing (Msg(..))
 import Components.PackageSearch.Classes exposing (..)
 
 
+packageAndVersionToDep : PackageSearchResult -> Version -> Dependency
+packageAndVersionToDep package version =
+    Dependency
+        package.username
+        package.name
+        (VersionRange version (Version.nextMajor version))
+
+
+onSelectedIndexChange : (Int -> msg) -> Html.Attribute msg
+onSelectedIndexChange tagger =
+    on "change" <| Decode.map tagger <| Decode.at [ "target", "selectedIndex" ] Decode.int
+
+
+packageString : PackageSearchResult -> String
+packageString package =
+    package.username ++ "/" ++ package.name
+
+
 packageItem : Context msg -> PackageSearchResult -> Html msg
 packageItem context package =
     div
-        [ onClick (PackageSelected package) |> Attr.map context.onLocalMsg
-        ]
-        [ text <| PackageSearchResult.toString package ]
+        [ onClick (PackageSelected package) |> Attr.map context.onLocalMsg ]
+        [ text <| packageString package ]
 
 
 packageSearch : Context msg -> List PackageSearchResult -> String -> Html msg
@@ -42,45 +62,24 @@ packageSearch context packages searchTerm =
         ]
 
 
-versionItem : Context msg -> Version -> Html msg
-versionItem context version =
-    div
-        [ onClick (VersionSelected version) |> Attr.map context.onLocalMsg
-        ]
-        [ text <| Version.toString version ]
-
-
-versionSearch : Context msg -> PackageSearchResult -> List Version -> String -> Html msg
-versionSearch context package versions searchTerm =
-    div []
-        [ div [] [ text <| PackageSearchResult.toString package ]
-        , div []
-            [ input
-                [ type_ "text"
-                , value searchTerm
-                , onInput VersionQueryUpdated |> Attr.map context.onLocalMsg
-                ]
-                []
-            ]
-        , div [] (List.map (versionItem context) versions)
-        , div []
-            [ span
-                [ class [ ActionIcon ]
-                , onClick context.onCancel
-                ]
-                [ Icons.close ]
-            ]
+versionOption : Version -> Version -> Html msg
+versionOption selectedVersion version =
+    option
+        [ selected <| Debug.log "s" (selectedVersion == version) ]
+        [ text <| Version.toString version
         ]
 
 
-ready : Context msg -> Dependency -> Html msg
-ready context dependency =
+versionSelect : Context msg -> PackageSearchResult -> Version -> Html msg
+versionSelect context package version =
     div []
-        [ div [] [ text <| (dependency.username ++ "/" ++ dependency.name) ]
+        [ div [] [ text <| packageString package ]
         , div []
-            [ span [] [ text <| Version.toString dependency.range.min ]
+            [ select
+                [ onSelectedIndexChange VersionSelected |> Attr.map context.onLocalMsg ]
+                (Nonempty.toList <| Nonempty.map (versionOption version) package.versions)
             , span [] [ text " <= v < " ]
-            , span [] [ text <| Version.toString dependency.range.max ]
+            , span [] [ text <| Version.toString (Version.nextMajor version) ]
             ]
         , div []
             [ span
@@ -88,7 +87,11 @@ ready context dependency =
                 , onClick context.onCancel
                 ]
                 [ Icons.close ]
-            , span [ class [ ActionIcon ] ] [ Icons.checkmark ]
+            , span
+                [ class [ ActionIcon ]
+                , onClick <| context.onApprove (packageAndVersionToDep package version)
+                ]
+                [ Icons.checkmark ]
             ]
         ]
 
@@ -106,8 +109,5 @@ view context model =
         Packages packages searchTerm ->
             packageSearch context packages searchTerm
 
-        Versions package versions searchTerm ->
-            versionSearch context package versions searchTerm
-
-        Ready dependency ->
-            ready context dependency
+        Versions package version ->
+            versionSelect context package version

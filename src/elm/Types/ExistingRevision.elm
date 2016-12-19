@@ -18,6 +18,7 @@ type alias ExistingRevision =
     , dependencies : List Dependency
     , revisionNumber : Int
     , projectId : Uuid
+    , owned : Bool
     }
 
 
@@ -29,6 +30,7 @@ encode revision =
         , ( "dependencies", Encode.list <| List.map Dependency.encode revision.dependencies )
         , ( "revisionNumber", Encode.int revision.revisionNumber )
         , ( "projectId", Uuid.encode revision.projectId )
+        , ( "owned", Encode.bool revision.owned )
         ]
 
 
@@ -40,3 +42,4 @@ decode =
         |> Decode.required "dependencies" (Decode.list Dependency.decode)
         |> Decode.required "revisionNumber" Decode.int
         |> Decode.required "projectId" Uuid.decode
+        |> Decode.required "owned" Decode.bool

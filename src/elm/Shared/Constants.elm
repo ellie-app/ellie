@@ -10,6 +10,11 @@ sidebarWidth =
     300
 
 
+headerHeight : number
+headerHeight =
+    50
+
+
 apiBase : String
 apiBase =
     "%API_BASE%"

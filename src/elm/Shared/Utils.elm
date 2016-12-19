@@ -4,6 +4,14 @@ import Regex exposing (Regex)
 import Json.Decode as Decode exposing (Decoder)
 
 
+filterMaybe : (a -> Bool) -> a -> Maybe a
+filterMaybe predicate a =
+    if predicate a then
+        Just a
+    else
+        Nothing
+
+
 listFind : (a -> Bool) -> List a -> Maybe a
 listFind predicate list =
     list

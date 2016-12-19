@@ -5,13 +5,12 @@ module Components.PackageSearch.Model
         , updatePackagesQuery
         , receivePackageSearchResult
         , selectPackage
-        , updateVersionsQuery
-        , receiveVersionSearchResult
-        , selectVersion
         , asVersions
+        , updateVersionChoice
         )
 
 import RemoteData exposing (RemoteData(..))
+import List.Nonempty as Nonempty exposing (Nonempty)
 import Types.Dependency as Dependency exposing (Dependency)
 import Types.PackageSearchResult as PackageSearchResult exposing (PackageSearchResult)
 import Types.Version as Version exposing (Version)
@@ -21,8 +20,7 @@ import Shared.Api as Api exposing (Error)
 
 type Model
     = Packages (List PackageSearchResult) String
-    | Versions PackageSearchResult (List Version) String
-    | Ready Dependency
+    | Versions PackageSearchResult Version
 
 
 asPackages : Model -> Maybe ( List PackageSearchResult, String )
@@ -35,11 +33,11 @@ asPackages model =
             Nothing
 
 
-asVersions : Model -> Maybe ( PackageSearchResult, List Version, String )
+asVersions : Model -> Maybe ( PackageSearchResult, Version )
 asVersions model =
     case model of
-        Versions p v s ->
-            Just ( p, v, s )
+        Versions p v ->
+            Just ( p, v )
 
         _ ->
             Nothing
@@ -90,27 +88,14 @@ receivePackageSearchResult originalTerm data model =
 
 selectPackage : PackageSearchResult -> Model -> Model
 selectPackage package model =
-    Versions package [] ""
+    Versions package (Nonempty.head package.versions)
 
 
-updateVersionsQuery : String -> Model -> Model
-updateVersionsQuery query model =
+updateVersionChoice : Int -> Model -> Model
+updateVersionChoice index model =
     model
         |> asVersions
-        |> Maybe.map (\( p, v, s ) -> Versions p v query)
-        |> Maybe.withDefault model
-
-
-receiveVersionSearchResult :
-    String
-    -> RemoteData Error (List Version)
-    -> Model
-    -> Model
-receiveVersionSearchResult originalTerm data model =
-    model
-        |> asVersions
-        |> Maybe.andThen (\( p, v, s ) -> pairToMaybe p (s == originalTerm))
-        |> Maybe.map2 (\v p -> Versions p v originalTerm) (RemoteData.toMaybe data)
+        |> Maybe.map (\( p, v ) -> Versions p (Nonempty.get index p.versions))
         |> Maybe.withDefault model
 
 
@@ -120,12 +105,3 @@ packageAndVersionToDep package version =
         package.username
         package.name
         (VersionRange version (Version.nextMajor version))
-
-
-selectVersion : Version -> Model -> Model
-selectVersion version model =
-    model
-        |> asVersions
-        |> Maybe.map (\( p, _, _ ) -> packageAndVersionToDep p version)
-        |> Maybe.map Ready
-        |> Maybe.withDefault model

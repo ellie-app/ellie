@@ -30,6 +30,9 @@ viewSaveButton msg saveOption enabled =
         Save ->
             viewButton msg enabled "Save" Icons.cloudOutline
 
+        Saving ->
+            viewButton msg False "Saving" Icons.cloudOutline
+
         Update ->
             viewButton msg enabled "Update" Icons.cloudOutline
 
@@ -41,6 +44,7 @@ type SaveOption
     = Save
     | Update
     | Fork
+    | Saving
 
 
 type alias Context msg =

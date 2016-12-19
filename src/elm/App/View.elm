@@ -4,8 +4,8 @@ import Html exposing (Html, div, button, text, iframe, main_, header, span)
 import Html.Attributes exposing (value, style, srcdoc)
 import Html.Events exposing (onClick, onMouseDown, onMouseUp)
 import RemoteData exposing (RemoteData(..))
-import App.Update exposing (Msg(..))
-import App.Model exposing (Model)
+import App.Update as Update exposing (Msg(..))
+import App.Model as Model exposing (Model)
 import Components.Editors.View as Editors
 import Components.Header.View as Header
 import Components.Sidebar.View as Sidebar
@@ -119,14 +119,31 @@ viewMain model =
         ]
 
 
+headerSaveOption : Model -> Header.SaveOption
+headerSaveOption model =
+    case model.currentRevision of
+        Success revision ->
+            if revision.owned then
+                Header.Update
+            else
+                Header.Fork
+
+        Loading ->
+            Header.Saving
+
+        _ ->
+            Header.Save
+
+
 headerContext : Model -> Header.Context Msg
 headerContext model =
-    { saveButtonOption = Header.Fork
+    { saveButtonOption = headerSaveOption model
     , onSave = SaveButtonClicked
     , onCompile = Compile
     , saveButtonEnabled =
         not (RemoteData.isLoading model.currentRevision)
             && RemoteData.isSuccess model.session
+            && Model.hasChanges model
     , compileButtonEnabled =
         not (RemoteData.isLoading model.compileResult)
             && RemoteData.isSuccess model.session

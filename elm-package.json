@@ -22,6 +22,7 @@
         "krisajenkins/remotedata": "4.0.1 <= v < 5.0.0",
         "lukewestby/elm-http-builder": "5.0.0 <= v < 6.0.0",
         "lukewestby/lru-cache": "1.0.0 <= v < 2.0.0",
+        "mgold/elm-nonempty-list": "3.0.0 <= v < 4.0.0",
         "rtfeldman/elm-css": "7.0.0 <= v < 8.0.0",
         "rtfeldman/elm-css-helpers": "2.0.1 <= v < 3.0.0"
     },
