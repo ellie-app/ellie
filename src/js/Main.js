@@ -9,7 +9,7 @@ initCodeMirror()
     const app = Elm.Main.fullscreen()
 
     window.addEventListener('beforeunload', () => {
-      app.ports.windowUnloadedIn.send([])
+      app.ports.windowUnloadedIn.send(null)
     })
 
     window.addEventListener('message', (event) => {
