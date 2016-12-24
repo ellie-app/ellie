@@ -52,6 +52,6 @@ decode =
         |> Decode.required "tag" Decode.string
         |> Decode.required "overview" Decode.string
         |> Decode.required "details" Decode.string
-        |> Decode.required "subregion" (Decode.nullable decodeRegion)
+        |> Decode.optional "subregion" (Decode.map Just decodeRegion) Nothing
         |> Decode.required "region" decodeRegion
         |> Decode.required "type" Decode.string

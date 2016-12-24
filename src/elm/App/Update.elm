@@ -1,230 +1,165 @@
 module App.Update exposing (update, initialize, onRouteChange, Msg(..))
 
-import Task
 import Window exposing (Size)
 import Mouse exposing (Position)
 import RemoteData exposing (RemoteData(..))
 import Navigation
+import Types.ApiError as ApiError exposing (ApiError)
+import Types.Revision as Revision exposing (Revision)
 import Types.ExistingRevision as ExistingRevision exposing (ExistingRevision)
 import Types.Session as Session exposing (Session)
 import Types.CompileError as CompileError exposing (CompileError)
 import App.Model as Model exposing (Model)
 import App.Routing as Routing exposing (Route(..))
 import Components.Sidebar.Update as Sidebar
-import Shared.Api as Api exposing (Error)
+import Shared.Api as Api
 import Shared.Constants as Constants
 import Shared.Utils as Utils
+
+
+resultIsSuccess : Result x a -> Bool
+resultIsSuccess result =
+    result
+        |> Result.map (\_ -> True)
+        |> Result.withDefault False
+
+
+boolToMaybe : Bool -> Maybe ()
+boolToMaybe bool =
+    if bool then
+        Just ()
+    else
+        Nothing
+
 
 
 -- UPDATE
 
 
 type Msg
-    = WindowUnloaded
-    | TypedElmCode String
-    | TypedHtmlCode String
-    | InitCompleted (RemoteData Error Session)
-    | Compile
-    | CompileCompleted (RemoteData Error (List CompileError))
-    | StartDraggingEditors
-    | EditorSplitDrags Position
-    | StartDraggingResult
-    | ResultSplitDrags Position
-    | StopDragging
-    | WindowSizeChanged Size
-    | SidebarMsg Sidebar.Msg
-    | TitleChanged String
-    | DescriptionChanged String
+    = CreateSessionCompleted (Result ApiError Session)
     | RouteChanged Route
-    | SaveButtonClicked
-    | SaveCompleted (RemoteData Error ExistingRevision)
-    | LoadRevisionComplete (RemoteData Error ExistingRevision)
+    | LoadRevisionCompleted (Result ApiError Revision)
+    | CompileRequested
+    | CompileCompleted (Result ApiError (List CompileError))
+    | ElmCodeChanged String
+    | HtmlCodeChanged String
+    | SaveRequested
+    | SaveCompleted (Result ApiError Revision)
+    | OnlineChanged Bool
+    | FormattingRequested
+    | FormattingCompleted (Result ApiError String)
     | NoOp
 
 
-withNoCmd : Model -> ( Model, Cmd Msg )
-withNoCmd model =
-    ( model, Cmd.none )
-
-
-saveRevision : Model -> ( Model, Cmd Msg )
-saveRevision model =
-    ( { model | currentRevision = Loading }
-    , model
-        |> Model.updatedRevision
-        |> Maybe.andThen (Utils.filterMaybe .owned)
-        |> Maybe.map Api.createRevision
-        |> Maybe.withDefault (Api.createProjectFromRevision (Model.newRevision model))
-        |> Api.send SaveCompleted
-    )
-
-
-redirectIfSuccessful : RemoteData Error ExistingRevision -> Model -> ( Model, Cmd Msg )
-redirectIfSuccessful data model =
-    ( model
-    , case data of
-        Success revision ->
-            Navigation.modifyUrl <| Routing.construct (SpecificRevision revision.projectId revision.revisionNumber)
-
-        _ ->
-            Cmd.none
-    )
-
-
-unloadSession : Model -> ( Model, Cmd Msg )
-unloadSession model =
-    case model.session of
-        Success session ->
-            ( model
-            , Api.removeSession session
-                |> Api.send (\_ -> NoOp)
-            )
-
-        _ ->
-            ( model, Cmd.none )
-
-
-compileIfReady : Model -> ( Model, Cmd Msg )
-compileIfReady model =
-    case model.session of
-        Success session ->
-            ( model
-            , Api.compile session model.elmCode
-                |> Api.send CompileCompleted
-            )
-
-        _ ->
-            ( model, Cmd.none )
+saveProject : Model -> Cmd Msg
+saveProject model =
+    if Model.isSavedProject model && Model.isOwnedProject model then
+        model.clientRevision
+            |> (\r -> { r | revisionNumber = Maybe.map ((+) 1) r.revisionNumber })
+            |> Api.createRevision
+            |> Api.send SaveCompleted
+    else
+        model.clientRevision
+            |> Api.createProjectFromRevision
+            |> Api.send SaveCompleted
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
-        LoadRevisionComplete revision ->
-            model
-                |> Model.acceptLoadedRevision revision
-                |> withNoCmd
-
-        SaveButtonClicked ->
-            model
-                |> saveRevision
-
-        SaveCompleted currentRevision ->
-            model
-                |> Model.acceptSavedRevision currentRevision
-                |> redirectIfSuccessful currentRevision
-
-        WindowUnloaded ->
-            model
-                |> unloadSession
-
-        InitCompleted sessionResult ->
-            model
-                |> Model.acceptSession sessionResult
-                |> withNoCmd
-
-        TypedElmCode nextCode ->
-            model
-                |> Model.updateElmCode nextCode
-                |> withNoCmd
-
-        TypedHtmlCode nextCode ->
-            model
-                |> Model.updateHtmlCode nextCode
-                |> withNoCmd
-
-        Compile ->
-            model
-                |> Model.startCompiling
-                |> compileIfReady
-
-        CompileCompleted result ->
-            model
-                |> Model.acceptCompileResult result
-                |> withNoCmd
-
-        StartDraggingEditors ->
-            ( { model | isDraggingEditorsSplit = True }
+        CreateSessionCompleted sessionResult ->
+            ( { model | session = RemoteData.fromResult sessionResult }
             , Cmd.none
             )
 
-        EditorSplitDrags position ->
-            let
-                adjustedForHeader =
-                    position.y - 60
-
-                percentage =
-                    toFloat adjustedForHeader / (toFloat model.windowSize.height - 60)
-
-                clamped =
-                    if percentage < 0.1 then
-                        0.1
-                    else if percentage > 0.9 then
-                        0.9
-                    else
-                        percentage
-            in
-                ( { model | editorEditorSplit = clamped }
-                , Cmd.none
-                )
-
-        StartDraggingResult ->
-            ( { model | isDraggingResultSplit = True }
-            , Cmd.none
-            )
-
-        ResultSplitDrags position ->
-            let
-                adjustedForSidebar =
-                    position.x - Constants.sidebarWidth
-
-                percentage =
-                    toFloat adjustedForSidebar / (toFloat model.windowSize.width - Constants.sidebarWidth)
-
-                clamped =
-                    if percentage < 0.1 then
-                        0.1
-                    else if percentage > 0.7 then
-                        0.7
-                    else
-                        percentage
-            in
-                ( { model | editorsResultSplit = clamped }
-                , Cmd.none
-                )
-
-        StopDragging ->
+        LoadRevisionCompleted revisionResult ->
             ( { model
-                | isDraggingResultSplit = False
-                , isDraggingEditorsSplit = False
+                | serverRevision = RemoteData.fromResult revisionResult
+                , clientRevision = Result.withDefault model.clientRevision revisionResult
               }
             , Cmd.none
             )
 
-        WindowSizeChanged size ->
-            ( { model | windowSize = size }
-            , Cmd.none
-            )
-
-        TitleChanged title ->
-            ( { model | title = title }
-            , Cmd.none
-            )
-
-        DescriptionChanged description ->
-            ( { model | description = description }
-            , Cmd.none
-            )
-
-        SidebarMsg subMsg ->
-            Sidebar.update subMsg model.sidebar
-                |> Utils.mapCmd SidebarMsg
-                |> Utils.mapModel (\s -> { model | sidebar = s })
-
         RouteChanged route ->
-            handleRouteChanged route ( model, Cmd.none )
+            handleRouteChanged route ( { model | currentRoute = route }, Cmd.none )
 
-        NoOp ->
+        CompileRequested ->
+            ( { model | compileResult = Loading }
+            , model.session
+                |> RemoteData.map (Api.compile model.clientRevision.elmCode)
+                |> RemoteData.map (Api.send CompileCompleted)
+                |> RemoteData.withDefault Cmd.none
+            )
+
+        CompileCompleted compileResult ->
+            ( { model
+                | compileResult =
+                    RemoteData.fromResult compileResult
+                , firstCompileComplete =
+                    model.firstCompileComplete
+                        || resultIsSuccess compileResult
+                , elmCodeChanged =
+                    not (resultIsSuccess compileResult)
+              }
+            , Cmd.none
+            )
+
+        ElmCodeChanged code ->
+            ( model
+                |> Model.updateClientRevision (\r -> { r | elmCode = code })
+                |> (\m -> { m | elmCodeChanged = True })
+            , Cmd.none
+            )
+
+        HtmlCodeChanged code ->
+            ( model
+                |> Model.updateClientRevision (\r -> { r | htmlCode = code })
+            , Cmd.none
+            )
+
+        SaveRequested ->
+            ( { model | saveState = Loading }
+            , saveProject model
+            )
+
+        SaveCompleted saveResult ->
+            ( { model
+                | saveState =
+                    saveResult
+                        |> Result.map (\_ -> ())
+                        |> RemoteData.fromResult
+                , serverRevision =
+                    RemoteData.fromResult saveResult
+                , clientRevision =
+                    Result.withDefault model.clientRevision saveResult
+              }
+            , saveResult
+                |> Result.toMaybe
+                |> Maybe.andThen (\r -> Maybe.map2 (,) r.projectId r.revisionNumber)
+                |> Maybe.map (\( p, r ) -> Routing.construct <| SpecificRevision p r)
+                |> Maybe.map Navigation.modifyUrl
+                |> Maybe.withDefault Cmd.none
+            )
+
+        OnlineChanged isOnline ->
+            ( { model | isOnline = isOnline }
+            , Cmd.none
+            )
+
+        FormattingRequested ->
+            ( model
+            , Api.format model.clientRevision.elmCode
+                |> Api.send FormattingCompleted
+            )
+
+        FormattingCompleted result ->
+            ( model
+                |> Model.updateClientRevision (\r -> { r | elmCode = Result.withDefault r.elmCode result })
+            , Cmd.none
+            )
+
+        _ ->
             ( model, Cmd.none )
 
 
@@ -235,57 +170,75 @@ onRouteChange =
 
 initialize : Navigation.Location -> ( Model, Cmd Msg )
 initialize location =
-    ( Model.model
-    , Cmd.batch
-        [ Api.createSession
-            |> Api.send InitCompleted
-        , Window.size
-            |> Task.perform WindowSizeChanged
-        ]
-    )
-        |> handleRouteChanged (Routing.parse location)
+    let
+        initialModel =
+            Model.model
+    in
+        location
+            |> Routing.parse
+            |> (\route -> { initialModel | currentRoute = route })
+            |> (\model -> ( model, Cmd.none ))
+            |> (\( model, cmd ) -> handleRouteChanged model.currentRoute ( model, cmd ))
 
 
 handleRouteChanged : Route -> ( Model, Cmd Msg ) -> ( Model, Cmd Msg )
 handleRouteChanged route ( model, cmd ) =
-    let
-        ( nextModel, nextCmd ) =
-            case route of
-                NotFound ->
-                    ( model
-                    , Navigation.modifyUrl <| Routing.construct NewProject
-                    )
+    ( case route of
+        NotFound ->
+            model
 
-                SpecificRevision projectId revisionNumber ->
-                    let
-                        alreadyLoaded =
-                            case model.currentRevision of
-                                Success revision ->
-                                    revision.projectId
-                                        == projectId
-                                        && revision.revisionNumber
-                                        == revisionNumber
+        NewProject ->
+            model.session
+                |> RemoteData.map (\_ -> model)
+                |> RemoteData.withDefault { model | session = Loading, serverRevision = Loading }
 
-                                _ ->
-                                    False
-                    in
-                        if alreadyLoaded then
-                            ( model, Cmd.none )
-                        else
-                            ( { model | currentRevision = Loading }
-                            , Api.exactRevision projectId revisionNumber
-                                |> Api.send LoadRevisionComplete
-                            )
+        SpecificRevision projectId revisionNumber ->
+            let
+                modelForSession =
+                    model.session
+                        |> RemoteData.map (\_ -> model)
+                        |> RemoteData.withDefault { model | session = Loading }
+            in
+                model.clientRevision
+                    |> (\r -> Maybe.map2 (,) r.projectId r.revisionNumber)
+                    |> Maybe.map (\( p, r ) -> p /= projectId || r /= revisionNumber)
+                    |> Maybe.andThen boolToMaybe
+                    |> Maybe.map (\() -> { modelForSession | serverRevision = Loading })
+                    |> Maybe.withDefault modelForSession
 
-                LatestRevision projectId ->
-                    ( { model | currentRevision = Loading }
-                    , Api.latestRevision projectId
-                        |> Api.send LoadRevisionComplete
-                    )
+        _ ->
+            model
+    , Cmd.batch
+        [ cmd
+        , case route of
+            NotFound ->
+                Navigation.modifyUrl (Routing.construct NewProject)
 
-                NewProject ->
-                    ( model, Cmd.none )
-    in
-        ( { nextModel | currentRoute = route }
-        , Cmd.batch [ nextCmd, cmd ]
-        )
+            NewProject ->
+                Cmd.batch
+                    [ model.session
+                        |> RemoteData.map (\_ -> Cmd.none)
+                        |> RemoteData.withDefault (Api.createSession |> Api.send CreateSessionCompleted)
+                    , Api.defaultRevision
+                        |> Api.send LoadRevisionCompleted
+                    ]
+
+            SpecificRevision projectId revisionNumber ->
+                Cmd.batch
+                    [ model.session
+                        |> RemoteData.map (\_ -> Cmd.none)
+                        |> RemoteData.withDefault (Api.createSession |> Api.send CreateSessionCompleted)
+                    , model.clientRevision
+                        |> (\r -> Maybe.map2 (,) r.projectId r.revisionNumber)
+                        |> Maybe.map (\( p, r ) -> p /= projectId || r /= revisionNumber)
+                        |> Maybe.withDefault True
+                        |> boolToMaybe
+                        |> Maybe.map (\() -> Api.exactRevision projectId revisionNumber)
+                        |> Maybe.map (Api.send LoadRevisionCompleted)
+                        |> Maybe.withDefault Cmd.none
+                    ]
+
+            _ ->
+                Cmd.none
+        ]
+    )

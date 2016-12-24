@@ -12,6 +12,14 @@ import Shared.Icons as Icons
 import Components.Header.Classes exposing (..)
 
 
+when : Bool -> (() -> Html msg) -> Html msg
+when pred html =
+    if pred then
+        html ()
+    else
+        text ""
+
+
 viewButton : msg -> Bool -> String -> Html msg -> Html msg
 viewButton msg enabled content icon =
     button
@@ -53,6 +61,8 @@ type alias Context msg =
     , saveButtonOption : SaveOption
     , onSave : msg
     , onCompile : msg
+    , onFormat : msg
+    , buttonsVisible : Bool
     }
 
 
@@ -62,6 +72,24 @@ view context =
         [ div [ class [ Logo ] ]
             [ h1 [ class [ LogoText ] ] [ text "Ellie" ]
             ]
-        , viewButton context.onCompile context.compileButtonEnabled "Compile" Icons.playOutline
-        , viewSaveButton context.onSave context.saveButtonOption context.saveButtonEnabled
+        , when context.buttonsVisible <|
+            \() ->
+                viewButton
+                    context.onCompile
+                    context.compileButtonEnabled
+                    "Compile"
+                    Icons.playOutline
+        , when context.buttonsVisible <|
+            \() ->
+                viewSaveButton
+                    context.onSave
+                    context.saveButtonOption
+                    context.saveButtonEnabled
+        , when context.buttonsVisible <|
+            \() ->
+                viewButton
+                    context.onFormat
+                    context.compileButtonEnabled
+                    "Format"
+                    Icons.format
         ]

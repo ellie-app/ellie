@@ -129,17 +129,21 @@ type alias Context msg =
     }
 
 
-view : Context msg -> Model -> Html msg
-view context model =
+
+--
+-- section
+--     (context.onLocalMsg DetailsToggled)
+--     (model.detailsOpen)
+--     ("details")
+--     (details context)
+-- , section
+--     (context.onLocalMsg PackagesToggled)
+--     (model.packagesOpen)
+--     ("packages")
+--     (dependencies context model)
+
+
+view : Context msg -> Html msg
+view context =
     aside [ class [ Sidebar ] ]
-        [ section
-            (context.onLocalMsg DetailsToggled)
-            (model.detailsOpen)
-            ("details")
-            (details context)
-        , section
-            (context.onLocalMsg PackagesToggled)
-            (model.packagesOpen)
-            ("packages")
-            (dependencies context model)
-        ]
+        []

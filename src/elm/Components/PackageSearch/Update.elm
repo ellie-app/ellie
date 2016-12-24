@@ -8,14 +8,15 @@ module Components.PackageSearch.Update
 import RemoteData exposing (RemoteData(..))
 import Types.Version as Version exposing (Version)
 import Types.PackageSearchResult as PackageSearchResult exposing (PackageSearchResult)
-import Shared.Api as Api exposing (Error)
+import Types.ApiError as ApiError exposing (ApiError)
+import Shared.Api as Api
 import Components.PackageSearch.Model as Model exposing (Model(..))
 
 
 type Msg
     = NoOp
     | PackageQueryUpdated String
-    | PackageSearchCompleted String (RemoteData Error (List PackageSearchResult))
+    | PackageSearchCompleted String (RemoteData ApiError (List PackageSearchResult))
     | PackageSelected PackageSearchResult
     | VersionSelected Int
 
@@ -34,7 +35,7 @@ searchPackages : String -> Model -> ( Model, Cmd Msg )
 searchPackages searchTerm model =
     ( model
     , Api.searchPackages elmVersion searchTerm
-        |> Api.send (PackageSearchCompleted searchTerm)
+        |> Api.send (RemoteData.fromResult >> PackageSearchCompleted searchTerm)
     )
 
 

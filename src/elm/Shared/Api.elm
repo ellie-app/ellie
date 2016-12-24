@@ -1,31 +1,31 @@
 module Shared.Api
     exposing
-        ( Error(..)
-        , send
+        ( send
         , searchPackages
         , createSession
         , removeSession
         , compile
+        , format
         , addDependencies
         , latestRevision
         , exactRevision
         , createProjectFromRevision
         , createRevision
+        , defaultRevision
         )
 
 import Json.Encode as Encode exposing (Value)
 import Json.Decode as Decode exposing (Decoder)
-import Http exposing (Request, Expect)
+import Http exposing (Request, Expect, Error(..))
 import HttpBuilder exposing (..)
-import RemoteData exposing (RemoteData)
+import Types.ApiError as ApiError exposing (ApiError)
+import Types.Revision as Revision exposing (Revision)
 import Types.Version as Version exposing (Version)
 import Types.PackageSearchResult as PackageSearchResult exposing (PackageSearchResult)
 import Types.Uuid as Uuid exposing (Uuid)
 import Types.Session as Session exposing (Session)
 import Types.Dependency as Dependency exposing (Dependency)
 import Types.CompileError as CompileError exposing (CompileError)
-import Types.NewRevision as NewRevision exposing (NewRevision)
-import Types.ExistingRevision as ExistingRevision exposing (ExistingRevision)
 import Shared.Constants as Constants
 
 
@@ -37,11 +37,11 @@ listOf a =
     [ a ]
 
 
-send : (RemoteData Error a -> msg) -> RequestBuilder a -> Cmd msg
+send : (Result ApiError a -> msg) -> RequestBuilder a -> Cmd msg
 send tagger requestBuilder =
     requestBuilder
         |> toRequest
-        |> Http.send (handleError >> tagger)
+        |> Http.send (Result.mapError upgradeError >> tagger)
 
 
 fullUrl : String -> String
@@ -60,20 +60,38 @@ withApiHeaders builder =
 -- ERRORS
 
 
-type Error
-    = Badness
-
-
-upgradeError : Http.Error -> Error
+upgradeError : Error -> ApiError
 upgradeError error =
-    Badness
+    case error of
+        BadUrl url ->
+            { statusCode = 0
+            , message = "Bad Url" ++ url
+            , explanation = Just <| "Url " ++ url
+            }
 
+        NetworkError ->
+            { statusCode = 0
+            , message = "A Network Error Occurred"
+            , explanation = Nothing
+            }
 
-handleError : Result Http.Error a -> RemoteData Error a
-handleError result =
-    result
-        |> Result.mapError upgradeError
-        |> RemoteData.fromResult
+        Timeout ->
+            { statusCode = 0
+            , message = "A Network Timeout Occurred"
+            , explanation = Nothing
+            }
+
+        BadStatus response ->
+            { statusCode = response.status.code
+            , message = response.status.message
+            , explanation = Just response.body
+            }
+
+        BadPayload error response ->
+            { statusCode = response.status.code
+            , message = "Unexpected Response from Server"
+            , explanation = Just response.body
+            }
 
 
 
@@ -125,12 +143,32 @@ compileExpect =
         |> Http.expectJson
 
 
-compile : Session -> String -> RequestBuilder (List CompileError)
-compile session source =
+compile : String -> Session -> RequestBuilder (List CompileError)
+compile source session =
     post (fullUrl ("/sessions/" ++ session.id ++ "/compile"))
         |> withApiHeaders
         |> withJsonBody (compilePayload source)
         |> withExpect compileExpect
+
+
+formatPayload : String -> Value
+formatPayload source =
+    Encode.object
+        [ ( "source", Encode.string source ) ]
+
+
+formatExpect : Expect String
+formatExpect =
+    Decode.field "source" Decode.string
+        |> Http.expectJson
+
+
+format : String -> RequestBuilder String
+format source =
+    post (fullUrl "/format")
+        |> withApiHeaders
+        |> withJsonBody (formatPayload source)
+        |> withExpect formatExpect
 
 
 
@@ -158,31 +196,41 @@ addDependencies session dependencies =
 -- REVISIONS AND PROJECTS
 
 
-latestRevision : Uuid -> RequestBuilder ExistingRevision
+latestRevision : Uuid -> RequestBuilder Revision
 latestRevision projectId =
     get (fullUrl ("/projects/" ++ Uuid.toString projectId ++ "/revisions/latest"))
         |> withApiHeaders
-        |> withExpect (Http.expectJson ExistingRevision.decode)
+        |> withExpect (Http.expectJson Revision.decode)
 
 
-exactRevision : Uuid -> Int -> RequestBuilder ExistingRevision
+exactRevision : Uuid -> Int -> RequestBuilder Revision
 exactRevision projectId revisionNumber =
     get (fullUrl ("/projects/" ++ Uuid.toString projectId ++ "/revisions/" ++ toString revisionNumber))
         |> withApiHeaders
-        |> withExpect (Http.expectJson ExistingRevision.decode)
+        |> withExpect (Http.expectJson Revision.decode)
 
 
-createProjectFromRevision : NewRevision -> RequestBuilder ExistingRevision
+createProjectFromRevision : Revision -> RequestBuilder Revision
 createProjectFromRevision revision =
     post (fullUrl "/projects")
         |> withApiHeaders
-        |> withExpect (Http.expectJson ExistingRevision.decode)
-        |> withJsonBody (NewRevision.encode revision)
+        |> withExpect (Http.expectJson Revision.decode)
+        |> withJsonBody (Revision.encode revision)
 
 
-createRevision : ExistingRevision -> RequestBuilder ExistingRevision
+createRevision : Revision -> RequestBuilder Revision
 createRevision revision =
-    put (fullUrl "/projects/" ++ Uuid.toString revision.projectId ++ "/revisions")
+    revision.projectId
+        |> Maybe.map Uuid.toString
+        |> Maybe.withDefault ""
+        |> (\s -> put (fullUrl "/projects/" ++ s ++ "/revisions"))
         |> withApiHeaders
-        |> withJsonBody (ExistingRevision.encode revision)
+        |> withJsonBody (Revision.encode revision)
         |> withExpect (Http.expectJson (Decode.succeed revision))
+
+
+defaultRevision : RequestBuilder Revision
+defaultRevision =
+    get (fullUrl "/defaults/revision")
+        |> withApiHeaders
+        |> withExpect (Http.expectJson Revision.decode)

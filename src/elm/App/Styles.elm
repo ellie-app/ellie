@@ -64,4 +64,30 @@ styles =
             [ height (pct 100)
             , position relative
             ]
+        , (.) MainLoadingMessageContainer
+            [ width (pct 100)
+            , height (pct 100)
+            , backgroundColor (hex "55B5DB")
+            , displayFlex
+            , property "align-items" "center"
+            , property "justify-content" "center"
+            , flexDirection column
+            ]
+        , (.) MainLoadingMessageHeader
+            [ fontSize (px 56)
+            , color (hex "fff")
+            , property "font-family" Constants.scriptFont
+            , textShadow4 (px 1) (px 2) (px 6) (rgba 0 0 0 0.5)
+            , marginBottom (px 56)
+            ]
+        , (.) MainLoadingMessageElmLogo
+            [ color (hex "fff")
+            , height (px 120)
+            , textShadow4 (px 1) (px 2) (px 6) (rgba 0 0 0 0.5)
+            , property "filter" "drop-shadow( 1px 2px 6px rgba(0,0,0,0.5) )"
+            ]
+        , (.) MainContainerInner
+            [ displayFlex
+            , width (pct 100)
+            ]
         ]

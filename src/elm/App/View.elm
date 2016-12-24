@@ -4,160 +4,195 @@ import Html exposing (Html, div, button, text, iframe, main_, header, span)
 import Html.Attributes exposing (value, style, srcdoc)
 import Html.Events exposing (onClick, onMouseDown, onMouseUp)
 import RemoteData exposing (RemoteData(..))
+import RemoteData.Infix exposing ((<*>))
+import Types.ApiError as ApiError exposing (ApiError)
+import Types.CompileError as CompileError exposing (CompileError)
+import Types.Revision as Revision exposing (Revision)
+import Types.Session as Session exposing (Session)
+import Shared.Icons as Icons
 import App.Update as Update exposing (Msg(..))
 import App.Model as Model exposing (Model)
-import Components.Editors.View as Editors
+import App.Classes exposing (..)
 import Components.Header.View as Header
 import Components.Sidebar.View as Sidebar
+import Components.Editors.View as Editors
 import Components.Output.View as Output
-import App.Classes exposing (..)
 
 
-floatToPercentageString : Float -> String
-floatToPercentageString float =
-    toString (float * 100) ++ "%"
+when : Bool -> (() -> Html msg) -> Html msg
+when pred thunk =
+    if pred then
+        thunk ()
+    else
+        htmlNone
 
 
-viewEditors : Model -> Html Msg
-viewEditors model =
-    let
-        ( elmEditor, htmlEditor ) =
-            case ( model.session, model.currentRevision ) of
-                ( Loading, _ ) ->
-                    ( Editors.loading, Editors.loading )
-
-                ( _, Loading ) ->
-                    ( Editors.loading, Editors.loading )
-
-                ( Success _, _ ) ->
-                    ( Editors.elm
-                        (TypedElmCode)
-                        (model.elmCode)
-                        (model.compileResult |> RemoteData.withDefault [])
-                    , Editors.html
-                        (TypedHtmlCode)
-                        (model.htmlCode)
-                    )
-
-                ( Failure _, _ ) ->
-                    ( div [] [ text "nope!" ], div [] [ text "nope!" ] )
-
-                _ ->
-                    ( div [] [ text "yo" ], div [] [ text "yo!" ] )
-    in
-        div
-            [ class [ EditorsContainer ]
-            , style [ ( "width", floatToPercentageString model.editorsResultSplit ) ]
-            ]
-            [ div
-                [ class [ EditorContainer ]
-                , style
-                    [ ( "height", floatToPercentageString model.editorEditorSplit )
-                    , ( "border-bottom", "1px solid #bdb7bd" )
-                    ]
-                ]
-                [ elmEditor ]
-            , div
-                [ class [ EditorsSeparator ]
-                , onMouseDown StartDraggingEditors
-                ]
-                []
-            , div
-                [ class [ EditorContainer ]
-                , style [ ( "height", floatToPercentageString (1 - model.editorEditorSplit) ) ]
-                ]
-                [ htmlEditor ]
-            ]
+htmlNone : Html msg
+htmlNone =
+    text ""
 
 
-viewResults : Model -> Html Msg
-viewResults model =
-    let
-        innerView =
-            case ( model.session, model.compileResult, model.currentRevision ) of
-                ( _, _, Loading ) ->
-                    Output.loading
-
-                ( Success session, Success _, _ ) ->
-                    Output.success session.id model.htmlCode
-
-                ( Success _, NotAsked, _ ) ->
-                    Output.waiting
-
-                ( Success _, Loading, _ ) ->
-                    Output.compiling
-
-                ( Success _, _, _ ) ->
-                    div [] [ text "eh" ]
-
-                ( Failure _, _, _ ) ->
-                    div [] [ text "ugh" ]
-
-                ( Loading, _, _ ) ->
-                    Output.loading
-
-                ( NotAsked, _, _ ) ->
-                    div [] [ text "waiting!" ]
-    in
-        div
-            [ class [ ResultsContainer ]
-            , style [ ( "width", floatToPercentageString (1 - model.editorsResultSplit) ) ]
-            ]
-            [ innerView ]
-
-
-viewMain : Model -> Html Msg
-viewMain model =
-    div [ class [ WorkAreaContainer ] ]
-        [ viewEditors model
-        , div
-            [ class [ ResultsEditorsSeparator ]
-            , onMouseDown StartDraggingResult
-            ]
-            []
-        , viewResults model
+mainStuffError : String -> Html msg
+mainStuffError message =
+    div []
+        [ text <| "Failed: " ++ message
         ]
+
+
+loadingSession : Html msg
+loadingSession =
+    div [ class [ MainLoadingMessageContainer ] ]
+        [ div [ class [ MainLoadingMessageHeader ] ]
+            [ text "Preparing your session..." ]
+        , div [ class [ MainLoadingMessageElmLogo ] ]
+            [ Icons.elmLogo
+            ]
+        ]
+
+
+loadingRevision : Html msg
+loadingRevision =
+    div [ class [ MainLoadingMessageContainer ] ]
+        [ div [ class [ MainLoadingMessageHeader ] ]
+            [ text "Loading your project..." ]
+        ]
+
+
+results : Revision -> RemoteData ApiError (List CompileError) -> Session -> Html Msg
+results revision compileResult session =
+    div
+        [ class [ ResultsContainer ]
+        , style [ ( "width", "50%" ) ]
+        ]
+        [ case compileResult of
+            Success errors ->
+                case List.filter (.level >> (==) "error") errors of
+                    [] ->
+                        Output.success session.id revision.htmlCode
+
+                    relevantErrors ->
+                        Output.errors relevantErrors
+
+            Failure _ ->
+                div [] [ text "no!" ]
+
+            Loading ->
+                Output.compiling
+
+            NotAsked ->
+                Output.waiting
+        ]
+
+
+editors : List CompileError -> Revision -> Session -> Html Msg
+editors compileErrors revision session =
+    div
+        [ class [ EditorsContainer ]
+        , style [ ( "width", "50%" ) ]
+        ]
+        [ div
+            [ class [ EditorContainer ]
+            , style
+                [ ( "height", "50%" )
+                , ( "border-bottom", "1px solid #bdb7bd" )
+                ]
+            ]
+            [ Editors.elm
+                ElmCodeChanged
+                (revision.elmCode)
+                (compileErrors)
+            ]
+        , div
+            [ class [ EditorContainer ]
+            , style [ ( "height", "50%" ) ]
+            ]
+            [ Editors.html
+                HtmlCodeChanged
+                (revision.htmlCode)
+            ]
+        ]
+
+
+workArea : Model -> Html Msg
+workArea model =
+    div [ class [ WorkAreaContainer ] ]
+        [ model.session
+            |> RemoteData.map (editors (RemoteData.withDefault [] model.compileResult) model.clientRevision)
+            |> RemoteData.withDefault htmlNone
+        , model.session
+            |> RemoteData.map (results model.clientRevision model.compileResult)
+            |> RemoteData.withDefault htmlNone
+        ]
+
+
+ready : Model -> Html Msg
+ready model =
+    div [ class [ MainContainerInner ] ]
+        [ Sidebar.view <| sidebarContext model
+        , workArea model
+        ]
+
+
+mainStuff : Model -> Html Msg
+mainStuff model =
+    case Success (,) <*> model.session <*> model.serverRevision of
+        Success ( session, serverRevision ) ->
+            ready model
+
+        Failure error ->
+            mainStuffError error.message
+
+        Loading ->
+            if RemoteData.isLoading model.session then
+                loadingSession
+            else
+                loadingRevision
+
+        NotAsked ->
+            mainStuffError "This shouldn't have happened"
 
 
 headerSaveOption : Model -> Header.SaveOption
 headerSaveOption model =
-    case model.currentRevision of
-        Success revision ->
-            if revision.owned then
-                Header.Update
-            else
-                Header.Fork
-
-        Loading ->
-            Header.Saving
-
-        _ ->
-            Header.Save
+    if Model.isOwnedProject model && Model.isSavedProject model then
+        Header.Update
+    else if Model.isOwnedProject model && not (Model.isSavedProject model) then
+        Header.Save
+    else
+        Header.Fork
 
 
 headerContext : Model -> Header.Context Msg
 headerContext model =
-    { saveButtonOption = headerSaveOption model
-    , onSave = SaveButtonClicked
-    , onCompile = Compile
+    { onSave = SaveRequested
+    , onCompile = CompileRequested
+    , onFormat = FormattingRequested
     , saveButtonEnabled =
-        not (RemoteData.isLoading model.currentRevision)
-            && RemoteData.isSuccess model.session
-            && Model.hasChanges model
+        (Model.isRevisionChanged model || not (Model.isSavedProject model))
+            && not (RemoteData.isLoading model.saveState)
+            && model.isOnline
+    , saveButtonOption =
+        headerSaveOption model
     , compileButtonEnabled =
         not (RemoteData.isLoading model.compileResult)
             && RemoteData.isSuccess model.session
+            && RemoteData.isSuccess model.serverRevision
+            && ((not model.firstCompileComplete) || model.elmCodeChanged)
+            && model.isOnline
+    , buttonsVisible =
+        RemoteData.isSuccess model.session
+            && RemoteData.isSuccess model.serverRevision
     }
 
 
 sidebarContext : Model -> Sidebar.Context Msg
 sidebarContext model =
-    { detailsTitle = model.title
-    , detailsDescription = model.description
-    , onLocalMsg = SidebarMsg
-    , onTitleChange = TitleChanged
-    , onDescriptionChange = DescriptionChanged
-    , dependencies = model.dependencies
+    { detailsTitle = ""
+    , detailsDescription = ""
+    , onLocalMsg = \_ -> NoOp
+    , onTitleChange = \_ -> NoOp
+    , onDescriptionChange = \_ -> NoOp
+    , dependencies = model.clientRevision.dependencies
     }
 
 
@@ -166,7 +201,6 @@ view model =
     div [ class [ TopContainer ] ]
         [ Header.view (headerContext model)
         , main_ [ class [ MainContainer ] ]
-            [ Sidebar.view (sidebarContext model) model.sidebar
-            , viewMain model
+            [ mainStuff model
             ]
         ]

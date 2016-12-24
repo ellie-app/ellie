@@ -15,7 +15,7 @@ import Types.Dependency as Dependency exposing (Dependency)
 import Types.PackageSearchResult as PackageSearchResult exposing (PackageSearchResult)
 import Types.Version as Version exposing (Version)
 import Types.VersionRange as VersionRange exposing (VersionRange)
-import Shared.Api as Api exposing (Error)
+import Types.ApiError as ApiError exposing (ApiError)
 
 
 type Model
@@ -74,7 +74,7 @@ updatePackagesQuery query model =
 
 receivePackageSearchResult :
     String
-    -> RemoteData Error (List PackageSearchResult)
+    -> RemoteData ApiError (List PackageSearchResult)
     -> Model
     -> Model
 receivePackageSearchResult originalTerm data model =

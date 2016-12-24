@@ -2,6 +2,7 @@ module Shared.Utils exposing (..)
 
 import Regex exposing (Regex)
 import Json.Decode as Decode exposing (Decoder)
+import Json.Encode as Encode exposing (Value)
 
 
 filterMaybe : (a -> Bool) -> a -> Maybe a
@@ -51,3 +52,10 @@ customDecoder start parse =
                     Decode.fail message
         )
         start
+
+
+encodeNullable : (a -> Value) -> Maybe a -> Value
+encodeNullable encoder maybe =
+    maybe
+        |> Maybe.map encoder
+        |> Maybe.withDefault Encode.null

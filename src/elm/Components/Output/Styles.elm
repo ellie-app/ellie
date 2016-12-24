@@ -94,4 +94,44 @@ styles =
             [ fontSize (px 24)
             , textAlign center
             ]
+        , (.) ErrorsContainer
+            [ padding (px 12)
+            , width (pct 100)
+            ]
+        , (.) ErrorItem
+            [ padding (px 12)
+            , boxShadow5 (px 1) (px 3) (px 13) (px -2) (rgba 0 0 0 0.4)
+            , backgroundColor (hex "e00")
+            , color (hex "fff")
+            , descendants
+                [ code
+                    [ fontWeight (int 700)
+                    , backgroundColor (rgba 255 255 255 0.4)
+                    , padding2 (px 2) (px 6)
+                    , borderRadius (px 3)
+                    , display inlineBlock
+                    , lineHeight (int 1)
+                    ]
+                ]
+            ]
+        , (.) ErrorItemHeader
+            [ marginBottom (px 12)
+            , paddingBottom (px 8)
+            , fontSize (px 14)
+            , borderBottom3 (px 3) solid (hex "fff")
+            , displayFlex
+            , property "justify-content" "space-between"
+            ]
+        , (.) ErrorItemName
+            []
+        , (.) ErrorItemLocation
+            [ textTransform uppercase ]
+        , (.) ErrorItemOverview
+            [ fontSize (px 20)
+            , marginBottom (px 18)
+            , fontWeight (int 700)
+            ]
+        , (.) ErrorItemDetails
+            [ fontSize (px 16)
+            ]
         ]

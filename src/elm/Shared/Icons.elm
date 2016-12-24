@@ -7,12 +7,14 @@ module Shared.Icons
         , minusEmpty
         , close
         , checkmark
+        , elmLogo
+        , format
         )
 
 import Html exposing (Html)
 import Html.Attributes exposing (style)
-import Svg exposing (svg, path, g, polygon)
-import Svg.Attributes exposing (viewBox, points, d, fillRule, stroke, fill, strokeWidth)
+import Svg exposing (svg, path, g, polygon, rect)
+import Svg.Attributes exposing (width, height, x, y, viewBox, points, d, fillRule, stroke, fill, strokeWidth)
 
 
 iconStyle : Html.Attribute msg
@@ -128,4 +130,34 @@ checkmark =
             , fillRule "evenodd"
             ]
             []
+        ]
+
+
+elmLogo : Html msg
+elmLogo =
+    svg
+        [ viewBox "0 0 100 100"
+        , iconStyle
+        ]
+        [ polygon [ points "0 2.5 47.5 50 0 97.5" ] []
+        , polygon [ points "50 47.5 72.5 25 27.5 25" ] []
+        , polygon [ points "50 53 97 100 3 100" ] []
+        , polygon [ points "100 55.5 79 76.5 100 97" ] []
+        , polygon [ points "100 0 55.5 0 100 44.5" ] []
+        , polygon [ points "2.5 0 50 0 72 22 24.5 22" ] []
+        , polygon [ points "53 50 76.5 73.5 100 50 76.5 26.5" ] []
+        ]
+
+
+format : Html msg
+format =
+    svg
+        [ viewBox "0 0 512 512"
+        , iconStyle
+        ]
+        [ rect [ x "55", y "34", width "400", height "45" ] []
+        , rect [ x "55", y "134", width "300", height "45" ] []
+        , rect [ x "55", y "234", width "200", height "45" ] []
+        , rect [ x "56", y "334", width "400", height "45" ] []
+        , rect [ x "55", y "434", width "300", height "45" ] []
         ]

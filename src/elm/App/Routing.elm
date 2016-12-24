@@ -1,4 +1,9 @@
-module App.Routing exposing (..)
+module App.Routing
+    exposing
+        ( Route(..)
+        , parse
+        , construct
+        )
 
 import Navigation
 import UrlParser exposing ((</>))
