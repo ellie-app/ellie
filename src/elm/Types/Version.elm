@@ -1,4 +1,14 @@
-module Types.Version exposing (..)
+module Types.Version
+    exposing
+        ( Version
+        , parse
+        , compare
+        , nextMajor
+        , toString
+        , encode
+        , decode
+        , hash
+        )
 
 import Json.Encode as Encode exposing (Value)
 import Json.Decode as Decode exposing (Decoder)
@@ -98,3 +108,8 @@ decode =
         [ decodeString
         , decodeJson
         ]
+
+
+hash : Version -> String
+hash version =
+    toString version

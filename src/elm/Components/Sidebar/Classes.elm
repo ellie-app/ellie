@@ -8,25 +8,15 @@ type Classes
     = Sidebar
     | Section
     | SectionHeader
-    | SectionHeaderIcon
-    | SectionHeaderText
-    | Details
-    | DetailsTitle
-    | DetailsDescription
-    | DetailsInputContainer
-    | Dependencies
-    | InstalledDeps
-    | InstalledDepContainer
-    | InstalledDepDetails
-    | InstalledDepName
-    | InstalledDepRange
-    | InstalledDepMin
-    | InstalledDepMax
-    | InstalledDepRemoveContainer
+    | SectionContent
+    | TextInput
+    | Textarea
+    | PackagesList
+    | DepItem
+    | DepItemDetails
+    | RemoveButton
+    | DepItemPackageName
     | AddDepButton
-    | AddDepButtonText
-    | AddDepButtonIcon
-    | CloseButton
 
 
 helpers : Html.CssHelpers.Namespace String class id msg

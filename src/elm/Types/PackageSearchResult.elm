@@ -3,6 +3,7 @@ module Types.PackageSearchResult
         ( PackageSearchResult
         , encode
         , decode
+        , hash
         )
 
 import Json.Encode as Encode exposing (Value)
@@ -18,7 +19,7 @@ decodeNonempty elementDecoder =
         |> Decode.list
         |> Decode.andThen
             (\values ->
-                case Nonempty.fromList (Debug.log "v" values) of
+                case Nonempty.fromList values of
                     Just nonempty ->
                         Decode.succeed nonempty
 
@@ -49,3 +50,12 @@ decode =
         |> Decode.required "username" Decode.string
         |> Decode.required "name" Decode.string
         |> Decode.required "versions" (decodeNonempty Version.decode)
+
+
+hash : PackageSearchResult -> String
+hash packageSearchResult =
+    packageSearchResult.username
+        ++ "/"
+        ++ packageSearchResult.name
+        ++ "&&"
+        ++ (String.join "," <| Nonempty.toList <| Nonempty.map Version.hash packageSearchResult.versions)

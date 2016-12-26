@@ -18,10 +18,10 @@ initCodeMirror()
 
     app.ports.online.send(window.navigator.onLine)
 
-    // window.addEventListener('beforeunload', () => {
-    //   app.ports.windowUnloadedIn.send(null)
-    // })
-    //
+    window.addEventListener('beforeunload', () => {
+      app.ports.windowUnloadedIn.send(null)
+    })
+
     // window.addEventListener('message', (event) => {
     //   app.ports.windowMessageIn.send(event.data)
     // })

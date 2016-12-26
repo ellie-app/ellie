@@ -2,11 +2,13 @@ module Shared.Api
     exposing
         ( send
         , searchPackages
-        , createSession
+        , createNewSession
+        , createSessionForRevision
         , removeSession
         , compile
         , format
         , addDependencies
+        , removeDependency
         , latestRevision
         , exactRevision
         , createProjectFromRevision
@@ -56,6 +58,11 @@ withApiHeaders builder =
         |> withHeader "Accept" "application/json"
 
 
+expectValue : a -> Expect a
+expectValue value =
+    Http.expectStringResponse (\_ -> Ok value)
+
+
 
 -- ERRORS
 
@@ -66,31 +73,31 @@ upgradeError error =
         BadUrl url ->
             { statusCode = 0
             , message = "Bad Url" ++ url
-            , explanation = Just <| "Url " ++ url
+            , explanation = "Url " ++ url
             }
 
         NetworkError ->
             { statusCode = 0
             , message = "A Network Error Occurred"
-            , explanation = Nothing
+            , explanation = "The network may be offline or your signal may not be strong enough."
             }
 
         Timeout ->
             { statusCode = 0
             , message = "A Network Timeout Occurred"
-            , explanation = Nothing
+            , explanation = "The request timed out."
             }
 
         BadStatus response ->
             { statusCode = response.status.code
             , message = response.status.message
-            , explanation = Just response.body
+            , explanation = response.body
             }
 
         BadPayload error response ->
             { statusCode = response.status.code
             , message = "Unexpected Response from Server"
-            , explanation = Just response.body
+            , explanation = response.body
             }
 
 
@@ -113,16 +120,32 @@ searchPackages elmVersion searchTerm =
 -- SESSIONS
 
 
-createSession : RequestBuilder Session
-createSession =
+createNewSession : RequestBuilder Session
+createNewSession =
     post (fullUrl "/sessions")
         |> withApiHeaders
         |> withExpect (Http.expectJson Session.decode)
 
 
+sessionForRevisionPayload : Uuid -> Int -> Value
+sessionForRevisionPayload projectId revisionNumber =
+    Encode.object
+        [ ( "projectId", Uuid.encode projectId )
+        , ( "revisionNumber", Encode.int revisionNumber )
+        ]
+
+
+createSessionForRevision : Uuid -> Int -> RequestBuilder Session
+createSessionForRevision projectId revisionNumber =
+    post (fullUrl "/sessions")
+        |> withApiHeaders
+        |> withExpect (Http.expectJson Session.decode)
+        |> withJsonBody (sessionForRevisionPayload projectId revisionNumber)
+
+
 removeSession : Session -> RequestBuilder ()
 removeSession session =
-    delete ("http://localhost:1337/sessions/" ++ session.id)
+    delete (fullUrl ("/sessions/" ++ session.id))
         |> withApiHeaders
 
 
@@ -190,6 +213,14 @@ addDependencies session dependencies =
     put (fullUrl ("/sessions/" ++ session.id ++ "/dependencies"))
         |> withApiHeaders
         |> withJsonBody (addDependenciesPayload dependencies)
+
+
+removeDependency : Session -> Dependency -> RequestBuilder Dependency
+removeDependency session dependency =
+    delete (fullUrl ("/sessions/" ++ session.id ++ "/dependencies"))
+        |> withApiHeaders
+        |> withJsonBody (Dependency.encode dependency)
+        |> withExpect (expectValue dependency)
 
 
 

@@ -1,24 +1,27 @@
-module Components.Header.Classes exposing (..)
+module Components.Notifications.Classes exposing (..)
 
 import Html exposing (Attribute)
 import Html.CssHelpers
 
 
 type Classes
-    = Header
-    | Logo
-    | LogoText
-    | Status
-    | StatusText
-    | StatusEllipsis
+    = Notifications
     | Button
-    | ButtonIcon
-    | HeaderLeftStuff
+    | Popout
+    | PopoutHidden
+    | Item
+    | ItemIcon
+    | ItemDetails
+    | Items
+    | ItemTitle
+    | Latest
+    | LatestTitle
+    | LatestIcon
 
 
 helpers : Html.CssHelpers.Namespace String class id msg
 helpers =
-    Html.CssHelpers.withNamespace "components_header_"
+    Html.CssHelpers.withNamespace "components_notifications_"
 
 
 class : List class -> Attribute msg

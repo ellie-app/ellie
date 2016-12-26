@@ -13,6 +13,8 @@ import Types.ApiError as ApiError exposing (ApiError)
 import Types.Session as Session exposing (Session)
 import Types.Revision as Revision exposing (Revision)
 import Types.CompileError as CompileError exposing (CompileError)
+import Types.NewPackageFlow as NewPackageFlow exposing (NewPackageFlow(..))
+import Types.Notification as Notification exposing (Notification)
 import App.Routing as Routing exposing (Route(..))
 
 
@@ -25,7 +27,10 @@ type alias Model =
     , elmCodeChanged : Bool
     , firstCompileComplete : Bool
     , saveState : RemoteData ApiError ()
-    , isOnline : Bool
+    , isOnline : Maybe Bool
+    , newPackageFlow : NewPackageFlow
+    , notifications : List Notification
+    , notificationsOpen : Bool
     }
 
 
@@ -39,7 +44,10 @@ model =
     , elmCodeChanged = False
     , firstCompileComplete = False
     , saveState = NotAsked
-    , isOnline = False
+    , isOnline = Nothing
+    , newPackageFlow = NotSearching
+    , notifications = []
+    , notificationsOpen = False
     }
 
 

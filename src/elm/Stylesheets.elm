@@ -7,6 +7,7 @@ import Components.Output.Styles as Output
 import Components.Editors.Styles as Editors
 import Components.Header.Styles as Header
 import Components.PackageSearch.Styles as PackageSearch
+import Components.Notifications.Styles as Notifications
 
 
 port files : CssFileStructure -> Cmd msg
@@ -23,6 +24,7 @@ fileStructure =
                 , Editors.styles
                 , Header.styles
                 , PackageSearch.styles
+                , Notifications.styles
                 ]
           )
         ]

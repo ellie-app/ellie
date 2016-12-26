@@ -36,3 +36,8 @@ defaultDependencies =
 scriptFont : String
 scriptFont =
     "Leckerli One"
+
+
+elmVersion : Version
+elmVersion =
+    Version 0 18 0

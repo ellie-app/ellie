@@ -10,6 +10,7 @@ import Types.Version as Version exposing (Version)
 import Types.VersionRange as VersionRange exposing (VersionRange)
 import Types.PackageSearchResult as PackageSearchResult exposing (PackageSearchResult)
 import Shared.Icons as Icons
+import Shared.Utils as Utils
 import Components.PackageSearch.Model exposing (Model(..))
 import Components.PackageSearch.Update exposing (Msg(..))
 import Components.PackageSearch.Classes exposing (..)
@@ -40,6 +41,11 @@ packageItem context package =
         [ text <| packageString package ]
 
 
+sharedHash : { a | username : String, name : String } -> String
+sharedHash a =
+    a.username ++ "/" ++ a.name
+
+
 packageSearch : Context msg -> List PackageSearchResult -> String -> Html msg
 packageSearch context packages searchTerm =
     div []
@@ -51,7 +57,11 @@ packageSearch context packages searchTerm =
                 ]
                 []
             ]
-        , div [] (List.map (packageItem context) packages)
+        , div []
+            (packages
+                |> Utils.hashFilter sharedHash sharedHash context.excluded
+                |> List.map (packageItem context)
+            )
         , div []
             [ span
                 [ class [ ActionIcon ]
@@ -100,6 +110,7 @@ type alias Context msg =
     { onCancel : msg
     , onApprove : Dependency -> msg
     , onLocalMsg : Msg -> msg
+    , excluded : List Dependency
     }
 
 

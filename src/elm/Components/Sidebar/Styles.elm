@@ -14,93 +14,89 @@ styles =
             , width (px Constants.sidebarWidth)
             ]
         , (.) Section
-            [ displayFlex
-            , flexDirection column
-            ]
+            []
         , (.) SectionHeader
-            [ padding2 (px 12) (px 16)
-            , color (hex "fff")
-            , backgroundColor (hex "55B5DB")
-            , displayFlex
-            , property "justify-content" "space-between"
-            , cursor pointer
+            [ fontSize (px 13)
+            , textTransform uppercase
+            , margin zero
+            , fontWeight (int 300)
+            , padding2 (px 8) (px 16)
+            , backgroundColor (hex "f7f7f7")
+            , borderTop3 (px 1) solid (hex "bdb7bd")
+            , borderBottom3 (px 1) solid (hex "bdb7bd")
             ]
-        , (.) SectionHeaderIcon
-            [ width (px 13)
-            , height (px 13)
-            , property "fill" "currentColor"
-            ]
-        , (.) SectionHeaderText
-            [ textTransform uppercase
-            , fontSize (px 13)
-            ]
-        , (.) Details
+        , (.) SectionContent
             [ padding (px 16)
             ]
-        , (.) DetailsInputContainer
-            [ padding2 (px 8) zero
-            ]
-        , (.) DetailsTitle
+        , (.) TextInput
             [ property "-webkit-appearance" "none"
             , border zero
-            , borderBottom3 (px 1) solid (hex "A7A7A7")
             , outline zero
-            ]
-        , (.) Dependencies
-            [ displayFlex
-            , flexDirection column
-            , padding2 zero (px 16)
-            ]
-        , (.) InstalledDeps
-            [ padding2 (px 8) zero
-            ]
-        , (.) InstalledDepContainer
-            [ padding2 (px 8) zero
             , width (pct 100)
-            , displayFlex
+            , borderBottom3 (px 2) solid (hex "bdb7bd")
+            , height (px 32)
+            , fontSize (px 16)
+            , fontFamily inherit
+            , fontWeight (int 300)
+            , focus
+                [ borderBottomColor (hex "55B5DB")
+                ]
             ]
-        , (.) InstalledDepDetails
-            [ property "width" "calc(100% - 32px)" ]
-        , (.) InstalledDepName
-            [ property "font-family" "monospace"
-            ]
-        , (.) InstalledDepRange
-            [ property "font-family" "monospace"
-            ]
-        , (.) InstalledDepMin
-            []
-        , (.) InstalledDepMax
-            []
-        , (.) AddDepButton
+        , (.) Textarea
             [ property "-webkit-appearance" "none"
-            , backgroundColor (hex "A7A7A7")
-            , color (hex "fff")
-            , property "border" "none"
-            , padding (px 12)
+            , border zero
             , outline zero
-            , cursor pointer
+            , width (pct 100)
+            , borderBottom3 (px 2) solid (hex "bdb7bd")
+            , height (px 32)
+            , fontSize (px 16)
+            , fontFamily inherit
+            , fontWeight (int 300)
+            , property "resize" "none"
+            , height (px 120)
+            , focus
+                [ borderBottomColor (hex "55B5DB")
+                ]
             ]
-        , (.) AddDepButtonText
-            [ fontSize (px 13)
-            , marginLeft (px 8)
-            , textTransform uppercase
-            , display inlineBlock
-            , verticalAlign middle
+        , (.) PackagesList
+            [ maxHeight (px 300)
+            , overflowY auto
+            , padding2 (px 8) (px 16)
+            , borderBottom3 (px 2) solid (hex "f7f7f7")
             ]
-        , (.) AddDepButtonIcon
-            [ width (px 13)
-            , height (px 13)
-            , display inlineBlock
-            , verticalAlign middle
+        , (.) DepItem
+            [ padding2 (px 8) zero
+            , displayFlex
+            , property "align-items" "center"
+            , property "justify-content" "space-between"
             ]
-        , (.) CloseButton
+        , (.) DepItemDetails
+            [ property "width" "calc(100% - 32px)"
+            , fontSize (px 16)
+            , fontFamilies [ "monospace" ]
+            ]
+        , (.) DepItemPackageName
+            [ whiteSpace noWrap
+            , textOverflow ellipsis
+            , width (pct 100)
+            , overflow hidden
+            , fontWeight bold
+            ]
+        , (.) RemoveButton
             [ width (px 32)
             , height (px 32)
-            , property "-webkit-appearance" "none"
             , property "background" "none"
-            , property "border" "none"
+            , border zero
             , cursor pointer
-            , padding (px 8)
-            , outline zero
+            ]
+        , (.) AddDepButton
+            [ width (pct 100)
+            , height (px 48)
+            , border zero
+            , cursor pointer
+            , backgroundColor (hex "f7f7f7")
+            , fontFamily inherit
+            , fontSize (px 13)
+            , textTransform uppercase
             ]
         ]

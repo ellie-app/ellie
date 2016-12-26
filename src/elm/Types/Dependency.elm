@@ -4,6 +4,7 @@ module Types.Dependency
         , encode
         , decode
         , toString
+        , hash
         )
 
 import Json.Encode as Encode exposing (Value)
@@ -43,3 +44,12 @@ decode =
         |> Decode.required "username" Decode.string
         |> Decode.required "name" Decode.string
         |> Decode.required "range" VersionRange.decode
+
+
+hash : Dependency -> String
+hash dependency =
+    dependency.username
+        ++ "/"
+        ++ dependency.name
+        ++ "@"
+        ++ VersionRange.hash dependency.range

@@ -12,7 +12,6 @@ import Types.Uuid as Uuid exposing (Uuid)
 
 type Route
     = NewProject
-    | LatestRevision Uuid
     | SpecificRevision Uuid Int
     | NotFound
 
@@ -28,7 +27,6 @@ parse =
         parser =
             UrlParser.oneOf
                 [ UrlParser.map NewProject (UrlParser.s "new")
-                , UrlParser.map LatestRevision uuid
                 , UrlParser.map SpecificRevision (uuid </> UrlParser.int)
                 ]
     in
@@ -41,9 +39,6 @@ construct route =
     case route of
         NewProject ->
             "/new"
-
-        LatestRevision projectId ->
-            "/" ++ Uuid.toString projectId
 
         SpecificRevision projectId revisionNumber ->
             "/" ++ Uuid.toString projectId ++ "/" ++ toString revisionNumber

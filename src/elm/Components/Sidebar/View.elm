@@ -4,146 +4,140 @@ module Components.Sidebar.View
         , view
         )
 
-import Html exposing (Html, textarea, button, aside, div, text, span, input)
-import Html.Attributes exposing (type_, value)
-import Html.Events exposing (onClick, onInput)
-import Shared.Icons as Icons
+import Json.Decode as Decode
+import List.Nonempty as Nonempty
+import RemoteData exposing (RemoteData(..))
+import Html exposing (Html, textarea, h3, button, aside, div, text, span, input, hr, option, select)
+import Html.Attributes exposing (type_, value, selected)
+import Html.Events exposing (onClick, onInput, on)
+import Types.PackageSearchResult as PackageSearchResult exposing (PackageSearchResult)
 import Types.Dependency as Dependency exposing (Dependency)
 import Types.Version as Version exposing (Version)
+import Types.NewPackageFlow as NewPackageFlow exposing (NewPackageFlow(..))
+import Shared.Icons as Icons
+import Shared.Utils as Utils
 import Components.Sidebar.Classes exposing (..)
-import Components.Sidebar.Update exposing (..)
-import Components.Sidebar.Model as Model exposing (Model, SearchFlow(..))
-import Components.PackageSearch.View as PackageSearch
-
-
-closeButton : msg -> Html msg
-closeButton msg =
-    button
-        [ class [ CloseButton ]
-        , onClick msg
-        ]
-        [ Icons.close ]
-
-
-details : Context msg -> Html msg
-details context =
-    div
-        [ class [ Details ] ]
-        [ div [ class [ DetailsInputContainer ] ]
-            [ input
-                [ type_ "text"
-                , value context.detailsTitle
-                , onInput context.onTitleChange
-                , class [ DetailsTitle ]
-                ]
-                []
-            ]
-        , div [ class [ DetailsInputContainer ] ]
-            [ textarea
-                [ value context.detailsDescription
-                , onInput context.onDescriptionChange
-                ]
-                []
-            ]
-        ]
-
-
-installedDependency : msg -> Dependency -> Html msg
-installedDependency onRemove dependency =
-    div [ class [ InstalledDepContainer ] ]
-        [ div [ class [ InstalledDepDetails ] ]
-            [ div [ class [ InstalledDepName ] ]
-                [ text <| dependency.username ++ "/" ++ dependency.name ]
-            , div [ class [ InstalledDepRange ] ]
-                [ span [ class [ InstalledDepMin ] ]
-                    [ text <| Version.toString dependency.range.min ]
-                , span [ class [ InstalledDepMax ] ]
-                    [ text <| " <= v < " ++ Version.toString dependency.range.max ]
-                ]
-            ]
-        , div [ class [ InstalledDepRemoveContainer ] ]
-            [ closeButton onRemove
-            ]
-        ]
-
-
-newPackageStuff : SearchFlow -> Html Msg
-newPackageStuff searchFlow =
-    case searchFlow of
-        NotSearching ->
-            button [ class [ AddDepButton ], onClick NewSearchStarted ]
-                [ span [ class [ AddDepButtonIcon ] ] [ Icons.plusEmpty ]
-                , span [ class [ AddDepButtonText ] ] [ text "Add Dependency" ]
-                ]
-
-        NewPackageSearching searchModel ->
-            PackageSearch.view
-                (PackageSearch.Context SearchCanceled (\_ -> NoOp) PackageSearchMsg)
-                (searchModel)
-
-
-dependencies : Context msg -> Model -> Html msg
-dependencies context model =
-    div [ class [ Dependencies ] ]
-        [ div [ class [ InstalledDeps ] ]
-            (List.map (installedDependency (context.onLocalMsg NoOp)) context.dependencies)
-        , Html.map context.onLocalMsg <| newPackageStuff model.searchFlow
-        ]
-
-
-sectionHeader : msg -> Bool -> String -> Html msg
-sectionHeader onToggle isOpen content =
-    div
-        [ class [ SectionHeader ]
-        , onClick onToggle
-        ]
-        [ span [ class [ SectionHeaderText ] ]
-            [ text content ]
-        , span [ class [ SectionHeaderIcon ] ]
-            [ if isOpen then
-                Icons.minusEmpty
-              else
-                Icons.plusEmpty
-            ]
-        ]
-
-
-section : msg -> Bool -> String -> Html msg -> Html msg
-section onToggle isOpen header innerStuff =
-    div [ class [ Section ] ]
-        [ sectionHeader onToggle isOpen header
-        , if isOpen then
-            innerStuff
-          else
-            Html.text ""
-        ]
 
 
 type alias Context msg =
-    { detailsTitle : String
-    , detailsDescription : String
-    , onLocalMsg : Msg -> msg
-    , onTitleChange : String -> msg
-    , onDescriptionChange : String -> msg
-    , dependencies : List Dependency
+    { dependencies : List Dependency
+    , newPackageFlow : NewPackageFlow
+    , onStarted : msg
+    , onSearchTermChanged : String -> msg
+    , onPackageSelected : PackageSearchResult -> msg
+    , onVersionSelected : Int -> msg
+    , onInstallRequested : msg
+    , onCancelled : msg
+    , onRemoved : Dependency -> msg
     }
 
 
+sharedHash : { a | username : String, name : String } -> String
+sharedHash a =
+    a.username ++ "/" ++ a.name
 
---
--- section
---     (context.onLocalMsg DetailsToggled)
---     (model.detailsOpen)
---     ("details")
---     (details context)
--- , section
---     (context.onLocalMsg PackagesToggled)
---     (model.packagesOpen)
---     ("packages")
---     (dependencies context model)
+
+dependency : (Dependency -> msg) -> Dependency -> Html msg
+dependency onRemoved dep =
+    div [ class [ DepItem ] ]
+        [ div [ class [ DepItemDetails ] ]
+            [ div [ class [ DepItemPackageName ] ]
+                [ text <| dep.username ++ "/" ++ dep.name ]
+            , div []
+                [ text <| Version.toString dep.range.min
+                , text <| " <= v < "
+                , text <| Version.toString dep.range.max
+                ]
+            ]
+        , button
+            [ onClick (onRemoved dep)
+            , class [ RemoveButton ]
+            ]
+            [ Icons.close ]
+        ]
+
+
+newPackageFlow : Context msg -> Html msg
+newPackageFlow context =
+    case context.newPackageFlow of
+        NotSearching ->
+            button
+                [ onClick context.onStarted
+                , class [ AddDepButton ]
+                ]
+                [ text "add dep" ]
+
+        PackageSearch searchText packages ->
+            div []
+                [ div []
+                    [ input
+                        [ type_ "text"
+                        , onInput context.onSearchTermChanged
+                        ]
+                        []
+                    ]
+                , div []
+                    (packages
+                        |> Utils.hashFilter sharedHash sharedHash context.dependencies
+                        |> List.map (\r -> div [ onClick (context.onPackageSelected r) ] [ text <| r.username ++ "/" ++ r.name ])
+                    )
+                ]
+
+        VersionSearch package version ->
+            div []
+                [ select [ on "change" <| Decode.map context.onVersionSelected (Decode.at [ "target", "selectedIndex" ] Decode.int) ] <|
+                    Nonempty.toList <|
+                        Nonempty.map (\v -> option [ selected (version == v) ] [ text <| Version.toString v ]) package.versions
+                , button [ onClick context.onInstallRequested ] [ text "Install" ]
+                ]
+
+        Installation dependency data ->
+            case data of
+                NotAsked ->
+                    text ""
+
+                Loading ->
+                    div []
+                        [ text <| "Installing " ++ Dependency.toString dependency
+                        ]
+
+                Failure _ ->
+                    div []
+                        [ div [] [ text <| "Failed to install " ++ Dependency.toString dependency ]
+                        , div [] [ button [ onClick context.onCancelled ] [ text "Cancel" ] ]
+                        ]
+
+                Success _ ->
+                    div []
+                        [ div [] [ text <| "Installed " ++ Dependency.toString dependency ]
+                        , div [] [ button [ onClick context.onCancelled ] [ text "OK" ] ]
+                        ]
 
 
 view : Context msg -> Html msg
 view context =
     aside [ class [ Sidebar ] ]
-        []
+        [ div [ class [ Section ] ]
+            [ h3 [ class [ SectionHeader ] ] [ text "Title" ]
+            , div [ class [ SectionContent ] ]
+                [ input
+                    [ type_ "text"
+                    , class [ TextInput ]
+                    , value "Untitled"
+                    ]
+                    []
+                ]
+            ]
+        , div [ class [ Section ] ]
+            [ h3 [ class [ SectionHeader ] ] [ text "Description" ]
+            , div [ class [ SectionContent ] ]
+                [ textarea [ class [ Textarea ], value "Tell everyone about your project!" ] []
+                ]
+            ]
+        , div [ class [ Section ] ]
+            [ h3 [ class [ SectionHeader ] ] [ text "Packages" ]
+            , div [ class [ PackagesList ] ]
+                (List.map (dependency context.onRemoved) context.dependencies)
+            , div [ class [ SectionContent ] ] [ newPackageFlow context ]
+            ]
+        ]

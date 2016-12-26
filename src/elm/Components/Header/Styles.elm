@@ -19,9 +19,11 @@ styles =
             , boxShadow5 (px 0) (px 2) (px 15) (px -4) (rgba 0 0 0 0.5)
             , position relative
             , property "z-index" "4"
+            , property "justify-content" "space-between"
+            , padding2 zero (px 16)
             ]
         , (.) Logo
-            [ padding2 zero (px 16)
+            [ paddingRight (px 16)
             ]
         , (.) LogoText
             [ property "font-family" "Leckerli One"
@@ -65,5 +67,11 @@ styles =
             , display inlineBlock
             , marginRight (px 6)
             , position relative
+            ]
+        , (.) HeaderLeftStuff
+            [ displayFlex
+            , height (px Constants.headerHeight)
+            , alignItems center
+            , property "justify-content" "space-between"
             ]
         ]

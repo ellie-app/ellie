@@ -1,9 +1,7 @@
 port module App.Subs exposing (subscriptions)
 
-import Mouse exposing (Position)
-import Window
 import Json.Decode as Decode exposing (Value)
-import RemoteData exposing (RemoteData(..))
+import Shared.MessageBus as MessageBus
 import App.Model as Model exposing (Model)
 import App.Update as Update exposing (Msg(..))
 
@@ -91,6 +89,8 @@ subscriptions : Model -> Sub Msg
 subscriptions model =
     Sub.batch
         [ online OnlineChanged
+        , windowUnloadedIn (\_ -> WindowUnloaded)
+        , MessageBus.notifications NotificationReceived
         ]
 
 

@@ -5,13 +5,12 @@ module Types.ApiError
         )
 
 import Json.Encode as Encode exposing (Value)
-import Shared.Utils as Utils
 
 
 type alias ApiError =
     { statusCode : Int
     , message : String
-    , explanation : Maybe String
+    , explanation : String
     }
 
 
@@ -20,5 +19,5 @@ encode apiError =
     Encode.object
         [ ( "statusCode", Encode.int apiError.statusCode )
         , ( "message", Encode.string apiError.message )
-        , ( "explanation", Utils.encodeNullable Encode.string apiError.explanation )
+        , ( "explanation", Encode.string apiError.explanation )
         ]

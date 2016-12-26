@@ -1,5 +1,7 @@
 module Shared.Utils exposing (..)
 
+import Set exposing (Set)
+import Dict exposing (Dict)
 import Regex exposing (Regex)
 import Json.Decode as Decode exposing (Decoder)
 import Json.Encode as Encode exposing (Value)
@@ -59,3 +61,30 @@ encodeNullable encoder maybe =
     maybe
         |> Maybe.map encoder
         |> Maybe.withDefault Encode.null
+
+
+hashFilter : (b -> String) -> (a -> String) -> List b -> List a -> List a
+hashFilter hashEx hashM excluded values =
+    let
+        set =
+            excluded
+                |> List.map hashEx
+                |> Set.fromList
+    in
+        List.filter (\a -> not (Set.member (hashM a) set)) values
+
+
+decodeUnion : String -> List ( String, Decoder a ) -> Decoder a
+decodeUnion topTag list =
+    let
+        decoderDict =
+            list
+                |> List.map (\( l, r ) -> ( topTag ++ "." ++ l, r ))
+                |> Dict.fromList
+    in
+        Decode.field "tag" Decode.string
+            |> Decode.andThen
+                (\tag ->
+                    Dict.get tag decoderDict
+                        |> Maybe.withDefault (Decode.fail <| "Could not decode value with tag " ++ tag ++ " for type " ++ topTag)
+                )

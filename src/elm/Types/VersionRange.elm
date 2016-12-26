@@ -1,4 +1,13 @@
-module Types.VersionRange exposing (..)
+module Types.VersionRange
+    exposing
+        ( VersionRange
+        , parse
+        , toString
+        , includes
+        , encode
+        , decode
+        , hash
+        )
 
 import Json.Encode as Encode exposing (Value)
 import Json.Decode as Decode exposing (Decoder)
@@ -77,3 +86,10 @@ decode =
         [ decodeString
         , decodeJson
         ]
+
+
+hash : VersionRange -> String
+hash versionRange =
+    Version.hash versionRange.min
+        ++ "<=v<"
+        ++ Version.hash versionRange.max

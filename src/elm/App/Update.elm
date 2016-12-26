@@ -1,20 +1,23 @@
-module App.Update exposing (update, initialize, onRouteChange, Msg(..))
+module App.Update exposing (update, initialize, onRouteChange, Msg(..), NewPackageFlowMsg(..))
 
 import Window exposing (Size)
 import Mouse exposing (Position)
 import RemoteData exposing (RemoteData(..))
 import Navigation
+import List.Nonempty as Nonempty
+import Types.Dependency as Dependency exposing (Dependency)
+import Types.NewPackageFlow as NewPackageFlow exposing (NewPackageFlow)
 import Types.ApiError as ApiError exposing (ApiError)
 import Types.Revision as Revision exposing (Revision)
-import Types.ExistingRevision as ExistingRevision exposing (ExistingRevision)
 import Types.Session as Session exposing (Session)
 import Types.CompileError as CompileError exposing (CompileError)
+import Types.PackageSearchResult as PackageSearchResult exposing (PackageSearchResult)
+import Types.Notification as Notification exposing (Notification)
 import App.Model as Model exposing (Model)
 import App.Routing as Routing exposing (Route(..))
-import Components.Sidebar.Update as Sidebar
 import Shared.Api as Api
 import Shared.Constants as Constants
-import Shared.Utils as Utils
+import Shared.MessageBus as MessageBus
 
 
 resultIsSuccess : Result x a -> Bool
@@ -36,6 +39,17 @@ boolToMaybe bool =
 -- UPDATE
 
 
+type NewPackageFlowMsg
+    = Started
+    | SearchTermUpdated String
+    | SearchCompleted String (Result ApiError (List PackageSearchResult))
+    | PackageSelected PackageSearchResult
+    | VersionSelected Int
+    | InstallRequested
+    | InstallCompleted Dependency (Result ApiError ())
+    | Cancelled
+
+
 type Msg
     = CreateSessionCompleted (Result ApiError Session)
     | RouteChanged Route
@@ -49,6 +63,12 @@ type Msg
     | OnlineChanged Bool
     | FormattingRequested
     | FormattingCompleted (Result ApiError String)
+    | NewPackageFlowMsg NewPackageFlowMsg
+    | RemoveDependencyRequested Dependency
+    | RemoveDependencyCompleted (Result ApiError Dependency)
+    | WindowUnloaded
+    | NotificationReceived Notification
+    | ToggleNotifications
     | NoOp
 
 
@@ -68,9 +88,38 @@ saveProject model =
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
+        ToggleNotifications ->
+            ( { model | notificationsOpen = not model.notificationsOpen }
+            , Cmd.none
+            )
+
+        NotificationReceived notification ->
+            ( { model | notifications = notification :: model.notifications }
+            , Cmd.none
+            )
+
+        WindowUnloaded ->
+            ( model
+            , model.session
+                |> RemoteData.map Api.removeSession
+                |> RemoteData.map (Api.send (\_ -> NoOp))
+                |> RemoteData.withDefault Cmd.none
+            )
+
         CreateSessionCompleted sessionResult ->
             ( { model | session = RemoteData.fromResult sessionResult }
-            , Cmd.none
+            , case sessionResult of
+                Ok _ ->
+                    MessageBus.notify
+                        Notification.Success
+                        "Your Session is Ready!"
+                        "Your session is all set! Compile away."
+
+                Err apiError ->
+                    MessageBus.notify
+                        Notification.Error
+                        "Failed To Set Up Session"
+                        ("Ellie couldn't set up a session for you right now. Here's what the server said: " ++ apiError.explanation)
             )
 
         LoadRevisionCompleted revisionResult ->
@@ -78,7 +127,18 @@ update msg model =
                 | serverRevision = RemoteData.fromResult revisionResult
                 , clientRevision = Result.withDefault model.clientRevision revisionResult
               }
-            , Cmd.none
+            , case revisionResult of
+                Ok _ ->
+                    MessageBus.notify
+                        Notification.Success
+                        "Your Project Is Loaded!"
+                        "Ellie found the project and revision you asked for. It's loaded up and ready to be run."
+
+                Err apiError ->
+                    MessageBus.notify
+                        Notification.Error
+                        "Failed To Load Project"
+                        ("Ellie couldn't load the project you asked for. Here's what the server said: " ++ apiError.explanation)
             )
 
         RouteChanged route ->
@@ -86,10 +146,16 @@ update msg model =
 
         CompileRequested ->
             ( { model | compileResult = Loading }
-            , model.session
-                |> RemoteData.map (Api.compile model.clientRevision.elmCode)
-                |> RemoteData.map (Api.send CompileCompleted)
-                |> RemoteData.withDefault Cmd.none
+            , Cmd.batch
+                [ model.session
+                    |> RemoteData.map (Api.compile model.clientRevision.elmCode)
+                    |> RemoteData.map (Api.send CompileCompleted)
+                    |> RemoteData.withDefault Cmd.none
+                , MessageBus.notify
+                    Notification.Info
+                    "Compilation started"
+                    "Ellie is compiling your code. When it's done we'll show you the result below."
+                ]
             )
 
         CompileCompleted compileResult ->
@@ -102,7 +168,24 @@ update msg model =
                 , elmCodeChanged =
                     not (resultIsSuccess compileResult)
               }
-            , Cmd.none
+            , case compileResult of
+                Ok [] ->
+                    MessageBus.notify
+                        Notification.Success
+                        "Compilation Succeeded"
+                        "Your code compiled without any problems. Nice!"
+
+                Ok _ ->
+                    MessageBus.notify
+                        Notification.Warning
+                        "Compilation Finished With Errors"
+                        "Ellie found some compilation errors in your code. Fix them and try again!"
+
+                Err apiError ->
+                    MessageBus.notify
+                        Notification.Error
+                        "Compilation Failed"
+                        ("Ellie couldn't even run the compiler. Here's what the server said: " ++ apiError.explanation)
             )
 
         ElmCodeChanged code ->
@@ -120,7 +203,13 @@ update msg model =
 
         SaveRequested ->
             ( { model | saveState = Loading }
-            , saveProject model
+            , Cmd.batch
+                [ saveProject model
+                , MessageBus.notify
+                    Notification.Info
+                    "Saving Your Project"
+                    "Ellie is saving your work! Any changes to code or settings since you last saved will be included."
+                ]
             )
 
         SaveCompleted saveResult ->
@@ -134,30 +223,215 @@ update msg model =
                 , clientRevision =
                     Result.withDefault model.clientRevision saveResult
               }
-            , saveResult
-                |> Result.toMaybe
-                |> Maybe.andThen (\r -> Maybe.map2 (,) r.projectId r.revisionNumber)
-                |> Maybe.map (\( p, r ) -> Routing.construct <| SpecificRevision p r)
-                |> Maybe.map Navigation.modifyUrl
-                |> Maybe.withDefault Cmd.none
+            , Cmd.batch
+                [ saveResult
+                    |> Result.toMaybe
+                    |> Maybe.andThen (\r -> Maybe.map2 (,) r.projectId r.revisionNumber)
+                    |> Maybe.map (\( p, r ) -> Routing.construct <| SpecificRevision p r)
+                    |> Maybe.map Navigation.newUrl
+                    |> Maybe.withDefault Cmd.none
+                , case saveResult of
+                    Ok _ ->
+                        MessageBus.notify
+                            Notification.Success
+                            "Your Project Was Saved"
+                            "Ellie saved your project! Your revision number has been updated in the URL."
+
+                    Err apiError ->
+                        MessageBus.notify
+                            Notification.Error
+                            "Failed To Save Project"
+                            ("Ellie couldn't save your project. Here's what the server said: " ++ apiError.explanation)
+                ]
             )
 
         OnlineChanged isOnline ->
-            ( { model | isOnline = isOnline }
-            , Cmd.none
+            ( { model | isOnline = Just isOnline }
+            , case model.isOnline of
+                Just _ ->
+                    if isOnline then
+                        MessageBus.notify
+                            Notification.Success
+                            "You're Online!"
+                            "Ellie is 100% ready to connect to the server."
+                    else
+                        MessageBus.notify
+                            Notification.Error
+                            "You're Offline!"
+                            "Ellie can't connect to the server right now, so we've disabled most features."
+
+                Nothing ->
+                    Cmd.none
             )
 
         FormattingRequested ->
             ( model
-            , Api.format model.clientRevision.elmCode
-                |> Api.send FormattingCompleted
+            , Cmd.batch
+                [ Api.format model.clientRevision.elmCode
+                    |> Api.send FormattingCompleted
+                , MessageBus.notify
+                    Notification.Info
+                    "Formatting Your Code"
+                    "Ellie has asked the server to format your code with elm-format."
+                ]
             )
 
         FormattingCompleted result ->
             ( model
                 |> Model.updateClientRevision (\r -> { r | elmCode = Result.withDefault r.elmCode result })
-            , Cmd.none
+            , case result of
+                Ok _ ->
+                    MessageBus.notify
+                        Notification.Success
+                        "Formatting Succeeded!"
+                        "Your code looks so good!"
+
+                Err apiError ->
+                    MessageBus.notify
+                        Notification.Error
+                        "Formatting Your Code Failed"
+                        ("Ellie couldn't format your code. Here's what the server said: " ++ apiError.explanation)
             )
+
+        RemoveDependencyRequested dependency ->
+            ( model
+            , Cmd.batch
+                [ model.session
+                    |> RemoteData.map (\s -> Api.removeDependency s dependency)
+                    |> RemoteData.map (Api.send RemoveDependencyCompleted)
+                    |> RemoteData.withDefault Cmd.none
+                , MessageBus.notify
+                    Notification.Info
+                    "Removing Package"
+                    "Ellie is removing your package. Once it's gone you'll have to reinstall it to use it again."
+                ]
+            )
+
+        RemoveDependencyCompleted result ->
+            ( model
+                |> Model.updateClientRevision
+                    (\r ->
+                        { r
+                            | dependencies =
+                                result
+                                    |> Result.map (\d -> List.filter ((/=) d) r.dependencies)
+                                    |> Result.withDefault r.dependencies
+                        }
+                    )
+            , case result of
+                Ok dep ->
+                    MessageBus.notify
+                        Notification.Success
+                        "Package Removed!"
+                        "Ellie removed your package. Don't forget to remove it from your code!"
+
+                Err apiError ->
+                    MessageBus.notify
+                        Notification.Error
+                        "Couldn't Remove Package"
+                        ("Elle couldn't remove your package. Here's what the server said: " ++ apiError.explanation)
+            )
+
+        NewPackageFlowMsg npfMsg ->
+            case npfMsg of
+                Started ->
+                    ( { model | newPackageFlow = NewPackageFlow.PackageSearch "" [] }
+                    , Cmd.none
+                    )
+
+                SearchTermUpdated searchTerm ->
+                    ( { model
+                        | newPackageFlow =
+                            NewPackageFlow.updateSearchTerm searchTerm model.newPackageFlow
+                      }
+                    , Api.searchPackages Constants.elmVersion searchTerm
+                        |> Api.send (SearchCompleted searchTerm >> NewPackageFlowMsg)
+                    )
+
+                SearchCompleted searchTerm result ->
+                    ( { model
+                        | newPackageFlow =
+                            NewPackageFlow.receiveResultsForTerm
+                                searchTerm
+                                (Result.withDefault [] result)
+                                model.newPackageFlow
+                      }
+                    , Cmd.none
+                    )
+
+                PackageSelected package ->
+                    ( { model
+                        | newPackageFlow =
+                            NewPackageFlow.VersionSearch package (Nonempty.get 0 package.versions)
+                      }
+                    , Cmd.none
+                    )
+
+                VersionSelected index ->
+                    ( { model
+                        | newPackageFlow =
+                            NewPackageFlow.selectVersionAtIndex index model.newPackageFlow
+                      }
+                    , Cmd.none
+                    )
+
+                InstallRequested ->
+                    ( { model
+                        | newPackageFlow =
+                            model.newPackageFlow
+                                |> NewPackageFlow.toDependency
+                                |> Maybe.map (\d -> NewPackageFlow.Installation d Loading)
+                                |> Maybe.withDefault model.newPackageFlow
+                      }
+                    , Maybe.map2 (,) (model.session |> RemoteData.toMaybe) (model.newPackageFlow |> NewPackageFlow.toDependency)
+                        |> Maybe.map
+                            (\( s, d ) ->
+                                Cmd.batch
+                                    [ Api.addDependencies s [ d ]
+                                        |> Api.send (InstallCompleted d)
+                                        |> Cmd.map NewPackageFlowMsg
+                                    , MessageBus.notify
+                                        Notification.Info
+                                        "Installing Package"
+                                        "Ellie is installing your package. Once it's installed and compiled you'll be able to use it in your code."
+                                    ]
+                            )
+                        |> Maybe.withDefault Cmd.none
+                    )
+
+                InstallCompleted dep result ->
+                    ( model
+                        |> (\m ->
+                                { m
+                                    | newPackageFlow =
+                                        NewPackageFlow.Installation dep (RemoteData.fromResult result)
+                                }
+                           )
+                        |> Model.updateClientRevision
+                            (\r ->
+                                { r
+                                    | dependencies =
+                                        r.dependencies ++ (result |> Result.map (\_ -> [ dep ]) |> Result.withDefault [])
+                                }
+                            )
+                    , case result of
+                        Ok _ ->
+                            MessageBus.notify
+                                Notification.Success
+                                "Package Installed!"
+                                "Ellie installed and compiled your package. You can start using it in your code now."
+
+                        Err apiError ->
+                            MessageBus.notify
+                                Notification.Error
+                                "Failed Installing Package"
+                                ("Elle couldn't install your package. Here's what the server said: " ++ apiError.explanation)
+                    )
+
+                Cancelled ->
+                    ( { model | newPackageFlow = NewPackageFlow.NotSearching }
+                    , Cmd.none
+                    )
 
         _ ->
             ( model, Cmd.none )
@@ -190,7 +464,7 @@ handleRouteChanged route ( model, cmd ) =
         NewProject ->
             model.session
                 |> RemoteData.map (\_ -> model)
-                |> RemoteData.withDefault { model | session = Loading, serverRevision = Loading }
+                |> RemoteData.withDefault { model | session = Loading, serverRevision = Loading, compileResult = NotAsked }
 
         SpecificRevision projectId revisionNumber ->
             let
@@ -203,11 +477,8 @@ handleRouteChanged route ( model, cmd ) =
                     |> (\r -> Maybe.map2 (,) r.projectId r.revisionNumber)
                     |> Maybe.map (\( p, r ) -> p /= projectId || r /= revisionNumber)
                     |> Maybe.andThen boolToMaybe
-                    |> Maybe.map (\() -> { modelForSession | serverRevision = Loading })
+                    |> Maybe.map (\() -> { modelForSession | serverRevision = Loading, compileResult = NotAsked })
                     |> Maybe.withDefault modelForSession
-
-        _ ->
-            model
     , Cmd.batch
         [ cmd
         , case route of
@@ -218,27 +489,42 @@ handleRouteChanged route ( model, cmd ) =
                 Cmd.batch
                     [ model.session
                         |> RemoteData.map (\_ -> Cmd.none)
-                        |> RemoteData.withDefault (Api.createSession |> Api.send CreateSessionCompleted)
+                        |> RemoteData.withDefault (Api.createNewSession |> Api.send CreateSessionCompleted)
                     , Api.defaultRevision
                         |> Api.send LoadRevisionCompleted
+                    , MessageBus.notify
+                        Notification.Info
+                        "Setting up your session"
+                        "Ellie is getting everything ready for you to compile code and install packages on the server."
                     ]
 
             SpecificRevision projectId revisionNumber ->
-                Cmd.batch
-                    [ model.session
-                        |> RemoteData.map (\_ -> Cmd.none)
-                        |> RemoteData.withDefault (Api.createSession |> Api.send CreateSessionCompleted)
-                    , model.clientRevision
-                        |> (\r -> Maybe.map2 (,) r.projectId r.revisionNumber)
-                        |> Maybe.map (\( p, r ) -> p /= projectId || r /= revisionNumber)
-                        |> Maybe.withDefault True
-                        |> boolToMaybe
-                        |> Maybe.map (\() -> Api.exactRevision projectId revisionNumber)
-                        |> Maybe.map (Api.send LoadRevisionCompleted)
-                        |> Maybe.withDefault Cmd.none
-                    ]
-
-            _ ->
-                Cmd.none
+                model.clientRevision
+                    |> (\r -> Maybe.map2 (,) r.projectId r.revisionNumber)
+                    |> Maybe.map (\( p, r ) -> p /= projectId || r /= revisionNumber)
+                    |> Maybe.withDefault True
+                    |> boolToMaybe
+                    |> Maybe.map
+                        (\() ->
+                            Cmd.batch
+                                [ Api.exactRevision projectId revisionNumber
+                                    |> Api.send LoadRevisionCompleted
+                                , model.session
+                                    |> RemoteData.map Api.removeSession
+                                    |> RemoteData.map (Api.send (\_ -> NoOp))
+                                    |> RemoteData.withDefault Cmd.none
+                                , Api.createSessionForRevision projectId revisionNumber
+                                    |> Api.send CreateSessionCompleted
+                                , MessageBus.notify
+                                    Notification.Info
+                                    "Setting up your session"
+                                    "Ellie is getting everything ready for you to compile code and install packages on the server."
+                                , MessageBus.notify
+                                    Notification.Info
+                                    "Loading your project"
+                                    "Ellie is loading up the project and revision you requested."
+                                ]
+                        )
+                    |> Maybe.withDefault Cmd.none
         ]
     )

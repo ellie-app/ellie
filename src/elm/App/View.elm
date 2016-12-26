@@ -10,7 +10,7 @@ import Types.CompileError as CompileError exposing (CompileError)
 import Types.Revision as Revision exposing (Revision)
 import Types.Session as Session exposing (Session)
 import Shared.Icons as Icons
-import App.Update as Update exposing (Msg(..))
+import App.Update as Update exposing (Msg(..), NewPackageFlowMsg(..))
 import App.Model as Model exposing (Model)
 import App.Classes exposing (..)
 import Components.Header.View as Header
@@ -167,10 +167,13 @@ headerContext model =
     { onSave = SaveRequested
     , onCompile = CompileRequested
     , onFormat = FormattingRequested
+    , onNotificationsToggled = ToggleNotifications
+    , notifications = model.notifications
+    , notificationsOpen = model.notificationsOpen
     , saveButtonEnabled =
         (Model.isRevisionChanged model || not (Model.isSavedProject model))
             && not (RemoteData.isLoading model.saveState)
-            && model.isOnline
+            && Maybe.withDefault False model.isOnline
     , saveButtonOption =
         headerSaveOption model
     , compileButtonEnabled =
@@ -178,7 +181,7 @@ headerContext model =
             && RemoteData.isSuccess model.session
             && RemoteData.isSuccess model.serverRevision
             && ((not model.firstCompileComplete) || model.elmCodeChanged)
-            && model.isOnline
+            && Maybe.withDefault False model.isOnline
     , buttonsVisible =
         RemoteData.isSuccess model.session
             && RemoteData.isSuccess model.serverRevision
@@ -187,12 +190,15 @@ headerContext model =
 
 sidebarContext : Model -> Sidebar.Context Msg
 sidebarContext model =
-    { detailsTitle = ""
-    , detailsDescription = ""
-    , onLocalMsg = \_ -> NoOp
-    , onTitleChange = \_ -> NoOp
-    , onDescriptionChange = \_ -> NoOp
-    , dependencies = model.clientRevision.dependencies
+    { dependencies = model.clientRevision.dependencies
+    , newPackageFlow = model.newPackageFlow
+    , onStarted = NewPackageFlowMsg Started
+    , onSearchTermChanged = SearchTermUpdated >> NewPackageFlowMsg
+    , onPackageSelected = PackageSelected >> NewPackageFlowMsg
+    , onVersionSelected = VersionSelected >> NewPackageFlowMsg
+    , onInstallRequested = NewPackageFlowMsg InstallRequested
+    , onCancelled = NewPackageFlowMsg Cancelled
+    , onRemoved = RemoveDependencyRequested
     }
 
 

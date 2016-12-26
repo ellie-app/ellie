@@ -84,6 +84,7 @@ styles =
             , flexDirection column
             , color (hex "fff")
             , padding (px 16)
+            , textShadow4 (px 1) (px 2) (px 6) (rgba 0 0 0 0.5)
             ]
         , (.) OverlayTitle
             [ property "font-family" "Leckerli One"
@@ -103,6 +104,7 @@ styles =
             , boxShadow5 (px 1) (px 3) (px 13) (px -2) (rgba 0 0 0 0.4)
             , backgroundColor (hex "e00")
             , color (hex "fff")
+            , marginBottom (px 16)
             , descendants
                 [ code
                     [ fontWeight (int 700)

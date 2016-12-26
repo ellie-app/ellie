@@ -1,48 +1,50 @@
-effect module MessageBus
+effect module Shared.MessageBus
     where { command = BusCmd, subscription = BusSub }
     exposing
-        ( BusMsg(..)
-        , send
-        , listen
+        ( notifications
+        , notify
         )
 
+import Date
+import Time
 import Task exposing (Task)
+import Types.Notification as Notification exposing (Notification)
 
 
-send : BusMsg -> Cmd msg
-send busMsg =
-    command <| Send busMsg
+notifications : (Notification -> msg) -> Sub msg
+notifications tagger =
+    subscription <| Notifications tagger
 
 
-listen : (BusMsg -> msg) -> Sub msg
-listen tagger =
-    subscription <| Listen tagger
-
-
-type BusMsg
-    = NoOp
+notify : Notification.Level -> String -> String -> Cmd msg
+notify level title message =
+    command <| Notify level title message
 
 
 type BusCmd msg
-    = Send BusMsg
+    = Notify Notification.Level String String
 
 
 type BusSub msg
-    = Listen (BusMsg -> msg)
+    = Notifications (Notification -> msg)
+
+
+type SelfMsg
+    = Notified Notification
 
 
 cmdMap : (a -> b) -> BusCmd a -> BusCmd b
-cmdMap tagger (Send busMsg) =
-    Send busMsg
+cmdMap tagger (Notify level title message) =
+    Notify level title message
 
 
 subMap : (a -> b) -> BusSub a -> BusSub b
-subMap outerTagger (Listen innerTagger) =
-    Listen (outerTagger << innerTagger)
+subMap outerTagger (Notifications innerTagger) =
+    Notifications (outerTagger << innerTagger)
 
 
 type alias State msg =
-    List (BusMsg -> msg)
+    List (Notification -> msg)
 
 
 init : Task Never (State msg)
@@ -52,11 +54,18 @@ init =
 
 unwrapSubs : List (BusSub msg) -> State msg
 unwrapSubs subs =
-    List.map (\(Listen tagger) -> tagger) subs
+    List.map (\(Notifications tagger) -> tagger) subs
+
+
+stampAndSend : Platform.Router msg SelfMsg -> Notification.Level -> String -> String -> Task Never ()
+stampAndSend router level title message =
+    Time.now
+        |> Task.map (Date.fromTime >> Notification level message title >> Notified)
+        |> Task.andThen (Platform.sendToSelf router)
 
 
 onEffects :
-    Platform.Router msg BusMsg
+    Platform.Router msg SelfMsg
     -> List (BusCmd msg)
     -> List (BusSub msg)
     -> State msg
@@ -65,7 +74,7 @@ onEffects router cmds subs state =
     case ( subs, cmds ) of
         ( s :: _, c :: _ ) ->
             cmds
-                |> List.map (\(Send busMsg) -> Platform.sendToSelf router busMsg)
+                |> List.map (\(Notify level title message) -> stampAndSend router level title message)
                 |> Task.sequence
                 |> Task.andThen (\_ -> Task.succeed <| unwrapSubs subs)
 
@@ -74,12 +83,14 @@ onEffects router cmds subs state =
 
 
 onSelfMsg :
-    Platform.Router msg BusMsg
-    -> BusMsg
+    Platform.Router msg SelfMsg
+    -> SelfMsg
     -> State msg
     -> Task Never (State msg)
-onSelfMsg router busMsg state =
-    state
-        |> List.map (\tagger -> Platform.sendToApp router (tagger busMsg))
-        |> Task.sequence
-        |> Task.andThen (\_ -> Task.succeed state)
+onSelfMsg router selfMsg state =
+    case selfMsg of
+        Notified notification ->
+            state
+                |> List.map (\tagger -> Platform.sendToApp router (tagger notification))
+                |> Task.sequence
+                |> Task.andThen (\_ -> Task.succeed state)
