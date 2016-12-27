@@ -88,3 +88,8 @@ decodeUnion topTag list =
                     Dict.get tag decoderDict
                         |> Maybe.withDefault (Decode.fail <| "Could not decode value with tag " ++ tag ++ " for type " ++ topTag)
                 )
+
+
+numberToPercent : number -> String
+numberToPercent number =
+    (toString (number * 100)) ++ "%"

@@ -82,7 +82,7 @@ styles =
             , overflow hidden
             , fontWeight bold
             ]
-        , (.) RemoveButton
+        , (.) IconButton
             [ width (px 32)
             , height (px 32)
             , property "background" "none"
@@ -94,9 +94,59 @@ styles =
             , height (px 48)
             , border zero
             , cursor pointer
-            , backgroundColor (hex "f7f7f7")
+            , backgroundColor (hex "E5E1DB")
             , fontFamily inherit
-            , fontSize (px 13)
+            , fontSize (px 14)
+            , lineHeight (px 14)
             , textTransform uppercase
+            , displayFlex
+            , alignItems center
+            , property "justify-content" "center"
+            ]
+        , (.) AddDepButtonIcon
+            [ width (px 16)
+            , height (px 16)
+            , display inlineBlock
+            , marginLeft (px 8)
+            ]
+        , (.) AddDepContainer
+            [ displayFlex
+            ]
+        , (.) AddDepInputContainer
+            [ property "width" "calc(100% - 32px)"
+            ]
+        , (.) AddDepResultList
+            [ position absolute
+            , width (pct 100)
+            , marginTop (px 12)
+            , boxShadow5 (px 4) (px 4) (px 15) (px -4) (rgba 0 0 0 0.5)
+            , padding2 (px 8) zero
+            ]
+        , (.) AddDepPackageSearch
+            [ position relative
+            ]
+        , (.) AddDepPackageItem
+            [ cursor pointer
+            , padding2 (px 8) (px 16)
+            , hover
+                [ backgroundColor (hex "f7f7f7")
+                ]
+            ]
+        , (.) AddDepVersion
+            [ displayFlex
+            , property "align-items" "center"
+            , property "justify-content" "space-between"
+            ]
+        , (.) AddDepVersionDetails
+            [ property "width" "calc(100% - 64px)"
+            , fontSize (px 16)
+            , fontFamilies [ "monospace" ]
+            ]
+        , (.) AddDepVersionPackageName
+            [ whiteSpace noWrap
+            , textOverflow ellipsis
+            , width (pct 100)
+            , overflow hidden
+            , fontWeight bold
             ]
         ]

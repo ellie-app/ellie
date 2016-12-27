@@ -1,15 +1,15 @@
 module Main exposing (main)
 
 import Navigation
-import App.Model as Model exposing (Model)
+import App.Model as Model exposing (Model, Flags)
 import App.Update as Update exposing (Msg(..))
 import App.View as View
 import App.Subs as Subs
 
 
-main : Program Never Model Msg
+main : Program Flags Model Msg
 main =
-    Navigation.program Update.onRouteChange
+    Navigation.programWithFlags Update.onRouteChange
         { view = View.view
         , update = Update.update
         , subscriptions = Subs.subscriptions

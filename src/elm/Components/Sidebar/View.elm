@@ -8,7 +8,7 @@ import Json.Decode as Decode
 import List.Nonempty as Nonempty
 import RemoteData exposing (RemoteData(..))
 import Html exposing (Html, textarea, h3, button, aside, div, text, span, input, hr, option, select)
-import Html.Attributes exposing (type_, value, selected)
+import Html.Attributes exposing (type_, value, selected, placeholder)
 import Html.Events exposing (onClick, onInput, on)
 import Types.PackageSearchResult as PackageSearchResult exposing (PackageSearchResult)
 import Types.Dependency as Dependency exposing (Dependency)
@@ -29,6 +29,10 @@ type alias Context msg =
     , onInstallRequested : msg
     , onCancelled : msg
     , onRemoved : Dependency -> msg
+    , title : String
+    , onTitleChanged : String -> msg
+    , description : String
+    , onDescriptionChanged : String -> msg
     }
 
 
@@ -51,67 +55,116 @@ dependency onRemoved dep =
             ]
         , button
             [ onClick (onRemoved dep)
-            , class [ RemoveButton ]
+            , class [ IconButton ]
             ]
             [ Icons.close ]
         ]
+
+
+packageFlowItem : (PackageSearchResult -> msg) -> PackageSearchResult -> Html msg
+packageFlowItem onSelected r =
+    div
+        [ class [ AddDepPackageItem ]
+        , onClick (onSelected r)
+        ]
+        [ text <| r.username ++ "/" ++ r.name ]
+
+
+notSearching : Context msg -> Html msg
+notSearching context =
+    button
+        [ onClick context.onStarted
+        , class [ AddDepButton ]
+        ]
+        [ span [] [ text "Add Dependency" ]
+        , span [ class [ AddDepButtonIcon ] ] [ Icons.plusEmpty ]
+        ]
+
+
+packageSearch : Context msg -> String -> List PackageSearchResult -> Html msg
+packageSearch context searchText packages =
+    div [ class [ AddDepPackageSearch ] ]
+        [ div [ class [ AddDepContainer ] ]
+            [ div [ class [ AddDepInputContainer ] ]
+                [ input
+                    [ type_ "text"
+                    , onInput context.onSearchTermChanged
+                    , class [ TextInput ]
+                    , placeholder "Search packages..."
+                    ]
+                    []
+                ]
+            , button
+                [ onClick context.onCancelled
+                , class [ IconButton ]
+                ]
+                [ Icons.close ]
+            ]
+        , case packages of
+            [] ->
+                text ""
+
+            _ ->
+                div [ class [ AddDepResultList ] ]
+                    (packages
+                        |> Utils.hashFilter sharedHash sharedHash context.dependencies
+                        |> List.map (packageFlowItem context.onPackageSelected)
+                    )
+        ]
+
+
+versionSearch : Context msg -> PackageSearchResult -> Version -> Html msg
+versionSearch context package version =
+    div [ class [ AddDepVersion ] ]
+        [ div [ class [ AddDepVersionDetails ] ]
+            [ div [ class [ AddDepVersionPackageName ] ]
+                [ text <| package.username ++ "/" ++ package.name
+                ]
+            , div []
+                [ select
+                    [ on "change" <| Decode.map context.onVersionSelected (Decode.at [ "target", "selectedIndex" ] Decode.int) ]
+                    (Nonempty.toList <| Nonempty.map (\v -> option [ selected (version == v) ] [ text <| Version.toString v ]) package.versions)
+                , span [] [ text " <= v < " ]
+                , span [] [ text <| Version.toString (Version.nextMajor version) ]
+                ]
+            ]
+        , button
+            [ onClick context.onInstallRequested
+            , class [ IconButton ]
+            ]
+            [ Icons.checkmark ]
+        , button
+            [ onClick context.onCancelled
+            , class [ IconButton ]
+            ]
+            [ Icons.close ]
+        ]
+
+
+installation : Context msg -> Dependency -> RemoteData x a -> Html msg
+installation context dependency data =
+    case data of
+        Loading ->
+            div [] [ text <| "Installing..." ]
+
+        _ ->
+            text ""
 
 
 newPackageFlow : Context msg -> Html msg
 newPackageFlow context =
     case context.newPackageFlow of
         NotSearching ->
-            button
-                [ onClick context.onStarted
-                , class [ AddDepButton ]
-                ]
-                [ text "add dep" ]
+            notSearching context
 
         PackageSearch searchText packages ->
-            div []
-                [ div []
-                    [ input
-                        [ type_ "text"
-                        , onInput context.onSearchTermChanged
-                        ]
-                        []
-                    ]
-                , div []
-                    (packages
-                        |> Utils.hashFilter sharedHash sharedHash context.dependencies
-                        |> List.map (\r -> div [ onClick (context.onPackageSelected r) ] [ text <| r.username ++ "/" ++ r.name ])
-                    )
-                ]
+            packageSearch context searchText packages
 
         VersionSearch package version ->
-            div []
-                [ select [ on "change" <| Decode.map context.onVersionSelected (Decode.at [ "target", "selectedIndex" ] Decode.int) ] <|
-                    Nonempty.toList <|
-                        Nonempty.map (\v -> option [ selected (version == v) ] [ text <| Version.toString v ]) package.versions
-                , button [ onClick context.onInstallRequested ] [ text "Install" ]
-                ]
+            versionSearch context package version
 
         Installation dependency data ->
-            case data of
-                NotAsked ->
-                    text ""
-
-                Loading ->
-                    div []
-                        [ text <| "Installing " ++ Dependency.toString dependency
-                        ]
-
-                Failure _ ->
-                    div []
-                        [ div [] [ text <| "Failed to install " ++ Dependency.toString dependency ]
-                        , div [] [ button [ onClick context.onCancelled ] [ text "Cancel" ] ]
-                        ]
-
-                Success _ ->
-                    div []
-                        [ div [] [ text <| "Installed " ++ Dependency.toString dependency ]
-                        , div [] [ button [ onClick context.onCancelled ] [ text "OK" ] ]
-                        ]
+            installation context dependency data
 
 
 view : Context msg -> Html msg
@@ -123,7 +176,8 @@ view context =
                 [ input
                     [ type_ "text"
                     , class [ TextInput ]
-                    , value "Untitled"
+                    , value context.title
+                    , onInput context.onTitleChanged
                     ]
                     []
                 ]
@@ -131,7 +185,12 @@ view context =
         , div [ class [ Section ] ]
             [ h3 [ class [ SectionHeader ] ] [ text "Description" ]
             , div [ class [ SectionContent ] ]
-                [ textarea [ class [ Textarea ], value "Tell everyone about your project!" ] []
+                [ textarea
+                    [ class [ Textarea ]
+                    , onInput context.onDescriptionChanged
+                    , value context.description
+                    ]
+                    []
                 ]
             ]
         , div [ class [ Section ] ]

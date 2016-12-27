@@ -21,6 +21,8 @@ type alias Revision =
     , owned : Bool
     , revisionNumber : Maybe Int
     , projectId : Maybe Uuid
+    , title : String
+    , description : String
     }
 
 
@@ -32,6 +34,8 @@ empty =
     , owned = False
     , revisionNumber = Nothing
     , projectId = Nothing
+    , title = ""
+    , description = ""
     }
 
 
@@ -44,6 +48,8 @@ encode revision =
         , ( "owned", Encode.bool revision.owned )
         , ( "revisionNumber", Utils.encodeNullable Encode.int revision.revisionNumber )
         , ( "projectId", Utils.encodeNullable Uuid.encode revision.projectId )
+        , ( "title", Encode.string revision.title )
+        , ( "description", Encode.string revision.description )
         ]
 
 
@@ -56,3 +62,5 @@ decode =
         |> Decode.optional "owned" Decode.bool True
         |> Decode.required "revisionNumber" (Decode.nullable Decode.int)
         |> Decode.required "projectId" (Decode.nullable Uuid.decode)
+        |> Decode.required "title" Decode.string
+        |> Decode.required "description" Decode.string

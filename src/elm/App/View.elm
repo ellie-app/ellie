@@ -10,6 +10,7 @@ import Types.CompileError as CompileError exposing (CompileError)
 import Types.Revision as Revision exposing (Revision)
 import Types.Session as Session exposing (Session)
 import Shared.Icons as Icons
+import Shared.Utils as Utils
 import App.Update as Update exposing (Msg(..), NewPackageFlowMsg(..))
 import App.Model as Model exposing (Model)
 import App.Classes exposing (..)
@@ -58,11 +59,11 @@ loadingRevision =
         ]
 
 
-results : Revision -> RemoteData ApiError (List CompileError) -> Session -> Html Msg
-results revision compileResult session =
+results : Float -> Revision -> RemoteData ApiError (List CompileError) -> Session -> Html Msg
+results split revision compileResult session =
     div
         [ class [ ResultsContainer ]
-        , style [ ( "width", "50%" ) ]
+        , style [ ( "width", Utils.numberToPercent (1 - split) ) ]
         ]
         [ case compileResult of
             Success errors ->
@@ -84,16 +85,16 @@ results revision compileResult session =
         ]
 
 
-editors : List CompileError -> Revision -> Session -> Html Msg
-editors compileErrors revision session =
+editors : Float -> Float -> List CompileError -> Revision -> Session -> Html Msg
+editors editorSplit resultSplit compileErrors revision session =
     div
         [ class [ EditorsContainer ]
-        , style [ ( "width", "50%" ) ]
+        , style [ ( "width", Utils.numberToPercent resultSplit ) ]
         ]
         [ div
             [ class [ EditorContainer ]
             , style
-                [ ( "height", "50%" )
+                [ ( "height", Utils.numberToPercent editorSplit )
                 , ( "border-bottom", "1px solid #bdb7bd" )
                 ]
             ]
@@ -103,8 +104,20 @@ editors compileErrors revision session =
                 (compileErrors)
             ]
         , div
+            [ onMouseDown EditorDragStarted
+            , style
+                [ ( "width", "100%" )
+                , ( "height", "5px" )
+                , ( "position", "absolute" )
+                , ( "top", "calc(" ++ Utils.numberToPercent editorSplit ++ " - 2px)" )
+                , ( "z-index", "4" )
+                , ( "cursor", "ns-resize" )
+                ]
+            ]
+            []
+        , div
             [ class [ EditorContainer ]
-            , style [ ( "height", "50%" ) ]
+            , style [ ( "height", Utils.numberToPercent (1 - editorSplit) ) ]
             ]
             [ Editors.html
                 HtmlCodeChanged
@@ -117,10 +130,28 @@ workArea : Model -> Html Msg
 workArea model =
     div [ class [ WorkAreaContainer ] ]
         [ model.session
-            |> RemoteData.map (editors (RemoteData.withDefault [] model.compileResult) model.clientRevision)
+            |> RemoteData.map
+                (editors
+                    model.editorSplit
+                    model.resultSplit
+                    (RemoteData.withDefault [] model.compileResult)
+                    model.clientRevision
+                )
             |> RemoteData.withDefault htmlNone
+        , div
+            [ onMouseDown ResultDragStarted
+            , style
+                [ ( "height", "100%" )
+                , ( "width", "5px" )
+                , ( "position", "absolute" )
+                , ( "left", "calc(" ++ Utils.numberToPercent model.resultSplit ++ " - 2px)" )
+                , ( "z-index", "4" )
+                , ( "cursor", "ew-resize" )
+                ]
+            ]
+            []
         , model.session
-            |> RemoteData.map (results model.clientRevision model.compileResult)
+            |> RemoteData.map (results model.resultSplit model.clientRevision model.compileResult)
             |> RemoteData.withDefault htmlNone
         ]
 
@@ -170,10 +201,11 @@ headerContext model =
     , onNotificationsToggled = ToggleNotifications
     , notifications = model.notifications
     , notificationsOpen = model.notificationsOpen
+    , notificationsHighlight = model.notificationsHighlight
     , saveButtonEnabled =
         (Model.isRevisionChanged model || not (Model.isSavedProject model))
             && not (RemoteData.isLoading model.saveState)
-            && Maybe.withDefault False model.isOnline
+            && model.isOnline
     , saveButtonOption =
         headerSaveOption model
     , compileButtonEnabled =
@@ -181,7 +213,7 @@ headerContext model =
             && RemoteData.isSuccess model.session
             && RemoteData.isSuccess model.serverRevision
             && ((not model.firstCompileComplete) || model.elmCodeChanged)
-            && Maybe.withDefault False model.isOnline
+            && model.isOnline
     , buttonsVisible =
         RemoteData.isSuccess model.session
             && RemoteData.isSuccess model.serverRevision
@@ -199,12 +231,23 @@ sidebarContext model =
     , onInstallRequested = NewPackageFlowMsg InstallRequested
     , onCancelled = NewPackageFlowMsg Cancelled
     , onRemoved = RemoveDependencyRequested
+    , title = model.clientRevision.title
+    , onTitleChanged = TitleChanged
+    , description = model.clientRevision.description
+    , onDescriptionChanged = DescriptionChanged
     }
 
 
 view : Model -> Html Msg
 view model =
-    div [ class [ TopContainer ] ]
+    div
+        [ classList
+            [ ( TopContainer, True )
+            , ( TopContainerDragging, model.resultDragging || model.editorDragging )
+            , ( TopContainerNs, model.editorDragging )
+            , ( TopContainerEw, model.resultDragging )
+            ]
+        ]
         [ Header.view (headerContext model)
         , main_ [ class [ MainContainer ] ]
             [ mainStuff model

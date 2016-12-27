@@ -139,7 +139,7 @@ buildSrcDoc : String -> String -> String
 buildSrcDoc sessionId htmlCode =
     Utils.stringReplace
         ("</head>")
-        (resultScript sessionId ++ messagesScript ++ "</head>")
+        (resultScript sessionId ++ "\n" ++ messagesScript ++ "\n</head>")
         (htmlCode)
 
 
@@ -160,5 +160,8 @@ messagesScript =
       x: e.screenX,
       y: e.screenY
     }, 'http://localhost:8000')
+  })
+  document.addEventListener('click', function (e) {
+    parent.postMessage({ type: 'click' }, 'http://localhost:8000')
   })
 </script>"""

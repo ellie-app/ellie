@@ -41,6 +41,7 @@ styles =
             [ displayFlex
             , height (pct 100)
             , property "width" <| "calc(100% - " ++ toString Constants.sidebarWidth ++ "px)"
+            , position relative
             ]
         , (.) ResultsEditorsSeparator
             [ position relative
@@ -63,6 +64,18 @@ styles =
         , (.) TopContainer
             [ height (pct 100)
             , position relative
+            ]
+        , (.) TopContainerNs
+            [ descendants
+                [ everything [ cursor nsResize |> important ] ]
+            ]
+        , (.) TopContainerEw
+            [ descendants
+                [ everything [ cursor ewResize |> important ] ]
+            ]
+        , (.) TopContainerDragging
+            [ descendants
+                [ everything [ property "user-select" "none" ] ]
             ]
         , (.) MainLoadingMessageContainer
             [ width (pct 100)

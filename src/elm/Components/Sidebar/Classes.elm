@@ -14,9 +14,18 @@ type Classes
     | PackagesList
     | DepItem
     | DepItemDetails
-    | RemoveButton
+    | IconButton
     | DepItemPackageName
     | AddDepButton
+    | AddDepButtonIcon
+    | AddDepContainer
+    | AddDepInputContainer
+    | AddDepResultList
+    | AddDepPackageSearch
+    | AddDepPackageItem
+    | AddDepVersionPackageName
+    | AddDepVersion
+    | AddDepVersionDetails
 
 
 helpers : Html.CssHelpers.Namespace String class id msg

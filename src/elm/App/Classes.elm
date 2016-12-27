@@ -28,6 +28,9 @@ type Classes
     | ResultsContainer
     | MainContainer
     | TopContainer
+    | TopContainerDragging
+    | TopContainerNs
+    | TopContainerEw
     | MainLoadingMessageContainer
     | MainLoadingMessageHeader
     | MainLoadingMessageElmLogo

@@ -67,6 +67,7 @@ type alias Context msg =
     , buttonsVisible : Bool
     , notifications : List Notification
     , notificationsOpen : Bool
+    , notificationsHighlight : Bool
     , onNotificationsToggled : msg
     }
 
@@ -76,6 +77,7 @@ notificationsContext context =
     { notifications = context.notifications
     , isOpen = context.notificationsOpen
     , onToggled = context.onNotificationsToggled
+    , isHighlighted = context.notificationsHighlight
     }
 
 

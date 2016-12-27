@@ -1,6 +1,7 @@
 module App.Model
     exposing
         ( Model
+        , Flags
         , model
         , updateClientRevision
         , isOwnedProject
@@ -8,6 +9,7 @@ module App.Model
         , isRevisionChanged
         )
 
+import Window exposing (Size)
 import RemoteData exposing (RemoteData(..))
 import Types.ApiError as ApiError exposing (ApiError)
 import Types.Session as Session exposing (Session)
@@ -16,6 +18,12 @@ import Types.CompileError as CompileError exposing (CompileError)
 import Types.NewPackageFlow as NewPackageFlow exposing (NewPackageFlow(..))
 import Types.Notification as Notification exposing (Notification)
 import App.Routing as Routing exposing (Route(..))
+
+
+type alias Flags =
+    { windowSize : Window.Size
+    , online : Bool
+    }
 
 
 type alias Model =
@@ -27,15 +35,21 @@ type alias Model =
     , elmCodeChanged : Bool
     , firstCompileComplete : Bool
     , saveState : RemoteData ApiError ()
-    , isOnline : Maybe Bool
+    , isOnline : Bool
     , newPackageFlow : NewPackageFlow
     , notifications : List Notification
     , notificationsOpen : Bool
+    , notificationsHighlight : Bool
+    , resultSplit : Float
+    , resultDragging : Bool
+    , editorSplit : Float
+    , editorDragging : Bool
+    , windowSize : Size
     }
 
 
-model : Model
-model =
+model : Flags -> Model
+model flags =
     { session = NotAsked
     , serverRevision = NotAsked
     , clientRevision = Revision.empty
@@ -44,10 +58,16 @@ model =
     , elmCodeChanged = False
     , firstCompileComplete = False
     , saveState = NotAsked
-    , isOnline = Nothing
+    , isOnline = flags.online
     , newPackageFlow = NotSearching
     , notifications = []
     , notificationsOpen = False
+    , notificationsHighlight = False
+    , resultSplit = 0.5
+    , resultDragging = False
+    , editorSplit = 0.5
+    , editorDragging = False
+    , windowSize = flags.windowSize
     }
 
 

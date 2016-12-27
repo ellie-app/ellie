@@ -1,4 +1,11 @@
-module App.Update exposing (update, initialize, onRouteChange, Msg(..), NewPackageFlowMsg(..))
+module App.Update
+    exposing
+        ( update
+        , initialize
+        , onRouteChange
+        , Msg(..)
+        , NewPackageFlowMsg(..)
+        )
 
 import Window exposing (Size)
 import Mouse exposing (Position)
@@ -13,7 +20,8 @@ import Types.Session as Session exposing (Session)
 import Types.CompileError as CompileError exposing (CompileError)
 import Types.PackageSearchResult as PackageSearchResult exposing (PackageSearchResult)
 import Types.Notification as Notification exposing (Notification)
-import App.Model as Model exposing (Model)
+import Types.Identity as Identity exposing (Identity)
+import App.Model as Model exposing (Model, Flags)
 import App.Routing as Routing exposing (Route(..))
 import Shared.Api as Api
 import Shared.Constants as Constants
@@ -33,6 +41,21 @@ boolToMaybe bool =
         Just ()
     else
         Nothing
+
+
+clamp : comparable -> comparable -> comparable -> comparable
+clamp minimum maximum current =
+    if current >= maximum then
+        maximum
+    else if current <= minimum then
+        minimum
+    else
+        current
+
+
+onlyErrors : List CompileError -> List CompileError
+onlyErrors errors =
+    List.filter (.level >> (==) "error") errors
 
 
 
@@ -69,6 +92,15 @@ type Msg
     | WindowUnloaded
     | NotificationReceived Notification
     | ToggleNotifications
+    | ResultDragStarted
+    | ResultDragged Position
+    | ResultDragEnded
+    | EditorDragStarted
+    | EditorDragged Position
+    | EditorDragEnded
+    | WindowSizeChanged Size
+    | TitleChanged String
+    | DescriptionChanged String
     | NoOp
 
 
@@ -88,13 +120,76 @@ saveProject model =
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
+        TitleChanged title ->
+            ( model
+                |> Model.updateClientRevision (\r -> { r | title = title })
+            , Cmd.none
+            )
+
+        DescriptionChanged description ->
+            ( model
+                |> Model.updateClientRevision (\r -> { r | description = description })
+            , Cmd.none
+            )
+
+        EditorDragStarted ->
+            ( { model | editorDragging = True }
+            , Cmd.none
+            )
+
+        EditorDragged position ->
+            ( { model
+                | editorSplit =
+                    Identity.create position
+                        |> Identity.map (\p -> toFloat (p.y - Constants.headerHeight))
+                        |> Identity.map (\h -> h / toFloat (model.windowSize.height - Constants.headerHeight))
+                        |> Identity.fold (clamp 0.2 0.8)
+              }
+            , Cmd.none
+            )
+
+        EditorDragEnded ->
+            ( { model | editorDragging = False }
+            , Cmd.none
+            )
+
+        WindowSizeChanged size ->
+            ( { model | windowSize = size }
+            , Cmd.none
+            )
+
+        ResultDragStarted ->
+            ( { model | resultDragging = True }
+            , Cmd.none
+            )
+
+        ResultDragged position ->
+            ( { model
+                | resultSplit =
+                    Identity.create position
+                        |> Identity.map (\p -> toFloat (p.x - Constants.sidebarWidth))
+                        |> Identity.map (\w -> w / toFloat (model.windowSize.width - Constants.sidebarWidth))
+                        |> Identity.fold (clamp 0.2 0.8)
+              }
+            , Cmd.none
+            )
+
+        ResultDragEnded ->
+            ( { model | resultDragging = False }
+            , Cmd.none
+            )
+
         ToggleNotifications ->
             ( { model | notificationsOpen = not model.notificationsOpen }
             , Cmd.none
             )
 
         NotificationReceived notification ->
-            ( { model | notifications = notification :: model.notifications }
+            ( { model
+                | notifications = notification :: model.notifications
+                , notificationsOpen = model.notificationsOpen || notification.level == Notification.Error
+                , notificationsHighlight = notification.level == Notification.Error
+              }
             , Cmd.none
             )
 
@@ -168,7 +263,7 @@ update msg model =
                 , elmCodeChanged =
                     not (resultIsSuccess compileResult)
               }
-            , case compileResult of
+            , case Result.map onlyErrors compileResult of
                 Ok [] ->
                     MessageBus.notify
                         Notification.Success
@@ -219,7 +314,9 @@ update msg model =
                         |> Result.map (\_ -> ())
                         |> RemoteData.fromResult
                 , serverRevision =
-                    RemoteData.fromResult saveResult
+                    saveResult
+                        |> Result.map Success
+                        |> Result.withDefault model.serverRevision
                 , clientRevision =
                     Result.withDefault model.clientRevision saveResult
               }
@@ -246,22 +343,17 @@ update msg model =
             )
 
         OnlineChanged isOnline ->
-            ( { model | isOnline = Just isOnline }
-            , case model.isOnline of
-                Just _ ->
-                    if isOnline then
-                        MessageBus.notify
-                            Notification.Success
-                            "You're Online!"
-                            "Ellie is 100% ready to connect to the server."
-                    else
-                        MessageBus.notify
-                            Notification.Error
-                            "You're Offline!"
-                            "Ellie can't connect to the server right now, so we've disabled most features."
-
-                Nothing ->
-                    Cmd.none
+            ( { model | isOnline = isOnline }
+            , if isOnline then
+                MessageBus.notify
+                    Notification.Success
+                    "You're Online!"
+                    "Ellie is 100% ready to connect to the server."
+              else
+                MessageBus.notify
+                    Notification.Error
+                    "You're Offline!"
+                    "Ellie can't connect to the server right now, so we've disabled most features."
             )
 
         FormattingRequested ->
@@ -401,12 +493,7 @@ update msg model =
 
                 InstallCompleted dep result ->
                     ( model
-                        |> (\m ->
-                                { m
-                                    | newPackageFlow =
-                                        NewPackageFlow.Installation dep (RemoteData.fromResult result)
-                                }
-                           )
+                        |> (\m -> { m | newPackageFlow = NewPackageFlow.NotSearching })
                         |> Model.updateClientRevision
                             (\r ->
                                 { r
@@ -442,11 +529,11 @@ onRouteChange =
     Routing.parse >> RouteChanged
 
 
-initialize : Navigation.Location -> ( Model, Cmd Msg )
-initialize location =
+initialize : Flags -> Navigation.Location -> ( Model, Cmd Msg )
+initialize flags location =
     let
         initialModel =
-            Model.model
+            Model.model flags
     in
         location
             |> Routing.parse

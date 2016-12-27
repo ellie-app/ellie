@@ -6,7 +6,14 @@ const initCodeMirror = require('./CodeMirror')
 initCodeMirror()
   .then(() => {
     const Elm = require('../elm/Main.elm')
-    const app = Elm.Main.fullscreen()
+
+    const app = Elm.Main.fullscreen({
+      windowSize: {
+        width: window.innerWidth,
+        height: window.innerHeight
+      },
+      online: window.navigator.onLine
+    })
 
     window.addEventListener('online',  () => {
       app.ports.online.send(true)
@@ -16,13 +23,11 @@ initCodeMirror()
       app.ports.online.send(false)
     })
 
-    app.ports.online.send(window.navigator.onLine)
-
     window.addEventListener('beforeunload', () => {
       app.ports.windowUnloadedIn.send(null)
     })
 
-    // window.addEventListener('message', (event) => {
-    //   app.ports.windowMessageIn.send(event.data)
-    // })
+    window.addEventListener('message', (event) => {
+      app.ports.windowMessageIn.send(event.data)
+    })
   })

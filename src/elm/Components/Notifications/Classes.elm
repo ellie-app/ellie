@@ -14,9 +14,13 @@ type Classes
     | ItemDetails
     | Items
     | ItemTitle
+    | ItemTimestamp
+    | ItemMessage
     | Latest
     | LatestTitle
     | LatestIcon
+    | ItemHighlighted
+    | ButtonIcon
 
 
 helpers : Html.CssHelpers.Namespace String class id msg

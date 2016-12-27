@@ -15,12 +15,24 @@ styles =
             , alignItems center
             ]
         , (.) Button
-            [ height (px Constants.headerHeight)
-            , width (px Constants.headerHeight)
+            [ height (px (Constants.headerHeight - 10))
+            , width (px (Constants.headerHeight - 10))
             , property "background" "none"
             , border zero
+            , borderRadius (pct 50)
+            , backgroundColor (hex "e7e7e7")
             , padding (px 10)
             , cursor pointer
+            , position relative
+            , boxShadow5 (px 0) (px 5) (px 9) (px -3) (rgba 0 0 0 0.5)
+            , top (px -2)
+            ]
+        , (.) ButtonIcon
+            [ position absolute
+            , width (px 16)
+            , height (px 16)
+            , top (px 1)
+            , left (px 28)
             ]
         , (.) Popout
             [ position absolute
@@ -32,6 +44,7 @@ styles =
             , property "z-index" "5"
             , borderRadius (px 4)
             , borderTopRightRadius (px 0)
+            , border3 (px 1) solid (hex "a7a7a7")
             , transforms [ scaleX 1, scaleY 1 ]
             , property "transition" "transform 0.1s ease-in-out, opacity 0.1s ease-in-out"
             , property "transform-origin" "top right"
@@ -44,6 +57,17 @@ styles =
                 , height zero
                 , top (px -16)
                 , right zero
+                , property "z-index" "2"
+                ]
+            , after
+                [ property "content" "''"
+                , position absolute
+                , borderBottom3 (px 18) solid (hex "a7a7a7")
+                , borderLeft3 (px 18) solid transparent
+                , width zero
+                , height zero
+                , top (px -19)
+                , right (px -1)
                 ]
             ]
         , (.) PopoutHidden
@@ -53,19 +77,25 @@ styles =
         , (.) Items
             [ overflowY auto
             , maxHeight (px 500)
-            , padding2 (px 8) (px 16)
+            , padding2 (px 8) zero
             ]
         , (.) Item
-            [ displayFlex
-            , padding2 (px 8) zero
+            [ padding2 (px 8) (px 16)
             , borderBottom3 (px 1) solid (hex "a7a7a7")
             , lastChild
                 [ borderBottom zero
                 ]
             ]
+        , (.) ItemHighlighted
+            [ backgroundColor (hex "e7e7e7")
+            ]
         , (.) ItemDetails
+            [ paddingBottom (px 8)
+            , displayFlex
+            , property "align-items" "center"
+            ]
+        , (.) ItemMessage
             [ property "width" "calc(100% - 24px)"
-            , paddingBottom (px 8)
             , paddingRight (px 16)
             ]
         , (.) ItemIcon
@@ -75,11 +105,17 @@ styles =
             [ fontWeight (int 300)
             , fontSize (px 13)
             , textTransform uppercase
-            , padding2 (px 8) zero
+            , paddingTop (px 8)
+            , paddingBottom (px 16)
+            , displayFlex
+            , property "justify-content" "space-between"
+            ]
+        , (.) ItemTimestamp
+            [ color (hex "a7a7a7")
             ]
         , (.) Latest
             [ padding2 zero (px 16)
-            , fontSize (px 16)
+            , fontSize (px 14)
             , textTransform uppercase
             ]
         , (.) LatestTitle
@@ -88,8 +124,8 @@ styles =
             , lineHeight (int 1)
             ]
         , (.) LatestIcon
-            [ width (px 18)
-            , height (px 18)
+            [ width (px 16)
+            , height (px 16)
             , display inlineBlock
             , marginRight (px 8)
             , verticalAlign middle
