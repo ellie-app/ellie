@@ -10,10 +10,11 @@ module Components.Output.View
 import Regex exposing (Regex)
 import Json.Encode as Encode
 import Html exposing (Html, div, iframe, text)
-import Html.Attributes exposing (srcdoc)
+import Html.Attributes exposing (src)
 import Types.CompileError as CompileError exposing (CompileError)
 import Components.Output.Classes exposing (Classes(..), class)
 import Shared.Utils as Utils
+import Shared.Constants as Constants
 
 
 innerHtml : String -> Html.Attribute msg
@@ -109,7 +110,7 @@ loading =
 success : String -> String -> Html msg
 success sessionId htmlCode =
     iframe
-        [ srcdoc <| buildSrcDoc sessionId htmlCode
+        [ src <| (Constants.apiBase ++ "/sessions/" ++ sessionId ++ "/iframe")
         , class [ Iframe ]
         ]
         []
@@ -133,35 +134,3 @@ compiling =
 waiting : Html msg
 waiting =
     overlayDisplay "Ready!" "Run the compiler to see your program."
-
-
-buildSrcDoc : String -> String -> String
-buildSrcDoc sessionId htmlCode =
-    Utils.stringReplace
-        ("</head>")
-        (resultScript sessionId ++ "\n" ++ messagesScript ++ "\n</head>")
-        (htmlCode)
-
-
-resultScript : String -> String
-resultScript sessionId =
-    "<script src=\"http://localhost:1337/sessions/" ++ sessionId ++ "/result\"></script>"
-
-
-messagesScript : String
-messagesScript =
-    """<script>
-  document.addEventListener('mouseup', function () {
-    parent.postMessage({ type: 'mouseup' }, 'http://localhost:8000')
-  })
-  document.addEventListener('mousemove', function (e) {
-    parent.postMessage({
-      type: 'mousemove',
-      x: e.screenX,
-      y: e.screenY
-    }, 'http://localhost:8000')
-  })
-  document.addEventListener('click', function (e) {
-    parent.postMessage({ type: 'click' }, 'http://localhost:8000')
-  })
-</script>"""

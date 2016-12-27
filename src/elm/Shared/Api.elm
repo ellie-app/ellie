@@ -153,10 +153,11 @@ removeSession session =
 -- COMPILATION
 
 
-compilePayload : String -> Value
-compilePayload source =
+compilePayload : String -> String -> Value
+compilePayload elmCode htmlCode =
     Encode.object
-        [ ( "source", Encode.string source )
+        [ ( "elmCode", Encode.string elmCode )
+        , ( "htmlCode", Encode.string htmlCode )
         ]
 
 
@@ -166,11 +167,11 @@ compileExpect =
         |> Http.expectJson
 
 
-compile : String -> Session -> RequestBuilder (List CompileError)
-compile source session =
+compile : String -> String -> Session -> RequestBuilder (List CompileError)
+compile elmCode htmlCode session =
     post (fullUrl ("/sessions/" ++ session.id ++ "/compile"))
         |> withApiHeaders
-        |> withJsonBody (compilePayload source)
+        |> withJsonBody (compilePayload elmCode htmlCode)
         |> withExpect compileExpect
 
 

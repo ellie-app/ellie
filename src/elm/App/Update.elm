@@ -243,7 +243,7 @@ update msg model =
             ( { model | compileResult = Loading }
             , Cmd.batch
                 [ model.session
-                    |> RemoteData.map (Api.compile model.clientRevision.elmCode)
+                    |> RemoteData.map (Api.compile model.clientRevision.elmCode model.clientRevision.htmlCode)
                     |> RemoteData.map (Api.send CompileCompleted)
                     |> RemoteData.withDefault Cmd.none
                 , MessageBus.notify
