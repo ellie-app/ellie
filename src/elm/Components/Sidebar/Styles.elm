@@ -99,15 +99,18 @@ styles =
             , fontSize (px 14)
             , lineHeight (px 14)
             , textTransform uppercase
-            , displayFlex
-            , alignItems center
-            , property "justify-content" "center"
+            , textAlign center
+            ]
+        , (.) AddDepButtonText
+            [ display inlineBlock
+            , verticalAlign middle
             ]
         , (.) AddDepButtonIcon
             [ width (px 16)
             , height (px 16)
             , display inlineBlock
             , marginLeft (px 8)
+            , verticalAlign middle
             ]
         , (.) AddDepContainer
             [ displayFlex

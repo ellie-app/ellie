@@ -117,6 +117,20 @@ saveProject model =
             |> Api.send SaveCompleted
 
 
+onlineNotification : Bool -> Cmd Msg
+onlineNotification isOnline =
+    if isOnline then
+        MessageBus.notify
+            Notification.Success
+            "You're Online!"
+            "Ellie is 100% ready to connect to the server."
+    else
+        MessageBus.notify
+            Notification.Error
+            "You're Offline!"
+            "Ellie can't connect to the server right now, so we've disabled most features."
+
+
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
@@ -203,18 +217,21 @@ update msg model =
 
         CreateSessionCompleted sessionResult ->
             ( { model | session = RemoteData.fromResult sessionResult }
-            , case sessionResult of
-                Ok _ ->
-                    MessageBus.notify
-                        Notification.Success
-                        "Your Session is Ready!"
-                        "Your session is all set! Compile away."
+            , Cmd.batch
+                [ onlineNotification model.isOnline
+                , case sessionResult of
+                    Ok _ ->
+                        MessageBus.notify
+                            Notification.Success
+                            "Your Session is Ready!"
+                            "Your session is all set! Compile away."
 
-                Err apiError ->
-                    MessageBus.notify
-                        Notification.Error
-                        "Failed To Set Up Session"
-                        ("Ellie couldn't set up a session for you right now. Here's what the server said: " ++ apiError.explanation)
+                    Err apiError ->
+                        MessageBus.notify
+                            Notification.Error
+                            "Failed To Set Up Session"
+                            ("Ellie couldn't set up a session for you right now. Here's what the server said: " ++ apiError.explanation)
+                ]
             )
 
         LoadRevisionCompleted revisionResult ->
@@ -344,16 +361,7 @@ update msg model =
 
         OnlineChanged isOnline ->
             ( { model | isOnline = isOnline }
-            , if isOnline then
-                MessageBus.notify
-                    Notification.Success
-                    "You're Online!"
-                    "Ellie is 100% ready to connect to the server."
-              else
-                MessageBus.notify
-                    Notification.Error
-                    "You're Offline!"
-                    "Ellie can't connect to the server right now, so we've disabled most features."
+            , onlineNotification isOnline
             )
 
         FormattingRequested ->

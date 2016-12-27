@@ -24,6 +24,7 @@ styles =
             [ displayFlex
             , flexDirection column
             , borderRight3 (px 1) solid (hex "dddddd")
+            , height (pct 100)
             ]
         , (.) EditorContainer
             [ width (pct 100)
@@ -102,5 +103,6 @@ styles =
         , (.) MainContainerInner
             [ displayFlex
             , width (pct 100)
+            , height (pct 100)
             ]
         ]

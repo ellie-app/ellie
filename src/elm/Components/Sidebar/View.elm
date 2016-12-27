@@ -76,7 +76,7 @@ notSearching context =
         [ onClick context.onStarted
         , class [ AddDepButton ]
         ]
-        [ span [] [ text "Add Dependency" ]
+        [ span [ class [ AddDepButtonText ] ] [ text "Add Dependency" ]
         , span [ class [ AddDepButtonIcon ] ] [ Icons.plusEmpty ]
         ]
 

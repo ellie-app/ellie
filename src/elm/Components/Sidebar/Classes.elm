@@ -18,6 +18,7 @@ type Classes
     | DepItemPackageName
     | AddDepButton
     | AddDepButtonIcon
+    | AddDepButtonText
     | AddDepContainer
     | AddDepInputContainer
     | AddDepResultList

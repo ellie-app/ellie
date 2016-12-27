@@ -217,6 +217,7 @@ headerContext model =
     , buttonsVisible =
         RemoteData.isSuccess model.session
             && RemoteData.isSuccess model.serverRevision
+            && model.isOnline
     }
 
 
