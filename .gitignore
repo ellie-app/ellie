@@ -1,0 +1,6 @@
+node_modules/
+.mongodata/
+elm-stuff/
+.DS_Store
+.env
+build/
