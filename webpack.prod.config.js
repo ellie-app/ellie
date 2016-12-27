@@ -2,6 +2,7 @@ var path = require("path");
 var webpack = require('webpack');
 var DashboardPlugin = require('webpack-dashboard/plugin');
 var StringReplacePlugin = require('string-replace-webpack-plugin');
+var ExtractTextPlugin = require('extract-text-webpack-plugin');
 
 module.exports = {
   context: path.join(__dirname, 'src'),
@@ -13,11 +14,12 @@ module.exports = {
   },
 
   output: {
-    path: path.resolve(__dirname + '/dist'),
+    path: path.resolve(__dirname + '/build'),
     filename: '[name].js',
   },
 
   module: {
+    // noParse: /Stylesheets\.elm$/,
     loaders: [
       {
         test: /\.css$/,
@@ -25,7 +27,7 @@ module.exports = {
       },
       {
         test: /Stylesheets\.elm$/,
-        loader: 'style!css!elm-css-webpack',
+        loader: ExtractTextPlugin.extract('css-loader?minimize!postcss-loader!elm-css-webpack-loader'),
         exclude: [/node_modules/]
       },
       {
@@ -39,7 +41,7 @@ module.exports = {
         loaders:  [
           StringReplacePlugin.replace({
             replacements: [
-              { pattern: /\%API_BASE\%/g, replacement: () => 'http://localhost:1337' }
+              { pattern: /\%API_BASE\%/g, replacement: () => process.env.API_BASE || 'http://localhost:1337' }
             ]
           }),
           'elm-webpack-loader?yes',
@@ -57,17 +59,24 @@ module.exports = {
   },
 
   plugins: [
-    new DashboardPlugin(),
-    new StringReplacePlugin()
-  ],
-
-  devServer: {
-    inline: true,
-    stats: { colors: true },
-    historyApiFallback: true,
-    watchOptions: {
-      aggregateTimeout: 300,
-      poll: 1000
-    },
-  },
+    new webpack.optimize.OccurrenceOrderPlugin(),
+    new webpack.optimize.DedupePlugin(),
+    new webpack.optimize.UglifyJsPlugin({
+      compress: {
+        screw_ie8: true,
+        warnings: false,
+        dead_code: true,
+        passes: 2
+      },
+      mangle: {
+        screw_ie8: true
+      },
+      output: {
+        comments: false,
+        screw_ie8: true
+      }
+    }),
+    new StringReplacePlugin(),
+    new ExtractTextPlugin('main.css')
+  ]
 };

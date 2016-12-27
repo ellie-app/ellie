@@ -1,13 +1,13 @@
 require('../index.html')
 require('./Main.css')
 require('../elm/Stylesheets.elm')
-const initCodeMirror = require('./CodeMirror')
+var initCodeMirror = require('./CodeMirror')
 
 initCodeMirror()
-  .then(() => {
-    const Elm = require('../elm/Main.elm')
+  .then(function () {
+    var Elm = require('../elm/Main.elm')
 
-    const app = Elm.Main.fullscreen({
+    var app = Elm.Main.fullscreen({
       windowSize: {
         width: window.innerWidth,
         height: window.innerHeight
@@ -15,19 +15,19 @@ initCodeMirror()
       online: window.navigator.onLine
     })
 
-    window.addEventListener('online',  () => {
+    window.addEventListener('online', function () {
       app.ports.online.send(true)
     })
 
-    window.addEventListener('offline', () => {
+    window.addEventListener('offline', function () {
       app.ports.online.send(false)
     })
 
-    window.addEventListener('beforeunload', () => {
+    window.addEventListener('beforeunload', function () {
       app.ports.windowUnloadedIn.send(null)
     })
 
-    window.addEventListener('message', (event) => {
+    window.addEventListener('message', function (event) {
       app.ports.windowMessageIn.send(event.data)
     })
   })

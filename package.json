@@ -4,12 +4,15 @@
   "main": "index.js",
   "license": "MIT",
   "dependencies": {
+    "autoprefixer": "^6.6.0",
     "codemirror": "^5.20.2",
     "css-loader": "^0.25.0",
     "elm-css-webpack-loader": "^2.0.2",
     "elm-webpack-loader": "^4.0.0",
+    "extract-text-webpack-plugin": "^1.0.1",
     "file-loader": "^0.9.0",
     "muicss": "^0.9.3",
+    "postcss-loader": "^1.2.1",
     "string-replace-webpack-plugin": "^0.0.4",
     "style-loader": "^0.13.1",
     "webpack": "^1.13.3",
@@ -17,6 +20,7 @@
     "webpack-dev-server": "^1.16.2"
   },
   "scripts": {
-    "watch": "webpack-dashboard -- webpack-dev-server --port 8000 --watch"
+    "watch": "webpack-dashboard -- webpack-dev-server --port 8000 --watch --config ./webpack.dev.config.js",
+    "build": "webpack --config ./webpack.prod.config.js"
   }
 }
