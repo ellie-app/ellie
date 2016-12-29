@@ -11,6 +11,7 @@ import Types.Revision as Revision exposing (Revision)
 import Types.Session as Session exposing (Session)
 import Shared.Icons as Icons
 import Shared.Utils as Utils
+import Shared.Selector as Selector
 import App.Update as Update exposing (Msg(..), NewPackageFlowMsg(..))
 import App.Model as Model exposing (Model)
 import App.Classes exposing (..)
@@ -85,8 +86,8 @@ results split revision compileResult session =
         ]
 
 
-editors : Float -> Float -> List CompileError -> Revision -> Session -> Html Msg
-editors editorSplit resultSplit compileErrors revision session =
+editors : Float -> Float -> List CompileError -> String -> String -> Session -> Html Msg
+editors editorSplit resultSplit compileErrors htmlCode elmCode session =
     div
         [ class [ EditorsContainer ]
         , style [ ( "width", Utils.numberToPercent resultSplit ) ]
@@ -100,7 +101,7 @@ editors editorSplit resultSplit compileErrors revision session =
             ]
             [ Editors.elm
                 ElmCodeChanged
-                (revision.elmCode)
+                (elmCode)
                 (compileErrors)
             ]
         , div
@@ -121,7 +122,7 @@ editors editorSplit resultSplit compileErrors revision session =
             ]
             [ Editors.html
                 HtmlCodeChanged
-                (revision.htmlCode)
+                (htmlCode)
             ]
         ]
 
@@ -135,7 +136,8 @@ workArea model =
                     model.editorSplit
                     model.resultSplit
                     (RemoteData.withDefault [] model.compileResult)
-                    model.clientRevision
+                    model.stagedHtmlCode
+                    model.stagedElmCode
                 )
             |> RemoteData.withDefault htmlNone
         , div
@@ -209,11 +211,7 @@ headerContext model =
     , saveButtonOption =
         headerSaveOption model
     , compileButtonEnabled =
-        not (RemoteData.isLoading model.compileResult)
-            && RemoteData.isSuccess model.session
-            && RemoteData.isSuccess model.serverRevision
-            && ((not model.firstCompileComplete) || model.elmCodeChanged)
-            && model.isOnline
+        Model.canCompile model
     , buttonsVisible =
         RemoteData.isSuccess model.session
             && RemoteData.isSuccess model.serverRevision

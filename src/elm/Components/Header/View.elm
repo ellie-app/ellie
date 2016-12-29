@@ -92,7 +92,7 @@ view context =
                 \() ->
                     viewButton
                         context.onCompile
-                        True
+                        context.compileButtonEnabled
                         "Compile"
                         Icons.playOutline
             , when context.buttonsVisible <|

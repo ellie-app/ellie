@@ -131,6 +131,35 @@ onlineNotification isOnline =
             "Ellie can't connect to the server right now, so we've disabled most features."
 
 
+compileCmd : Model -> ( Model, Cmd Msg )
+compileCmd model =
+    ( model
+    , Cmd.batch
+        [ model.session
+            |> RemoteData.map (Api.compile model.clientRevision.elmCode model.clientRevision.htmlCode)
+            |> RemoteData.map (Api.send CompileCompleted)
+            |> RemoteData.withDefault Cmd.none
+        , MessageBus.notify
+            Notification.Info
+            "Compilation started"
+            "Ellie is compiling your code. When it's done we'll show you the result below."
+        ]
+    )
+
+
+saveCmd : Model -> ( Model, Cmd Msg )
+saveCmd model =
+    ( model
+    , Cmd.batch
+        [ saveProject model
+        , MessageBus.notify
+            Notification.Info
+            "Saving Your Project"
+            "Ellie is saving your work! Any changes to code or settings since you last saved will be included."
+        ]
+    )
+
+
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
@@ -239,6 +268,7 @@ update msg model =
                 | serverRevision = RemoteData.fromResult revisionResult
                 , clientRevision = Result.withDefault model.clientRevision revisionResult
               }
+                |> Model.resetStagedCode
             , case revisionResult of
                 Ok _ ->
                     MessageBus.notify
@@ -257,18 +287,10 @@ update msg model =
             handleRouteChanged route ( { model | currentRoute = route }, Cmd.none )
 
         CompileRequested ->
-            ( { model | compileResult = Loading }
-            , Cmd.batch
-                [ model.session
-                    |> RemoteData.map (Api.compile model.clientRevision.elmCode model.clientRevision.htmlCode)
-                    |> RemoteData.map (Api.send CompileCompleted)
-                    |> RemoteData.withDefault Cmd.none
-                , MessageBus.notify
-                    Notification.Info
-                    "Compilation started"
-                    "Ellie is compiling your code. When it's done we'll show you the result below."
-                ]
-            )
+            model
+                |> (\m -> { m | compileResult = Loading })
+                |> Model.commitStagedCode
+                |> compileCmd
 
         CompileCompleted compileResult ->
             ( { model
@@ -277,8 +299,6 @@ update msg model =
                 , firstCompileComplete =
                     model.firstCompileComplete
                         || resultIsSuccess compileResult
-                , elmCodeChanged =
-                    not (resultIsSuccess compileResult)
               }
             , case Result.map onlyErrors compileResult of
                 Ok [] ->
@@ -302,27 +322,21 @@ update msg model =
 
         ElmCodeChanged code ->
             ( model
-                |> Model.updateClientRevision (\r -> { r | elmCode = code })
-                |> (\m -> { m | elmCodeChanged = True })
+                |> (\m -> { m | stagedElmCode = code })
             , Cmd.none
             )
 
         HtmlCodeChanged code ->
             ( model
-                |> Model.updateClientRevision (\r -> { r | htmlCode = code })
+                |> (\m -> { m | stagedHtmlCode = code })
             , Cmd.none
             )
 
         SaveRequested ->
-            ( { model | saveState = Loading }
-            , Cmd.batch
-                [ saveProject model
-                , MessageBus.notify
-                    Notification.Info
-                    "Saving Your Project"
-                    "Ellie is saving your work! Any changes to code or settings since you last saved will be included."
-                ]
-            )
+            model
+                |> (\m -> { m | saveState = Loading })
+                |> Model.commitStagedCode
+                |> saveCmd
 
         SaveCompleted saveResult ->
             ( { model
@@ -337,6 +351,7 @@ update msg model =
                 , clientRevision =
                     Result.withDefault model.clientRevision saveResult
               }
+                |> Model.resetStagedCode
             , Cmd.batch
                 [ saveResult
                     |> Result.toMaybe
@@ -377,8 +392,7 @@ update msg model =
             )
 
         FormattingCompleted result ->
-            ( model
-                |> Model.updateClientRevision (\r -> { r | elmCode = Result.withDefault r.elmCode result })
+            ( { model | stagedElmCode = Result.withDefault model.stagedElmCode result }
             , case result of
                 Ok _ ->
                     MessageBus.notify
@@ -550,7 +564,6 @@ initialize flags location =
             |> (\( model, cmd ) -> handleRouteChanged model.currentRoute ( model, cmd ))
 
 
-handleRouteChanged : Route -> ( Model, Cmd Msg ) -> ( Model, Cmd Msg )
 handleRouteChanged route ( model, cmd ) =
     ( case route of
         NotFound ->

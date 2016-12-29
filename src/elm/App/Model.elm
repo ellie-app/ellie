@@ -7,6 +7,9 @@ module App.Model
         , isOwnedProject
         , isSavedProject
         , isRevisionChanged
+        , commitStagedCode
+        , resetStagedCode
+        , canCompile
         )
 
 import Window exposing (Size)
@@ -32,7 +35,8 @@ type alias Model =
     , clientRevision : Revision
     , currentRoute : Route
     , compileResult : RemoteData ApiError (List CompileError)
-    , elmCodeChanged : Bool
+    , stagedElmCode : String
+    , stagedHtmlCode : String
     , firstCompileComplete : Bool
     , saveState : RemoteData ApiError ()
     , isOnline : Bool
@@ -48,14 +52,20 @@ type alias Model =
     }
 
 
+emptyRevision : Revision
+emptyRevision =
+    Revision.empty
+
+
 model : Flags -> Model
 model flags =
     { session = NotAsked
     , serverRevision = NotAsked
-    , clientRevision = Revision.empty
+    , clientRevision = emptyRevision
+    , stagedElmCode = emptyRevision.elmCode
+    , stagedHtmlCode = emptyRevision.htmlCode
     , currentRoute = NotFound
     , compileResult = NotAsked
-    , elmCodeChanged = False
     , firstCompileComplete = False
     , saveState = NotAsked
     , isOnline = flags.online
@@ -69,6 +79,20 @@ model flags =
     , editorDragging = False
     , windowSize = flags.windowSize
     }
+
+
+canCompile : Model -> Bool
+canCompile model =
+    let
+        stagedCodeChanged =
+            (model.stagedElmCode /= model.clientRevision.elmCode)
+                || (model.stagedHtmlCode /= model.clientRevision.htmlCode)
+    in
+        not (RemoteData.isLoading model.compileResult)
+            && RemoteData.isSuccess model.session
+            && RemoteData.isSuccess model.serverRevision
+            && ((not model.firstCompileComplete) || stagedCodeChanged)
+            && model.isOnline
 
 
 isRevisionChanged : Model -> Bool
@@ -98,3 +122,17 @@ isOwnedProject model =
 updateClientRevision : (Revision -> Revision) -> Model -> Model
 updateClientRevision updater model =
     { model | clientRevision = updater model.clientRevision }
+
+
+commitStagedCode : Model -> Model
+commitStagedCode model =
+    model
+        |> updateClientRevision (\r -> { r | htmlCode = model.stagedHtmlCode, elmCode = model.stagedElmCode })
+
+
+resetStagedCode : Model -> Model
+resetStagedCode model =
+    { model
+        | stagedElmCode = model.clientRevision.elmCode
+        , stagedHtmlCode = model.clientRevision.htmlCode
+    }

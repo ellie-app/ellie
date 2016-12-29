@@ -59,6 +59,10 @@ module.exports = {
   },
 
   plugins: [
+    new webpack.DefinePlugin({
+      API_BASE: JSON.stringify(process.env.API_BASE || 'http://localhost:1337'),
+      'process.env.NODE_ENV': JSON.stringify('production')
+    }),
     new webpack.optimize.OccurrenceOrderPlugin(),
     new webpack.optimize.DedupePlugin(),
     new webpack.optimize.UglifyJsPlugin({

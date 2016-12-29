@@ -24,7 +24,7 @@
   },
   "scripts": {
     "watch": "webpack-dashboard -- webpack-dev-server --port 8000 --watch --config ./webpack.dev.config.js",
-    "build": "elm-package install --yes && webpack --config ./webpack.prod.config.js",
+    "build": "webpack --config ./webpack.prod.config.js",
     "build:staging": "API_BASE=http://staging-api.ellie-app.com yarn build"
   }
 }

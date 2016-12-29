@@ -2,9 +2,12 @@ require('../index.html')
 require('../200.html')
 require('./Main.css')
 require('../elm/Stylesheets.elm')
+var register = require('serviceworker!./ServiceWorker')
 var initCodeMirror = require('./CodeMirror')
 
-initCodeMirror()
+register({ scope: '/' })
+  .catch(function () {})
+  .then(initCodeMirror)
   .then(function () {
     var Elm = require('../elm/Main.elm')
 
@@ -13,7 +16,7 @@ initCodeMirror()
         width: window.innerWidth,
         height: window.innerHeight
       },
-      online: window.navigator.onLine
+      online: true //window.navigator.onLine
     })
 
     window.addEventListener('online', function () {

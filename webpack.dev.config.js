@@ -57,6 +57,10 @@ module.exports = {
   },
 
   plugins: [
+    new webpack.DefinePlugin({
+      API_BASE: JSON.stringify(process.env.API_BASE || 'http://localhost:1337'),
+      'process.env.NODE_ENV': JSON.stringify(process.env.NODE_ENV)
+    }),
     new DashboardPlugin(),
     new StringReplacePlugin()
   ],

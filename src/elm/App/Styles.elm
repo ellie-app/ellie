@@ -25,6 +25,8 @@ styles =
             , flexDirection column
             , borderRight3 (px 1) solid (hex "dddddd")
             , height (pct 100)
+            , overflow hidden
+            , position relative
             ]
         , (.) EditorContainer
             [ width (pct 100)
