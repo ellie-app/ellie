@@ -1,5 +1,4 @@
 require('../index.html')
-require('../200.html')
 require('./Main.css')
 require('../elm/Stylesheets.elm')
 var register = require('serviceworker!./ServiceWorker')
