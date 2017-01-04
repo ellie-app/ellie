@@ -16,6 +16,7 @@
     "file-loader": "0.9.0",
     "list": "0.9.5",
     "postcss-loader": "1.2.1",
+    "serviceworker-loader": "^0.1.0",
     "string-replace-webpack-plugin": "0.0.4",
     "style-loader": "0.13.1",
     "webpack": "1.13.3",
