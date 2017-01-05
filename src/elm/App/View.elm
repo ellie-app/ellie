@@ -204,9 +204,7 @@ headerContext model =
     , notificationsOpen = model.notificationsOpen
     , notificationsHighlight = model.notificationsHighlight
     , saveButtonEnabled =
-        (Model.isRevisionChanged model || not (Model.isSavedProject model))
-            && not (RemoteData.isLoading model.saveState)
-            && model.isOnline
+        Model.canSave model
     , saveButtonOption =
         headerSaveOption model
     , compileButtonEnabled =

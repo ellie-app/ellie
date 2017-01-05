@@ -10,6 +10,7 @@ module App.Model
         , commitStagedCode
         , resetStagedCode
         , canCompile
+        , canSave
         )
 
 import Window exposing (Size)
@@ -92,6 +93,18 @@ canCompile model =
             && RemoteData.isSuccess model.session
             && RemoteData.isSuccess model.serverRevision
             && ((not model.firstCompileComplete) || stagedCodeChanged)
+            && model.isOnline
+
+
+canSave : Model -> Bool
+canSave model =
+    let
+        stagedCodeChanged =
+            (model.stagedElmCode /= model.clientRevision.elmCode)
+                || (model.stagedHtmlCode /= model.clientRevision.htmlCode)
+    in
+        (stagedCodeChanged || isRevisionChanged model || not (isSavedProject model))
+            && not (RemoteData.isLoading model.saveState)
             && model.isOnline
 
 
