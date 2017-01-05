@@ -11,7 +11,6 @@ import Types.Revision as Revision exposing (Revision)
 import Types.Session as Session exposing (Session)
 import Shared.Icons as Icons
 import Shared.Utils as Utils
-import Shared.Selector as Selector
 import App.Update as Update exposing (Msg(..), NewPackageFlowMsg(..))
 import App.Model as Model exposing (Model)
 import App.Classes exposing (..)

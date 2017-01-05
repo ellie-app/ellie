@@ -7,18 +7,12 @@ module App.Routing
 
 import Navigation
 import UrlParser exposing ((</>))
-import Types.Uuid as Uuid exposing (Uuid)
 
 
 type Route
     = NewProject
-    | SpecificRevision Uuid Int
+    | SpecificRevision String Int
     | NotFound
-
-
-uuid : UrlParser.Parser (Uuid -> a) a
-uuid =
-    UrlParser.custom "UUID" Uuid.uuid
 
 
 parse : Navigation.Location -> Route
@@ -27,7 +21,7 @@ parse =
         parser =
             UrlParser.oneOf
                 [ UrlParser.map NewProject (UrlParser.s "new")
-                , UrlParser.map SpecificRevision (uuid </> UrlParser.int)
+                , UrlParser.map SpecificRevision (UrlParser.string </> UrlParser.int)
                 ]
     in
         UrlParser.parsePath parser
@@ -41,7 +35,7 @@ construct route =
             "/new"
 
         SpecificRevision projectId revisionNumber ->
-            "/" ++ Uuid.toString projectId ++ "/" ++ toString revisionNumber
+            "/" ++ projectId ++ "/" ++ toString revisionNumber
 
         NotFound ->
             "/"

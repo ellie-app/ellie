@@ -24,7 +24,6 @@ import Types.ApiError as ApiError exposing (ApiError)
 import Types.Revision as Revision exposing (Revision)
 import Types.Version as Version exposing (Version)
 import Types.PackageSearchResult as PackageSearchResult exposing (PackageSearchResult)
-import Types.Uuid as Uuid exposing (Uuid)
 import Types.Session as Session exposing (Session)
 import Types.Dependency as Dependency exposing (Dependency)
 import Types.CompileError as CompileError exposing (CompileError)
@@ -127,15 +126,15 @@ createNewSession =
         |> withExpect (Http.expectJson Session.decode)
 
 
-sessionForRevisionPayload : Uuid -> Int -> Value
+sessionForRevisionPayload : String -> Int -> Value
 sessionForRevisionPayload projectId revisionNumber =
     Encode.object
-        [ ( "projectId", Uuid.encode projectId )
+        [ ( "projectId", Encode.string projectId )
         , ( "revisionNumber", Encode.int revisionNumber )
         ]
 
 
-createSessionForRevision : Uuid -> Int -> RequestBuilder Session
+createSessionForRevision : String -> Int -> RequestBuilder Session
 createSessionForRevision projectId revisionNumber =
     post (fullUrl "/sessions")
         |> withApiHeaders
@@ -228,16 +227,16 @@ removeDependency session dependency =
 -- REVISIONS AND PROJECTS
 
 
-latestRevision : Uuid -> RequestBuilder Revision
+latestRevision : String -> RequestBuilder Revision
 latestRevision projectId =
-    get (fullUrl ("/projects/" ++ Uuid.toString projectId ++ "/revisions/latest"))
+    get (fullUrl ("/projects/" ++ projectId ++ "/revisions/latest"))
         |> withApiHeaders
         |> withExpect (Http.expectJson Revision.decode)
 
 
-exactRevision : Uuid -> Int -> RequestBuilder Revision
+exactRevision : String -> Int -> RequestBuilder Revision
 exactRevision projectId revisionNumber =
-    get (fullUrl ("/projects/" ++ Uuid.toString projectId ++ "/revisions/" ++ toString revisionNumber))
+    get (fullUrl ("/projects/" ++ projectId ++ "/revisions/" ++ toString revisionNumber))
         |> withApiHeaders
         |> withExpect (Http.expectJson Revision.decode)
 
@@ -253,7 +252,6 @@ createProjectFromRevision revision =
 createRevision : Revision -> RequestBuilder Revision
 createRevision revision =
     revision.projectId
-        |> Maybe.map Uuid.toString
         |> Maybe.withDefault ""
         |> (\s -> put (fullUrl "/projects/" ++ s ++ "/revisions"))
         |> withApiHeaders

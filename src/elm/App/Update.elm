@@ -564,6 +564,7 @@ initialize flags location =
             |> (\( model, cmd ) -> handleRouteChanged model.currentRoute ( model, cmd ))
 
 
+handleRouteChanged : Route -> ( Model, Cmd Msg ) -> ( Model, Cmd Msg )
 handleRouteChanged route ( model, cmd ) =
     ( case route of
         NotFound ->
