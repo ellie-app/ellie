@@ -2,6 +2,7 @@ var path = require("path");
 var webpack = require('webpack');
 var DashboardPlugin = require('webpack-dashboard/plugin');
 var StringReplacePlugin = require('string-replace-webpack-plugin');
+var HtmlWebpackPlugin = require('html-webpack-plugin');
 
 module.exports = {
   context: path.join(__dirname, 'src'),
@@ -34,6 +35,11 @@ module.exports = {
         loader:  'file?name=[name].[ext]',
       },
       {
+        test: /ServiceWorker\.js$/,
+        exclude: /node_modules/,
+        loader: 'serviceworker',
+      },
+      {
         test:    /Main\.elm$/,
         exclude: [/elm-stuff/, /node_modules/],
         loaders:  [
@@ -62,7 +68,24 @@ module.exports = {
       'process.env.NODE_ENV': JSON.stringify(process.env.NODE_ENV)
     }),
     new DashboardPlugin(),
-    new StringReplacePlugin()
+    new StringReplacePlugin(),
+    new HtmlWebpackPlugin({
+      inject: true,
+      template: path.join(__dirname, 'src/index.ejs'),
+      minify: {
+        removeComments: true,
+        collapseWhitespace: true,
+        removeRedundantAttributes: true,
+        useShortDoctype: true,
+        removeEmptyAttributes: true,
+        removeStyleLinkTypeAttributes: true,
+        keepClosingSlash: true,
+        minifyJS: true,
+        minifyCSS: true,
+        minifyURLs: true
+      }
+    })
+
   ],
 
   devServer: {
