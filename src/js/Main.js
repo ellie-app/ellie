@@ -1,7 +1,6 @@
-require('../index.html')
 require('./Main.css')
 require('../elm/Stylesheets.elm')
-var register = require('serviceworker!./ServiceWorker')
+var register = require('./ServiceWorker')
 var initCodeMirror = require('./CodeMirror')
 
 register({ scope: '/' })

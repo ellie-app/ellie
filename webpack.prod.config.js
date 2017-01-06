@@ -3,6 +3,8 @@ var webpack = require('webpack');
 var DashboardPlugin = require('webpack-dashboard/plugin');
 var StringReplacePlugin = require('string-replace-webpack-plugin');
 var ExtractTextPlugin = require('extract-text-webpack-plugin');
+var WebpackMd5Hash = require('webpack-md5-hash');
+var HtmlWebpackPlugin = require('html-webpack-plugin');
 
 module.exports = {
   context: path.join(__dirname, 'src'),
@@ -15,7 +17,8 @@ module.exports = {
 
   output: {
     path: path.resolve(__dirname + '/build'),
-    filename: '[name].js',
+    filename: '[name].[chunkhash:8].js',
+    chunkFilename: 'chunk.[name].[chunkhash:8].js',
   },
 
   module: {
@@ -28,12 +31,12 @@ module.exports = {
       {
         test: /Stylesheets\.elm$/,
         loader: ExtractTextPlugin.extract('css-loader?minimize!postcss-loader!elm-css-webpack-loader'),
-        exclude: [/node_modules/]
+        exclude: /node_modules/,
       },
       {
-        test:    /\.html$/,
+        test: /ServiceWorker\.js$/,
         exclude: /node_modules/,
-        loader:  'file?name=[name].[ext]',
+        loader: 'serviceworker',
       },
       {
         test:    /Main\.elm$/,
@@ -59,6 +62,7 @@ module.exports = {
   },
 
   plugins: [
+    new WebpackMd5Hash(),
     new webpack.DefinePlugin({
       API_BASE: JSON.stringify(process.env.API_BASE || 'http://localhost:1337'),
       'process.env.NODE_ENV': JSON.stringify('production')
@@ -81,6 +85,22 @@ module.exports = {
       }
     }),
     new StringReplacePlugin(),
-    new ExtractTextPlugin('main.css')
+    new ExtractTextPlugin('main.[chunkhash:8].css'),
+    new HtmlWebpackPlugin({
+      inject: true,
+      template: path.join(__dirname, 'src/index.ejs'),
+      minify: {
+        removeComments: true,
+        collapseWhitespace: true,
+        removeRedundantAttributes: true,
+        useShortDoctype: true,
+        removeEmptyAttributes: true,
+        removeStyleLinkTypeAttributes: true,
+        keepClosingSlash: true,
+        minifyJS: true,
+        minifyCSS: true,
+        minifyURLs: true
+      }
+    })
   ]
 };

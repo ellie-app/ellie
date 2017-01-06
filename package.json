@@ -14,14 +14,16 @@
     "elm-webpack-loader": "4.0.0",
     "extract-text-webpack-plugin": "1.0.1",
     "file-loader": "0.9.0",
+    "html-webpack-plugin": "^2.26.0",
     "list": "0.9.5",
     "postcss-loader": "1.2.1",
-    "serviceworker-loader": "^0.1.0",
+    "serviceworker-loader": "0.1.0",
     "string-replace-webpack-plugin": "0.0.4",
     "style-loader": "0.13.1",
     "webpack": "1.13.3",
     "webpack-dashboard": "0.2.0",
-    "webpack-dev-server": "1.16.2"
+    "webpack-dev-server": "1.16.2",
+    "webpack-md5-hash": "^0.0.5"
   },
   "scripts": {
     "watch": "webpack-dashboard -- webpack-dev-server --port 8000 --watch --config ./webpack.dev.config.js",
