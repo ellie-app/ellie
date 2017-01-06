@@ -1,5 +1,5 @@
 var CACHE_NAME =
-  'ellie-cache-v1'
+  'ellie-cache-v2'
 
 var isApiRequest = function (url) {
   return url.indexOf(API_BASE) !== -1
@@ -14,6 +14,21 @@ var cachedApiRequests =
     /\/projects\/[a-fA-F0-9\-]+\/revisions\/[0-9]+/,
   ]
 
+var cachedResourceRequests =
+  [
+    /\/app\..+\.js/,
+    /\/chunk\..+\.js/,
+    /\/main\..+\.css/
+  ]
+
+var isCachedResourceRequest = function (url) {
+  var urlObj = new URL(url)
+  return cachedResourceRequests
+    .some(function (regex) {
+      return regex.test(urlObj.pathname)
+    })
+}
+
 var isCachedApiRequest = function (url) {
   if (!isApiRequest(url)) {
     return false
@@ -27,6 +42,10 @@ var isCachedApiRequest = function (url) {
     })
 }
 
+var isCachedRequest = function (url) {
+  return isCachedApiRequest(url) ||
+    isCachedResourceRequest(url)
+}
 
 var fetchWithCache = function (request) {
   return caches
@@ -53,28 +72,9 @@ var fetchWithCache = function (request) {
 }
 
 
-if (process.env.NODE_ENV === 'production') {
-  self.addEventListener('install', function (event) {
-    event.waitUntil(
-      caches
-      .open(CACHE_NAME)
-      .then(function (cache) {
-        return cache.addAll([
-          '/',
-          '/new',
-          '/1.1.js',
-          '/app.js',
-          '/main.css'
-        ])
-      })
-    )
-  })
-}
-
-
 self.addEventListener('fetch', function (event) {
   event.respondWith(
-    isCachedApiRequest(event.request.url) ?
+    isCachedRequest(event.request.url) ?
       fetchWithCache(event.request) :
       fetch(event.request)
   )
