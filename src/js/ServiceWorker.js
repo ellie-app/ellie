@@ -9,9 +9,7 @@ var cachedApiRequests =
   [
     /\/packages\/search/,
     /\/defaults\/revision/,
-    /\/projects\/[a-fA-F0-9\-]+\/revisions\/[0-9]+/,
-    /\/projects\/[a-fA-F0-9\-]+\/revisions\/latest/,
-    /\/projects\/[a-fA-F0-9\-]+\/revisions\/[0-9]+/,
+    /\/projects\/[a-zA-Z0-9-_]+\/revisions\/[0-9]+/,
   ]
 
 var cachedResourceRequests =
