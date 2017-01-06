@@ -14,7 +14,7 @@ register({ scope: '/' })
         width: window.innerWidth,
         height: window.innerHeight
       },
-      online: true //window.navigator.onLine
+      online: window.navigator.onLine
     })
 
     window.addEventListener('online', function () {
