@@ -6,14 +6,14 @@ module.exports = function () {
       'codemirror/mode/elm/elm',
       'codemirror/addon/lint/lint',
       'codemirror/addon/lint/lint.css',
-      'codemirror/theme/yeti.css',
+      'codemirror/theme/material.css',
     ], function() {
       var CodeMirror = require('codemirror/lib/codemirror')
       require('codemirror/lib/codemirror.css')
       require('codemirror/mode/elm/elm')
       require('codemirror/addon/lint/lint')
       require('codemirror/addon/lint/lint.css')
-      require('codemirror/theme/yeti.css')
+      require('codemirror/theme/material.css')
       window.CodeMirror = CodeMirror
       resolve()
     })

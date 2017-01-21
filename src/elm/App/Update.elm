@@ -4,24 +4,25 @@ module App.Update
         , initialize
         , onRouteChange
         , Msg(..)
-        , NewPackageFlowMsg(..)
         )
 
+import Task
+import Dom
+import Set exposing (Set)
 import Window exposing (Size)
 import Mouse exposing (Position)
 import RemoteData exposing (RemoteData(..))
 import Navigation
-import List.Nonempty as Nonempty
 import Types.Dependency as Dependency exposing (Dependency)
-import Types.NewPackageFlow as NewPackageFlow exposing (NewPackageFlow)
 import Types.ApiError as ApiError exposing (ApiError)
 import Types.Revision as Revision exposing (Revision)
 import Types.Session as Session exposing (Session)
 import Types.CompileError as CompileError exposing (CompileError)
-import Types.PackageSearchResult as PackageSearchResult exposing (PackageSearchResult)
 import Types.Notification as Notification exposing (Notification)
-import Types.Identity as Identity exposing (Identity)
-import App.Model as Model exposing (Model, Flags)
+import Types.Package as Package exposing (Package)
+import Types.VersionRange as VersionRange exposing (VersionRange)
+import Types.Version as Version exposing (Version)
+import App.Model as Model exposing (Model, Flags, PopoutState(..))
 import App.Routing as Routing exposing (Route(..))
 import Shared.Api as Api
 import Shared.Constants as Constants
@@ -62,17 +63,6 @@ onlyErrors errors =
 -- UPDATE
 
 
-type NewPackageFlowMsg
-    = Started
-    | SearchTermUpdated String
-    | SearchCompleted String (Result ApiError (List PackageSearchResult))
-    | PackageSelected PackageSearchResult
-    | VersionSelected Int
-    | InstallRequested
-    | InstallCompleted Dependency (Result ApiError ())
-    | Cancelled
-
-
 type Msg
     = CreateSessionCompleted (Result ApiError Session)
     | RouteChanged Route
@@ -86,12 +76,12 @@ type Msg
     | OnlineChanged Bool
     | FormattingRequested
     | FormattingCompleted (Result ApiError String)
-    | NewPackageFlowMsg NewPackageFlowMsg
     | RemoveDependencyRequested Dependency
     | RemoveDependencyCompleted (Result ApiError Dependency)
     | WindowUnloaded
     | NotificationReceived Notification
     | ToggleNotifications
+    | ToggleAbout
     | ResultDragStarted
     | ResultDragged Position
     | ResultDragEnded
@@ -101,6 +91,11 @@ type Msg
     | WindowSizeChanged Size
     | TitleChanged String
     | DescriptionChanged String
+    | ToggleSearch
+    | SearchChanged String
+    | SearchResultsCompleted String (Result ApiError (List Package))
+    | PackageSelected Package
+    | AddDependencyCompleted Dependency (Result ApiError ())
     | NoOp
 
 
@@ -160,9 +155,93 @@ saveCmd model =
     )
 
 
+addDependencyCmd : Package -> Model -> ( Model, Cmd Msg )
+addDependencyCmd package model =
+    let
+        dep =
+            Dependency
+                package.username
+                package.name
+                (VersionRange package.version (Version.nextMajor package.version))
+    in
+        model.session
+            |> RemoteData.map (\session -> Api.addDependencies session [ dep ])
+            |> RemoteData.map
+                (\req ->
+                    Cmd.batch
+                        [ Api.send (AddDependencyCompleted dep) req
+                        , MessageBus.notify
+                            Notification.Info
+                            "Installing Package"
+                            "Ellie is installing your package. Once it's installed and compiled you'll be able to use it in your code."
+                        ]
+                )
+            |> RemoteData.map ((,) model)
+            |> RemoteData.withDefault ( model, Cmd.none )
+
+
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
+        AddDependencyCompleted dependency result ->
+            ( { model
+                | installingPackage =
+                    result
+                        |> Result.map (\_ -> Nothing)
+                        |> Result.withDefault model.installingPackage
+              }
+                |> Model.updateClientRevision
+                    (\r ->
+                        { r
+                            | dependencies =
+                                r.dependencies ++ (result |> Result.map (\_ -> [ dependency ]) |> Result.withDefault [])
+                        }
+                    )
+            , case result of
+                Ok _ ->
+                    MessageBus.notify
+                        Notification.Success
+                        "Package Installed!"
+                        "Ellie installed and compiled your package. You can start using it in your code now."
+
+                Err apiError ->
+                    MessageBus.notify
+                        Notification.Error
+                        "Failed Installing Package"
+                        ("Elle couldn't install your package. Here's what the server said: " ++ apiError.explanation)
+            )
+
+        PackageSelected package ->
+            { model | installingPackage = Just package }
+                |> Model.closeSearch
+                |> addDependencyCmd package
+
+        SearchChanged value ->
+            ( { model | searchValue = value }
+            , Api.searchPackages Constants.elmVersion value
+                |> Api.send (SearchResultsCompleted value)
+            )
+
+        SearchResultsCompleted searchTerm result ->
+            if searchTerm /= model.searchValue then
+                ( model, Cmd.none )
+            else
+                ( { model | searchResults = Result.withDefault model.searchResults result }
+                , Cmd.none
+                )
+
+        ToggleSearch ->
+            if model.searchOpen then
+                ( model
+                    |> Model.closeSearch
+                , Cmd.none
+                )
+            else
+                ( { model | searchOpen = True }
+                , Dom.focus "searchInput"
+                    |> Task.attempt (\_ -> NoOp)
+                )
+
         TitleChanged title ->
             ( model
                 |> Model.updateClientRevision (\r -> { r | title = title })
@@ -183,10 +262,10 @@ update msg model =
         EditorDragged position ->
             ( { model
                 | editorSplit =
-                    Identity.create position
-                        |> Identity.map (\p -> toFloat (p.y - Constants.headerHeight))
-                        |> Identity.map (\h -> h / toFloat (model.windowSize.height - Constants.headerHeight))
-                        |> Identity.fold (clamp 0.2 0.8)
+                    position
+                        |> (\p -> toFloat (p.y - Constants.headerHeight))
+                        |> (\h -> h / toFloat (model.windowSize.height - Constants.headerHeight))
+                        |> (clamp 0.2 0.8)
               }
             , Cmd.none
             )
@@ -209,10 +288,10 @@ update msg model =
         ResultDragged position ->
             ( { model
                 | resultSplit =
-                    Identity.create position
-                        |> Identity.map (\p -> toFloat (p.x - Constants.sidebarWidth))
-                        |> Identity.map (\w -> w / toFloat (model.windowSize.width - Constants.sidebarWidth))
-                        |> Identity.fold (clamp 0.2 0.8)
+                    position
+                        |> (\p -> toFloat (p.x - Constants.sidebarWidth))
+                        |> (\w -> w / toFloat (model.windowSize.width - Constants.sidebarWidth))
+                        |> (clamp 0.2 0.8)
               }
             , Cmd.none
             )
@@ -223,15 +302,39 @@ update msg model =
             )
 
         ToggleNotifications ->
-            ( { model | notificationsOpen = not model.notificationsOpen }
+            ( { model
+                | popoutState =
+                    case model.popoutState of
+                        NotificationsOpen ->
+                            BothClosed
+
+                        _ ->
+                            NotificationsOpen
+              }
+            , Cmd.none
+            )
+
+        ToggleAbout ->
+            ( { model
+                | popoutState =
+                    case model.popoutState of
+                        AboutOpen ->
+                            BothClosed
+
+                        _ ->
+                            AboutOpen
+              }
             , Cmd.none
             )
 
         NotificationReceived notification ->
             ( { model
                 | notifications = notification :: model.notifications
-                , notificationsOpen = model.notificationsOpen || notification.level == Notification.Error
-                , notificationsHighlight = notification.level == Notification.Error
+                , popoutState =
+                    if notification.level == Notification.Error then
+                        NotificationsOpen
+                    else
+                        model.popoutState
               }
             , Cmd.none
             )
@@ -408,7 +511,10 @@ update msg model =
             )
 
         RemoveDependencyRequested dependency ->
-            ( model
+            ( { model
+                | removingDependencyHashes =
+                    Set.insert (Dependency.hash dependency) model.removingDependencyHashes
+              }
             , Cmd.batch
                 [ model.session
                     |> RemoteData.map (\s -> Api.removeDependency s dependency)
@@ -422,16 +528,13 @@ update msg model =
             )
 
         RemoveDependencyCompleted result ->
-            ( model
-                |> Model.updateClientRevision
-                    (\r ->
-                        { r
-                            | dependencies =
-                                result
-                                    |> Result.map (\d -> List.filter ((/=) d) r.dependencies)
-                                    |> Result.withDefault r.dependencies
-                        }
-                    )
+            ( case result of
+                Ok dep ->
+                    { model | removingDependencyHashes = Set.remove (Dependency.hash dep) model.removingDependencyHashes }
+                        |> Model.updateClientRevision (\r -> { r | dependencies = List.filter ((/=) dep) r.dependencies })
+
+                Err _ ->
+                    model
             , case result of
                 Ok dep ->
                     MessageBus.notify
@@ -445,102 +548,6 @@ update msg model =
                         "Couldn't Remove Package"
                         ("Elle couldn't remove your package. Here's what the server said: " ++ apiError.explanation)
             )
-
-        NewPackageFlowMsg npfMsg ->
-            case npfMsg of
-                Started ->
-                    ( { model | newPackageFlow = NewPackageFlow.PackageSearch "" [] }
-                    , Cmd.none
-                    )
-
-                SearchTermUpdated searchTerm ->
-                    ( { model
-                        | newPackageFlow =
-                            NewPackageFlow.updateSearchTerm searchTerm model.newPackageFlow
-                      }
-                    , Api.searchPackages Constants.elmVersion searchTerm
-                        |> Api.send (SearchCompleted searchTerm >> NewPackageFlowMsg)
-                    )
-
-                SearchCompleted searchTerm result ->
-                    ( { model
-                        | newPackageFlow =
-                            NewPackageFlow.receiveResultsForTerm
-                                searchTerm
-                                (Result.withDefault [] result)
-                                model.newPackageFlow
-                      }
-                    , Cmd.none
-                    )
-
-                PackageSelected package ->
-                    ( { model
-                        | newPackageFlow =
-                            NewPackageFlow.VersionSearch package (Nonempty.get 0 package.versions)
-                      }
-                    , Cmd.none
-                    )
-
-                VersionSelected index ->
-                    ( { model
-                        | newPackageFlow =
-                            NewPackageFlow.selectVersionAtIndex index model.newPackageFlow
-                      }
-                    , Cmd.none
-                    )
-
-                InstallRequested ->
-                    ( { model
-                        | newPackageFlow =
-                            model.newPackageFlow
-                                |> NewPackageFlow.toDependency
-                                |> Maybe.map (\d -> NewPackageFlow.Installation d Loading)
-                                |> Maybe.withDefault model.newPackageFlow
-                      }
-                    , Maybe.map2 (,) (model.session |> RemoteData.toMaybe) (model.newPackageFlow |> NewPackageFlow.toDependency)
-                        |> Maybe.map
-                            (\( s, d ) ->
-                                Cmd.batch
-                                    [ Api.addDependencies s [ d ]
-                                        |> Api.send (InstallCompleted d)
-                                        |> Cmd.map NewPackageFlowMsg
-                                    , MessageBus.notify
-                                        Notification.Info
-                                        "Installing Package"
-                                        "Ellie is installing your package. Once it's installed and compiled you'll be able to use it in your code."
-                                    ]
-                            )
-                        |> Maybe.withDefault Cmd.none
-                    )
-
-                InstallCompleted dep result ->
-                    ( model
-                        |> (\m -> { m | newPackageFlow = NewPackageFlow.NotSearching })
-                        |> Model.updateClientRevision
-                            (\r ->
-                                { r
-                                    | dependencies =
-                                        r.dependencies ++ (result |> Result.map (\_ -> [ dep ]) |> Result.withDefault [])
-                                }
-                            )
-                    , case result of
-                        Ok _ ->
-                            MessageBus.notify
-                                Notification.Success
-                                "Package Installed!"
-                                "Ellie installed and compiled your package. You can start using it in your code now."
-
-                        Err apiError ->
-                            MessageBus.notify
-                                Notification.Error
-                                "Failed Installing Package"
-                                ("Elle couldn't install your package. Here's what the server said: " ++ apiError.explanation)
-                    )
-
-                Cancelled ->
-                    ( { model | newPackageFlow = NewPackageFlow.NotSearching }
-                    , Cmd.none
-                    )
 
         _ ->
             ( model, Cmd.none )

@@ -5,15 +5,7 @@ import Html.CssHelpers
 
 
 type Classes
-    = Loading
-    | LoadingShimmer
-    | LoadingSection
-    | LoadingFullBox
-    | LoadingSplitContainer
-    | LoadingSplitLeft
-    | LoadingSplitRight
-    | LoadingCircle
-    | Iframe
+    = Iframe
     | Overlay
     | OverlayTitle
     | OverlaySubtitle

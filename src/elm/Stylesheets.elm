@@ -6,8 +6,10 @@ import Components.Sidebar.Styles as Sidebar
 import Components.Output.Styles as Output
 import Components.Editors.Styles as Editors
 import Components.Header.Styles as Header
-import Components.PackageSearch.Styles as PackageSearch
+import Components.Search.Styles as Search
 import Components.Notifications.Styles as Notifications
+import Components.About.Styles as About
+import Components.Splash.Styles as Splash
 
 
 port files : CssFileStructure -> Cmd msg
@@ -23,8 +25,10 @@ fileStructure =
                 , Output.styles
                 , Editors.styles
                 , Header.styles
-                , PackageSearch.styles
+                , Search.styles
                 , Notifications.styles
+                , Splash.styles
+                , About.styles
                 ]
           )
         ]

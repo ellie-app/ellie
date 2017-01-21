@@ -1,53 +1,16 @@
 module Components.Header.View
     exposing
-        ( Context
+        ( view
+        , ViewModel
         , SaveOption(..)
-        , view
         )
 
 import Html exposing (Html, header, h1, button, div, text, span)
 import Html.Events exposing (onClick)
 import Html.Attributes exposing (disabled)
-import Types.Notification as Notification exposing (Notification)
-import Shared.Icons as Icons
 import Components.Header.Classes exposing (..)
-import Components.Notifications.View as Notifications
-
-
-when : Bool -> (() -> Html msg) -> Html msg
-when pred html =
-    if pred then
-        html ()
-    else
-        text ""
-
-
-viewButton : msg -> Bool -> String -> Html msg -> Html msg
-viewButton msg enabled content icon =
-    button
-        [ class [ Button ]
-        , disabled <| not enabled
-        , onClick msg
-        ]
-        [ span [ class [ ButtonIcon ] ] [ icon ]
-        , span [] [ text content ]
-        ]
-
-
-viewSaveButton : msg -> SaveOption -> Bool -> Html msg
-viewSaveButton msg saveOption enabled =
-    case saveOption of
-        Save ->
-            viewButton msg enabled "Save" Icons.cloudOutline
-
-        Saving ->
-            viewButton msg False "Saving" Icons.cloudOutline
-
-        Update ->
-            viewButton msg enabled "Update" Icons.cloudOutline
-
-        Fork ->
-            viewButton msg enabled "Fork" Icons.forkRepo
+import Shared.Icons as Icons
+import Shared.Utils as Utils exposing (renderIf)
 
 
 type SaveOption
@@ -57,57 +20,126 @@ type SaveOption
     | Saving
 
 
-type alias Context msg =
+type alias ViewModel msg =
     { compileButtonEnabled : Bool
     , saveButtonEnabled : Bool
     , saveButtonOption : SaveOption
+    , buttonsVisible : Bool
     , onSave : msg
     , onCompile : msg
     , onFormat : msg
-    , buttonsVisible : Bool
-    , notifications : List Notification
-    , notificationsOpen : Bool
-    , notificationsHighlight : Bool
-    , onNotificationsToggled : msg
+    , onAbout : msg
+    , onNotifications : msg
+    , notificationCount : Int
     }
 
 
-notificationsContext : Context msg -> Notifications.Context msg
-notificationsContext context =
-    { notifications = context.notifications
-    , isOpen = context.notificationsOpen
-    , onToggled = context.onNotificationsToggled
-    , isHighlighted = context.notificationsHighlight
-    }
+viewLogo : Html msg
+viewLogo =
+    div [ class [ Logo ] ]
+        [ text "Ellie" ]
 
 
-view : Context msg -> Html msg
-view context =
+viewButton : msg -> Bool -> Html msg -> String -> Html msg
+viewButton clickMsg isDisabled icon label =
+    button
+        [ class [ Button ]
+        , onClick clickMsg
+        , disabled isDisabled
+        ]
+        [ span [ class [ ButtonIcon ] ]
+            [ icon ]
+        , if String.length label == 0 then
+            text ""
+          else
+            span [ class [ ButtonText ] ]
+                [ text label ]
+        ]
+
+
+viewSaveButton : ViewModel msg -> Html msg
+viewSaveButton viewModel =
+    case viewModel.saveButtonOption of
+        Fork ->
+            viewButton
+                viewModel.onSave
+                (not viewModel.saveButtonEnabled)
+                Icons.forkRepo
+                "Fork"
+
+        Update ->
+            viewButton
+                viewModel.onSave
+                (not viewModel.saveButtonEnabled)
+                Icons.cloudOutline
+                "Update"
+
+        Save ->
+            viewButton
+                viewModel.onSave
+                (not viewModel.saveButtonEnabled)
+                Icons.cloudOutline
+                "Save"
+
+        Saving ->
+            viewButton
+                viewModel.onSave
+                True
+                Icons.cloudOutline
+                "Saving..."
+
+
+viewCompileButton : ViewModel msg -> Html msg
+viewCompileButton viewModel =
+    viewButton
+        viewModel.onCompile
+        (not viewModel.compileButtonEnabled)
+        Icons.playOutline
+        "Compile"
+
+
+viewFormatButton : ViewModel msg -> Html msg
+viewFormatButton viewModel =
+    viewButton
+        viewModel.onFormat
+        False
+        Icons.format
+        "Format"
+
+
+viewAboutButton : ViewModel msg -> Html msg
+viewAboutButton viewModel =
+    viewButton
+        viewModel.onAbout
+        False
+        Icons.lightning
+        "About"
+
+
+viewNotificationsButton : ViewModel msg -> Html msg
+viewNotificationsButton viewModel =
+    viewButton
+        viewModel.onNotifications
+        False
+        Icons.bell
+        (if viewModel.notificationCount == 0 then
+            ""
+         else
+            toString viewModel.notificationCount
+        )
+
+
+view : ViewModel msg -> Html msg
+view viewModel =
     header [ class [ Header ] ]
-        [ div [ class [ HeaderLeftStuff ] ]
-            [ div [ class [ Logo ] ]
-                [ h1 [ class [ LogoText ] ] [ text "Ellie" ]
-                ]
-            , when context.buttonsVisible <|
-                \() ->
-                    viewButton
-                        context.onCompile
-                        context.compileButtonEnabled
-                        "Compile"
-                        Icons.playOutline
-            , when context.buttonsVisible <|
-                \() ->
-                    viewSaveButton
-                        context.onSave
-                        context.saveButtonOption
-                        context.saveButtonEnabled
-            , when context.buttonsVisible <|
-                \() ->
-                    viewButton
-                        context.onFormat
-                        True
-                        "Format"
-                        Icons.format
+        [ div [ class [ HeaderGroup ] ]
+            [ viewLogo
+            , renderIf viewModel.buttonsVisible (\_ -> viewCompileButton viewModel)
+            , renderIf viewModel.buttonsVisible (\_ -> viewSaveButton viewModel)
+            , renderIf viewModel.buttonsVisible (\_ -> viewFormatButton viewModel)
             ]
-        , div [] [ Notifications.view <| notificationsContext context ]
+        , div [ class [ HeaderGroup ] ]
+            [ viewAboutButton viewModel
+            , viewNotificationsButton viewModel
+            ]
         ]

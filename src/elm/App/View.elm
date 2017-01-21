@@ -1,68 +1,172 @@
 module App.View exposing (view)
 
 import Html exposing (Html, div, button, text, iframe, main_, header, span)
-import Html.Attributes exposing (value, style, srcdoc)
-import Html.Events exposing (onClick, onMouseDown, onMouseUp)
+import Html.Attributes exposing (style)
+import Html.Events exposing (onMouseDown)
 import RemoteData exposing (RemoteData(..))
-import RemoteData.Infix exposing ((<*>))
+import Types.Revision as Revision exposing (Revision)
 import Types.ApiError as ApiError exposing (ApiError)
 import Types.CompileError as CompileError exposing (CompileError)
-import Types.Revision as Revision exposing (Revision)
 import Types.Session as Session exposing (Session)
-import Shared.Icons as Icons
-import Shared.Utils as Utils
-import App.Update as Update exposing (Msg(..), NewPackageFlowMsg(..))
-import App.Model as Model exposing (Model)
+import App.Update as Update exposing (Msg(..))
+import App.Model as Model exposing (Model, PopoutState(..))
 import App.Classes exposing (..)
-import Components.Header.View as Header
+import Components.Splash.View as Splash
 import Components.Sidebar.View as Sidebar
 import Components.Editors.View as Editors
+import Components.Header.View as Header
 import Components.Output.View as Output
+import Components.Notifications.View as Notifications
+import Components.About.View as About
+import Components.Search.View as Search
+import Shared.Utils as Utils
 
 
-when : Bool -> (() -> Html msg) -> Html msg
-when pred thunk =
-    if pred then
+renderIf : Bool -> (() -> Html msg) -> Html msg
+renderIf predicate thunk =
+    if predicate then
         thunk ()
     else
-        htmlNone
+        text ""
 
 
-htmlNone : Html msg
-htmlNone =
-    text ""
+popoutView : Model -> Html Msg
+popoutView model =
+    case model.popoutState of
+        NotificationsOpen ->
+            renderIf
+                (not <| List.isEmpty model.notifications)
+                (\_ -> Notifications.view model.notifications)
+
+        AboutOpen ->
+            About.view
+
+        BothClosed ->
+            text ""
 
 
-mainStuffError : String -> Html msg
-mainStuffError message =
-    div []
-        [ text <| "Failed: " ++ message
-        ]
+sidebarContext : Model -> Sidebar.ViewModel Msg
+sidebarContext model =
+    { title = model.clientRevision.title
+    , description = model.clientRevision.description
+    , onTitleChange = TitleChanged
+    , onDescriptionChange = DescriptionChanged
+    , dependencies = model.clientRevision.dependencies
+    , onAddPackageClick = ToggleSearch
+    , installingPackage = model.installingPackage
+    , removingHashes = model.removingDependencyHashes
+    , onRemove = RemoveDependencyRequested
+    }
 
 
-loadingSession : Html msg
-loadingSession =
-    div [ class [ MainLoadingMessageContainer ] ]
-        [ div [ class [ MainLoadingMessageHeader ] ]
-            [ text "Preparing your session..." ]
-        , div [ class [ MainLoadingMessageElmLogo ] ]
-            [ Icons.elmLogo
+searchContext : Model -> Search.ViewModel Msg
+searchContext model =
+    { onClose = ToggleSearch
+    , searchValue = model.searchValue
+    , onSearchChange = SearchChanged
+    , results = model.searchResults
+    , onInstall = PackageSelected
+    }
+
+
+loadedView : Model -> Html Msg
+loadedView model =
+    div [ class [ LoadedContainer ] ]
+        [ Header.view <| headerContext model
+        , div [ class [ MainContainer ] ]
+            [ Sidebar.view <| sidebarContext model
+            , workAreaView model
+            , div [ class [ NotificationsContainer ] ]
+                [ popoutView model ]
             ]
+        , renderIf
+            model.searchOpen
+            (\_ -> Search.view <| searchContext model)
         ]
 
 
-loadingRevision : Html msg
-loadingRevision =
-    div [ class [ MainLoadingMessageContainer ] ]
-        [ div [ class [ MainLoadingMessageHeader ] ]
-            [ text "Loading your project..." ]
+workAreaView : Model -> Html Msg
+workAreaView model =
+    div [ class [ WorkArea ] ]
+        [ editorsView model
+        , div
+            [ class [ OutputResizeHandle ]
+            , style [ ( "left", Utils.numberToPercent model.resultSplit ) ]
+            , onMouseDown ResultDragStarted
+            ]
+            []
+        , model.session
+            |> RemoteData.map (outputView model.resultSplit model.clientRevision model.compileResult)
+            |> RemoteData.withDefault (text "")
         ]
 
 
-results : Float -> Revision -> RemoteData ApiError (List CompileError) -> Session -> Html Msg
-results split revision compileResult session =
+editorsView : Model -> Html Msg
+editorsView model =
     div
-        [ class [ ResultsContainer ]
+        [ class [ EditorsContainer ]
+        , style [ ( "width", Utils.numberToPercent model.resultSplit ) ]
+        ]
+        [ div
+            [ class [ EditorContainer ]
+            , style [ ( "height", Utils.numberToPercent model.editorSplit ) ]
+            ]
+            [ Editors.elm
+                ElmCodeChanged
+                model.stagedElmCode
+                (model.compileResult |> RemoteData.withDefault [])
+            ]
+        , div
+            [ class [ EditorResizeHandle ]
+            , style [ ( "top", Utils.numberToPercent model.editorSplit ) ]
+            , onMouseDown EditorDragStarted
+            ]
+            []
+        , div
+            [ class [ EditorContainer ]
+            , style
+                [ ( "height", Utils.numberToPercent (1 - model.editorSplit) )
+                ]
+            ]
+            [ Editors.html HtmlCodeChanged model.stagedHtmlCode ]
+        ]
+
+
+headerSaveOption : Model -> Header.SaveOption
+headerSaveOption model =
+    if Model.isOwnedProject model && Model.isSavedProject model then
+        Header.Update
+    else if Model.isOwnedProject model && not (Model.isSavedProject model) then
+        Header.Save
+    else
+        Header.Fork
+
+
+headerContext : Model -> Header.ViewModel Msg
+headerContext model =
+    { onSave = SaveRequested
+    , onCompile = CompileRequested
+    , onFormat = FormattingRequested
+    , onAbout = ToggleAbout
+    , onNotifications = ToggleNotifications
+    , notificationCount = List.length model.notifications
+    , saveButtonEnabled =
+        Model.canSave model
+    , saveButtonOption =
+        headerSaveOption model
+    , compileButtonEnabled =
+        Model.canCompile model
+    , buttonsVisible =
+        RemoteData.isSuccess model.session
+            && RemoteData.isSuccess model.serverRevision
+            && model.isOnline
+    }
+
+
+outputView : Float -> Revision -> RemoteData ApiError (List CompileError) -> Session -> Html Msg
+outputView split revision compileResult session =
+    div
+        [ class [ OutputContainer ]
         , style [ ( "width", Utils.numberToPercent (1 - split) ) ]
         ]
         [ case compileResult of
@@ -85,167 +189,22 @@ results split revision compileResult session =
         ]
 
 
-editors : Float -> Float -> List CompileError -> String -> String -> Session -> Html Msg
-editors editorSplit resultSplit compileErrors htmlCode elmCode session =
-    div
-        [ class [ EditorsContainer ]
-        , style [ ( "width", Utils.numberToPercent resultSplit ) ]
-        ]
-        [ div
-            [ class [ EditorContainer ]
-            , style
-                [ ( "height", Utils.numberToPercent editorSplit )
-                , ( "border-bottom", "1px solid #bdb7bd" )
-                ]
-            ]
-            [ Editors.elm
-                ElmCodeChanged
-                (elmCode)
-                (compileErrors)
-            ]
-        , div
-            [ onMouseDown EditorDragStarted
-            , style
-                [ ( "width", "100%" )
-                , ( "height", "5px" )
-                , ( "position", "absolute" )
-                , ( "top", "calc(" ++ Utils.numberToPercent editorSplit ++ " - 2px)" )
-                , ( "z-index", "4" )
-                , ( "cursor", "ns-resize" )
-                ]
-            ]
-            []
-        , div
-            [ class [ EditorContainer ]
-            , style [ ( "height", Utils.numberToPercent (1 - editorSplit) ) ]
-            ]
-            [ Editors.html
-                HtmlCodeChanged
-                (htmlCode)
-            ]
-        ]
-
-
-workArea : Model -> Html Msg
-workArea model =
-    div [ class [ WorkAreaContainer ] ]
-        [ model.session
-            |> RemoteData.map
-                (editors
-                    model.editorSplit
-                    model.resultSplit
-                    (RemoteData.withDefault [] model.compileResult)
-                    model.stagedHtmlCode
-                    model.stagedElmCode
-                )
-            |> RemoteData.withDefault htmlNone
-        , div
-            [ onMouseDown ResultDragStarted
-            , style
-                [ ( "height", "100%" )
-                , ( "width", "5px" )
-                , ( "position", "absolute" )
-                , ( "left", "calc(" ++ Utils.numberToPercent model.resultSplit ++ " - 2px)" )
-                , ( "z-index", "4" )
-                , ( "cursor", "ew-resize" )
-                ]
-            ]
-            []
-        , model.session
-            |> RemoteData.map (results model.resultSplit model.clientRevision model.compileResult)
-            |> RemoteData.withDefault htmlNone
-        ]
-
-
-ready : Model -> Html Msg
-ready model =
-    div [ class [ MainContainerInner ] ]
-        [ Sidebar.view <| sidebarContext model
-        , workArea model
-        ]
-
-
-mainStuff : Model -> Html Msg
-mainStuff model =
-    case Success (,) <*> model.session <*> model.serverRevision of
-        Success ( session, serverRevision ) ->
-            ready model
-
-        Failure error ->
-            mainStuffError error.message
-
-        Loading ->
-            if RemoteData.isLoading model.session then
-                loadingSession
-            else
-                loadingRevision
-
-        NotAsked ->
-            mainStuffError "This shouldn't have happened"
-
-
-headerSaveOption : Model -> Header.SaveOption
-headerSaveOption model =
-    if Model.isOwnedProject model && Model.isSavedProject model then
-        Header.Update
-    else if Model.isOwnedProject model && not (Model.isSavedProject model) then
-        Header.Save
-    else
-        Header.Fork
-
-
-headerContext : Model -> Header.Context Msg
-headerContext model =
-    { onSave = SaveRequested
-    , onCompile = CompileRequested
-    , onFormat = FormattingRequested
-    , onNotificationsToggled = ToggleNotifications
-    , notifications = model.notifications
-    , notificationsOpen = model.notificationsOpen
-    , notificationsHighlight = model.notificationsHighlight
-    , saveButtonEnabled =
-        Model.canSave model
-    , saveButtonOption =
-        headerSaveOption model
-    , compileButtonEnabled =
-        Model.canCompile model
-    , buttonsVisible =
-        RemoteData.isSuccess model.session
-            && RemoteData.isSuccess model.serverRevision
-            && model.isOnline
-    }
-
-
-sidebarContext : Model -> Sidebar.Context Msg
-sidebarContext model =
-    { dependencies = model.clientRevision.dependencies
-    , newPackageFlow = model.newPackageFlow
-    , onStarted = NewPackageFlowMsg Started
-    , onSearchTermChanged = SearchTermUpdated >> NewPackageFlowMsg
-    , onPackageSelected = PackageSelected >> NewPackageFlowMsg
-    , onVersionSelected = VersionSelected >> NewPackageFlowMsg
-    , onInstallRequested = NewPackageFlowMsg InstallRequested
-    , onCancelled = NewPackageFlowMsg Cancelled
-    , onRemoved = RemoveDependencyRequested
-    , title = model.clientRevision.title
-    , onTitleChanged = TitleChanged
-    , description = model.clientRevision.description
-    , onDescriptionChanged = DescriptionChanged
-    }
-
-
 view : Model -> Html Msg
 view model =
     div
         [ classList
-            [ ( TopContainer, True )
-            , ( TopContainerDragging, model.resultDragging || model.editorDragging )
-            , ( TopContainerNs, model.editorDragging )
-            , ( TopContainerEw, model.resultDragging )
+            [ ( AppContainer, True )
+            , ( ResizeEw, model.resultDragging )
+            , ( ResizeNs, model.editorDragging )
             ]
         ]
-        [ Header.view (headerContext model)
-        , main_ [ class [ MainContainer ] ]
-            [ mainStuff model
-            ]
+        [ case model.session of
+            Success _ ->
+                loadedView model
+
+            Failure _ ->
+                loadedView model
+
+            _ ->
+                Splash.view
         ]

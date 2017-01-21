@@ -4,6 +4,7 @@ import Css exposing (..)
 import Css.Namespace exposing (..)
 import Components.Header.Classes exposing (Classes(..))
 import Shared.Constants as Constants
+import Shared.Colors as Colors
 
 
 styles : Stylesheet
@@ -12,8 +13,7 @@ styles =
         [ (.) Header
             [ width (pct 100)
             , height (px Constants.headerHeight)
-            , backgroundColor (hex "f7f7f7")
-            , borderBottom3 (px 1) solid (hex "55B5DB")
+            , backgroundColor (hex Colors.pink)
             , displayFlex
             , alignItems center
             , boxShadow5 (px 0) (px 2) (px 15) (px -4) (rgba 0 0 0 0.5)
@@ -22,56 +22,63 @@ styles =
             , property "justify-content" "space-between"
             , padding2 zero (px 16)
             ]
+        , (.) HeaderGroup
+            [ displayFlex
+            , alignItems center
+            ]
         , (.) Logo
-            [ paddingRight (px 16)
-            ]
-        , (.) LogoText
-            [ property "font-family" "Leckerli One"
-            , margin zero
-            ]
-        , (.) Status
-            [ padding2 zero (px 16)
-            ]
-        , (.) StatusText
-            [ textTransform uppercase
-            , fontSize (em 1.1)
+            [ fontFamilies [ Constants.scriptFont ]
+            , fontSize (px 32)
+            , color (hex Colors.white)
+            , paddingRight (px 24)
             ]
         , (.) Button
-            [ property "-webkit-appearance" "none"
-            , backgroundColor transparent
+            [ backgroundColor <|
+                rgba
+                    (.r Colors.darkGrayRgb)
+                    (.g Colors.darkGrayRgb)
+                    (.b Colors.darkGrayRgb)
+                    0.24
             , border zero
-            , padding2 zero (px 10)
+            , borderRadius (px 3)
+            , color (hex Colors.white)
             , fontFamily inherit
-            , fontSize (px 13)
             , textTransform uppercase
-            , fontWeight inherit
-            , cursor pointer
-            , outline zero
-            , height (pct 100)
-            , borderBottom3 (px 2) solid transparent
+            , height (px 38)
+            , fontSize (px 14)
+            , padding2 zero (px 12)
             , displayFlex
-            , alignItems center
             , property "justify-content" "center"
-            , property "fill" "currentColor"
-            , hover
-                [ borderBottomColor (hex "55B5DB") ]
+            , alignItems center
+            , cursor pointer
+            , marginLeft (px 8)
             , disabled
-                [ color (hex "A7A7A7")
+                [ opacity (num 0.5)
                 , cursor notAllowed
-                , hover [ borderBottomColor (hex "A7A7A7") ]
+                ]
+            , hover
+                [ backgroundColor <|
+                    rgba
+                        (.r Colors.darkGrayRgb)
+                        (.g Colors.darkGrayRgb)
+                        (.b Colors.darkGrayRgb)
+                        0.33
+                ]
+            , active
+                [ backgroundColor <|
+                    rgba
+                        (.r Colors.darkGrayRgb)
+                        (.g Colors.darkGrayRgb)
+                        (.b Colors.darkGrayRgb)
+                        0.5
                 ]
             ]
         , (.) ButtonIcon
-            [ height (px 13)
-            , width (px 13)
-            , display inlineBlock
-            , marginRight (px 6)
-            , position relative
+            [ height (px 16)
+            , width (px 16)
+            , display block
             ]
-        , (.) HeaderLeftStuff
-            [ displayFlex
-            , height (px Constants.headerHeight)
-            , alignItems center
-            , property "justify-content" "space-between"
+        , (.) ButtonText
+            [ marginLeft (px 8)
             ]
         ]

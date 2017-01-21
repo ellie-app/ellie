@@ -23,7 +23,7 @@ import HttpBuilder exposing (..)
 import Types.ApiError as ApiError exposing (ApiError)
 import Types.Revision as Revision exposing (Revision)
 import Types.Version as Version exposing (Version)
-import Types.PackageSearchResult as PackageSearchResult exposing (PackageSearchResult)
+import Types.Package as Package exposing (Package)
 import Types.Session as Session exposing (Session)
 import Types.Dependency as Dependency exposing (Dependency)
 import Types.CompileError as CompileError exposing (CompileError)
@@ -104,7 +104,7 @@ upgradeError error =
 -- SEARCH
 
 
-searchPackages : Version -> String -> RequestBuilder (List PackageSearchResult)
+searchPackages : Version -> String -> RequestBuilder (List Package)
 searchPackages elmVersion searchTerm =
     get (fullUrl "/packages/search")
         |> withQueryParams
@@ -112,7 +112,7 @@ searchPackages elmVersion searchTerm =
             , ( "elmVersion", Version.toString elmVersion )
             ]
         |> withApiHeaders
-        |> withExpect (Http.expectJson (Decode.list PackageSearchResult.decode))
+        |> withExpect (Http.expectJson (Decode.list Package.decode))
 
 
 

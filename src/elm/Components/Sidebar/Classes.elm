@@ -6,27 +6,28 @@ import Html.CssHelpers
 
 type Classes
     = Sidebar
-    | Section
-    | SectionHeader
-    | SectionContent
-    | TextInput
-    | Textarea
+    | ProjectInfo
+    | ProjectInfoInput
+    | ProjectInfoLabel
+    | ProjectInfoTitle
+    | ProjectInfoInputContainer
+    | ProjectInfoTextarea
+    | Packages
     | PackagesList
-    | DepItem
-    | DepItemDetails
-    | IconButton
-    | DepItemPackageName
-    | AddDepButton
-    | AddDepButtonIcon
-    | AddDepButtonText
-    | AddDepContainer
-    | AddDepInputContainer
-    | AddDepResultList
-    | AddDepPackageSearch
-    | AddDepPackageItem
-    | AddDepVersionPackageName
-    | AddDepVersion
-    | AddDepVersionDetails
+    | PackagesTitle
+    | PackagesItem
+    | PackagesItemInfo
+    | PackagesItemInfoName
+    | PackagesItemInfoNameUsername
+    | PackagesItemInfoVersion
+    | PackagesItemRemove
+    | PackagesItemRemoveIcon
+    | PackagesItemRemoveText
+    | AddPackage
+    | Loading
+    | LoadingPackageInfo
+    | LoadingAnimContainer
+    | LoadingAnim
 
 
 helpers : Html.CssHelpers.Namespace String class id msg

@@ -20,18 +20,15 @@ classList =
 
 
 type Classes
-    = EditorsContainer
-    | EditorContainer
-    | EditorsSeparator
-    | WorkAreaContainer
-    | ResultsEditorsSeparator
-    | ResultsContainer
+    = AppContainer
     | MainContainer
-    | TopContainer
-    | TopContainerDragging
-    | TopContainerNs
-    | TopContainerEw
-    | MainLoadingMessageContainer
-    | MainLoadingMessageHeader
-    | MainLoadingMessageElmLogo
-    | MainContainerInner
+    | WorkArea
+    | EditorsContainer
+    | EditorContainer
+    | LoadedContainer
+    | OutputContainer
+    | NotificationsContainer
+    | OutputResizeHandle
+    | ResizeNs
+    | ResizeEw
+    | EditorResizeHandle

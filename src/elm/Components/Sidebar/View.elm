@@ -1,202 +1,167 @@
 module Components.Sidebar.View
     exposing
-        ( Context
-        , view
+        ( view
+        , ViewModel
         )
 
-import Json.Decode as Decode
-import List.Nonempty as Nonempty
-import RemoteData exposing (RemoteData(..))
-import Html exposing (Html, textarea, h3, button, aside, div, text, span, input, hr, option, select)
-import Html.Attributes exposing (type_, value, selected, placeholder)
-import Html.Events exposing (onClick, onInput, on)
-import Types.PackageSearchResult as PackageSearchResult exposing (PackageSearchResult)
-import Types.Dependency as Dependency exposing (Dependency)
-import Types.Version as Version exposing (Version)
-import Types.NewPackageFlow as NewPackageFlow exposing (NewPackageFlow(..))
+import Set exposing (Set)
+import Html exposing (Html, label, textarea, h3, button, aside, div, text, span, input, hr, option, select)
+import Html.Attributes exposing (type_, value, disabled)
+import Html.Events exposing (onInput, onClick)
+import Svg exposing (svg, circle)
+import Svg.Attributes exposing (fill, cx, cy, r, viewBox)
 import Shared.Icons as Icons
-import Shared.Utils as Utils
 import Components.Sidebar.Classes exposing (..)
+import Types.Dependency as Dependency exposing (Dependency)
+import Types.VersionRange as VersionRange exposing (VersionRange)
+import Types.Package as Package exposing (Package)
+import Types.Version as Version exposing (Version)
+import Shared.Utils as Utils exposing (renderIf)
 
 
-type alias Context msg =
-    { dependencies : List Dependency
-    , newPackageFlow : NewPackageFlow
-    , onStarted : msg
-    , onSearchTermChanged : String -> msg
-    , onPackageSelected : PackageSearchResult -> msg
-    , onVersionSelected : Int -> msg
-    , onInstallRequested : msg
-    , onCancelled : msg
-    , onRemoved : Dependency -> msg
-    , title : String
-    , onTitleChanged : String -> msg
+type alias ViewModel msg =
+    { title : String
     , description : String
-    , onDescriptionChanged : String -> msg
+    , onTitleChange : String -> msg
+    , onDescriptionChange : String -> msg
+    , dependencies : List Dependency
+    , onAddPackageClick : msg
+    , installingPackage : Maybe Package
+    , removingHashes : Set String
+    , onRemove : Dependency -> msg
     }
 
 
-sharedHash : { a | username : String, name : String } -> String
-sharedHash a =
-    a.username ++ "/" ++ a.name
-
-
-dependency : (Dependency -> msg) -> Dependency -> Html msg
-dependency onRemoved dep =
-    div [ class [ DepItem ] ]
-        [ div [ class [ DepItemDetails ] ]
-            [ div [ class [ DepItemPackageName ] ]
-                [ text <| dep.username ++ "/" ++ dep.name ]
-            , div []
-                [ text <| Version.toString dep.range.min
-                , text <| " <= v < "
-                , text <| Version.toString dep.range.max
+viewProjectInfo : ViewModel msg -> Html msg
+viewProjectInfo viewModel =
+    div [ class [ ProjectInfo ] ]
+        [ div [ class [ ProjectInfoTitle ] ]
+            [ text "Project Info" ]
+        , div []
+            [ div [ class [ ProjectInfoInputContainer ] ]
+                [ label
+                    [ class [ ProjectInfoLabel ] ]
+                    [ text "Title" ]
+                , input
+                    [ class [ ProjectInfoInput ]
+                    , type_ "text"
+                    , value viewModel.title
+                    , onInput viewModel.onTitleChange
+                    ]
+                    []
+                ]
+            , div [ class [ ProjectInfoInputContainer ] ]
+                [ label
+                    [ class [ ProjectInfoLabel ] ]
+                    [ text "Description" ]
+                , textarea
+                    [ class [ ProjectInfoTextarea ]
+                    , value viewModel.description
+                    , onInput viewModel.onDescriptionChange
+                    ]
+                    []
                 ]
             ]
-        , button
-            [ onClick (onRemoved dep)
-            , class [ IconButton ]
-            ]
-            [ Icons.close ]
         ]
 
 
-packageFlowItem : (PackageSearchResult -> msg) -> PackageSearchResult -> Html msg
-packageFlowItem onSelected r =
-    div
-        [ class [ AddDepPackageItem ]
-        , onClick (onSelected r)
-        ]
-        [ text <| r.username ++ "/" ++ r.name ]
-
-
-notSearching : Context msg -> Html msg
-notSearching context =
+viewAddButton : ViewModel msg -> Html msg
+viewAddButton viewModel =
     button
-        [ onClick context.onStarted
-        , class [ AddDepButton ]
+        [ class [ AddPackage ]
+        , onClick viewModel.onAddPackageClick
         ]
-        [ span [ class [ AddDepButtonText ] ] [ text "Add Dependency" ]
-        , span [ class [ AddDepButtonIcon ] ] [ Icons.plusEmpty ]
-        ]
+        [ text "Add A Package" ]
 
 
-packageSearch : Context msg -> String -> List PackageSearchResult -> Html msg
-packageSearch context searchText packages =
-    div [ class [ AddDepPackageSearch ] ]
-        [ div [ class [ AddDepContainer ] ]
-            [ div [ class [ AddDepInputContainer ] ]
-                [ input
-                    [ type_ "text"
-                    , onInput context.onSearchTermChanged
-                    , class [ TextInput ]
-                    , placeholder "Search packages..."
-                    ]
-                    []
+viewLoading : Package -> Html msg
+viewLoading package =
+    div [ class [ Loading ] ]
+        [ div [ class [ LoadingPackageInfo ] ]
+            [ text <| package.username ++ "/" ++ package.name ++ " @" ++ Version.toString package.version ]
+        , div [ class [ LoadingAnimContainer ] ]
+            [ svg [ viewBox "0 0 50 10" ]
+                [ circle [ cx "5", cy "5", r "5" ] []
+                , circle [ cx "25", cy "5", r "5" ] []
+                , circle [ cx "45", cy "5", r "5" ] []
                 ]
-            , button
-                [ onClick context.onCancelled
-                , class [ IconButton ]
-                ]
-                [ Icons.close ]
             ]
-        , case packages of
-            [] ->
-                text ""
-
-            _ ->
-                div [ class [ AddDepResultList ] ]
-                    (packages
-                        |> Utils.hashFilter sharedHash sharedHash context.dependencies
-                        |> List.map (packageFlowItem context.onPackageSelected)
-                    )
         ]
 
 
-versionSearch : Context msg -> PackageSearchResult -> Version -> Html msg
-versionSearch context package version =
-    div [ class [ AddDepVersion ] ]
-        [ div [ class [ AddDepVersionDetails ] ]
-            [ div [ class [ AddDepVersionPackageName ] ]
-                [ text <| package.username ++ "/" ++ package.name
-                ]
-            , div []
-                [ select
-                    [ on "change" <| Decode.map context.onVersionSelected (Decode.at [ "target", "selectedIndex" ] Decode.int) ]
-                    (Nonempty.toList <| Nonempty.map (\v -> option [ selected (version == v) ] [ text <| Version.toString v ]) package.versions)
-                , span [] [ text " <= v < " ]
-                , span [] [ text <| Version.toString (Version.nextMajor version) ]
+viewRemovingIndicator : Html msg
+viewRemovingIndicator =
+    button
+        [ class [ PackagesItemRemove ]
+        , disabled True
+        ]
+        [ span [ class [ PackagesItemRemoveIcon ] ]
+            [ svg [ viewBox "0 0 50 10" ]
+                [ circle [ cx "5", cy "5", r "5" ] []
+                , circle [ cx "25", cy "5", r "5" ] []
+                , circle [ cx "45", cy "5", r "5" ] []
                 ]
             ]
-        , button
-            [ onClick context.onInstallRequested
-            , class [ IconButton ]
-            ]
-            [ Icons.checkmark ]
-        , button
-            [ onClick context.onCancelled
-            , class [ IconButton ]
-            ]
+        , span [ class [ PackagesItemRemoveText ] ]
+            [ text "Removing" ]
+        ]
+
+
+viewRemoveButton : msg -> Html msg
+viewRemoveButton onRemove =
+    button
+        [ class [ PackagesItemRemove ]
+        , onClick onRemove
+        ]
+        [ span [ class [ PackagesItemRemoveIcon ] ]
             [ Icons.close ]
+        , span [ class [ PackagesItemRemoveText ] ]
+            [ text "Remove" ]
         ]
 
 
-installation : Context msg -> Dependency -> RemoteData x a -> Html msg
-installation context dependency data =
-    case data of
-        Loading ->
-            div [] [ text <| "Installing..." ]
-
-        _ ->
-            text ""
-
-
-newPackageFlow : Context msg -> Html msg
-newPackageFlow context =
-    case context.newPackageFlow of
-        NotSearching ->
-            notSearching context
-
-        PackageSearch searchText packages ->
-            packageSearch context searchText packages
-
-        VersionSearch package version ->
-            versionSearch context package version
-
-        Installation dependency data ->
-            installation context dependency data
+viewPackageItem : ViewModel msg -> Dependency -> Html msg
+viewPackageItem viewModel dependency =
+    let
+        isRemoving =
+            depInHash viewModel.removingHashes dependency
+    in
+        div [ class [ PackagesItem ] ]
+            [ div [ class [ PackagesItemInfo ] ]
+                [ div [ class [ PackagesItemInfoName ] ]
+                    [ span [ class [ PackagesItemInfoNameUsername ] ]
+                        [ text <| dependency.username ++ " / " ]
+                    , span [] [ text dependency.name ]
+                    ]
+                , div [ class [ PackagesItemInfoVersion ] ]
+                    [ text <| VersionRange.toString dependency.range ]
+                ]
+            , renderIf isRemoving (\_ -> viewRemovingIndicator)
+            , renderIf (not isRemoving) (\_ -> viewRemoveButton (viewModel.onRemove dependency))
+            ]
 
 
-view : Context msg -> Html msg
-view context =
+depInHash : Set String -> Dependency -> Bool
+depInHash removingHashes dependency =
+    Set.member (Dependency.hash dependency) removingHashes
+
+
+viewPackages : ViewModel msg -> Html msg
+viewPackages viewModel =
+    div [ class [ Packages ] ]
+        [ div [ class [ PackagesTitle ] ]
+            [ text "Packages" ]
+        , div [ class [ PackagesList ] ]
+            (List.map (viewPackageItem viewModel) viewModel.dependencies)
+        , viewModel.installingPackage
+            |> Maybe.map viewLoading
+            |> Maybe.withDefault (viewAddButton viewModel)
+        ]
+
+
+view : ViewModel msg -> Html msg
+view viewModel =
     aside [ class [ Sidebar ] ]
-        [ div [ class [ Section ] ]
-            [ h3 [ class [ SectionHeader ] ] [ text "Title" ]
-            , div [ class [ SectionContent ] ]
-                [ input
-                    [ type_ "text"
-                    , class [ TextInput ]
-                    , value context.title
-                    , onInput context.onTitleChanged
-                    ]
-                    []
-                ]
-            ]
-        , div [ class [ Section ] ]
-            [ h3 [ class [ SectionHeader ] ] [ text "Description" ]
-            , div [ class [ SectionContent ] ]
-                [ textarea
-                    [ class [ Textarea ]
-                    , onInput context.onDescriptionChanged
-                    , value context.description
-                    ]
-                    []
-                ]
-            ]
-        , div [ class [ Section ] ]
-            [ h3 [ class [ SectionHeader ] ] [ text "Packages" ]
-            , div [ class [ PackagesList ] ]
-                (List.map (dependency context.onRemoved) context.dependencies)
-            , div [ class [ SectionContent ] ] [ newPackageFlow context ]
-            ]
+        [ viewProjectInfo viewModel
+        , viewPackages viewModel
         ]

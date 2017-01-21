@@ -1,21 +1,25 @@
-module Components.Header.Classes exposing (..)
+module Components.About.Classes exposing (..)
 
 import Html exposing (Attribute)
 import Html.CssHelpers
 
 
 type Classes
-    = Header
-    | HeaderGroup
+    = Popout
+    | Title
+    | Paragraph
+    | Creators
+    | CreatorLine
     | Logo
-    | Button
-    | ButtonIcon
-    | ButtonText
+    | ImagesAndHsLogo
+    | PartnerImageContainer
+    | PartnerImage
+    | HsLogoImage
 
 
 helpers : Html.CssHelpers.Namespace String class id msg
 helpers =
-    Html.CssHelpers.withNamespace "components_header_"
+    Html.CssHelpers.withNamespace "components_about_"
 
 
 class : List class -> Attribute msg

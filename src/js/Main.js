@@ -3,9 +3,14 @@ require('../elm/Stylesheets.elm')
 var register = require('./ServiceWorker')
 var initCodeMirror = require('./CodeMirror')
 
-register({ scope: '/' })
-  .catch(function () {})
-  .then(initCodeMirror)
+var promise =
+  process.env.NODE_ENV === 'production' ?
+    register({ scope: '/' })
+      .catch(function () {})
+      .then(initCodeMirror) :
+    initCodeMirror()
+
+promise
   .then(function () {
     var Elm = require('../elm/Main.elm')
 

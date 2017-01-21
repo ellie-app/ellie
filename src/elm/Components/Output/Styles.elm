@@ -5,6 +5,7 @@ import Css.Namespace exposing (..)
 import Css.Elements exposing (..)
 import Components.Output.Classes as Classes exposing (Classes(..))
 import Shared.Constants as Constants
+import Shared.Colors as Colors
 
 
 shimmerGradient : String
@@ -15,60 +16,7 @@ shimmerGradient =
 styles : Stylesheet
 styles =
     (stylesheet << namespace "components_output_")
-        [ (.) LoadingShimmer
-            [ height (pct 120)
-            , width (pct 100)
-            , position absolute
-            , property "background-image" shimmerGradient
-            , top (pct -10)
-            , property "animation-name" "shimmer"
-            , property "animation-duration" "2s"
-            , property "animation-fill-model" "forwards"
-            , property "animation-timing-function" "ease"
-            , property "animation-play-state" "running"
-            , property "animation-iteration-count" "infinite"
-            ]
-        , (.) Loading
-            [ width (pct 100)
-            , height (pct 100)
-            , displayFlex
-            , padding (px 16)
-            , flexDirection column
-            , overflow hidden
-            , position relative
-            ]
-        , (.) LoadingSection
-            [ marginBottom (px 32)
-            , position relative
-            ]
-        , (.) LoadingFullBox
-            [ width (pct 100)
-            , height (px 80)
-            , marginBottom (px 12)
-            , backgroundColor (hex "e5e1e5")
-            ]
-        , (.) LoadingSplitContainer
-            [ width (pct 100)
-            , displayFlex
-            ]
-        , (.) LoadingSplitLeft
-            [ width (pct 60)
-            , paddingRight (px 8)
-            ]
-        , (.) LoadingSplitRight
-            [ width (pct 40)
-            , paddingLeft (px 8)
-            , textAlign center
-            ]
-        , (.) LoadingCircle
-            [ height (pct 100)
-            , borderRadius (pct 50)
-            , backgroundColor (hex "e5e1e5")
-            , width (pct 100)
-            , maxWidth (px 184)
-            , display inlineBlock
-            ]
-        , (.) Iframe
+        [ (.) Iframe
             [ width (pct 100)
             , height (pct 100)
             , border zero
@@ -77,14 +25,13 @@ styles =
             [ width (pct 100)
             , height (pct 100)
             , position relative
-            , backgroundColor (hex "55B5DB")
+            , backgroundColor (hex Colors.mediumGray)
             , displayFlex
             , property "align-items" "center"
-            , property "justify-content" "center"
             , flexDirection column
-            , color (hex "fff")
+            , color (hex Colors.white)
             , padding (px 16)
-            , textShadow4 (px 1) (px 2) (px 6) (rgba 0 0 0 0.5)
+            , paddingTop (px 300)
             ]
         , (.) OverlayTitle
             [ property "font-family" "Leckerli One"
@@ -96,15 +43,25 @@ styles =
             , textAlign center
             ]
         , (.) ErrorsContainer
-            [ padding (px 12)
+            [ padding (px 16)
             , width (pct 100)
+            , backgroundColor (hex Colors.mediumGray)
+            , height (pct 100)
+            , overflowY auto
             ]
         , (.) ErrorItem
-            [ padding (px 12)
-            , boxShadow5 (px 1) (px 3) (px 13) (px -2) (rgba 0 0 0 0.4)
-            , backgroundColor (hex "e00")
-            , color (hex "fff")
-            , marginBottom (px 16)
+            [ padding (px 16)
+            , backgroundColor (hex Colors.darkGray)
+            , color (hex Colors.white)
+            , marginBottom (px 2)
+            , firstChild
+                [ borderTopRightRadius (px 3)
+                , borderTopLeftRadius (px 3)
+                ]
+            , lastChild
+                [ borderBottomRightRadius (px 3)
+                , borderBottomLeftRadius (px 3)
+                ]
             , descendants
                 [ code
                     [ fontWeight (int 700)
@@ -117,23 +74,26 @@ styles =
                 ]
             ]
         , (.) ErrorItemHeader
-            [ marginBottom (px 12)
-            , paddingBottom (px 8)
-            , fontSize (px 14)
-            , borderBottom3 (px 3) solid (hex "fff")
-            , displayFlex
+            [ displayFlex
             , property "justify-content" "space-between"
+            , fontSize (px 10)
+            , color (hex Colors.lightGray)
+            , lineHeight (px 10)
+            , textTransform uppercase
+            , paddingBottom (px 16)
             ]
         , (.) ErrorItemName
             []
         , (.) ErrorItemLocation
-            [ textTransform uppercase ]
+            []
         , (.) ErrorItemOverview
-            [ fontSize (px 20)
-            , marginBottom (px 18)
+            [ fontSize (px 16)
             , fontWeight (int 700)
+            , paddingBottom (px 16)
+            , lineHeight (px 16)
             ]
         , (.) ErrorItemDetails
-            [ fontSize (px 16)
+            [ fontSize (px 14)
+            , lineHeight (px 14)
             ]
         ]

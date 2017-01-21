@@ -2,12 +2,12 @@ port module App.Subs exposing (subscriptions)
 
 import Window
 import Mouse
+import Keyboard
 import Json.Decode as Decode exposing (Decoder, Value)
 import Json.Decode.Pipeline as Decode
 import Shared.MessageBus as MessageBus
-import App.Model as Model exposing (Model)
+import App.Model as Model exposing (Model, PopoutState(..))
 import App.Update as Update exposing (Msg(..))
-import Effects.ClickOutside as ClickOutside
 
 
 port windowUnloadedIn : (() -> msg) -> Sub msg
@@ -25,12 +25,6 @@ windowMessageDecoder model =
         |> Decode.andThen
             (\type_ ->
                 case type_ of
-                    "click" ->
-                        if model.notificationsOpen then
-                            Decode.succeed ToggleNotifications
-                        else
-                            Decode.succeed NoOp
-
                     "mouseup" ->
                         if model.resultDragging then
                             Decode.succeed ResultDragEnded
@@ -60,7 +54,7 @@ windowMessageDecoder model =
 
 windowMessage : Model -> Sub Msg
 windowMessage model =
-    if model.resultDragging || model.editorDragging || model.notificationsOpen then
+    if model.resultDragging || model.editorDragging || model.popoutState == NotificationsOpen then
         windowMessageIn (Decode.decodeValue (windowMessageDecoder model) >> Result.withDefault NoOp)
     else
         Sub.none
@@ -93,10 +87,16 @@ resultDrags model =
         Sub.none
 
 
-clickOutsideNotifications : Model -> Sub Msg
-clickOutsideNotifications model =
-    if model.notificationsOpen then
-        ClickOutside.clickOutside "notifications" ToggleNotifications
+closeSearch : Model -> Sub Msg
+closeSearch model =
+    if model.searchOpen then
+        Keyboard.ups
+            (\keyCode ->
+                if keyCode == 27 then
+                    ToggleSearch
+                else
+                    NoOp
+            )
     else
         Sub.none
 
@@ -111,5 +111,5 @@ subscriptions model =
         , resultDrags model
         , editorDrags model
         , windowMessage model
-        , clickOutsideNotifications model
+        , closeSearch model
         ]

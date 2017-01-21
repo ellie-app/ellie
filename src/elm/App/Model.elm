@@ -1,6 +1,7 @@
 module App.Model
     exposing
         ( Model
+        , PopoutState(..)
         , Flags
         , model
         , updateClientRevision
@@ -11,16 +12,18 @@ module App.Model
         , resetStagedCode
         , canCompile
         , canSave
+        , closeSearch
         )
 
+import Set exposing (Set)
 import Window exposing (Size)
 import RemoteData exposing (RemoteData(..))
 import Types.ApiError as ApiError exposing (ApiError)
 import Types.Session as Session exposing (Session)
 import Types.Revision as Revision exposing (Revision)
 import Types.CompileError as CompileError exposing (CompileError)
-import Types.NewPackageFlow as NewPackageFlow exposing (NewPackageFlow(..))
 import Types.Notification as Notification exposing (Notification)
+import Types.Package as Package exposing (Package)
 import App.Routing as Routing exposing (Route(..))
 
 
@@ -28,6 +31,12 @@ type alias Flags =
     { windowSize : Window.Size
     , online : Bool
     }
+
+
+type PopoutState
+    = BothClosed
+    | AboutOpen
+    | NotificationsOpen
 
 
 type alias Model =
@@ -41,44 +50,54 @@ type alias Model =
     , firstCompileComplete : Bool
     , saveState : RemoteData ApiError ()
     , isOnline : Bool
-    , newPackageFlow : NewPackageFlow
     , notifications : List Notification
-    , notificationsOpen : Bool
-    , notificationsHighlight : Bool
+    , popoutState : PopoutState
     , resultSplit : Float
     , resultDragging : Bool
     , editorSplit : Float
     , editorDragging : Bool
     , windowSize : Size
+    , searchOpen : Bool
+    , searchValue : String
+    , searchResults : List Package
+    , installingPackage : Maybe Package
+    , removingDependencyHashes : Set String
     }
-
-
-emptyRevision : Revision
-emptyRevision =
-    Revision.empty
 
 
 model : Flags -> Model
 model flags =
     { session = NotAsked
     , serverRevision = NotAsked
-    , clientRevision = emptyRevision
-    , stagedElmCode = emptyRevision.elmCode
-    , stagedHtmlCode = emptyRevision.htmlCode
+    , clientRevision = Revision.empty
+    , stagedElmCode = .elmCode Revision.empty
+    , stagedHtmlCode = .htmlCode Revision.empty
     , currentRoute = NotFound
     , compileResult = NotAsked
     , firstCompileComplete = False
     , saveState = NotAsked
     , isOnline = flags.online
-    , newPackageFlow = NotSearching
     , notifications = []
-    , notificationsOpen = False
-    , notificationsHighlight = False
+    , popoutState = BothClosed
     , resultSplit = 0.5
     , resultDragging = False
     , editorSplit = 0.5
     , editorDragging = False
     , windowSize = flags.windowSize
+    , searchOpen = False
+    , searchValue = ""
+    , searchResults = []
+    , installingPackage = Nothing
+    , removingDependencyHashes = Set.empty
+    }
+
+
+closeSearch : Model -> Model
+closeSearch model =
+    { model
+        | searchOpen = False
+        , searchResults = []
+        , searchValue = ""
     }
 
 

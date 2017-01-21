@@ -1,25 +1,15 @@
 module Components.Notifications.View
     exposing
         ( view
-        , Context
         )
 
 import Date exposing (Date)
-import Json.Decode as Decode
 import Html exposing (Html, div, text, button, span)
 import Html.Attributes exposing (style, id)
-import Html.Events exposing (onClick, onWithOptions)
 import Types.Notification as Notification exposing (Notification)
 import Shared.Icons as Icons
+import Shared.Colors as Colors
 import Components.Notifications.Classes exposing (..)
-
-
-type alias Context msg =
-    { notifications : List Notification
-    , isOpen : Bool
-    , onToggled : msg
-    , isHighlighted : Bool
-    }
 
 
 icon : Notification.Level -> Html msg
@@ -42,16 +32,16 @@ iconColor : Notification.Level -> String
 iconColor level =
     case level of
         Notification.Warning ->
-            "#ded10c"
+            Colors.yellow
 
         Notification.Error ->
-            "#db5555"
+            Colors.orange
 
         Notification.Success ->
-            "#55db61"
+            Colors.green
 
         Notification.Info ->
-            "#55B5DB"
+            Colors.blue
 
 
 amPm : Date -> String
@@ -81,14 +71,9 @@ formatDate date =
         ++ amPm date
 
 
-item : Bool -> Int -> Notification -> Html msg
-item isHighlighted index notification =
-    div
-        [ classList
-            [ ( Item, True )
-            , ( ItemHighlighted, isHighlighted && index == 0 )
-            ]
-        ]
+item : Notification -> Html msg
+item notification =
+    div [ class [ Item ] ]
         [ div [ class [ ItemTitle ] ]
             [ span [] [ text notification.title ]
             , span [ class [ ItemTimestamp ] ] [ text <| formatDate notification.timestamp ]
@@ -105,57 +90,10 @@ item isHighlighted index notification =
         ]
 
 
-popout : Context msg -> Html msg
-popout context =
-    case context.notifications of
-        [] ->
-            text ""
-
-        _ ->
-            div
-                [ classList
-                    [ ( Popout, True )
-                    , ( PopoutHidden, not context.isOpen )
-                    ]
-                , id "notifications"
-                ]
-                [ div [ class [ Items ] ]
-                    (List.indexedMap (item context.isHighlighted) context.notifications)
-                ]
-
-
-latest : Context msg -> Html msg
-latest context =
-    case List.head context.notifications of
-        Just notification ->
-            div
-                [ class [ Latest ]
-                , style [ ( "color", iconColor notification.level ) ]
-                ]
-                [ span [ class [ LatestTitle ] ] [ text notification.title ]
-                ]
-
-        Nothing ->
-            text ""
-
-
-view : Context msg -> Html msg
-view context =
-    div [ class [ Notifications ] ]
-        [ latest context
-        , button
-            [ class [ Button ]
-            , onWithOptions
-                "click"
-                { stopPropagation = True, preventDefault = False }
-                (Decode.succeed context.onToggled)
-            ]
-            [ Icons.bell
-            , context.notifications
-                |> List.head
-                |> Maybe.map (.level)
-                |> Maybe.map (\l -> div [ class [ ButtonIcon ], style [ ( "color", iconColor l ) ] ] [ icon l ])
-                |> Maybe.withDefault (text "")
-            ]
-        , popout context
+view : List Notification -> Html msg
+view notifications =
+    div
+        [ class [ Popout ]
+        , id "notifications"
         ]
+        (List.map item notifications)

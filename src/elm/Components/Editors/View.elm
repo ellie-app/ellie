@@ -10,6 +10,7 @@ import Html.Attributes exposing (style, value)
 import Types.CompileError exposing (CompileError)
 import Components.Editors.CodeMirror as CodeMirror
 import Components.Editors.Classes exposing (Classes(..), class)
+import Shared.Utils as Utils
 
 
 singleton : a -> List a
@@ -93,7 +94,7 @@ elm onUpdate content compileErrors =
             in
                 CodeMirror.linterMessage
                     (compileErrorLevelToSeverity compileError.level)
-                    (compileError.overview ++ "\n\n" ++ compileError.details)
+                    (Utils.replaceAll <| compileError.overview ++ "\n\n" ++ compileError.details)
                     (CodeMirror.position (region.start.line - 1) (compileError.region.start.column - 1))
                     (CodeMirror.position (region.end.line - 1) (compileError.region.end.column))
 
@@ -104,7 +105,7 @@ elm onUpdate content compileErrors =
             [ value content
             , CodeMirror.linterMessages linterMessages
             , CodeMirror.onUpdate onUpdate
-            , CodeMirror.theme "yeti"
+            , CodeMirror.theme "material"
             , style
                 [ ( "height", "100%" )
                 , ( "width", "100%" )
@@ -117,7 +118,7 @@ html onUpdate content =
     CodeMirror.editor
         [ value content
         , CodeMirror.onUpdate onUpdate
-        , CodeMirror.theme "yeti"
+        , CodeMirror.theme "material"
         , style
             [ ( "height", "100%" )
             , ( "width", "100%" )

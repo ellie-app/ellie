@@ -20,7 +20,17 @@ var _user$project$Native_CodeMirror = (function () {
     var instance = CodeMirror(null, {
       lineNumbers: true,
       styleActiveLine: true,
-      lint: { lintOnChange: false }
+      smartIndent: true,
+      indentUnit: 4,
+      indentWithTabs: false,
+      tabSize: 4,
+      lint: { lintOnChange: false },
+      extraKeys: {
+        Tab: function(cm) {
+          var spaces = Array(cm.getOption("indentUnit") + 1).join(" ");
+          cm.replaceSelection(spaces);
+        }
+      }
     })
 
     instance.__ellie_errors = [];
@@ -56,7 +66,16 @@ var _user$project$Native_CodeMirror = (function () {
       },
       linterMessages: {
         set: function (errors) {
-          instance.__ellie_errors = errors
+          instance.__ellie_errors = errors.map(function (i) {
+            var div = document.createElement('div')
+            div.innerHTML = i.message
+            return {
+              from: i.from,
+              to: i.to,
+              message: div.innerText,
+              severity: i.severity
+            }
+          })
           instance.performLint()
         },
         get: function () {

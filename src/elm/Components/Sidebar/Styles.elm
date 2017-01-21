@@ -4,6 +4,7 @@ import Css exposing (..)
 import Css.Namespace exposing (..)
 import Components.Sidebar.Classes exposing (..)
 import Shared.Constants as Constants
+import Shared.Colors as Colors
 
 
 styles : Stylesheet
@@ -12,144 +13,177 @@ styles =
         [ (.) Sidebar
             [ height (pct 100)
             , width (px Constants.sidebarWidth)
-            ]
-        , (.) Section
-            []
-        , (.) SectionHeader
-            [ fontSize (px 13)
-            , textTransform uppercase
-            , margin zero
-            , fontWeight (int 300)
+            , backgroundColor (hex Colors.mediumGray)
             , padding2 (px 8) (px 16)
-            , backgroundColor (hex "f7f7f7")
-            , borderTop3 (px 1) solid (hex "bdb7bd")
-            , borderBottom3 (px 1) solid (hex "bdb7bd")
+            , property "box-shadow" "2px 0 8px 2px rgba(0,0,0,0.50)"
+            , position relative
+            , property "z-index" "1"
             ]
-        , (.) SectionContent
-            [ padding (px 16)
+        , (.) ProjectInfo
+            [ padding2 (px 8) zero
             ]
-        , (.) TextInput
-            [ property "-webkit-appearance" "none"
-            , border zero
-            , outline zero
-            , width (pct 100)
-            , borderBottom3 (px 2) solid (hex "bdb7bd")
-            , height (px 32)
-            , fontSize (px 16)
-            , fontFamily inherit
-            , fontWeight (int 300)
-            , focus
-                [ borderBottomColor (hex "55B5DB")
+        , (.) ProjectInfoTitle
+            [ color (hex Colors.lightGray)
+            , textTransform uppercase
+            , fontSize (px 14)
+            , paddingBottom (px 4)
+            , lineHeight (px 14)
+            ]
+        , (.) ProjectInfoInputContainer
+            [ position relative
+            , overflow hidden
+            , marginBottom (px 2)
+            , firstChild
+                [ borderTopLeftRadius (px 3)
+                , borderTopRightRadius (px 3)
+                ]
+            , lastChild
+                [ borderBottomLeftRadius (px 3)
+                , borderBottomRightRadius (px 3)
+                , marginBottom zero
                 ]
             ]
-        , (.) Textarea
-            [ property "-webkit-appearance" "none"
+        , (.) ProjectInfoInput
+            [ backgroundColor (hex Colors.darkGray)
+            , color (hex Colors.white)
+            , display block
             , border zero
-            , outline zero
             , width (pct 100)
-            , borderBottom3 (px 2) solid (hex "bdb7bd")
-            , height (px 32)
+            , outline zero
+            , padding3 (px 24) (px 8) (px 16)
             , fontSize (px 16)
-            , fontFamily inherit
-            , fontWeight (int 300)
+            , lineHeight (px 20)
+            , fontFamilies [ Constants.sansFont ]
+            , fontWeight (int 500)
+            ]
+        , (.) ProjectInfoTextarea
+            [ backgroundColor (hex Colors.darkGray)
+            , color (hex Colors.white)
+            , display block
+            , border zero
+            , width (pct 100)
+            , outline zero
+            , padding3 (px 24) (px 8) (px 16)
+            , fontSize (px 16)
+            , lineHeight (px 20)
             , property "resize" "none"
             , height (px 120)
-            , focus
-                [ borderBottomColor (hex "55B5DB")
-                ]
+            , fontFamilies [ Constants.sansFont ]
+            , fontWeight (int 500)
             ]
-        , (.) PackagesList
-            [ maxHeight (px 300)
-            , overflowY auto
-            , padding2 (px 8) (px 16)
-            , borderBottom3 (px 2) solid (hex "f7f7f7")
+        , (.) ProjectInfoLabel
+            [ position absolute
+            , top (px 8)
+            , left (px 8)
+            , fontSize (px 10)
+            , lineHeight (px 10)
+            , textTransform uppercase
+            , color (hex Colors.lightGray)
             ]
-        , (.) DepItem
+        , (.) Packages
             [ padding2 (px 8) zero
-            , displayFlex
-            , property "align-items" "center"
-            , property "justify-content" "space-between"
             ]
-        , (.) DepItemDetails
-            [ property "width" "calc(100% - 32px)"
-            , fontSize (px 16)
-            , fontFamilies [ "monospace" ]
-            ]
-        , (.) DepItemPackageName
-            [ whiteSpace noWrap
-            , textOverflow ellipsis
-            , width (pct 100)
-            , overflow hidden
-            , fontWeight bold
-            ]
-        , (.) IconButton
-            [ width (px 32)
-            , height (px 32)
-            , property "background" "none"
-            , border zero
-            , cursor pointer
-            ]
-        , (.) AddDepButton
-            [ width (pct 100)
-            , height (px 48)
-            , border zero
-            , cursor pointer
-            , backgroundColor (hex "E5E1DB")
-            , fontFamily inherit
+        , (.) PackagesTitle
+            [ color (hex Colors.lightGray)
+            , textTransform uppercase
             , fontSize (px 14)
             , lineHeight (px 14)
-            , textTransform uppercase
-            , textAlign center
+            , paddingBottom (px 4)
             ]
-        , (.) AddDepButtonText
-            [ display inlineBlock
-            , verticalAlign middle
+        , (.) PackagesList
+            [ paddingBottom (px 16)
             ]
-        , (.) AddDepButtonIcon
-            [ width (px 16)
-            , height (px 16)
-            , display inlineBlock
-            , marginLeft (px 8)
-            , verticalAlign middle
-            ]
-        , (.) AddDepContainer
-            [ displayFlex
-            ]
-        , (.) AddDepInputContainer
-            [ property "width" "calc(100% - 32px)"
-            ]
-        , (.) AddDepResultList
-            [ position absolute
+        , (.) PackagesItem
+            [ backgroundColor (hex Colors.darkGray)
+            , color (hex Colors.white)
             , width (pct 100)
-            , marginTop (px 12)
-            , boxShadow5 (px 4) (px 4) (px 15) (px -4) (rgba 0 0 0 0.5)
-            , padding2 (px 8) zero
-            ]
-        , (.) AddDepPackageSearch
-            [ position relative
-            ]
-        , (.) AddDepPackageItem
-            [ cursor pointer
-            , padding2 (px 8) (px 16)
-            , hover
-                [ backgroundColor (hex "f7f7f7")
+            , position relative
+            , marginBottom (px 2)
+            , displayFlex
+            , property "justify-content" "space-between"
+            , firstChild
+                [ borderTopLeftRadius (px 3)
+                , borderTopRightRadius (px 3)
+                ]
+            , lastChild
+                [ borderBottomLeftRadius (px 3)
+                , borderBottomRightRadius (px 3)
+                , marginBottom zero
                 ]
             ]
-        , (.) AddDepVersion
-            [ displayFlex
-            , property "align-items" "center"
-            , property "justify-content" "space-between"
+        , (.) PackagesItemInfo
+            [ fontSize (px 12)
+            , lineHeight (px 12)
+            , padding2 (px 12) (px 8)
+            , property "width" "calc(100% - 48px)"
+            , borderRight3 (px 2) solid (hex Colors.mediumGray)
             ]
-        , (.) AddDepVersionDetails
-            [ property "width" "calc(100% - 64px)"
-            , fontSize (px 16)
-            , fontFamilies [ "monospace" ]
+        , (.) PackagesItemInfoName
+            [ color (hex Colors.lightGray)
+            , paddingBottom (px 8)
             ]
-        , (.) AddDepVersionPackageName
-            [ whiteSpace noWrap
-            , textOverflow ellipsis
+        , (.) PackagesItemInfoNameUsername
+            [ color (hex Colors.mediumGray)
+            ]
+        , (.) PackagesItemInfoVersion
+            [ color (hex Colors.lightGray)
+            ]
+        , (.) PackagesItemRemove
+            [ property "background" "none"
+            , border zero
+            , width (px 48)
+            , display block
+            , position relative
+            , displayFlex
+            , flexDirection column
+            , property "justify-content" "center"
+            , alignItems center
+            , color (hex Colors.lightGray)
+            , cursor pointer
+            ]
+        , (.) PackagesItemRemoveIcon
+            [ width (px 24)
+            , height (px 24)
+            , paddingBottom (px 4)
+            ]
+        , (.) PackagesItemRemoveText
+            [ fontSize (px 8)
+            , textTransform uppercase
+            ]
+        , (.) AddPackage
+            [ display block
+            , backgroundColor (hex Colors.darkGray)
+            , color (hex Colors.lightGray)
+            , borderRadius (px 3)
+            , border zero
             , width (pct 100)
-            , overflow hidden
-            , fontWeight bold
+            , padding (px 12)
+            , fontSize (px 16)
+            , textTransform uppercase
+            , fontFamily inherit
+            , fontWeight (int 500)
+            , cursor pointer
             ]
+        , (.) Loading
+            [ padding2 (px 12) (px 16)
+            , backgroundColor (hex Colors.darkGray)
+            , displayFlex
+            , property "justify-content" "center"
+            , alignItems center
+            , flexDirection column
+            , borderRadius (px 3)
+            ]
+        , (.) LoadingPackageInfo
+            [ fontSize (px 12)
+            , color (hex Colors.lightGray)
+            , paddingBottom (px 8)
+            ]
+        , (.) LoadingAnimContainer
+            [ width (px 50)
+            , position relative
+            , height (px 20)
+            , color (hex Colors.mediumGray)
+            ]
+        , (.) LoadingAnim
+            []
         ]

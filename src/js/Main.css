@@ -7,3 +7,84 @@
   0% { transform: translateX(-100%); }
   100% { transform: translateX(100%); }
 }
+
+
+.CodeMirror {
+  background-color: #282A37 !important;
+}
+
+.CodeMirror .CodeMirror-gutters {
+  background-color: #282A37 !important;
+}
+
+.CodeMirror .cm-keyword {
+  color: #ff6cc9 !important;
+}
+
+.CodeMirror .cm-variable-2,
+.CodeMirror .cm-qualifier {
+  color: inherit !important;
+}
+
+.CodeMirror .CodeMirror-linenumber {
+  color: #8D8D97 !important;
+}
+
+
+@keyframes pulse {
+  0% { color: #e9eded; }
+  33%, 100% { color: inherit; }
+}
+
+.components_sidebar_LoadingAnimContainer svg circle,
+.components_sidebar_PackagesItemRemoveIcon svg circle {
+  fill: currentColor;
+  animation-name: pulse;
+  animation-duration: 1.5s;
+  animation-timing-function: step-end;
+  animation-play-state: running;
+  animation-fill-mode: forwards;
+  animation-iteration-count: infinite;
+}
+
+.components_sidebar_LoadingAnimContainer svg circle:nth-child(1),
+.components_sidebar_PackagesItemRemoveIcon svg circle:nth-child(1) {
+  animation-delay: 0.5s;
+}
+
+.components_sidebar_LoadingAnimContainer svg circle:nth-child(2),
+.components_sidebar_PackagesItemRemoveIcon svg circle:nth-child(2) {
+  animation-delay: 1s;
+}
+
+.components_search_SearchBarInput::placeholder {
+  color: #8D8D97;
+}
+
+.CodeMirror-lint-tooltip {
+  background-color: #565868 !important;
+  color: #e9eded !important;
+  border: #8D8D97 !important;
+  padding: 12px !important;
+  box-shadow: -6px 6px 15px -4px rgba(0, 0, 0, 0.5);
+  border-radius: 3px !important;
+}
+
+.CodeMirror-lint-marker-warning, .CodeMirror-lint-message-warning,
+.CodeMirror-lint-message-error, .CodeMirror-lint-message-warning {
+  background-image: none !important;
+  padding: 0 !important;
+}
+
+.CodeMirror-lint-mark-error, .CodeMirror-lint-mark-warning {
+    background-image: none !important;
+    border-bottom-style: dotted;
+}
+
+.CodeMirror-lint-mark-error {
+  border-bottom-color: #F77669;
+}
+
+.CodeMirror-lint-mark-warning {
+  border-bottom-color: #DECB6B;
+}

@@ -33,11 +33,16 @@ defaultDependencies =
     ]
 
 
+elmVersion : Version
+elmVersion =
+    Version 0 18 0
+
+
 scriptFont : String
 scriptFont =
     "Leckerli One"
 
 
-elmVersion : Version
-elmVersion =
-    Version 0 18 0
+sansFont : String
+sansFont =
+    "Quicksand"

@@ -4,95 +4,42 @@ import Css exposing (..)
 import Css.Namespace exposing (..)
 import Components.Notifications.Classes exposing (Classes(..))
 import Shared.Constants as Constants
+import Shared.Colors as Colors
 
 
 styles : Stylesheet
 styles =
     (stylesheet << namespace "components_notifications_")
-        [ (.) Notifications
+        [ (.) Popout
             [ position relative
-            , displayFlex
-            , alignItems center
-            ]
-        , (.) Button
-            [ height (px (Constants.headerHeight - 10))
-            , width (px (Constants.headerHeight - 10))
-            , property "background" "none"
-            , border zero
-            , borderRadius (pct 50)
-            , backgroundColor (hex "e7e7e7")
-            , padding (px 10)
-            , cursor pointer
-            , position relative
-            , boxShadow5 (px 0) (px 5) (px 9) (px -3) (rgba 0 0 0 0.5)
-            , top (px -2)
-            ]
-        , (.) ButtonIcon
-            [ position absolute
-            , width (px 16)
-            , height (px 16)
-            , top (px 1)
-            , left (px 28)
-            ]
-        , (.) Popout
-            [ position absolute
-            , backgroundColor (hex "f7f7f7")
+            , backgroundColor (hex Colors.mediumGray)
             , width (px 400)
-            , right (px (Constants.headerHeight / 2))
-            , top (px (Constants.headerHeight + 24))
             , boxShadow5 (px -6) (px 6) (px 15) (px -4) (rgba 0 0 0 0.5)
-            , property "z-index" "5"
-            , borderRadius (px 4)
-            , borderTopRightRadius (px 0)
-            , border3 (px 1) solid (hex "a7a7a7")
-            , transforms [ scaleX 1, scaleY 1 ]
-            , property "transition" "transform 0.1s ease-in-out, opacity 0.1s ease-in-out"
-            , property "transform-origin" "top right"
-            , before
-                [ property "content" "''"
-                , position absolute
-                , borderBottom3 (px 16) solid (hex "f7f7f7")
-                , borderLeft3 (px 16) solid transparent
-                , width zero
-                , height zero
-                , top (px -16)
-                , right zero
-                , property "z-index" "2"
-                ]
-            , after
-                [ property "content" "''"
-                , position absolute
-                , borderBottom3 (px 18) solid (hex "a7a7a7")
-                , borderLeft3 (px 18) solid transparent
-                , width zero
-                , height zero
-                , top (px -19)
-                , right (px -1)
-                ]
-            ]
-        , (.) PopoutHidden
-            [ transforms [ scaleX 0, scaleY 0 ]
-            , opacity (int 0)
-            ]
-        , (.) Items
-            [ overflowY auto
-            , maxHeight (px 500)
-            , padding2 (px 8) zero
+            , property "z-index" "4"
+            , borderRadius (px 3)
+            , padding (px 16)
+            , overflowY auto
+            , maxHeight (px 400)
+            , border3 (px 2) solid (hex Colors.lightGray)
             ]
         , (.) Item
-            [ padding2 (px 8) (px 16)
-            , borderBottom3 (px 1) solid (hex "a7a7a7")
+            [ backgroundColor (hex Colors.darkGray)
+            , marginBottom (px 2)
+            , padding (px 12)
+            , firstChild
+                [ borderTopRightRadius (px 3)
+                , borderTopLeftRadius (px 3)
+                ]
             , lastChild
-                [ borderBottom zero
+                [ borderBottomLeftRadius (px 3)
+                , borderBottomRightRadius (px 3)
+                , marginBottom zero
                 ]
             ]
-        , (.) ItemHighlighted
-            [ backgroundColor (hex "e7e7e7")
-            ]
         , (.) ItemDetails
-            [ paddingBottom (px 8)
-            , displayFlex
+            [ displayFlex
             , property "align-items" "center"
+            , color (hex Colors.white)
             ]
         , (.) ItemMessage
             [ property "width" "calc(100% - 24px)"
@@ -102,32 +49,13 @@ styles =
             [ width (px 24)
             ]
         , (.) ItemTitle
-            [ fontWeight (int 300)
-            , fontSize (px 13)
+            [ fontSize (px 12)
             , textTransform uppercase
-            , paddingTop (px 8)
-            , paddingBottom (px 16)
+            , paddingBottom (px 4)
             , displayFlex
+            , color (hex Colors.lightGray)
             , property "justify-content" "space-between"
             ]
         , (.) ItemTimestamp
-            [ color (hex "a7a7a7")
-            ]
-        , (.) Latest
-            [ padding2 zero (px 16)
-            , fontSize (px 14)
-            , textTransform uppercase
-            ]
-        , (.) LatestTitle
-            [ display inlineBlock
-            , verticalAlign middle
-            , lineHeight (int 1)
-            ]
-        , (.) LatestIcon
-            [ width (px 16)
-            , height (px 16)
-            , display inlineBlock
-            , marginRight (px 8)
-            , verticalAlign middle
-            ]
+            []
         ]
