@@ -1,5 +1,5 @@
 var CACHE_NAME =
-  'ellie-cache-v3'
+  'ellie-cache-v4'
 
 var isApiRequest = function (url) {
   return url.indexOf(API_BASE) !== -1
