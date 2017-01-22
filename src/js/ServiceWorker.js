@@ -16,7 +16,8 @@ var cachedResourceRequests =
   [
     /\/app\..+\.js/,
     /\/chunk\..+\.js/,
-    /\/main\..+\.css/
+    /\/main\..+\.css/,
+    /\/images\/\.+/
   ]
 
 var isCachedResourceRequest = function (url) {
