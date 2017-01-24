@@ -1,6 +1,7 @@
 module Shared.Api
     exposing
         ( send
+        , toTask
         , searchPackages
         , createNewSession
         , createSessionForRevision
@@ -16,6 +17,7 @@ module Shared.Api
         , defaultRevision
         )
 
+import Task exposing (Task)
 import Json.Encode as Encode exposing (Value)
 import Json.Decode as Decode exposing (Decoder)
 import Http exposing (Request, Expect, Error(..))
@@ -39,10 +41,17 @@ listOf a =
 
 
 send : (Result ApiError a -> msg) -> RequestBuilder a -> Cmd msg
-send tagger requestBuilder =
-    requestBuilder
+send tagger builder =
+    builder
         |> toRequest
         |> Http.send (Result.mapError upgradeError >> tagger)
+
+
+toTask : RequestBuilder a -> Task ApiError a
+toTask builder =
+    builder
+        |> HttpBuilder.toTask
+        |> Task.mapError upgradeError
 
 
 fullUrl : String -> String
@@ -93,10 +102,10 @@ upgradeError error =
             , explanation = response.body
             }
 
-        BadPayload error response ->
+        BadPayload innerError response ->
             { statusCode = response.status.code
             , message = "Unexpected Response from Server"
-            , explanation = response.body
+            , explanation = innerError
             }
 
 
@@ -241,19 +250,19 @@ exactRevision projectId revisionNumber =
         |> withExpect (Http.expectJson Revision.decode)
 
 
-createProjectFromRevision : Revision -> RequestBuilder Revision
-createProjectFromRevision revision =
-    post (fullUrl "/projects")
+createProjectFromRevision : Session -> Revision -> RequestBuilder Revision
+createProjectFromRevision session revision =
+    post (fullUrl ("/projects?sessionId=" ++ session.id))
         |> withApiHeaders
         |> withExpect (Http.expectJson Revision.decode)
         |> withJsonBody (Revision.encode revision)
 
 
-createRevision : Revision -> RequestBuilder Revision
-createRevision revision =
+createRevision : Session -> Revision -> RequestBuilder Revision
+createRevision session revision =
     revision.projectId
         |> Maybe.withDefault ""
-        |> (\s -> put (fullUrl "/projects/" ++ s ++ "/revisions"))
+        |> (\s -> put (fullUrl "/projects/" ++ s ++ "/revisions?sessionId=" ++ session.id))
         |> withApiHeaders
         |> withJsonBody (Revision.encode revision)
         |> withExpect (Http.expectJson (Decode.succeed revision))

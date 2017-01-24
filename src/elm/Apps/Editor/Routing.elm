@@ -1,4 +1,4 @@
-module App.Routing
+module Apps.Editor.Routing
     exposing
         ( Route(..)
         , parse

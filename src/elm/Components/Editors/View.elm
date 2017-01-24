@@ -72,7 +72,7 @@ loading =
         ]
 
 
-elm : (String -> msg) -> String -> List CompileError -> Html msg
+elm : Maybe (String -> msg) -> String -> List CompileError -> Html msg
 elm onUpdate content compileErrors =
     let
         compileErrorLevelToSeverity level =
@@ -100,11 +100,10 @@ elm onUpdate content compileErrors =
 
         linterMessages =
             List.map compileErrorToLinterMessage compileErrors
-    in
-        CodeMirror.editor
+
+        baseAttrs =
             [ value content
             , CodeMirror.linterMessages linterMessages
-            , CodeMirror.onUpdate onUpdate
             , CodeMirror.theme "material"
             , style
                 [ ( "height", "100%" )
@@ -112,15 +111,29 @@ elm onUpdate content compileErrors =
                 ]
             ]
 
+        updateAttrs =
+            onUpdate
+                |> Maybe.map (\u -> [ CodeMirror.onUpdate u, CodeMirror.readOnly False ])
+                |> Maybe.withDefault [ CodeMirror.readOnly True ]
+    in
+        CodeMirror.editor (baseAttrs ++ updateAttrs)
 
-html : (String -> msg) -> String -> Html msg
+
+html : Maybe (String -> msg) -> String -> Html msg
 html onUpdate content =
-    CodeMirror.editor
-        [ value content
-        , CodeMirror.onUpdate onUpdate
-        , CodeMirror.theme "material"
-        , style
-            [ ( "height", "100%" )
-            , ( "width", "100%" )
+    let
+        baseAttrs =
+            [ value content
+            , CodeMirror.theme "material"
+            , style
+                [ ( "height", "100%" )
+                , ( "width", "100%" )
+                ]
             ]
-        ]
+
+        updateAttrs =
+            onUpdate
+                |> Maybe.map (\u -> [ CodeMirror.onUpdate u, CodeMirror.readOnly False ])
+                |> Maybe.withDefault [ CodeMirror.readOnly True ]
+    in
+        CodeMirror.editor (baseAttrs ++ updateAttrs)

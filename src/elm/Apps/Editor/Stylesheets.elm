@@ -1,7 +1,7 @@
 port module Stylesheets exposing (..)
 
 import Css.File exposing (..)
-import App.Styles as App
+import Apps.Editor.Styles as App
 import Components.Sidebar.Styles as Sidebar
 import Components.Output.Styles as Output
 import Components.Editors.Styles as Editors

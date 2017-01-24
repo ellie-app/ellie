@@ -1,4 +1,4 @@
-module App.Classes exposing (Classes(..), class, classList)
+module Apps.Editor.Classes exposing (Classes(..), class, classList)
 
 import Html exposing (Attribute)
 import Html.CssHelpers

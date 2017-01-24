@@ -1,4 +1,4 @@
-module App.Model
+module Apps.Editor.Model
     exposing
         ( Model
         , PopoutState(..)
@@ -24,7 +24,7 @@ import Types.Revision as Revision exposing (Revision)
 import Types.CompileError as CompileError exposing (CompileError)
 import Types.Notification as Notification exposing (Notification)
 import Types.Package as Package exposing (Package)
-import App.Routing as Routing exposing (Route(..))
+import Apps.Editor.Routing as Routing exposing (Route(..))
 
 
 type alias Flags =

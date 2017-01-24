@@ -6,6 +6,7 @@ module Components.Editors.CodeMirror
         , position
         , linterMessage
         , mode
+        , readOnly
         , theme
         , onUpdate
         , linterMessages
@@ -66,6 +67,11 @@ onUpdate tagger =
 mode : String -> Attribute msg
 mode =
     Encode.string >> property "mode"
+
+
+readOnly : Bool -> Attribute msg
+readOnly =
+    Encode.bool >> property "readOnly"
 
 
 theme : String -> Attribute msg

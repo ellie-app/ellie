@@ -1,10 +1,10 @@
-module Main exposing (main)
+module Apps.Editor.Main exposing (main)
 
 import Navigation
-import App.Model as Model exposing (Model, Flags)
-import App.Update as Update exposing (Msg(..))
-import App.View as View
-import App.Subs as Subs
+import Apps.Editor.Model as Model exposing (Model, Flags)
+import Apps.Editor.Update as Update exposing (Msg(..))
+import Apps.Editor.View as View
+import Apps.Editor.Subs as Subs
 
 
 main : Program Flags Model Msg

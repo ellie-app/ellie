@@ -4,17 +4,22 @@ var DashboardPlugin = require('webpack-dashboard/plugin');
 var StringReplacePlugin = require('string-replace-webpack-plugin');
 var HtmlWebpackPlugin = require('html-webpack-plugin');
 
+var target = process.env.BUILD_TARGET || 'editor'
+
+var entries = {
+  editor: './js/Apps/Editor/Main.js',
+  embed: './js/Apps/Embed/Main.js'
+}
+
 module.exports = {
   context: path.join(__dirname, 'src'),
 
   entry: {
-    app: [
-      './js/Main.js'
-    ]
+    app: [ entries[target] ]
   },
 
   output: {
-    path: path.resolve(__dirname + '/dist'),
+    path: path.resolve(__dirname + '/dist', target),
     filename: '[name].js',
   },
 

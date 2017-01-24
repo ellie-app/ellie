@@ -1,4 +1,4 @@
-port module App.Subs exposing (subscriptions)
+port module Apps.Editor.Subs exposing (subscriptions)
 
 import Window
 import Mouse
@@ -6,8 +6,8 @@ import Keyboard
 import Json.Decode as Decode exposing (Decoder, Value)
 import Json.Decode.Pipeline as Decode
 import Shared.MessageBus as MessageBus
-import App.Model as Model exposing (Model, PopoutState(..))
-import App.Update as Update exposing (Msg(..))
+import Apps.Editor.Model as Model exposing (Model, PopoutState(..))
+import Apps.Editor.Update as Update exposing (Msg(..))
 
 
 port windowUnloadedIn : (() -> msg) -> Sub msg

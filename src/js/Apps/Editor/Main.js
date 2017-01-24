@@ -1,7 +1,7 @@
 require('./Main.css')
-require('../elm/Stylesheets.elm')
+require('../../../elm/Apps/Editor/Stylesheets.elm')
 var register = require('./ServiceWorker')
-var initCodeMirror = require('./CodeMirror')
+var initCodeMirror = require('../../Shared/CodeMirror')
 
 var promise =
   process.env.NODE_ENV === 'production' ?
@@ -12,9 +12,9 @@ var promise =
 
 promise
   .then(function () {
-    var Elm = require('../elm/Main.elm')
+    var Elm = require('../../../elm/Apps/Editor/Main.elm')
 
-    var app = Elm.Main.fullscreen({
+    var app = Elm.Apps.Editor.Main.fullscreen({
       windowSize: {
         width: window.innerWidth,
         height: window.innerHeight

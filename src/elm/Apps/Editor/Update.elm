@@ -1,4 +1,4 @@
-module App.Update
+module Apps.Editor.Update
     exposing
         ( update
         , initialize
@@ -22,8 +22,8 @@ import Types.Notification as Notification exposing (Notification)
 import Types.Package as Package exposing (Package)
 import Types.VersionRange as VersionRange exposing (VersionRange)
 import Types.Version as Version exposing (Version)
-import App.Model as Model exposing (Model, Flags, PopoutState(..))
-import App.Routing as Routing exposing (Route(..))
+import Apps.Editor.Model as Model exposing (Model, Flags, PopoutState(..))
+import Apps.Editor.Routing as Routing exposing (Route(..))
 import Shared.Api as Api
 import Shared.Constants as Constants
 import Shared.MessageBus as MessageBus
@@ -101,15 +101,20 @@ type Msg
 
 saveProject : Model -> Cmd Msg
 saveProject model =
-    if Model.isSavedProject model && Model.isOwnedProject model then
-        model.clientRevision
-            |> (\r -> { r | revisionNumber = Maybe.map ((+) 1) r.revisionNumber })
-            |> Api.createRevision
-            |> Api.send SaveCompleted
-    else
-        model.clientRevision
-            |> Api.createProjectFromRevision
-            |> Api.send SaveCompleted
+    case model.session of
+        Success session ->
+            if Model.isSavedProject model && Model.isOwnedProject model then
+                model.clientRevision
+                    |> (\r -> { r | revisionNumber = Maybe.map ((+) 1) r.revisionNumber })
+                    |> Api.createRevision session
+                    |> Api.send SaveCompleted
+            else
+                model.clientRevision
+                    |> Api.createProjectFromRevision session
+                    |> Api.send SaveCompleted
+
+        _ ->
+            Cmd.none
 
 
 onlineNotification : Bool -> Cmd Msg

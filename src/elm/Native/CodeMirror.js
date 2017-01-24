@@ -38,6 +38,14 @@ var _user$project$Native_CodeMirror = (function () {
     var element = instance.getWrapperElement()
 
     Object.defineProperties(element, {
+      readOnly: {
+        get: function () {
+          return instance.getOption('readOnly')
+        },
+        set: function (value) {
+          instance.setOption('readOnly', value)
+        }
+      },
       value: {
         get: function () {
           return instance.getValue()
@@ -66,6 +74,11 @@ var _user$project$Native_CodeMirror = (function () {
       },
       linterMessages: {
         set: function (errors) {
+          if (!errors) {
+            instance.__ellie_errors = []
+            return
+          }
+
           instance.__ellie_errors = errors.map(function (i) {
             var div = document.createElement('div')
             div.innerHTML = i.message

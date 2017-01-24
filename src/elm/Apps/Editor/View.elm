@@ -1,4 +1,4 @@
-module App.View exposing (view)
+module Apps.Editor.View exposing (view)
 
 import Html exposing (Html, div, button, text, iframe, main_, header, span)
 import Html.Attributes exposing (style)
@@ -8,9 +8,9 @@ import Types.Revision as Revision exposing (Revision)
 import Types.ApiError as ApiError exposing (ApiError)
 import Types.CompileError as CompileError exposing (CompileError)
 import Types.Session as Session exposing (Session)
-import App.Update as Update exposing (Msg(..))
-import App.Model as Model exposing (Model, PopoutState(..))
-import App.Classes exposing (..)
+import Apps.Editor.Update as Update exposing (Msg(..))
+import Apps.Editor.Model as Model exposing (Model, PopoutState(..))
+import Apps.Editor.Classes exposing (..)
 import Components.Splash.View as Splash
 import Components.Sidebar.View as Sidebar
 import Components.Editors.View as Editors
@@ -112,7 +112,7 @@ editorsView model =
             , style [ ( "height", Utils.numberToPercent model.editorSplit ) ]
             ]
             [ Editors.elm
-                ElmCodeChanged
+                (Just ElmCodeChanged)
                 model.stagedElmCode
                 (model.compileResult |> RemoteData.withDefault [])
             ]
@@ -128,7 +128,10 @@ editorsView model =
                 [ ( "height", Utils.numberToPercent (1 - model.editorSplit) )
                 ]
             ]
-            [ Editors.html HtmlCodeChanged model.stagedHtmlCode ]
+            [ Editors.html
+                (Just HtmlCodeChanged)
+                model.stagedHtmlCode
+            ]
         ]
 
 

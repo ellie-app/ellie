@@ -1,6 +1,7 @@
 module Types.Revision
     exposing
         ( Revision
+        , Snapshot(..)
         , encode
         , decode
         , empty
@@ -10,7 +11,14 @@ import Json.Encode as Encode exposing (Value)
 import Json.Decode as Decode exposing (Decoder)
 import Json.Decode.Pipeline as Decode
 import Types.Dependency as Dependency exposing (Dependency)
+import Types.CompileError as CompileError exposing (CompileError)
 import Shared.Utils as Utils
+
+
+type Snapshot
+    = NotSaved
+    | Uploaded
+    | Errored (List CompileError)
 
 
 type alias Revision =
@@ -22,6 +30,7 @@ type alias Revision =
     , projectId : Maybe String
     , title : String
     , description : String
+    , snapshot : Snapshot
     }
 
 
@@ -35,6 +44,7 @@ empty =
     , projectId = Nothing
     , title = ""
     , description = ""
+    , snapshot = NotSaved
     }
 
 
@@ -52,6 +62,25 @@ encode revision =
         ]
 
 
+decodeSnapshot : Decoder Snapshot
+decodeSnapshot =
+    Decode.field "result" Decode.string
+        |> Decode.andThen
+            (\snapshotType ->
+                case snapshotType of
+                    "ERROR" ->
+                        Decode.list CompileError.decode
+                            |> Decode.field "errors"
+                            |> Decode.map Errored
+
+                    "SUCCESS" ->
+                        Decode.succeed Uploaded
+
+                    _ ->
+                        Decode.succeed NotSaved
+            )
+
+
 decode : Decoder Revision
 decode =
     Decode.decode Revision
@@ -63,3 +92,4 @@ decode =
         |> Decode.required "projectId" (Decode.nullable Decode.string)
         |> Decode.required "title" Decode.string
         |> Decode.required "description" Decode.string
+        |> Decode.optional "snapshot" decodeSnapshot NotSaved

@@ -1,9 +1,9 @@
-module App.Styles exposing (styles)
+module Apps.Editor.Styles exposing (styles)
 
 import Css exposing (..)
 import Css.Elements exposing (..)
 import Css.Namespace exposing (..)
-import App.Classes exposing (Classes(..))
+import Apps.Editor.Classes exposing (Classes(..))
 import Shared.Constants as Constants
 import Shared.Colors as Colors
 

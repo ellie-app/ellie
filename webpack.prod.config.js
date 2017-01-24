@@ -6,17 +6,22 @@ var ExtractTextPlugin = require('extract-text-webpack-plugin');
 var WebpackMd5Hash = require('webpack-md5-hash');
 var HtmlWebpackPlugin = require('html-webpack-plugin');
 
+var target = process.env.BUILD_TARGET || 'editor'
+
+var entries = {
+  editor: './js/Apps/Editor/Main.js',
+  embed: './js/Apps/Embed/Main.js'
+}
+
 module.exports = {
   context: path.join(__dirname, 'src'),
 
   entry: {
-    app: [
-      './js/Main.js'
-    ]
+    app: [ entries[target] ]
   },
 
   output: {
-    path: path.resolve(__dirname + '/build'),
+    path: path.resolve(__dirname + '/build', target),
     filename: '[name].[chunkhash:8].js',
     chunkFilename: 'chunk.[name].[chunkhash:8].js',
   },
