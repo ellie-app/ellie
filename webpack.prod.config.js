@@ -35,7 +35,7 @@ module.exports = {
       },
       {
         test: /Stylesheets\.elm$/,
-        loader: ExtractTextPlugin.extract('css-loader?minimize!postcss-loader!elm-css-webpack-loader'),
+        loader: ExtractTextPlugin.extract('css-loader?minimize!postcss-loader!elm-css-webpack-loader?cache=false'),
         exclude: /node_modules/,
       },
       {
