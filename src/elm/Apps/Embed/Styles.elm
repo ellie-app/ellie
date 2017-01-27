@@ -26,6 +26,9 @@ styles =
             [ width (pct 100)
             , height (pct 100)
             , position relative
+            , property "z-index" "1"
+            , overflow hidden
+            , borderRadius (px 3)
             ]
         , (.) LoadingContainer
             [ width (pct 100)
@@ -87,7 +90,9 @@ styles =
             , displayFlex
             , height (px 40)
             , property "justify-content" "space-between"
-            , boxShadow5 (px 0) (px 2) (px 4) (px 0) (rgba 0 0 0 0.5)
+            , boxShadow4 zero zero (px 5) (rgba 57 70 78 0.7)
+            , property "z-index" "1"
+            , position relative
             ]
         , (.) HeaderLeft
             [ displayFlex ]
@@ -103,6 +108,8 @@ styles =
             , cursor pointer
             , marginRight (px 8)
             , displayFlex
+            , textDecoration none
+            , outline zero
             , backgroundColor <|
                 rgba
                     (.r Colors.darkGrayRgb)
@@ -128,6 +135,12 @@ styles =
                         (.g Colors.darkGrayRgb)
                         (.b Colors.darkGrayRgb)
                         0.5
+                ]
+            , withClass HeaderButtonActive
+                [ backgroundColor (hex Colors.white)
+                , color (hex Colors.pink)
+                , hover [ backgroundColor (hex Colors.white) ]
+                , active [ backgroundColor (hex Colors.white) ]
                 ]
             ]
         , (.) HeaderButtonIcon
@@ -155,8 +168,15 @@ styles =
             , top zero
             , left zero
             , width (pct 100)
+            , overflow hidden
             ]
         , (.) WorkAreaTabHidden
             [ property "visibility" "collapse"
+            ]
+        , (.) Iframe
+            [ border zero
+            , position relative
+            , width (pct 100)
+            , height (pct 100)
             ]
         ]

@@ -91,7 +91,8 @@ styles =
             , paddingBottom (px 4)
             ]
         , (.) PackagesList
-            [ paddingBottom (px 16)
+            [ maxHeight (px 376)
+            , overflowY auto
             ]
         , (.) PackagesItem
             [ backgroundColor (hex Colors.darkGray)
@@ -163,6 +164,7 @@ styles =
             , fontFamily inherit
             , fontWeight (int 500)
             , cursor pointer
+            , marginTop (px 16)
             ]
         , (.) Loading
             [ padding2 (px 12) (px 16)
@@ -172,6 +174,7 @@ styles =
             , alignItems center
             , flexDirection column
             , borderRadius (px 3)
+            , marginTop (px 16)
             ]
         , (.) LoadingPackageInfo
             [ fontSize (px 12)

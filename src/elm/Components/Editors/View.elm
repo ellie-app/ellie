@@ -105,6 +105,7 @@ elm onUpdate content compileErrors =
             [ value content
             , CodeMirror.linterMessages linterMessages
             , CodeMirror.theme "material"
+            , CodeMirror.mode "elm"
             , style
                 [ ( "height", "100%" )
                 , ( "width", "100%" )
@@ -125,6 +126,7 @@ html onUpdate content =
         baseAttrs =
             [ value content
             , CodeMirror.theme "material"
+            , CodeMirror.mode "htmlmixed"
             , style
                 [ ( "height", "100%" )
                 , ( "width", "100%" )

@@ -96,6 +96,7 @@ type Msg
     | SearchResultsCompleted String (Result ApiError (List Package))
     | PackageSelected Package
     | AddDependencyCompleted Dependency (Result ApiError ())
+    | ToggleEmbedLink
     | NoOp
 
 
@@ -188,6 +189,19 @@ addDependencyCmd package model =
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
+        ToggleEmbedLink ->
+            ( { model
+                | popoutState =
+                    case model.popoutState of
+                        EmbedLinkOpen ->
+                            AllClosed
+
+                        _ ->
+                            EmbedLinkOpen
+              }
+            , Cmd.none
+            )
+
         AddDependencyCompleted dependency result ->
             ( { model
                 | installingPackage =
@@ -311,7 +325,7 @@ update msg model =
                 | popoutState =
                     case model.popoutState of
                         NotificationsOpen ->
-                            BothClosed
+                            AllClosed
 
                         _ ->
                             NotificationsOpen
@@ -324,7 +338,7 @@ update msg model =
                 | popoutState =
                     case model.popoutState of
                         AboutOpen ->
-                            BothClosed
+                            AllClosed
 
                         _ ->
                             AboutOpen

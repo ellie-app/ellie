@@ -22,6 +22,7 @@ type SaveOption
 
 type alias ViewModel msg =
     { compileButtonEnabled : Bool
+    , embedLinkButtonEnabled : Bool
     , saveButtonEnabled : Bool
     , saveButtonOption : SaveOption
     , buttonsVisible : Bool
@@ -29,6 +30,7 @@ type alias ViewModel msg =
     , onCompile : msg
     , onFormat : msg
     , onAbout : msg
+    , onEmbedLink : msg
     , onNotifications : msg
     , notificationCount : Int
     }
@@ -129,15 +131,29 @@ viewNotificationsButton viewModel =
         )
 
 
+viewEmbedLinkButton : ViewModel msg -> Html msg
+viewEmbedLinkButton viewModel =
+    viewButton
+        viewModel.onEmbedLink
+        (not viewModel.embedLinkButtonEnabled)
+        Icons.share
+        "Share"
+
+
 view : ViewModel msg -> Html msg
 view viewModel =
     header [ class [ Header ] ]
-        [ div [ class [ HeaderGroup ] ]
-            [ viewLogo
-            , renderIf viewModel.buttonsVisible (\_ -> viewCompileButton viewModel)
-            , renderIf viewModel.buttonsVisible (\_ -> viewSaveButton viewModel)
-            , renderIf viewModel.buttonsVisible (\_ -> viewFormatButton viewModel)
-            ]
+        [ renderIf
+            viewModel.buttonsVisible
+            (\_ ->
+                div [ class [ HeaderGroup ] ]
+                    [ viewLogo
+                    , viewCompileButton viewModel
+                    , viewSaveButton viewModel
+                    , viewFormatButton viewModel
+                    , viewEmbedLinkButton viewModel
+                    ]
+            )
         , div [ class [ HeaderGroup ] ]
             [ viewAboutButton viewModel
             , viewNotificationsButton viewModel

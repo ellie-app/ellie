@@ -39,6 +39,7 @@ styles =
             , property "height" <| "calc(100% - " ++ (toString Constants.headerHeight) ++ "px)"
             , displayFlex
             , position relative
+            , property "z-index" "1"
             ]
         , (.) LoadedContainer
             [ position relative
@@ -94,5 +95,12 @@ styles =
         , (.) ResizeEw
             [ descendants [ everything [ cursor ewResize |> important ] ]
             , cursor ewResize
+            ]
+        , (.) EmbedLinkContainer
+            [ position absolute
+            , property "z-index" "2"
+            , width (px 320)
+            , left (px 448)
+            , top (px 16)
             ]
         ]

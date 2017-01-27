@@ -32,3 +32,4 @@ type Classes
     | ResizeNs
     | ResizeEw
     | EditorResizeHandle
+    | EmbedLinkContainer

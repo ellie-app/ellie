@@ -7,15 +7,15 @@ var HtmlWebpackPlugin = require('html-webpack-plugin');
 var target = process.env.BUILD_TARGET || 'editor'
 
 var entries = {
-  editor: './js/Apps/Editor/Main.js',
-  embed: './js/Apps/Embed/Main.js'
+  editor: ['webpack-dev-server/client?http://localhost:8000/', './js/Apps/Editor/Main.js'],
+  embed: ['webpack-dev-server/client?http://localhost:8001/', './js/Apps/Embed/Main.js']
 }
 
 module.exports = {
   context: path.join(__dirname, 'src'),
 
   entry: {
-    app: [ entries[target] ]
+    app: entries[target]
   },
 
   output: {
@@ -50,7 +50,10 @@ module.exports = {
         loaders:  [
           StringReplacePlugin.replace({
             replacements: [
-              { pattern: /\%API_BASE\%/g, replacement: () => process.env.API_BASE || 'http://localhost:1337' }
+              { pattern: /\%API_BASE\%/g, replacement: () => 'http://localhost:1337' },
+              { pattern: /\%CDN_BASE\%/g, replacement: () => 'http://localhost:1337/cdn-proxy' },
+              { pattern: /\%EMBED_BASE\%/g, replacement: () => 'http://localhost:8001' },
+              { pattern: /\%EDITOR_BASE\%/g, replacement: () => 'http://localhost:8000' },
             ]
           }),
           'elm-webpack-loader?yes',
@@ -97,6 +100,7 @@ module.exports = {
     inline: true,
     stats: { colors: true },
     historyApiFallback: true,
+    port: target === 'editor' ? '8000' : '8001',
     watchOptions: {
       aggregateTimeout: 300,
       poll: 1000

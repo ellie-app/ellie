@@ -46,3 +46,12 @@
 .CodeMirror-lint-mark-warning {
   border-bottom-color: #DECB6B;
 }
+
+
+.CodeMirror .cm-tag.cm-bracket {
+  color: #82b1ff;
+}
+
+.CodeMirror .cm-attribute {
+  color: #decb6b;
+}

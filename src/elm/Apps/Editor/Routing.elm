@@ -3,6 +3,7 @@ module Apps.Editor.Routing
         ( Route(..)
         , parse
         , construct
+        , isSpecificRevision
         )
 
 import Navigation
@@ -39,3 +40,13 @@ construct route =
 
         NotFound ->
             "/"
+
+
+isSpecificRevision : Route -> Bool
+isSpecificRevision route =
+    case route of
+        SpecificRevision _ _ ->
+            True
+
+        _ ->
+            False

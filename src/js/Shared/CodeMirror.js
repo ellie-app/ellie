@@ -4,6 +4,7 @@ module.exports = function () {
       'codemirror/lib/codemirror',
       'codemirror/lib/codemirror.css',
       'codemirror/mode/elm/elm',
+      'codemirror/mode/htmlmixed/htmlmixed',
       'codemirror/addon/lint/lint',
       'codemirror/addon/lint/lint.css',
       'codemirror/theme/material.css',
@@ -12,6 +13,7 @@ module.exports = function () {
       var CodeMirror = require('codemirror/lib/codemirror')
       require('codemirror/lib/codemirror.css')
       require('codemirror/mode/elm/elm')
+      require('codemirror/mode/htmlmixed/htmlmixed')
       require('codemirror/addon/lint/lint')
       require('codemirror/addon/lint/lint.css')
       require('codemirror/theme/material.css')

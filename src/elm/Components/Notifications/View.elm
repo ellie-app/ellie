@@ -35,7 +35,7 @@ iconColor level =
             Colors.yellow
 
         Notification.Error ->
-            Colors.orange
+            Colors.red
 
         Notification.Success ->
             Colors.green

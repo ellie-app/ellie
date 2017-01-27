@@ -11,6 +11,7 @@ import Types.Session as Session exposing (Session)
 import Apps.Editor.Update as Update exposing (Msg(..))
 import Apps.Editor.Model as Model exposing (Model, PopoutState(..))
 import Apps.Editor.Classes exposing (..)
+import Apps.Editor.Routing as Routing exposing (..)
 import Components.Splash.View as Splash
 import Components.Sidebar.View as Sidebar
 import Components.Editors.View as Editors
@@ -19,6 +20,7 @@ import Components.Output.View as Output
 import Components.Notifications.View as Notifications
 import Components.About.View as About
 import Components.Search.View as Search
+import Components.Editor.EmbedLink.View as EmbedLink
 import Shared.Utils as Utils
 
 
@@ -41,7 +43,7 @@ popoutView model =
         AboutOpen ->
             About.view
 
-        BothClosed ->
+        _ ->
             text ""
 
 
@@ -69,6 +71,19 @@ searchContext model =
     }
 
 
+embedLink : Model -> Html msg
+embedLink model =
+    case ( model.popoutState, model.currentRoute ) of
+        ( EmbedLinkOpen, SpecificRevision projectId revisionNumber ) ->
+            div
+                [ class [ EmbedLinkContainer ] ]
+                [ EmbedLink.view { projectId = projectId, revisionNumber = revisionNumber }
+                ]
+
+        _ ->
+            text ""
+
+
 loadedView : Model -> Html Msg
 loadedView model =
     div [ class [ LoadedContainer ] ]
@@ -78,6 +93,7 @@ loadedView model =
             , workAreaView model
             , div [ class [ NotificationsContainer ] ]
                 [ popoutView model ]
+            , embedLink model
             ]
         , renderIf
             model.searchOpen
@@ -151,8 +167,11 @@ headerContext model =
     , onCompile = CompileRequested
     , onFormat = FormattingRequested
     , onAbout = ToggleAbout
+    , onEmbedLink = ToggleEmbedLink
     , onNotifications = ToggleNotifications
     , notificationCount = List.length model.notifications
+    , embedLinkButtonEnabled =
+        Routing.isSpecificRevision model.currentRoute
     , saveButtonEnabled =
         Model.canSave model
     , saveButtonOption =

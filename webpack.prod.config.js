@@ -49,7 +49,10 @@ module.exports = {
         loaders:  [
           StringReplacePlugin.replace({
             replacements: [
-              { pattern: /\%API_BASE\%/g, replacement: () => process.env.API_BASE || 'http://localhost:1337' }
+              { pattern: /\%API_BASE\%/g, replacement: () => process.env.API_BASE },
+              { pattern: /\%CDN_BASE\%/g, replacement: () => process.env.CDN_BASE },
+              { pattern: /\%EMBED_BASE\%/g, replacement: () => process.env.EMBED_BASE },
+              { pattern: /\%EDITOR_BASE\%/g, replacement: () => process.env.EDITOR_BASE },
             ]
           }),
           'elm-webpack-loader?yes',

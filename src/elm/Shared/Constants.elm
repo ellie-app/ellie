@@ -20,6 +20,21 @@ apiBase =
     "%API_BASE%"
 
 
+editorBase : String
+editorBase =
+    "%EDITOR_BASE%"
+
+
+embedBase : String
+embedBase =
+    "%EMBED_BASE%"
+
+
+cdnBase : String
+cdnBase =
+    "%CDN_BASE%"
+
+
 defaultDependencies : List Dependency
 defaultDependencies =
     [ Dependency

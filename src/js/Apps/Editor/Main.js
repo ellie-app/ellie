@@ -19,7 +19,7 @@ promise
         width: window.innerWidth,
         height: window.innerHeight
       },
-      online: window.navigator.onLine
+      online: process.env.NODE_ENV === 'production' ? window.navigator.onLine : true
     })
 
     window.addEventListener('online', function () {

@@ -27,14 +27,11 @@
     "webpack-md5-hash": "0.0.5"
   },
   "scripts": {
-    "watch": "webpack-dashboard -- webpack-dev-server --port 8000 --watch --config ./webpack.dev.config.js",
+    "watch": "webpack-dev-server --watch --config ./webpack.dev.config.js",
     "clean": "rimraf ./build",
     "build": "yarn run clean && webpack --config ./webpack.prod.config.js",
-    "build:staging": "API_BASE=https://staging-api.ellie-app.com yarn build",
-    "build:production": "API_BASE=https://api.ellie-app.com yarn build",
-    "build:editor:staging": "BUILD_TARGET=editor yarn run build:staging",
+    "build:production": "API_BASE=https://api.ellie-app.com EDITOR_BASE=https://ellie-app.com CDN_BASE=https://cdn.ellie-app.com EMBED_BASE=https://embed.ellie-app.com yarn build",
     "build:editor:production": "BUILD_TARGET=editor yarn run build:production",
-    "build:embed:staging": "BUILD_TARGET=embed yarn run build:staging",
     "build:embed:production": "BUILD_TARGET=embed yarn run build:production"
   }
 }

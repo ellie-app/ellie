@@ -13,6 +13,7 @@ import Components.Output.View as Output
 import Types.Revision as Revision exposing (Revision, Snapshot(..))
 import Types.CompileError as CompileError exposing (CompileError)
 import Shared.Icons as Icons
+import Shared.Constants as Constants
 
 
 viewLoading : Html Msg
@@ -47,38 +48,34 @@ viewFailure =
         ]
 
 
-viewHeader : Html Msg
-viewHeader =
+viewHeaderButton : Tab -> Tab -> Html Msg -> String -> Html Msg
+viewHeaderButton activeTab myTab icon label =
+    button
+        [ onClick <| SwitchTab myTab
+        , classList
+            [ ( HeaderButton, True )
+            , ( HeaderButtonActive, activeTab == myTab )
+            ]
+        ]
+        [ span [ class [ HeaderButtonIcon ] ]
+            [ icon ]
+        , text label
+        ]
+
+
+viewHeader : Tab -> String -> Int -> Html Msg
+viewHeader activeTab projectId revisionNumber =
     header [ class [ Header ] ]
         [ div [ class [ HeaderLeft ] ]
-            [ button
-                [ onClick <| SwitchTab ElmTab
-                , class [ HeaderButton ]
-                ]
-                [ span [ class [ HeaderButtonIcon ] ]
-                    [ Icons.elmLogo ]
-                , text "Elm"
-                ]
-            , button
-                [ onClick <| SwitchTab HtmlTab
-                , class [ HeaderButton ]
-                ]
-                [ span [ class [ HeaderButtonIcon ] ]
-                    [ Icons.code ]
-                , text "HTML"
-                ]
-            , button
-                [ onClick <| SwitchTab ResultsTab
-                , class [ HeaderButton ]
-                ]
-                [ span [ class [ HeaderButtonIcon ] ]
-                    [ Icons.eye ]
-                , text "Results"
-                ]
+            [ viewHeaderButton activeTab ElmTab Icons.elmLogo "Elm"
+            , viewHeaderButton activeTab HtmlTab Icons.code "HTML"
+            , viewHeaderButton activeTab ResultsTab Icons.eye "Results"
             ]
         , div [ class [ HeaderRight ] ]
             [ a
                 [ class [ HeaderButton ]
+                , href <| Constants.editorBase ++ "/" ++ projectId ++ "/" ++ toString revisionNumber
+                , target "_blank"
                 ]
                 [ span [ class [ HeaderButtonIcon ] ]
                     [ Icons.edit ]
@@ -99,11 +96,16 @@ viewElm code errors =
     Editors.elm Nothing code errors
 
 
+iframeSrc : String -> Int -> String
+iframeSrc projectId revisionNumber =
+    Constants.cdnBase ++ "/compiler-output/" ++ projectId ++ "-" ++ toString revisionNumber ++ ".html"
+
+
 viewResultsUploaded : String -> Int -> Html Msg
 viewResultsUploaded projectId revisionNumber =
     iframe
-        [ src <| ("https://s3.us-east-2.amazonaws.com/ellie-compile-results/" ++ projectId ++ "-" ++ toString revisionNumber ++ ".html")
-        , class []
+        [ src <| iframeSrc projectId revisionNumber
+        , class [ Iframe ]
         ]
         []
 
@@ -129,18 +131,15 @@ viewResults revision =
             text ""
 
 
-activeStyle : Tab -> Tab -> Html.Attribute Msg
-activeStyle myTab currentTab =
-    if myTab == currentTab then
-        style [ ( "height", "100%" ), ( "position", "absolute" ) ]
-    else
-        style [ ( "visibility", "collapse" ), ( "height", "100%" ), ( "position", "absolute" ) ]
-
-
 viewLoaded : Model -> Revision -> Html Msg
 viewLoaded model revision =
     div [ class [ LoadedContainer ] ]
-        [ viewHeader
+        [ case model.currentRoute of
+            SpecificRevision projectId revisionNumber ->
+                viewHeader model.tab projectId revisionNumber
+
+            _ ->
+                text ""
         , div [ class [ WorkArea ] ]
             [ div
                 [ classList

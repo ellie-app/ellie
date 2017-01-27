@@ -32,9 +32,11 @@ type Classes
     | HeaderLeft
     | HeaderRight
     | HeaderButton
+    | HeaderButtonActive
     | HeaderButtonIcon
     | HeaderLinkLogo
     | WorkArea
     | LoadedContainer
     | WorkAreaTab
     | WorkAreaTabHidden
+    | Iframe

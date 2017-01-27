@@ -34,9 +34,10 @@ type alias Flags =
 
 
 type PopoutState
-    = BothClosed
+    = AllClosed
     | AboutOpen
     | NotificationsOpen
+    | EmbedLinkOpen
 
 
 type alias Model =
@@ -78,7 +79,7 @@ model flags =
     , saveState = NotAsked
     , isOnline = flags.online
     , notifications = []
-    , popoutState = BothClosed
+    , popoutState = AllClosed
     , resultSplit = 0.5
     , resultDragging = False
     , editorSplit = 0.5

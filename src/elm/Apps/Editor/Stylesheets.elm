@@ -10,6 +10,7 @@ import Components.Search.Styles as Search
 import Components.Notifications.Styles as Notifications
 import Components.About.Styles as About
 import Components.Splash.Styles as Splash
+import Components.Editor.EmbedLink.Styles as EmbedLink
 
 
 port files : CssFileStructure -> Cmd msg
@@ -29,6 +30,7 @@ fileStructure =
                 , Notifications.styles
                 , Splash.styles
                 , About.styles
+                , EmbedLink.styles
                 ]
           )
         ]
