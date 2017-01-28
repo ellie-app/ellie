@@ -98,15 +98,17 @@ styles =
             [ property "background" "none"
             , border zero
             , height (pct 100)
-            , displayFlex
-            , flexDirection column
-            , alignItems center
-            , property "justify-content" "center"
             , color (hex Colors.lightGray)
             , borderLeft3 (px 2) solid (hex Colors.mediumGray)
             , width (px 48)
             , cursor pointer
             , textDecoration none
+            ]
+        , (.) ResultsItemButtonInner
+            [ displayFlex
+            , flexDirection column
+            , alignItems center
+            , property "justify-content" "center"
             ]
         , (.) ResultsItemButtonIcon
             [ width (px 16)

@@ -47,9 +47,6 @@ styles =
             , height (px 38)
             , fontSize (px 14)
             , padding2 zero (px 12)
-            , displayFlex
-            , property "justify-content" "center"
-            , alignItems center
             , cursor pointer
             , marginLeft (px 8)
             , disabled
@@ -80,5 +77,10 @@ styles =
             ]
         , (.) ButtonText
             [ marginLeft (px 8)
+            ]
+        , (.) ButtonInner
+            [ displayFlex
+            , property "justify-content" "center"
+            , alignItems center
             ]
         ]

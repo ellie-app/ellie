@@ -22,6 +22,7 @@ type Classes
     | ResultsItemVersion
     | ResultsItemButtonGroup
     | ResultsItemButton
+    | ResultsItemButtonInner
     | ResultsItemButtonIcon
     | ResultsItemButtonText
 

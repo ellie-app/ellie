@@ -32,6 +32,7 @@ type Classes
     | HeaderLeft
     | HeaderRight
     | HeaderButton
+    | HeaderButtonInner
     | HeaderButtonActive
     | HeaderButtonIcon
     | HeaderLinkLogo

@@ -97,8 +97,7 @@ styles =
         , (.) HeaderLeft
             [ displayFlex ]
         , (.) HeaderButton
-            [ alignItems center
-            , padding2 (px 6) (px 12)
+            [ padding2 (px 6) (px 12)
             , color (hex Colors.white)
             , fontSize (px 16)
             , lineHeight (px 16)
@@ -107,7 +106,6 @@ styles =
             , borderRadius (px 3)
             , cursor pointer
             , marginRight (px 8)
-            , displayFlex
             , textDecoration none
             , outline zero
             , backgroundColor <|
@@ -142,6 +140,10 @@ styles =
                 , hover [ backgroundColor (hex Colors.white) ]
                 , active [ backgroundColor (hex Colors.white) ]
                 ]
+            ]
+        , (.) HeaderButtonInner
+            [ alignItems center
+            , displayFlex
             ]
         , (.) HeaderButtonIcon
             [ width (px 16)

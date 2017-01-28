@@ -56,7 +56,7 @@ viewResultsItem onSelect package =
             ]
         , div [ class [ ResultsItemButtonGroup ] ]
             [ a
-                [ class [ ResultsItemButton ]
+                [ class [ ResultsItemButton, ResultsItemButtonInner ]
                 , href <| docsLink package
                 , target "_blank"
                 ]
@@ -69,10 +69,12 @@ viewResultsItem onSelect package =
                 [ class [ ResultsItemButton ]
                 , onClick <| onSelect package
                 ]
-                [ span [ class [ ResultsItemButtonIcon ] ]
-                    [ Icons.plus ]
-                , span [ class [ ResultsItemButtonText ] ]
-                    [ text "Install" ]
+                [ div [ class [ ResultsItemButtonInner ] ]
+                    [ span [ class [ ResultsItemButtonIcon ] ]
+                        [ Icons.plus ]
+                    , span [ class [ ResultsItemButtonText ] ]
+                        [ text "Install" ]
+                    ]
                 ]
             ]
         ]

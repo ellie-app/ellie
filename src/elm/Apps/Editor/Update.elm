@@ -504,7 +504,7 @@ update msg model =
         FormattingRequested ->
             ( model
             , Cmd.batch
-                [ Api.format model.clientRevision.elmCode
+                [ Api.format model.stagedElmCode
                     |> Api.send FormattingCompleted
                 , MessageBus.notify
                     Notification.Info

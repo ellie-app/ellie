@@ -57,9 +57,11 @@ viewHeaderButton activeTab myTab icon label =
             , ( HeaderButtonActive, activeTab == myTab )
             ]
         ]
-        [ span [ class [ HeaderButtonIcon ] ]
-            [ icon ]
-        , text label
+        [ div [ class [ HeaderButtonInner ] ]
+            [ span [ class [ HeaderButtonIcon ] ]
+                [ icon ]
+            , text label
+            ]
         ]
 
 
@@ -73,7 +75,7 @@ viewHeader activeTab projectId revisionNumber =
             ]
         , div [ class [ HeaderRight ] ]
             [ a
-                [ class [ HeaderButton ]
+                [ class [ HeaderButton, HeaderButtonInner ]
                 , href <| Constants.editorBase ++ "/" ++ projectId ++ "/" ++ toString revisionNumber
                 , target "_blank"
                 ]

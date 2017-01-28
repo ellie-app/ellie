@@ -11,6 +11,7 @@ type Classes
     | Button
     | ButtonIcon
     | ButtonText
+    | ButtonInner
 
 
 helpers : Html.CssHelpers.Namespace String class id msg

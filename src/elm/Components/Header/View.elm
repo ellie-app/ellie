@@ -49,13 +49,15 @@ viewButton clickMsg isDisabled icon label =
         , onClick clickMsg
         , disabled isDisabled
         ]
-        [ span [ class [ ButtonIcon ] ]
-            [ icon ]
-        , if String.length label == 0 then
-            text ""
-          else
-            span [ class [ ButtonText ] ]
-                [ text label ]
+        [ div [ class [ ButtonInner ] ]
+            [ span [ class [ ButtonIcon ] ]
+                [ icon ]
+            , if String.length label == 0 then
+                text ""
+              else
+                span [ class [ ButtonText ] ]
+                    [ text label ]
+            ]
         ]
 
 

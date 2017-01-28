@@ -21,6 +21,7 @@ type Classes
     | PackagesItemInfoNameUsername
     | PackagesItemInfoVersion
     | PackagesItemRemove
+    | PackagesItemRemoveInner
     | PackagesItemRemoveIcon
     | PackagesItemRemoveText
     | AddPackage

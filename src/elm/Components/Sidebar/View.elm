@@ -113,10 +113,12 @@ viewRemoveButton onRemove =
         [ class [ PackagesItemRemove ]
         , onClick onRemove
         ]
-        [ span [ class [ PackagesItemRemoveIcon ] ]
-            [ Icons.close ]
-        , span [ class [ PackagesItemRemoveText ] ]
-            [ text "Remove" ]
+        [ div [ class [ PackagesItemRemoveInner ] ]
+            [ span [ class [ PackagesItemRemoveIcon ] ]
+                [ Icons.close ]
+            , span [ class [ PackagesItemRemoveText ] ]
+                [ text "Remove" ]
+            ]
         ]
 
 

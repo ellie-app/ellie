@@ -135,12 +135,14 @@ styles =
             , width (px 48)
             , display block
             , position relative
-            , displayFlex
+            , color (hex Colors.lightGray)
+            , cursor pointer
+            ]
+        , (.) PackagesItemRemoveInner
+            [ displayFlex
             , flexDirection column
             , property "justify-content" "center"
             , alignItems center
-            , color (hex Colors.lightGray)
-            , cursor pointer
             ]
         , (.) PackagesItemRemoveIcon
             [ width (px 24)
