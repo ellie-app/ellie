@@ -124,7 +124,7 @@ onlineNotification isOnline =
         MessageBus.notify
             Notification.Success
             "You're Online!"
-            "Ellie is 100% ready to connect to the server."
+            "Ellie has detected that your internet connection is online."
     else
         MessageBus.notify
             Notification.Error
@@ -227,7 +227,7 @@ update msg model =
                     MessageBus.notify
                         Notification.Error
                         "Failed Installing Package"
-                        ("Elle couldn't install your package. Here's what the server said: " ++ apiError.explanation)
+                        ("Elle couldn't install your package. Here's what the server said:\n\n" ++ apiError.explanation)
             )
 
         PackageSelected package ->
@@ -323,12 +323,11 @@ update msg model =
         ToggleNotifications ->
             ( { model
                 | popoutState =
-                    case model.popoutState of
-                        NotificationsOpen ->
-                            AllClosed
-
-                        _ ->
-                            NotificationsOpen
+                    if model.popoutState == NotificationsOpen then
+                        AllClosed
+                    else
+                        NotificationsOpen
+                , unseenNotificationsCount = 0
               }
             , Cmd.none
             )
@@ -349,6 +348,13 @@ update msg model =
         NotificationReceived notification ->
             ( { model
                 | notifications = notification :: model.notifications
+                , unseenNotificationsCount =
+                    if model.popoutState /= NotificationsOpen then
+                        model.unseenNotificationsCount + 1
+                    else if notification.level == Notification.Error then
+                        0
+                    else
+                        model.unseenNotificationsCount
                 , popoutState =
                     if notification.level == Notification.Error then
                         NotificationsOpen
@@ -381,7 +387,7 @@ update msg model =
                         MessageBus.notify
                             Notification.Error
                             "Failed To Set Up Session"
-                            ("Ellie couldn't set up a session for you right now. Here's what the server said: " ++ apiError.explanation)
+                            ("Ellie couldn't set up a session for you right now. Here's what the server said:\n\n" ++ apiError.explanation)
                 ]
             )
 
@@ -402,7 +408,7 @@ update msg model =
                     MessageBus.notify
                         Notification.Error
                         "Failed To Load Project"
-                        ("Ellie couldn't load the project you asked for. Here's what the server said: " ++ apiError.explanation)
+                        ("Ellie couldn't load the project you asked for. Here's what the server said:\n\n" ++ apiError.explanation)
             )
 
         RouteChanged route ->
@@ -421,6 +427,14 @@ update msg model =
                 , firstCompileComplete =
                     model.firstCompileComplete
                         || resultIsSuccess compileResult
+                , previousElmCode =
+                    compileResult
+                        |> Result.map (\_ -> model.stagedElmCode)
+                        |> Result.withDefault model.previousElmCode
+                , previousHtmlCode =
+                    compileResult
+                        |> Result.map (\_ -> model.stagedHtmlCode)
+                        |> Result.withDefault model.previousHtmlCode
               }
             , case Result.map onlyErrors compileResult of
                 Ok [] ->
@@ -439,7 +453,7 @@ update msg model =
                     MessageBus.notify
                         Notification.Error
                         "Compilation Failed"
-                        ("Ellie couldn't even run the compiler. Here's what the server said: " ++ apiError.explanation)
+                        ("Ellie couldn't even run the compiler. Here's what the server said:\n\n" ++ apiError.explanation)
             )
 
         ElmCodeChanged code ->
@@ -492,7 +506,7 @@ update msg model =
                         MessageBus.notify
                             Notification.Error
                             "Failed To Save Project"
-                            ("Ellie couldn't save your project. Here's what the server said: " ++ apiError.explanation)
+                            ("Ellie couldn't save your project. Here's what the server said:\n\n" ++ apiError.explanation)
                 ]
             )
 
@@ -514,7 +528,15 @@ update msg model =
             )
 
         FormattingCompleted result ->
-            ( { model | stagedElmCode = Result.withDefault model.stagedElmCode result }
+            ( { model
+                | stagedElmCode =
+                    Result.withDefault model.stagedElmCode result
+                , previousElmCode =
+                    if model.previousElmCode == model.stagedElmCode then
+                        Result.withDefault model.previousElmCode result
+                    else
+                        model.previousElmCode
+              }
             , case result of
                 Ok _ ->
                     MessageBus.notify
@@ -526,7 +548,7 @@ update msg model =
                     MessageBus.notify
                         Notification.Error
                         "Formatting Your Code Failed"
-                        ("Ellie couldn't format your code. Here's what the server said: " ++ apiError.explanation)
+                        ("Ellie couldn't format your code. Here's what the server said:\n\n" ++ apiError.explanation)
             )
 
         RemoveDependencyRequested dependency ->
@@ -565,7 +587,7 @@ update msg model =
                     MessageBus.notify
                         Notification.Error
                         "Couldn't Remove Package"
-                        ("Elle couldn't remove your package. Here's what the server said: " ++ apiError.explanation)
+                        ("Elle couldn't remove your package. Here's what the server said:\n\n" ++ apiError.explanation)
             )
 
         _ ->

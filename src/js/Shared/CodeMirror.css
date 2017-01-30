@@ -40,7 +40,7 @@
 }
 
 .CodeMirror-lint-mark-error {
-  border-bottom-color: #F77669;
+  border-bottom-color: #FF5369;
 }
 
 .CodeMirror-lint-mark-warning {

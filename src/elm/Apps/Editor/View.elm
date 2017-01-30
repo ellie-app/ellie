@@ -169,7 +169,7 @@ headerContext model =
     , onAbout = ToggleAbout
     , onEmbedLink = ToggleEmbedLink
     , onNotifications = ToggleNotifications
-    , notificationCount = List.length model.notifications
+    , notificationCount = model.unseenNotificationsCount
     , embedLinkButtonEnabled =
         Routing.isSpecificRevision model.currentRoute
     , saveButtonEnabled =

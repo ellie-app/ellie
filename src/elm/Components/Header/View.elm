@@ -145,17 +145,13 @@ viewEmbedLinkButton viewModel =
 view : ViewModel msg -> Html msg
 view viewModel =
     header [ class [ Header ] ]
-        [ renderIf
-            viewModel.buttonsVisible
-            (\_ ->
-                div [ class [ HeaderGroup ] ]
-                    [ viewLogo
-                    , viewCompileButton viewModel
-                    , viewSaveButton viewModel
-                    , viewFormatButton viewModel
-                    , viewEmbedLinkButton viewModel
-                    ]
-            )
+        [ div [ class [ HeaderGroup ] ]
+            [ viewLogo
+            , renderIf viewModel.buttonsVisible (\_ -> viewCompileButton viewModel)
+            , renderIf viewModel.buttonsVisible (\_ -> viewSaveButton viewModel)
+            , renderIf viewModel.buttonsVisible (\_ -> viewFormatButton viewModel)
+            , renderIf viewModel.buttonsVisible (\_ -> viewEmbedLinkButton viewModel)
+            ]
         , div [ class [ HeaderGroup ] ]
             [ viewAboutButton viewModel
             , viewNotificationsButton viewModel

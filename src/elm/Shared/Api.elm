@@ -20,6 +20,7 @@ module Shared.Api
 import Task exposing (Task)
 import Json.Encode as Encode exposing (Value)
 import Json.Decode as Decode exposing (Decoder)
+import Json.Decode.Pipeline as Decode
 import Http exposing (Request, Expect, Error(..))
 import HttpBuilder exposing (..)
 import Types.ApiError as ApiError exposing (ApiError)
@@ -97,10 +98,15 @@ upgradeError error =
             }
 
         BadStatus response ->
-            { statusCode = response.status.code
-            , message = response.status.message
-            , explanation = response.body
-            }
+            case Decode.decodeString (Decode.field "error" Decode.string) response.body of
+                Ok explanation ->
+                    { statusCode = response.status.code
+                    , message = response.status.message
+                    , explanation = explanation
+                    }
+
+                Err failure ->
+                    upgradeError <| BadPayload failure response
 
         BadPayload innerError response ->
             { statusCode = response.status.code

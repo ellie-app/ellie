@@ -47,11 +47,14 @@ type alias Model =
     , currentRoute : Route
     , compileResult : RemoteData ApiError (List CompileError)
     , stagedElmCode : String
+    , previousElmCode : String
     , stagedHtmlCode : String
+    , previousHtmlCode : String
     , firstCompileComplete : Bool
     , saveState : RemoteData ApiError ()
     , isOnline : Bool
     , notifications : List Notification
+    , unseenNotificationsCount : Int
     , popoutState : PopoutState
     , resultSplit : Float
     , resultDragging : Bool
@@ -72,13 +75,16 @@ model flags =
     , serverRevision = NotAsked
     , clientRevision = Revision.empty
     , stagedElmCode = .elmCode Revision.empty
+    , previousElmCode = .elmCode Revision.empty
     , stagedHtmlCode = .htmlCode Revision.empty
+    , previousHtmlCode = .htmlCode Revision.empty
     , currentRoute = NotFound
     , compileResult = NotAsked
     , firstCompileComplete = False
     , saveState = NotAsked
     , isOnline = flags.online
     , notifications = []
+    , unseenNotificationsCount = 0
     , popoutState = AllClosed
     , resultSplit = 0.5
     , resultDragging = False
@@ -106,8 +112,8 @@ canCompile : Model -> Bool
 canCompile model =
     let
         stagedCodeChanged =
-            (model.stagedElmCode /= model.clientRevision.elmCode)
-                || (model.stagedHtmlCode /= model.clientRevision.htmlCode)
+            (model.stagedElmCode /= model.previousElmCode)
+                || (model.stagedHtmlCode /= model.previousHtmlCode)
     in
         not (RemoteData.isLoading model.compileResult)
             && RemoteData.isSuccess model.session
