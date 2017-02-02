@@ -4,6 +4,7 @@ module Components.Output.View
         , waiting
         , compiling
         , errors
+        , failure
         )
 
 import Html exposing (Html, div, iframe, text)
@@ -49,6 +50,11 @@ success sessionId =
         , class [ Iframe ]
         ]
         []
+
+
+failure : Html msg
+failure =
+    overlayDisplay "Oh no!" "Something went wrong when compiling."
 
 
 overlayDisplay : String -> String -> Html msg

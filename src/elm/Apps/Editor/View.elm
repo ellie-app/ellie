@@ -201,7 +201,7 @@ outputView model session =
                         Output.errors relevantErrors
 
             Failure _ ->
-                div [] [ text "no!" ]
+                Output.failure
 
             Loading ->
                 Output.compiling
