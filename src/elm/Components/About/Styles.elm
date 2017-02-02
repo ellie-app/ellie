@@ -19,7 +19,6 @@ styles =
             , borderRadius (px 3)
             , padding (px 16)
             , overflowY auto
-            , maxHeight (px 400)
             , border3 (px 2) solid (hex Colors.lightGray)
             , color (hex Colors.white)
             ]
@@ -29,6 +28,11 @@ styles =
             ]
         , (.) Paragraph
             [ fontSize (px 16)
+            ]
+        , (.) Link
+            [ color inherit
+            , textDecoration none
+            , fontWeight (int 700)
             ]
         , (.) Creators
             [ paddingTop (px 12)

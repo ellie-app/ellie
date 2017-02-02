@@ -22,6 +22,12 @@ view =
         , p [ class [ Paragraph ] ]
             [ text "Add a package if you need it in the sidebar, write a program, work through compiler errors, and share your work with the world."
             ]
+        , p [ class [ Paragraph ] ]
+            [ text "All content created with Ellie is released in the public domain "
+            , a [ class [ Link ], href "https://creativecommons.org/share-your-work/public-domain/cc0/" ] [ text "(CC0)" ]
+            , text ". HumbleSpark LLC reserves the right to remove or modify any content created with Ellie for any reason. Report abuse, ask questions, or direct comments to "
+            , a [ class [ Link ], href "mailto:ellie-app@humblespark.com" ] [ text "ellie-app@humblespark.com" ]
+            ]
         , div [ class [ Creators ] ]
             [ div [ class [ CreatorLine ] ]
                 [ span [ class [ Logo ] ]

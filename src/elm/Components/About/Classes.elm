@@ -8,6 +8,7 @@ type Classes
     = Popout
     | Title
     | Paragraph
+    | Link
     | Creators
     | CreatorLine
     | Logo
