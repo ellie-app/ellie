@@ -28,6 +28,8 @@ view =
             , text ". HumbleSpark LLC reserves the right to remove or modify any content created with Ellie for any reason. Report abuse, ask questions, or direct comments to "
             , a [ class [ Link ], href "mailto:ellie-app@humblespark.com" ] [ text "ellie-app@humblespark.com" ]
             ]
+        , p [ class [ Paragraph ] ]
+            [ text "Copyright 2017 © HumbleSpark LLC" ]
         , div [ class [ Creators ] ]
             [ div [ class [ CreatorLine ] ]
                 [ span [ class [ Logo ] ]
