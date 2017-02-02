@@ -7,6 +7,7 @@ module Shared.Api
         , createSessionForRevision
         , removeSession
         , compile
+        , writeIframe
         , format
         , addDependencies
         , removeDependency
@@ -20,7 +21,6 @@ module Shared.Api
 import Task exposing (Task)
 import Json.Encode as Encode exposing (Value)
 import Json.Decode as Decode exposing (Decoder)
-import Json.Decode.Pipeline as Decode
 import Http exposing (Request, Expect, Error(..))
 import HttpBuilder exposing (..)
 import Types.ApiError as ApiError exposing (ApiError)
@@ -76,6 +76,14 @@ expectValue value =
 -- ERRORS
 
 
+decodeServerError : Decoder String
+decodeServerError =
+    Decode.oneOf
+        [ Decode.field "message" Decode.string
+        , Decode.field "error" Decode.string
+        ]
+
+
 upgradeError : Error -> ApiError
 upgradeError error =
     case error of
@@ -98,7 +106,7 @@ upgradeError error =
             }
 
         BadStatus response ->
-            case Decode.decodeString (Decode.field "error" Decode.string) response.body of
+            case Decode.decodeString decodeServerError response.body of
                 Ok explanation ->
                     { statusCode = response.status.code
                     , message = response.status.message
@@ -167,12 +175,10 @@ removeSession session =
 -- COMPILATION
 
 
-compilePayload : String -> String -> Value
-compilePayload elmCode htmlCode =
+compilePayload : String -> Value
+compilePayload elmCode =
     Encode.object
-        [ ( "elmCode", Encode.string elmCode )
-        , ( "htmlCode", Encode.string htmlCode )
-        ]
+        [ ( "elmCode", Encode.string elmCode ) ]
 
 
 compileExpect : Expect (List CompileError)
@@ -181,12 +187,26 @@ compileExpect =
         |> Http.expectJson
 
 
-compile : String -> String -> Session -> RequestBuilder (List CompileError)
-compile elmCode htmlCode session =
+compile : String -> Session -> RequestBuilder (List CompileError)
+compile elmCode session =
     post (fullUrl ("/sessions/" ++ session.id ++ "/compile"))
         |> withApiHeaders
-        |> withJsonBody (compilePayload elmCode htmlCode)
+        |> withJsonBody (compilePayload elmCode)
         |> withExpect compileExpect
+
+
+writeIframePayload : String -> Value
+writeIframePayload htmlCode =
+    Encode.object
+        [ ( "htmlCode", Encode.string htmlCode ) ]
+
+
+writeIframe : String -> Session -> RequestBuilder ()
+writeIframe htmlCode session =
+    post (fullUrl ("/sessions/" ++ session.id ++ "/iframe"))
+        |> withApiHeaders
+        |> withJsonBody (writeIframePayload htmlCode)
+        |> withExpect (expectValue ())
 
 
 formatPayload : String -> Value

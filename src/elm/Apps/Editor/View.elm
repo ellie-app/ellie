@@ -112,7 +112,7 @@ workAreaView model =
             ]
             []
         , model.session
-            |> RemoteData.map (outputView model.resultSplit model.clientRevision model.compileResult)
+            |> RemoteData.map (outputView model)
             |> RemoteData.withDefault (text "")
         ]
 
@@ -185,17 +185,17 @@ headerContext model =
     }
 
 
-outputView : Float -> Revision -> RemoteData ApiError (List CompileError) -> Session -> Html Msg
-outputView split revision compileResult session =
+outputView : Model -> Session -> Html Msg
+outputView model session =
     div
         [ class [ OutputContainer ]
-        , style [ ( "width", Utils.numberToPercent (1 - split) ) ]
+        , style [ ( "width", Utils.numberToPercent (1 - model.resultSplit) ) ]
         ]
-        [ case compileResult of
+        [ case RemoteData.map2 (\a _ -> a) model.compileResult model.iframeResult of
             Success errors ->
                 case List.filter (.level >> (==) "error") errors of
                     [] ->
-                        Output.success session.id revision.htmlCode
+                        Output.success session.id
 
                     relevantErrors ->
                         Output.errors relevantErrors

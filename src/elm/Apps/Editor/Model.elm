@@ -13,6 +13,9 @@ module Apps.Editor.Model
         , canCompile
         , canSave
         , closeSearch
+        , elmCodeForCompile
+        , shouldWriteIframe
+        , shouldCompileElm
         )
 
 import Set exposing (Set)
@@ -46,6 +49,7 @@ type alias Model =
     , clientRevision : Revision
     , currentRoute : Route
     , compileResult : RemoteData ApiError (List CompileError)
+    , iframeResult : RemoteData ApiError ()
     , stagedElmCode : String
     , previousElmCode : String
     , stagedHtmlCode : String
@@ -80,6 +84,7 @@ model flags =
     , previousHtmlCode = .htmlCode Revision.empty
     , currentRoute = NotFound
     , compileResult = NotAsked
+    , iframeResult = NotAsked
     , firstCompileComplete = False
     , saveState = NotAsked
     , isOnline = flags.online
@@ -175,3 +180,21 @@ resetStagedCode model =
         | stagedElmCode = model.clientRevision.elmCode
         , stagedHtmlCode = model.clientRevision.htmlCode
     }
+
+
+elmCodeForCompile : Model -> Maybe String
+elmCodeForCompile model =
+    if model.stagedElmCode == model.clientRevision.elmCode then
+        Nothing
+    else
+        Just model.stagedElmCode
+
+
+shouldCompileElm : Model -> Bool
+shouldCompileElm model =
+    (not model.firstCompileComplete) || model.stagedElmCode /= model.previousElmCode
+
+
+shouldWriteIframe : Model -> Bool
+shouldWriteIframe model =
+    model.stagedHtmlCode /= model.previousHtmlCode

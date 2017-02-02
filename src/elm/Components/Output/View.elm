@@ -42,8 +42,8 @@ errors compileErrors =
         (List.map errorSection compileErrors)
 
 
-success : String -> String -> Html msg
-success sessionId htmlCode =
+success : String -> Html msg
+success sessionId =
     iframe
         [ src <| (Constants.apiBase ++ "/sessions/" ++ sessionId ++ "/iframe")
         , class [ Iframe ]

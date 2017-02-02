@@ -24,9 +24,18 @@ import Types.VersionRange as VersionRange exposing (VersionRange)
 import Types.Version as Version exposing (Version)
 import Apps.Editor.Model as Model exposing (Model, Flags, PopoutState(..))
 import Apps.Editor.Routing as Routing exposing (Route(..))
+import Apps.Editor.Cmds as Cmds
 import Shared.Api as Api
 import Shared.Constants as Constants
 import Shared.MessageBus as MessageBus
+
+
+when : (m -> Bool) -> (m -> m) -> m -> m
+when pred transform model =
+    if pred model then
+        transform model
+    else
+        model
 
 
 resultIsSuccess : Result x a -> Bool
@@ -69,6 +78,7 @@ type Msg
     | LoadRevisionCompleted (Result ApiError Revision)
     | CompileRequested
     | CompileCompleted (Result ApiError (List CompileError))
+    | WriteIframeCompleted (Result ApiError ())
     | ElmCodeChanged String
     | HtmlCodeChanged String
     | SaveRequested
@@ -130,22 +140,6 @@ onlineNotification isOnline =
             Notification.Error
             "You're Offline!"
             "Ellie can't connect to the server right now, so we've disabled most features."
-
-
-compileCmd : Model -> ( Model, Cmd Msg )
-compileCmd model =
-    ( model
-    , Cmd.batch
-        [ model.session
-            |> RemoteData.map (Api.compile model.clientRevision.elmCode model.clientRevision.htmlCode)
-            |> RemoteData.map (Api.send CompileCompleted)
-            |> RemoteData.withDefault Cmd.none
-        , MessageBus.notify
-            Notification.Info
-            "Compilation started"
-            "Ellie is compiling your code. When it's done we'll show you the result below."
-        ]
-    )
 
 
 saveCmd : Model -> ( Model, Cmd Msg )
@@ -416,26 +410,22 @@ update msg model =
 
         CompileRequested ->
             model
-                |> (\m -> { m | compileResult = Loading })
-                |> Model.commitStagedCode
-                |> compileCmd
+                |> when Model.shouldCompileElm (\m -> { m | compileResult = Loading })
+                |> when Model.shouldWriteIframe (\m -> { m | iframeResult = Loading })
+                |> Cmds.withCmd (Cmds.compile CompileCompleted)
+                |> Cmds.withAdditionalCmd (Cmds.writeIframe (RemoteData.isNotAsked model.iframeResult) WriteIframeCompleted)
+
+        WriteIframeCompleted result ->
+            model
+                |> (\m -> { m | iframeResult = RemoteData.fromResult result })
+                |> (\m -> { m | previousHtmlCode = result |> Result.map (always m.stagedHtmlCode) |> Result.withDefault m.previousHtmlCode })
+                |> Cmds.withCmd (Cmds.notifyIframeResult result)
 
         CompileCompleted compileResult ->
-            ( { model
-                | compileResult =
-                    RemoteData.fromResult compileResult
-                , firstCompileComplete =
-                    model.firstCompileComplete
-                        || resultIsSuccess compileResult
-                , previousElmCode =
-                    compileResult
-                        |> Result.map (\_ -> model.stagedElmCode)
-                        |> Result.withDefault model.previousElmCode
-                , previousHtmlCode =
-                    compileResult
-                        |> Result.map (\_ -> model.stagedHtmlCode)
-                        |> Result.withDefault model.previousHtmlCode
-              }
+            ( model
+                |> (\m -> { m | compileResult = RemoteData.fromResult compileResult })
+                |> (\m -> { m | firstCompileComplete = model.firstCompileComplete || resultIsSuccess compileResult })
+                |> (\m -> { m | previousElmCode = compileResult |> Result.map (\_ -> model.stagedElmCode) |> Result.withDefault model.previousElmCode })
             , case Result.map onlyErrors compileResult of
                 Ok [] ->
                     MessageBus.notify

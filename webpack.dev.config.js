@@ -56,7 +56,7 @@ module.exports = {
               { pattern: /\%EDITOR_BASE\%/g, replacement: () => 'http://localhost:8000' },
             ]
           }),
-          'elm-webpack-loader?yes',
+          'elm-webpack-loader?yes&debug',
         ]
       },
       {

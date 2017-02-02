@@ -4,7 +4,7 @@ var register = require('./ServiceWorker')
 var initCodeMirror = require('../../Shared/CodeMirror')
 
 var promise =
-  process.env.NODE_ENV === 'production' ?
+  process.env.NODE_ENV === 'production' && navigator.serviceWorker ?
     register({ scope: '/' })
       .catch(function () {})
       .then(initCodeMirror) :

@@ -17,11 +17,15 @@ styles =
         , body
             [ height (pct 100)
             , margin zero
-            , fontWeight (int 300)
             , fontFamilies [ Constants.sansFont ]
+            , property "-webkit-font-smoothing" "antialiased"
             ]
         , everything
             [ boxSizing borderBox ]
+        , button
+            [ focus [ outline zero ] ]
+        , input
+            [ focus [ outline zero ] ]
         , (.) AppContainer
             [ width (pct 100)
             , height (pct 100)
@@ -49,6 +53,7 @@ styles =
         , (.) EditorsContainer
             [ displayFlex
             , flexDirection column
+            , height (pct 100)
             , width (pct 50)
             , borderRight3 (px 2) solid (hex Colors.mediumGray)
             ]

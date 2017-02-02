@@ -65,6 +65,7 @@ styles =
             , marginBottom (px 2)
             , property "justify-content" "space-between"
             , displayFlex
+            , height (px 60)
             , firstChild
                 [ borderTopRightRadius (px 3)
                 , borderTopLeftRadius (px 3)
@@ -76,7 +77,7 @@ styles =
                 ]
             ]
         , (.) ResultsItemInfo
-            [ padding (px 16)
+            [ padding2 zero (px 16)
             , displayFlex
             , alignItems center
             ]
@@ -93,6 +94,7 @@ styles =
             ]
         , (.) ResultsItemButtonGroup
             [ displayFlex
+            , height (pct 100)
             ]
         , (.) ResultsItemButton
             [ property "background" "none"
@@ -128,6 +130,8 @@ styles =
             , top zero
             , left zero
             , property "z-index" "1"
+            , property "backdrop-filter" "blur(10px)"
+            , property "-webkit-backdrop-filter" "blur(10px)"
             , backgroundColor <|
                 rgba
                     (.r Colors.lightGrayRgb)

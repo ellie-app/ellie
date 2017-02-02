@@ -105,9 +105,15 @@ styles =
             , border zero
             , borderRadius (px 3)
             , cursor pointer
+            , margin zero
             , marginRight (px 8)
             , textDecoration none
             , outline zero
+            , fontFamily inherit
+            , property "-webkit-appearance" "none"
+            , lastChild
+                [ marginRight zero
+                ]
             , backgroundColor <|
                 rgba
                     (.r Colors.darkGrayRgb)
