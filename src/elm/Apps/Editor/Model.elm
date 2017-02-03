@@ -16,6 +16,7 @@ module Apps.Editor.Model
         , elmCodeForCompile
         , shouldWriteIframe
         , shouldCompileElm
+        , hasUnsavedWork
         )
 
 import Set exposing (Set)
@@ -198,3 +199,15 @@ shouldCompileElm model =
 shouldWriteIframe : Model -> Bool
 shouldWriteIframe model =
     model.stagedHtmlCode /= model.previousHtmlCode
+
+
+hasUnsavedWork : Model -> Bool
+hasUnsavedWork model =
+    case model.serverRevision of
+        Success revision ->
+            (model.stagedElmCode /= revision.elmCode)
+                || (model.stagedHtmlCode /= revision.htmlCode)
+                || (model.clientRevision /= revision)
+
+        _ ->
+            False

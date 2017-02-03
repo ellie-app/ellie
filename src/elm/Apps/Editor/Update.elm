@@ -6,6 +6,8 @@ module Apps.Editor.Update
         , Msg(..)
         )
 
+import Time
+import Process
 import Task
 import Dom
 import Set exposing (Set)
@@ -89,6 +91,7 @@ type Msg
     | RemoveDependencyRequested Dependency
     | RemoveDependencyCompleted (Result ApiError Dependency)
     | WindowUnloaded
+    | WindowBeforeUnloaded
     | NotificationReceived Notification
     | ToggleNotifications
     | ToggleAbout
@@ -107,6 +110,7 @@ type Msg
     | PackageSelected Package
     | AddDependencyCompleted Dependency (Result ApiError ())
     | ToggleEmbedLink
+    | KeepSessionAlive
     | NoOp
 
 
@@ -183,6 +187,21 @@ addDependencyCmd package model =
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
+        KeepSessionAlive ->
+            case model.session of
+                Success session ->
+                    ( model
+                    , Cmd.batch
+                        [ Api.refreshSession session
+                            |> Api.send (always NoOp)
+                        , Process.sleep (5 * Time.minute)
+                            |> Task.perform (always KeepSessionAlive)
+                        ]
+                    )
+
+                _ ->
+                    ( model, Cmd.none )
+
         ToggleEmbedLink ->
             ( { model
                 | popoutState =
@@ -358,8 +377,13 @@ update msg model =
             , Cmd.none
             )
 
-        WindowUnloaded ->
+        WindowBeforeUnloaded ->
             ( model
+            , Cmd.none
+            )
+
+        WindowUnloaded ->
+            ( { model | session = NotAsked }
             , model.session
                 |> RemoteData.map Api.removeSession
                 |> RemoteData.map (Api.send (\_ -> NoOp))
@@ -370,6 +394,8 @@ update msg model =
             ( { model | session = RemoteData.fromResult sessionResult }
             , Cmd.batch
                 [ onlineNotification model.isOnline
+                , Process.sleep (5 * Time.minute)
+                    |> Task.perform (always KeepSessionAlive)
                 , case sessionResult of
                     Ok _ ->
                         MessageBus.notify
@@ -614,20 +640,15 @@ handleRouteChanged route ( model, cmd ) =
                 |> RemoteData.withDefault { model | session = Loading, serverRevision = Loading, compileResult = NotAsked }
 
         SpecificRevision projectId revisionNumber ->
-            let
-                modelForSession =
-                    model.session
-                        |> RemoteData.map (\_ -> model)
-                        |> RemoteData.withDefault { model | session = Loading }
-            in
-                model.clientRevision
-                    |> (\r -> Maybe.map2 (,) r.projectId r.revisionNumber)
-                    |> Maybe.map (\( p, r ) -> p /= projectId || r /= revisionNumber)
-                    |> Maybe.andThen boolToMaybe
-                    |> Maybe.map (\() -> { modelForSession | serverRevision = Loading, compileResult = NotAsked })
-                    |> Maybe.withDefault modelForSession
+            model.clientRevision
+                |> (\r -> Maybe.map2 (,) r.projectId r.revisionNumber)
+                |> Maybe.map (\( p, r ) -> p /= projectId || r /= revisionNumber)
+                |> Maybe.andThen boolToMaybe
+                |> Maybe.map (\() -> { model | serverRevision = Loading, compileResult = NotAsked, session = Loading })
+                |> Maybe.withDefault model
     , Cmd.batch
         [ cmd
+        , Cmds.pathChanged
         , case route of
             NotFound ->
                 Navigation.modifyUrl (Routing.construct NewProject)

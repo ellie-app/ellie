@@ -6,6 +6,7 @@ module Shared.Api
         , createNewSession
         , createSessionForRevision
         , removeSession
+        , refreshSession
         , compile
         , writeIframe
         , format
@@ -168,6 +169,12 @@ createSessionForRevision projectId revisionNumber =
 removeSession : Session -> RequestBuilder ()
 removeSession session =
     delete (fullUrl ("/sessions/" ++ session.id))
+        |> withApiHeaders
+
+
+refreshSession : Session -> RequestBuilder ()
+refreshSession session =
+    post (fullUrl ("/sessions/" ++ session.id ++ "/refresh"))
         |> withApiHeaders
 
 

@@ -6,8 +6,11 @@ port module Apps.Editor.Cmds
         , writeIframe
         , notifyIframeResult
         , reloadIframe
+        , hasUnsavedWork
+        , pathChanged
         )
 
+import Navigation
 import RemoteData exposing (RemoteData(..))
 import Types.CompileError as CompileError exposing (CompileError)
 import Types.ApiError as ApiError exposing (ApiError)
@@ -33,6 +36,17 @@ withAdditionalCmd makeCmd ( model, cmd ) =
 
 
 port reloadIframePort : () -> Cmd msg
+
+
+port hasUnsavedWork : Bool -> Cmd msg
+
+
+port pathChangedOut : () -> Cmd msg
+
+
+pathChanged : Cmd msg
+pathChanged =
+    pathChangedOut ()
 
 
 reloadIframe : Cmd msg
