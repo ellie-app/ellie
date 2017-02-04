@@ -80,6 +80,10 @@ module.exports = {
     new HtmlWebpackPlugin({
       inject: true,
       template: path.join(__dirname, 'src/index.ejs'),
+      data: {
+        production: false,
+        gtmId: '',
+      },
       minify: {
         removeComments: true,
         collapseWhitespace: true,
