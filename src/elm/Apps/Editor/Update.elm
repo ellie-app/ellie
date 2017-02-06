@@ -425,10 +425,13 @@ update msg model =
                         "Ellie found the project and revision you asked for. It's loaded up and ready to be run."
 
                 Err apiError ->
-                    MessageBus.notify
-                        Notification.Error
-                        "Failed To Load Project"
-                        ("Ellie couldn't load the project you asked for. Here's what the server said:\n\n" ++ apiError.explanation)
+                    if apiError.statusCode == 404 then
+                        Navigation.modifyUrl <| Routing.construct NewProject
+                    else
+                        MessageBus.notify
+                            Notification.Error
+                            "Failed To Load Project"
+                            ("Ellie couldn't load the project you asked for. Here's what the server said:\n\n" ++ apiError.explanation)
             )
 
         RouteChanged route ->
@@ -660,6 +663,10 @@ handleRouteChanged route ( model, cmd ) =
                         |> RemoteData.withDefault (Api.createNewSession |> Api.send CreateSessionCompleted)
                     , Api.defaultRevision
                         |> Api.send LoadRevisionCompleted
+                    , model.session
+                        |> RemoteData.map Api.removeSession
+                        |> RemoteData.map (Api.send (\_ -> NoOp))
+                        |> RemoteData.withDefault Cmd.none
                     , MessageBus.notify
                         Notification.Info
                         "Setting up your session"
