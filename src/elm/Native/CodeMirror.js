@@ -114,7 +114,7 @@ var _user$project$Native_CodeMirror = (function () {
     var runDispatch = debounce(function () {
       var event = new Event('CodeMirror.updated')
       element.dispatchEvent(event)
-    }, 45)
+    }, 200)
 
     instance.on('change', runDispatch)
 
