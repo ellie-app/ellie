@@ -60,13 +60,14 @@ var _user$project$Native_CodeMirror = (function () {
       },
       editorValue: {
         get: function () {
-          return instance.getValue()
+          return element.__debouncedValue
         },
         set: function (value) {
-          if (value !== instance.getValue() && !element.__dispatchingChanges) {
+          if (value !== element.__debouncedValue) {
             var prevScrollPosition = instance.getScrollInfo()
             instance.setValue(value)
             instance.scrollTo(prevScrollPosition.left, prevScrollPosition.top)
+            element.__debouncedValue = value
           }
         }
       },
@@ -111,7 +112,10 @@ var _user$project$Native_CodeMirror = (function () {
       }
     })
 
+    element.__debouncedValue = instance.getValue()
+
     var runDispatch = debounce(function () {
+      element.__debouncedValue = instance.getValue()
       var event = new Event('CodeMirror.updated')
       element.dispatchEvent(event)
     }, 200)
