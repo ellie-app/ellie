@@ -7,6 +7,7 @@ module Components.Editors.CodeMirror
         , linterMessage
         , mode
         , readOnly
+        , value
         , theme
         , onUpdate
         , linterMessages
@@ -61,7 +62,7 @@ position =
 
 onUpdate : (String -> msg) -> Attribute msg
 onUpdate tagger =
-    on "CodeMirror.updated" (Decode.map tagger targetValue)
+    on "CodeMirror.updated" (Decode.map tagger (Decode.at [ "target", "editorValue" ] Decode.string))
 
 
 mode : String -> Attribute msg
@@ -82,6 +83,11 @@ theme =
 editor : List (Attribute msg) -> Html msg
 editor =
     Native.CodeMirror.editor
+
+
+value : String -> Attribute msg
+value =
+    Encode.string >> property "editorValue"
 
 
 linterMessages : List LinterMessage -> Attribute msg

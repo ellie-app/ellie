@@ -4,6 +4,7 @@ module Apps.Editor.Model
         , PopoutState(..)
         , Flags
         , model
+        , resetToNew
         , updateClientRevision
         , isOwnedProject
         , isSavedProject
@@ -103,6 +104,11 @@ model flags =
     , installingPackage = Nothing
     , removingDependencyHashes = Set.empty
     }
+
+
+resetToNew : Model -> Model
+resetToNew m =
+    model { windowSize = m.windowSize, online = m.isOnline }
 
 
 closeSearch : Model -> Model

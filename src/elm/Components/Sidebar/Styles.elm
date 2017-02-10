@@ -75,8 +75,8 @@ styles =
             [ position absolute
             , top (px 8)
             , left (px 8)
-            , fontSize (px 10)
-            , lineHeight (px 10)
+            , fontSize (px 12)
+            , lineHeight (px 12)
             , textTransform uppercase
             , color (hex Colors.lightGray)
             ]

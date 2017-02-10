@@ -102,7 +102,7 @@ elm onUpdate content compileErrors =
             List.map compileErrorToLinterMessage compileErrors
 
         baseAttrs =
-            [ value content
+            [ CodeMirror.value content
             , CodeMirror.linterMessages linterMessages
             , CodeMirror.theme "material"
             , CodeMirror.mode "elm"
@@ -124,7 +124,7 @@ html : Maybe (String -> msg) -> String -> Html msg
 html onUpdate content =
     let
         baseAttrs =
-            [ value content
+            [ CodeMirror.value content
             , CodeMirror.theme "material"
             , CodeMirror.mode "htmlmixed"
             , style

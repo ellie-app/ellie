@@ -3,6 +3,18 @@ var _user$project$Native_CodeMirror = (function () {
   var toArray = _elm_lang$core$Native_List.toArray
   var CodeMirror = window.CodeMirror
 
+  function debounce(func, wait) {
+  	var timeout
+  	return function() {
+  		var later = function() {
+  			timeout = null
+  			func.apply(null, arguments)
+  		};
+  		clearTimeout(timeout)
+  		timeout = setTimeout(later, wait);
+  	}
+  }
+
   CodeMirror.registerHelper('lint', 'elm', function (text, options, instance) {
     return instance.__ellie_errors || []
   })
@@ -19,7 +31,7 @@ var _user$project$Native_CodeMirror = (function () {
   function render() {
     var instance = CodeMirror(null, {
       lineNumbers: true,
-      styleActiveLine: true,
+      styleActiveLine: { nonEmpty: true },
       smartIndent: true,
       indentUnit: 4,
       indentWithTabs: false,
@@ -46,13 +58,15 @@ var _user$project$Native_CodeMirror = (function () {
           instance.setOption('readOnly', value)
         }
       },
-      value: {
+      editorValue: {
         get: function () {
           return instance.getValue()
         },
         set: function (value) {
-          if (value !== instance.getValue()) {
+          if (value !== instance.getValue() && !element.__dispatchingChanges) {
+            var prevScrollPosition = instance.getScrollInfo()
             instance.setValue(value)
+            instance.scrollTo(prevScrollPosition.left, prevScrollPosition.top)
           }
         }
       },
@@ -97,10 +111,12 @@ var _user$project$Native_CodeMirror = (function () {
       }
     })
 
-    instance.on('changes', function () {
+    var runDispatch = debounce(function () {
       var event = new Event('CodeMirror.updated')
       element.dispatchEvent(event)
-    })
+    }, 30)
+
+    instance.on('change', runDispatch)
 
     requestAnimationFrame(function () {
       instance.refresh()

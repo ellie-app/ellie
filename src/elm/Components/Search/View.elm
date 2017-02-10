@@ -6,7 +6,9 @@ import Html.Events exposing (onInput, onClick, on)
 import Components.Search.Classes exposing (..)
 import Shared.Icons as Icons
 import Types.Package as Package exposing (Package)
+import Types.Dependency as Dependency exposing (Dependency)
 import Types.Version as Version exposing (Version)
+import Types.VersionRange as VersionRange exposing (VersionRange)
 
 
 type alias ViewModel msg =
@@ -14,8 +16,16 @@ type alias ViewModel msg =
     , searchValue : String
     , onSearchChange : String -> msg
     , results : List Package
+    , dependencies : List Dependency
     , onInstall : Package -> msg
     }
+
+
+packageIsInstalled : List Dependency -> Package -> Bool
+packageIsInstalled dependencyList package =
+    List.any
+        (\dep -> (dep.username == package.username) && (dep.name == package.name) && (VersionRange.includes package.version dep.range))
+        dependencyList
 
 
 docsLink : Package -> String
@@ -86,7 +96,10 @@ viewResults viewModel =
         text ""
     else
         div [ class [ Results ] ]
-            (List.map (viewResultsItem viewModel.onInstall) viewModel.results)
+            (viewModel.results
+                |> List.filter (not << packageIsInstalled viewModel.dependencies)
+                |> List.map (viewResultsItem viewModel.onInstall)
+            )
 
 
 view : ViewModel msg -> Html msg

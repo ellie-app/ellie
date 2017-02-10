@@ -28,4 +28,37 @@ styles =
             , fontSize (px 14)
             , overflowY auto
             ]
+        , (.) Option
+            [ backgroundColor (hex Colors.darkGray)
+            , marginBottom (px 2)
+            , padding3 (px 8) (px 8) (px 16)
+            , firstChild
+                [ borderTopLeftRadius (px 3)
+                , borderTopRightRadius (px 3)
+                ]
+            , lastChild
+                [ borderBottomLeftRadius (px 3)
+                , borderBottomRightRadius (px 3)
+                , marginBottom (px 2)
+                ]
+            ]
+        , (.) OptionTitle
+            [ fontSize (px 12)
+            , lineHeight (px 12)
+            , textTransform uppercase
+            , color (hex Colors.lightGray)
+            ]
+        , (.) OptionContent
+            [ paddingTop (px 8)
+            , whiteSpace noWrap
+            , overflowX hidden
+            , fontFamily monospace
+            , property "-webkit-appearance" "none"
+            , property "background" "none"
+            , border zero
+            , display block
+            , width (pct 100)
+            , fontSize (px 14)
+            , color (hex Colors.white)
+            ]
         ]

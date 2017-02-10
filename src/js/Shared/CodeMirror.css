@@ -2,6 +2,11 @@
   background-color: #282A37 !important;
 }
 
+.CodeMirror-focused .CodeMirror-activeline-background,
+.CodeMirror-focused .CodeMirror-activeline-gutter {
+  background-color: #484A55 !important;
+}
+
 .CodeMirror .CodeMirror-gutters {
   background-color: #282A37 !important;
 }

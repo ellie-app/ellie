@@ -6,6 +6,9 @@ import Html.CssHelpers
 
 type Classes
     = Container
+    | Option
+    | OptionTitle
+    | OptionContent
 
 
 helpers : Html.CssHelpers.Namespace String class id msg

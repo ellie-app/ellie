@@ -68,6 +68,7 @@ searchContext model =
     , onSearchChange = SearchChanged
     , results = model.searchResults
     , onInstall = PackageSelected
+    , dependencies = model.clientRevision.dependencies
     }
 
 

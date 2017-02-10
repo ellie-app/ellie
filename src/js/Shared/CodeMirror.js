@@ -6,6 +6,7 @@ module.exports = function () {
       'codemirror/mode/elm/elm',
       'codemirror/mode/htmlmixed/htmlmixed',
       'codemirror/addon/lint/lint',
+      'codemirror/addon/selection/active-line',
       'codemirror/addon/lint/lint.css',
       'codemirror/theme/material.css',
       './CodeMirror.css'
@@ -15,6 +16,7 @@ module.exports = function () {
       require('codemirror/mode/elm/elm')
       require('codemirror/mode/htmlmixed/htmlmixed')
       require('codemirror/addon/lint/lint')
+      require('codemirror/addon/selection/active-line')
       require('codemirror/addon/lint/lint.css')
       require('codemirror/theme/material.css')
       require('./CodeMirror.css')

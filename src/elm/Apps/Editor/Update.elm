@@ -638,17 +638,13 @@ handleRouteChanged route ( model, cmd ) =
             model
 
         NewProject ->
-            model.session
-                |> RemoteData.map (\_ -> model)
-                |> RemoteData.withDefault { model | session = Loading, serverRevision = Loading, compileResult = NotAsked }
+            Model.resetToNew model
 
         SpecificRevision projectId revisionNumber ->
-            model.clientRevision
-                |> (\r -> Maybe.map2 (,) r.projectId r.revisionNumber)
-                |> Maybe.map (\( p, r ) -> p /= projectId || r /= revisionNumber)
-                |> Maybe.andThen boolToMaybe
-                |> Maybe.map (\() -> { model | serverRevision = Loading, compileResult = NotAsked, session = Loading })
-                |> Maybe.withDefault model
+            if model.clientRevision.projectId == Just projectId && model.clientRevision.revisionNumber == Just revisionNumber then
+                model
+            else
+                { model | serverRevision = Loading, compileResult = NotAsked, session = Loading }
     , Cmd.batch
         [ cmd
         , Cmds.pathChanged
@@ -658,11 +654,8 @@ handleRouteChanged route ( model, cmd ) =
 
             NewProject ->
                 Cmd.batch
-                    [ model.session
-                        |> RemoteData.map (\_ -> Cmd.none)
-                        |> RemoteData.withDefault (Api.createNewSession |> Api.send CreateSessionCompleted)
-                    , Api.defaultRevision
-                        |> Api.send LoadRevisionCompleted
+                    [ Api.createNewSession |> Api.send CreateSessionCompleted
+                    , Api.defaultRevision |> Api.send LoadRevisionCompleted
                     , model.session
                         |> RemoteData.map Api.removeSession
                         |> RemoteData.map (Api.send (\_ -> NoOp))
