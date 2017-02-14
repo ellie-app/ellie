@@ -98,15 +98,15 @@ viewElm code errors =
     Editors.elm Nothing code errors
 
 
-iframeSrc : String -> Int -> String
-iframeSrc projectId revisionNumber =
-    Constants.cdnBase ++ "/compiler-output/" ++ projectId ++ "-" ++ toString revisionNumber ++ ".html"
+iframeSrc : String -> String
+iframeSrc path =
+    Constants.cdnBase ++ "/compiler-output/" ++ path ++ ".html"
 
 
-viewResultsUploaded : String -> Int -> Html Msg
-viewResultsUploaded projectId revisionNumber =
+viewResultsUploaded : String -> Html Msg
+viewResultsUploaded path =
     iframe
-        [ src <| iframeSrc projectId revisionNumber
+        [ src <| iframeSrc path
         , class [ Iframe ]
         ]
         []
@@ -120,11 +120,8 @@ viewResultsErrors errors =
 viewResults : Revision -> Html Msg
 viewResults revision =
     case revision.snapshot of
-        Uploaded ->
-            Maybe.map2 viewResultsUploaded
-                revision.projectId
-                revision.revisionNumber
-                |> Maybe.withDefault (text "")
+        Uploaded path ->
+            viewResultsUploaded path
 
         Errored errors ->
             viewResultsErrors errors

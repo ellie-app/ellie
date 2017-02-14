@@ -17,7 +17,7 @@ import Shared.Utils as Utils
 
 type Snapshot
     = NotSaved
-    | Uploaded
+    | Uploaded String
     | Errored (List CompileError)
 
 
@@ -74,7 +74,9 @@ decodeSnapshot =
                             |> Decode.map Errored
 
                     "SUCCESS" ->
-                        Decode.succeed Uploaded
+                        Decode.string
+                            |> Decode.field "path"
+                            |> Decode.map Uploaded
 
                     _ ->
                         Decode.succeed NotSaved
