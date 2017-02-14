@@ -33,4 +33,4 @@ construct route =
             "/" ++ projectId ++ "/" ++ toString revisionNumber
 
         NotFound ->
-            "/"
+            "/not-found"

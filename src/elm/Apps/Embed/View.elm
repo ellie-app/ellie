@@ -36,15 +36,15 @@ viewNotFound =
         ]
 
 
-viewFailure : Html Msg
-viewFailure =
+viewFailure : String -> Html Msg
+viewFailure message =
     div [ class [ FailureContainer ] ]
         [ div [ class [ FailureTitle ] ]
             [ text "Oh no!" ]
         , div [ class [ FailureMessage ] ]
             [ text "Something went wrong while loading this project. The server said:" ]
         , div [ class [ FailureDetails ] ]
-            [ text "Failed to do whatever or something. This error is generated on the server. It’s meant to provide more details to the user because everyone hates vague errors." ]
+            [ text message ]
         ]
 
 
@@ -187,7 +187,7 @@ view model =
                         viewLoaded model revision
 
                     Failure error ->
-                        viewFailure
+                        viewFailure error.explanation
 
                     _ ->
                         viewLoading

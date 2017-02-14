@@ -15,6 +15,24 @@ import Types.ApiError as ApiError exposing (ApiError)
 import Types.Revision as Revision exposing (Revision)
 
 
+resultOnError : (x -> Result y a) -> Result x a -> Result y a
+resultOnError callback result =
+    case result of
+        Ok a ->
+            Ok a
+
+        Err x ->
+            callback x
+
+
+choose : a -> a -> Bool -> a
+choose l r predicate =
+    if predicate then
+        l
+    else
+        r
+
+
 type Msg
     = NoOp
     | RouteChanged Route
@@ -30,7 +48,11 @@ update msg model =
 
         LoadRevisionCompleted result ->
             ( { model | revision = RemoteData.fromResult result }
-            , Cmd.none
+            , result
+                |> Result.map (\_ -> False)
+                |> resultOnError (\apiError -> Ok <| apiError.statusCode == 404)
+                |> Result.map (choose (Navigation.modifyUrl <| Routing.construct NotFound) Cmd.none)
+                |> Result.withDefault Cmd.none
             )
 
         RouteChanged route ->
