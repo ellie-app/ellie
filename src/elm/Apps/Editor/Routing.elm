@@ -8,12 +8,18 @@ module Apps.Editor.Routing
 
 import Navigation
 import UrlParser exposing ((</>))
+import Types.ProjectId as ProjectId exposing (ProjectId)
 
 
 type Route
     = NewProject
-    | SpecificRevision String Int
+    | SpecificRevision ProjectId Int
     | NotFound
+
+
+parseProjectId : UrlParser.Parser (ProjectId -> b) b
+parseProjectId =
+    UrlParser.custom "PROJECT ID" (ProjectId.fromEncodedString >> Ok)
 
 
 parse : Navigation.Location -> Route
@@ -22,7 +28,7 @@ parse =
         parser =
             UrlParser.oneOf
                 [ UrlParser.map NewProject (UrlParser.s "new")
-                , UrlParser.map SpecificRevision (UrlParser.string </> UrlParser.int)
+                , UrlParser.map SpecificRevision (parseProjectId </> UrlParser.int)
                 ]
     in
         UrlParser.parsePath parser
@@ -36,7 +42,7 @@ construct route =
             "/new"
 
         SpecificRevision projectId revisionNumber ->
-            "/" ++ projectId ++ "/" ++ toString revisionNumber
+            "/" ++ (ProjectId.toEncodedString projectId) ++ "/" ++ toString revisionNumber
 
         NotFound ->
             "/"

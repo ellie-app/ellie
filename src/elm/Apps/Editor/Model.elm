@@ -18,6 +18,7 @@ module Apps.Editor.Model
         , shouldWriteIframe
         , shouldCompileElm
         , hasUnsavedWork
+        , activeProjectIdUrlEncoding
         )
 
 import Set exposing (Set)
@@ -29,6 +30,7 @@ import Types.Revision as Revision exposing (Revision)
 import Types.CompileError as CompileError exposing (CompileError)
 import Types.Notification as Notification exposing (Notification)
 import Types.Package as Package exposing (Package)
+import Types.ProjectId as ProjectId exposing (ProjectId)
 import Apps.Editor.Routing as Routing exposing (Route(..))
 
 
@@ -217,3 +219,13 @@ hasUnsavedWork model =
 
         _ ->
             False
+
+
+activeProjectIdUrlEncoding : Model -> ProjectId.EncodingVersion
+activeProjectIdUrlEncoding model =
+    case model.currentRoute of
+        SpecificRevision projectId _ ->
+            ProjectId.encodingVersion projectId
+
+        _ ->
+            ProjectId.latestVersion

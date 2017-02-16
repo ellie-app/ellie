@@ -13,6 +13,7 @@ import Apps.Embed.Routing as Routing exposing (Route(..))
 import Shared.Api as Api
 import Types.ApiError as ApiError exposing (ApiError)
 import Types.Revision as Revision exposing (Revision)
+import Types.ProjectId as ProjectId exposing (ProjectId)
 
 
 resultOnError : (x -> Result y a) -> Result x a -> Result y a
@@ -97,7 +98,7 @@ handleRouteChanged route ( model, cmd ) =
             ( { model | revision = Loading }
             , Cmd.batch
                 [ cmd
-                , loadRevision projectId revisionNumber
+                , loadRevision (ProjectId.toIdString projectId) revisionNumber
                 ]
             )
 

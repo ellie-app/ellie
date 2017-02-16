@@ -8,6 +8,7 @@ import Types.Revision as Revision exposing (Revision)
 import Types.ApiError as ApiError exposing (ApiError)
 import Types.CompileError as CompileError exposing (CompileError)
 import Types.Session as Session exposing (Session)
+import Types.ProjectId as ProjectId exposing (ProjectId)
 import Apps.Editor.Update as Update exposing (Msg(..))
 import Apps.Editor.Model as Model exposing (Model, PopoutState(..))
 import Apps.Editor.Classes exposing (..)
@@ -78,7 +79,10 @@ embedLink model =
         ( EmbedLinkOpen, SpecificRevision projectId revisionNumber ) ->
             div
                 [ class [ EmbedLinkContainer ] ]
-                [ EmbedLink.view { projectId = projectId, revisionNumber = revisionNumber }
+                [ EmbedLink.view
+                    { projectId = ProjectId.toEncodedString projectId
+                    , revisionNumber = revisionNumber
+                    }
                 ]
 
         _ ->

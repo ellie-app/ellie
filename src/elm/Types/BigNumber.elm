@@ -1,20 +1,24 @@
 module Types.BigNumber
     exposing
-        ( fromString
+        ( BigNumber
+        , fromString
         , fromFloat
         , fromInt
         , add
-        , sub
-        , mul
-        , div
+        , subtract
+        , multiply
+        , divide
         , floor
         , toFloat
+        , toString
         , toInt
         , zero
         , (|+|)
         , (|-|)
         , (|*|)
         , (|/|)
+        , (|>|)
+        , (|%|)
         )
 
 import Native.BigNumber
@@ -49,39 +53,55 @@ add number bignum =
     Native.BigNumber.add bignum number
 
 
+infixl 6 |+|
 (|+|) : BigNumber -> number -> BigNumber
 (|+|) =
     Native.BigNumber.add
 
 
-sub : number -> BigNumber -> BigNumber
-sub number bignum =
+subtract : number -> BigNumber -> BigNumber
+subtract number bignum =
     Native.BigNumber.sub bignum number
 
 
+infixl 6 |-|
 (|-|) : BigNumber -> number -> BigNumber
 (|-|) =
     Native.BigNumber.sub
 
 
-mul : number -> BigNumber -> BigNumber
-mul number bignum =
+multiply : number -> BigNumber -> BigNumber
+multiply number bignum =
     Native.BigNumber.mul bignum number
 
 
+infixl 7 |*|
 (|*|) : BigNumber -> number -> BigNumber
 (|*|) =
     Native.BigNumber.mul
 
 
-div : number -> BigNumber -> BigNumber
-div number bignum =
+divide : number -> BigNumber -> BigNumber
+divide number bignum =
     Native.BigNumber.div bignum number
 
 
+infixl 7 |/|
 (|/|) : BigNumber -> number -> BigNumber
 (|/|) =
     Native.BigNumber.div
+
+
+infix 4 |>|
+(|>|) : BigNumber -> number -> Bool
+(|>|) =
+    Native.BigNumber.gt
+
+
+infixl 7 |%|
+(|%|) : BigNumber -> number -> BigNumber
+(|%|) =
+    Native.BigNumber.mod
 
 
 floor : BigNumber -> BigNumber
@@ -91,9 +111,14 @@ floor =
 
 toInt : BigNumber -> Int
 toInt =
-    Native.BigNumber.toInt
+    toFloat >> round
 
 
 toFloat : BigNumber -> Float
 toFloat =
     Native.BigNumber.toFloat
+
+
+toString : BigNumber -> String
+toString =
+    Native.BigNumber.toString

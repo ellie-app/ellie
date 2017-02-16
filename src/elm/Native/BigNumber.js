@@ -2719,12 +2719,15 @@ var _user$project$Native_BigNumber = (function () {
       catch (e) { return { ctor: 'Err', _0: e.message } }
     },
     zero: new BigNumber(0),
-    add: function(l, r) { return l.add(r) },
-    sub: function(l, r) { return l.sub(r) },
-    mul: function(l, r) { return l.mul(t) },
-    div: function(l, r) { return l.div(r) },
+    add: F2(function(l, r) { return l.add(r) }),
+    sub: F2(function(l, r) { return l.sub(r) }),
+    mul: F2(function(l, r) { return l.mul(r) }),
+    div: F2(function(l, r) { return l.div(r) }),
+    gt: F2(function(l, r) { return l.greaterThan(r) }),
+    mod: F2(function(l, r) { return l.mod(r) }),
     floor: function(b) { return b.floor() },
     toInt: function(b) { return b.toNumber() | 0 },
     toFloat: function(b) { return b.toNumber() },
+    toString: function(b) { return b.toString() }
   }
 })()

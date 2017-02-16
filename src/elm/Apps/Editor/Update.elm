@@ -24,6 +24,7 @@ import Types.Notification as Notification exposing (Notification)
 import Types.Package as Package exposing (Package)
 import Types.VersionRange as VersionRange exposing (VersionRange)
 import Types.Version as Version exposing (Version)
+import Types.ProjectId as ProjectId exposing (ProjectId)
 import Apps.Editor.Model as Model exposing (Model, Flags, PopoutState(..))
 import Apps.Editor.Routing as Routing exposing (Route(..))
 import Apps.Editor.Cmds as Cmds
@@ -511,8 +512,16 @@ update msg model =
                 [ saveResult
                     |> Result.toMaybe
                     |> Maybe.andThen (\r -> Maybe.map2 (,) r.projectId r.revisionNumber)
-                    |> Maybe.map (\( p, r ) -> Routing.construct <| SpecificRevision p r)
-                    |> Maybe.map Navigation.newUrl
+                    |> Maybe.map
+                        (\( projectId, revisionNumber ) ->
+                            if Debug.log "o" (Model.isOwnedProject model) then
+                                SpecificRevision
+                                    (ProjectId.fromIdStringWithVersion (Model.activeProjectIdUrlEncoding model) projectId)
+                                    revisionNumber
+                            else
+                                SpecificRevision (ProjectId.fromIdString projectId) revisionNumber
+                        )
+                    |> Maybe.map (Routing.construct >> Navigation.newUrl)
                     |> Maybe.withDefault Cmd.none
                 , case saveResult of
                     Ok _ ->
@@ -641,7 +650,7 @@ handleRouteChanged route ( model, cmd ) =
             Model.resetToNew model
 
         SpecificRevision projectId revisionNumber ->
-            if model.clientRevision.projectId == Just projectId && model.clientRevision.revisionNumber == Just revisionNumber then
+            if model.clientRevision.projectId == Just (ProjectId.toIdString projectId) && model.clientRevision.revisionNumber == Just revisionNumber then
                 model
             else
                 { model | serverRevision = Loading, compileResult = NotAsked, session = Loading }
@@ -669,19 +678,19 @@ handleRouteChanged route ( model, cmd ) =
             SpecificRevision projectId revisionNumber ->
                 model.clientRevision
                     |> (\r -> Maybe.map2 (,) r.projectId r.revisionNumber)
-                    |> Maybe.map (\( p, r ) -> p /= projectId || r /= revisionNumber)
+                    |> Maybe.map (\( p, r ) -> p /= (ProjectId.toIdString projectId) || r /= revisionNumber)
                     |> Maybe.withDefault True
                     |> boolToMaybe
                     |> Maybe.map
                         (\() ->
                             Cmd.batch
-                                [ Api.exactRevision projectId revisionNumber
+                                [ Api.exactRevision (ProjectId.toIdString projectId) revisionNumber
                                     |> Api.send LoadRevisionCompleted
                                 , model.session
                                     |> RemoteData.map Api.removeSession
                                     |> RemoteData.map (Api.send (\_ -> NoOp))
                                     |> RemoteData.withDefault Cmd.none
-                                , Api.createSessionForRevision projectId revisionNumber
+                                , Api.createSessionForRevision (ProjectId.toIdString projectId) revisionNumber
                                     |> Api.send CreateSessionCompleted
                                 , MessageBus.notify
                                     Notification.Info
