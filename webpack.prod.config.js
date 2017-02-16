@@ -25,6 +25,7 @@ module.exports = {
     path: path.resolve(__dirname + '/build', target),
     filename: '[name].[chunkhash:8].js',
     chunkFilename: 'chunk.[name].[chunkhash:8].js',
+    publicPath: process.env.CDN_BASE + '/assets/' + target + '/'
   },
 
   module: {
@@ -54,6 +55,7 @@ module.exports = {
               { pattern: /\%CDN_BASE\%/g, replacement: () => process.env.CDN_BASE },
               { pattern: /\%EMBED_BASE\%/g, replacement: () => process.env.EMBED_BASE },
               { pattern: /\%EDITOR_BASE\%/g, replacement: () => process.env.EDITOR_BASE },
+              { pattern: /\%ENV\%/g, replacement: () => 'production' },
             ]
           }),
           'elm-webpack-loader?yes',
@@ -71,7 +73,7 @@ module.exports = {
   },
 
   plugins: [
-    new WebpackMd5Hash(),
+    // new WebpackMd5Hash(),
     new webpack.DefinePlugin({
       API_BASE: JSON.stringify(process.env.API_BASE || 'http://localhost:1337'),
       'process.env.NODE_ENV': JSON.stringify('production')

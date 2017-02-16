@@ -66,7 +66,7 @@ styles =
         , (.) HsLogoImage
             [ width (px 170)
             , height (px 45)
-            , backgroundImage (url "/images/humblespark_logo.png")
+            , backgroundImage (url <| Constants.asset "images/humblespark_logo.png")
             , backgroundSize (pct 102)
             , marginTop (px -16)
             ]

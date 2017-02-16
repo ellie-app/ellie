@@ -55,6 +55,7 @@ module.exports = {
               { pattern: /\%CDN_BASE\%/g, replacement: () => 'http://localhost:1337/cdn-proxy' },
               { pattern: /\%EMBED_BASE\%/g, replacement: () => 'http://localhost:8001' },
               { pattern: /\%EDITOR_BASE\%/g, replacement: () => 'http://localhost:8000' },
+              { pattern: /\%ENV\%/g, replacement: () => 'development' },
             ]
           }),
           'elm-webpack-loader?yes&debug',

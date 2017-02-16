@@ -15,6 +15,11 @@ headerHeight =
     50
 
 
+isProduction : Bool
+isProduction =
+    "%ENV%" == "production"
+
+
 apiBase : String
 apiBase =
     "%API_BASE%"
@@ -33,6 +38,19 @@ embedBase =
 cdnBase : String
 cdnBase =
     "%CDN_BASE%"
+
+
+assetBase : String
+assetBase =
+    if isProduction then
+        cdnBase ++ "/assets/"
+    else
+        "/"
+
+
+asset : String -> String
+asset relative =
+    assetBase ++ relative
 
 
 defaultDependencies : List Dependency
