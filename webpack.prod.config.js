@@ -5,6 +5,7 @@ var StringReplacePlugin = require('string-replace-webpack-plugin');
 var ExtractTextPlugin = require('extract-text-webpack-plugin');
 var WebpackMd5Hash = require('webpack-md5-hash');
 var HtmlWebpackPlugin = require('html-webpack-plugin');
+var ManifestPlugin = require('webpack-manifest-plugin');
 
 var target = process.env.BUILD_TARGET || 'editor'
 
@@ -92,6 +93,7 @@ module.exports = {
         screw_ie8: true
       }
     }),
+    new ManifestPlugin(),
     new StringReplacePlugin(),
     new ExtractTextPlugin('main.[chunkhash:8].css'),
     new HtmlWebpackPlugin({

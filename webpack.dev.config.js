@@ -20,6 +20,7 @@ module.exports = {
 
   output: {
     path: path.resolve(__dirname + '/dist', target),
+    publicPath: 'http://localhost:8000/',
     filename: '[name].js',
   },
 
