@@ -11,16 +11,17 @@ module.exports = function () {
       'codemirror/theme/material.css',
       './CodeMirror.css'
     ], function() {
-      var CodeMirror = require('codemirror/lib/codemirror')
+      require('./CodeMirror.css')
+      require('codemirror/addon/lint/lint.css')
       require('codemirror/lib/codemirror.css')
+      require('codemirror/theme/material.css')
+      var CodeMirror = require('codemirror/lib/codemirror')
       require('codemirror/mode/elm/elm')
       require('codemirror/mode/htmlmixed/htmlmixed')
       require('codemirror/addon/lint/lint')
       require('codemirror/addon/selection/active-line')
-      require('codemirror/addon/lint/lint.css')
-      require('codemirror/theme/material.css')
-      require('./CodeMirror.css')
       window.CodeMirror = CodeMirror
+      var x = 2
       resolve()
     })
   })

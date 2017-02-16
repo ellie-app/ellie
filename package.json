@@ -8,7 +8,7 @@
   },
   "dependencies": {
     "autoprefixer": "6.6.0",
-    "codemirror": "5.20.2",
+    "codemirror": "5.23.0",
     "css-loader": "0.25.0",
     "elm-css-webpack-loader": "2.0.2",
     "elm-webpack-loader": "4.0.0",
@@ -30,7 +30,7 @@
     "watch": "webpack-dev-server --watch --config ./webpack.dev.config.js",
     "clean": "rimraf ./build",
     "build:target:env": "webpack --config ./webpack.prod.config.js",
-    "build:target:production": "GTM_ID=GTM-P4TGDDN API_BASE=https://api.ellie-app.com/v2 EDITOR_BASE=https://ellie-app.com CDN_BASE=https://cdn.ellie-app.com EMBED_BASE=https://embed.ellie-app.com yarn build:target:env",
+    "build:target:production": "GTM_ID=GTM-P4TGDDN API_BASE=https://api.ellie-app.com/v3 EDITOR_BASE=https://ellie-app.com CDN_BASE=https://cdn.ellie-app.com EMBED_BASE=https://embed.ellie-app.com yarn build:target:env",
     "build:editor:production": "BUILD_TARGET=editor yarn run build:target:production",
     "build:embed:production": "BUILD_TARGET=embed yarn run build:target:production",
     "build:production": "yarn run clean && yarn build:editor:production && yarn build:embed:production"

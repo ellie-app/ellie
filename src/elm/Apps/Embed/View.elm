@@ -12,6 +12,7 @@ import Components.Editors.View as Editors
 import Components.Output.View as Output
 import Types.Revision as Revision exposing (Revision, Snapshot(..))
 import Types.CompileError as CompileError exposing (CompileError)
+import Types.ProjectId as ProjectId exposing (ProjectId)
 import Shared.Icons as Icons
 import Shared.Constants as Constants
 
@@ -135,7 +136,7 @@ viewLoaded model revision =
     div [ class [ LoadedContainer ] ]
         [ case model.currentRoute of
             SpecificRevision projectId revisionNumber ->
-                viewHeader model.tab projectId revisionNumber
+                viewHeader model.tab (ProjectId.toEncodedString projectId) revisionNumber
 
             _ ->
                 text ""
@@ -184,7 +185,9 @@ view model =
             SpecificRevision _ _ ->
                 case model.revision of
                     Success revision ->
-                        viewLoaded model revision
+                        viewLoaded
+                            model
+                            revision
 
                     Failure error ->
                         viewFailure error.explanation
