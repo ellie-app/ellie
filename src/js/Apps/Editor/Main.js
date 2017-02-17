@@ -3,12 +3,14 @@ require('../../../elm/Apps/Editor/Stylesheets.elm')
 var register = require('./ServiceWorker')
 var initCodeMirror = require('../../Shared/CodeMirror')
 
+var vimMode = window.location.search.indexOf('vim=true') !== -1
+
 var promise =
   process.env.NODE_ENV === 'production' && navigator.serviceWorker ?
     register({ scope: '/' })
       .catch(function () {})
-      .then(initCodeMirror) :
-    initCodeMirror()
+      .then(function () { return initCodeMirror(vimMode) }) :
+    initCodeMirror(vimMode)
 
 promise
   .then(function () {
@@ -27,7 +29,6 @@ promise
     })
 
     var Elm = require('../../../elm/Apps/Editor/Main.elm')
-    var vimMode = window.location.search.indexOf('vim=true') !== -1
 
     var app = Elm.Apps.Editor.Main.fullscreen({
       windowSize: {
@@ -68,16 +69,4 @@ promise
     window.addEventListener('message', function (event) {
       app.ports.windowMessageIn.send(event.data)
     })
-
-    if (vimMode) {
-      require.ensure([
-        'codemirror/keymap/vim',
-        'codemirror/addon/dialog/dialog',
-        'codemirror/addon/dialog/dialog.css'
-      ], function () {
-        require('codemirror/keymap/vim')
-        require('codemirror/addon/dialog/dialog')
-        require('codemirror/addon/dialog/dialog.css')
-      })
-    }
   })

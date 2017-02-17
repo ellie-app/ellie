@@ -1,4 +1,4 @@
-module.exports = function () {
+module.exports = function (vimMode) {
   return new Promise(function (resolve, reject) {
     require.ensure([
       'codemirror/lib/codemirror',
@@ -21,7 +21,22 @@ module.exports = function () {
       require('codemirror/addon/lint/lint')
       require('codemirror/addon/selection/active-line')
       window.CodeMirror = CodeMirror
-      resolve()
+
+      if (!vimMode) {
+        resolve()
+        return
+      }
+
+      require.ensure([
+        'codemirror/keymap/vim',
+        'codemirror/addon/dialog/dialog',
+        'codemirror/addon/dialog/dialog.css'
+      ], function () {
+        require('codemirror/keymap/vim')
+        require('codemirror/addon/dialog/dialog')
+        require('codemirror/addon/dialog/dialog.css')
+        resolve()
+      })
     })
   })
 }
