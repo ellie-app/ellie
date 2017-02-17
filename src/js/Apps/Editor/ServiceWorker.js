@@ -1,5 +1,5 @@
 var GENERAL_CACHE_NAME =
-  'ellie-cache-v4'
+  'ellie-cache-v5'
 
 var SEARCH_CACHE_NAME =
   'ellie-cache-search-v1'
