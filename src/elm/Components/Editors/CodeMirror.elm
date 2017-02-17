@@ -11,6 +11,7 @@ module Components.Editors.CodeMirror
         , theme
         , onUpdate
         , linterMessages
+        , vimMode
         , editor
         )
 
@@ -88,6 +89,11 @@ editor =
 value : String -> Attribute msg
 value =
     Encode.string >> property "editorValue"
+
+
+vimMode : Bool -> Attribute msg
+vimMode =
+    Encode.bool >> property "vimMode"
 
 
 linterMessages : List LinterMessage -> Attribute msg

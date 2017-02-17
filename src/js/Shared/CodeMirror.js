@@ -21,7 +21,6 @@ module.exports = function () {
       require('codemirror/addon/lint/lint')
       require('codemirror/addon/selection/active-line')
       window.CodeMirror = CodeMirror
-      var x = 2
       resolve()
     })
   })

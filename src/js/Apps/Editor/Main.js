@@ -27,12 +27,14 @@ promise
     })
 
     var Elm = require('../../../elm/Apps/Editor/Main.elm')
+    var vimMode = window.location.search.indexOf('vim=true') !== -1
 
     var app = Elm.Apps.Editor.Main.fullscreen({
       windowSize: {
         width: window.innerWidth,
         height: window.innerHeight
       },
+      vimMode: vimMode,
       online: process.env.NODE_ENV === 'production' ? window.navigator.onLine : true
     })
 
@@ -66,4 +68,16 @@ promise
     window.addEventListener('message', function (event) {
       app.ports.windowMessageIn.send(event.data)
     })
+
+    if (vimMode) {
+      require.ensure([
+        'codemirror/keymap/vim',
+        'codemirror/addon/dialog/dialog',
+        'codemirror/addon/dialog/dialog.css'
+      ], function () {
+        require('codemirror/keymap/vim')
+        require('codemirror/addon/dialog/dialog')
+        require('codemirror/addon/dialog/dialog.css')
+      })
+    }
   })

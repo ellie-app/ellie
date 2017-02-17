@@ -133,6 +133,7 @@ editorsView model =
             , style [ ( "height", Utils.numberToPercent model.editorSplit ) ]
             ]
             [ Editors.elm
+                model.vimMode
                 (Just ElmCodeChanged)
                 model.stagedElmCode
                 (model.compileResult |> RemoteData.withDefault [])
@@ -150,6 +151,7 @@ editorsView model =
                 ]
             ]
             [ Editors.html
+                model.vimMode
                 (Just HtmlCodeChanged)
                 model.stagedHtmlCode
             ]

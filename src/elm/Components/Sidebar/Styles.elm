@@ -15,7 +15,7 @@ styles =
             , width (px Constants.sidebarWidth)
             , backgroundColor (hex Colors.mediumGray)
             , padding2 (px 8) (px 16)
-            , property "box-shadow" "2px 0 8px 2px rgba(0,0,0,0.50)"
+            , property "box-shadow" "2px 0 8px 0px rgba(0,0,0,0.50)"
             , position relative
             , property "z-index" "1"
             ]

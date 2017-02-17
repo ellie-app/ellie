@@ -50,6 +50,14 @@ var _user$project$Native_CodeMirror = (function () {
     var element = instance.getWrapperElement()
 
     Object.defineProperties(element, {
+      vimMode: {
+        get: function () {
+          return instance.getOption('keyMap') === 'vim'
+        },
+        set: function (value) {
+          instance.setOption('keyMap', 'vim')
+        }
+      },
       readOnly: {
         get: function () {
           return instance.getOption('readOnly')

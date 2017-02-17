@@ -72,8 +72,8 @@ loading =
         ]
 
 
-elm : Maybe (String -> msg) -> String -> List CompileError -> Html msg
-elm onUpdate content compileErrors =
+elm : Bool -> Maybe (String -> msg) -> String -> List CompileError -> Html msg
+elm vimMode onUpdate content compileErrors =
     let
         compileErrorLevelToSeverity level =
             case level of
@@ -106,6 +106,7 @@ elm onUpdate content compileErrors =
             , CodeMirror.linterMessages linterMessages
             , CodeMirror.theme "material"
             , CodeMirror.mode "elm"
+            , CodeMirror.vimMode vimMode
             , style
                 [ ( "height", "100%" )
                 , ( "width", "100%" )
@@ -120,13 +121,14 @@ elm onUpdate content compileErrors =
         CodeMirror.editor (baseAttrs ++ updateAttrs)
 
 
-html : Maybe (String -> msg) -> String -> Html msg
-html onUpdate content =
+html : Bool -> Maybe (String -> msg) -> String -> Html msg
+html vimMode onUpdate content =
     let
         baseAttrs =
             [ CodeMirror.value content
             , CodeMirror.theme "material"
             , CodeMirror.mode "htmlmixed"
+            , CodeMirror.vimMode vimMode
             , style
                 [ ( "height", "100%" )
                 , ( "width", "100%" )

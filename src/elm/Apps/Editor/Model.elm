@@ -37,6 +37,7 @@ import Apps.Editor.Routing as Routing exposing (Route(..))
 type alias Flags =
     { windowSize : Window.Size
     , online : Bool
+    , vimMode : Bool
     }
 
 
@@ -74,6 +75,7 @@ type alias Model =
     , searchResults : List Package
     , installingPackage : Maybe Package
     , removingDependencyHashes : Set String
+    , vimMode : Bool
     }
 
 
@@ -105,12 +107,13 @@ model flags =
     , searchResults = []
     , installingPackage = Nothing
     , removingDependencyHashes = Set.empty
+    , vimMode = flags.vimMode
     }
 
 
 resetToNew : Model -> Model
 resetToNew m =
-    model { windowSize = m.windowSize, online = m.isOnline }
+    model { windowSize = m.windowSize, online = m.isOnline, vimMode = m.vimMode }
 
 
 closeSearch : Model -> Model

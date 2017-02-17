@@ -52,6 +52,8 @@ styles =
             ]
         , (.) EditorsContainer
             [ displayFlex
+            , position relative
+            , property "z-index" "0"
             , flexDirection column
             , height (pct 100)
             , width (pct 50)
@@ -69,7 +71,9 @@ styles =
         , (.) OutputContainer
             [ width (pct 50)
             , height (pct 100)
-            , boxShadow5 (px -2) zero (px 4) zero (rgba 0 0 0 0.5)
+            , position relative
+            , property "z-index" "1"
+            , boxShadow5 (px -2) zero (px 8) zero (rgba 0 0 0 0.5)
             , overflow hidden
             ]
         , (.) NotificationsContainer
