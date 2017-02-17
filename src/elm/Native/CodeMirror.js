@@ -37,6 +37,7 @@ var _user$project$Native_CodeMirror = (function () {
       indentWithTabs: false,
       tabSize: 4,
       lint: { lintOnChange: false },
+      keyMap: 'default',
       extraKeys: {
         Tab: function(cm) {
           var spaces = Array(cm.getOption("indentUnit") + 1).join(" ");
@@ -55,7 +56,7 @@ var _user$project$Native_CodeMirror = (function () {
           return instance.getOption('keyMap') === 'vim'
         },
         set: function (value) {
-          instance.setOption('keyMap', 'vim')
+          instance.setOption('keyMap', value ? 'vim' : 'default')
         }
       },
       readOnly: {
