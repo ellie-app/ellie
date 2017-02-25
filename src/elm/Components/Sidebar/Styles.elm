@@ -101,7 +101,9 @@ styles =
             , position relative
             , marginBottom (px 2)
             , displayFlex
+            , height (px 48)
             , property "justify-content" "space-between"
+            , property "align-items" "center"
             , firstChild
                 [ borderTopLeftRadius (px 3)
                 , borderTopRightRadius (px 3)
@@ -111,45 +113,58 @@ styles =
                 , borderBottomRightRadius (px 3)
                 , marginBottom zero
                 ]
+            , hover
+                [ descendants
+                    [ (.) PackagesItemActions
+                        [ displayFlex
+                        ]
+                    ]
+                ]
             ]
-        , (.) PackagesItemInfo
+        , (.) PackagesItemName
+            [ fontSize (px 16)
+            , padding2 zero (px 12)
+            , color (hex Colors.white)
+            , whiteSpace noWrap
+            , textOverflow ellipsis
+            , overflowX hidden
+            , overflowY visible
+            ]
+        , (.) PackagesItemActions
+            [ display none
+            , property "align-items" "center"
+            , height (pct 100)
+            ]
+        , (.) PackagesItemVersion
             [ fontSize (px 12)
-            , lineHeight (px 12)
-            , padding2 (px 12) (px 8)
-            , property "width" "calc(100% - 48px)"
-            , borderRight3 (px 2) solid (hex Colors.mediumGray)
+            , color (hex Colors.lightGray)
+            , paddingRight (px 4)
             ]
-        , (.) PackagesItemInfoName
-            [ color (hex Colors.lightGray)
-            , paddingBottom (px 8)
-            ]
-        , (.) PackagesItemInfoNameUsername
-            [ color (hex Colors.mediumGray)
-            ]
-        , (.) PackagesItemInfoVersion
-            [ color (hex Colors.lightGray)
-            ]
-        , (.) PackagesItemRemove
+        , (.) PackagesItemButton
             [ property "background" "none"
             , border zero
             , width (px 48)
+            , height (pct 100)
             , display block
             , position relative
             , color (hex Colors.lightGray)
             , cursor pointer
+            , padding2 (px 8) zero
+            , borderLeft3 (px 2) solid (hex Colors.mediumGray)
+            , textDecoration none
             ]
-        , (.) PackagesItemRemoveInner
+        , (.) PackagesItemButtonInner
             [ displayFlex
             , flexDirection column
-            , property "justify-content" "center"
+            , property "justify-content" "space-between"
             , alignItems center
+            , height (pct 100)
             ]
-        , (.) PackagesItemRemoveIcon
-            [ width (px 24)
-            , height (px 24)
-            , paddingBottom (px 4)
+        , (.) PackagesItemButtonIcon
+            [ width (px 20)
+            , height (px 20)
             ]
-        , (.) PackagesItemRemoveText
+        , (.) PackagesItemButtonText
             [ fontSize (px 8)
             , textTransform uppercase
             ]
@@ -182,6 +197,7 @@ styles =
             [ fontSize (px 12)
             , color (hex Colors.lightGray)
             , paddingBottom (px 8)
+            , whiteSpace noWrap
             ]
         , (.) LoadingAnimContainer
             [ width (px 50)

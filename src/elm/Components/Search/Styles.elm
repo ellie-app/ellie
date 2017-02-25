@@ -80,12 +80,16 @@ styles =
             [ padding2 zero (px 16)
             , displayFlex
             , alignItems center
+            , property "width" "calc(100% - 96px)"
             ]
         , (.) ResultsItemName
             [ fontSize (px 24)
             , lineHeight (px 30)
             , color (hex Colors.white)
             , paddingRight (px 8)
+            , overflowX hidden
+            , whiteSpace noWrap
+            , textOverflow ellipsis
             ]
         , (.) ResultsItemVersion
             [ color (hex Colors.lightGray)

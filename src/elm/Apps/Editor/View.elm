@@ -4,9 +4,6 @@ import Html exposing (Html, div, button, text, iframe, main_, header, span)
 import Html.Attributes exposing (style)
 import Html.Events exposing (onMouseDown)
 import RemoteData exposing (RemoteData(..))
-import Types.Revision as Revision exposing (Revision)
-import Types.ApiError as ApiError exposing (ApiError)
-import Types.CompileError as CompileError exposing (CompileError)
 import Types.Session as Session exposing (Session)
 import Types.ProjectId as ProjectId exposing (ProjectId)
 import Apps.Editor.Update as Update exposing (Msg(..))
@@ -54,11 +51,11 @@ sidebarContext model =
     , description = model.clientRevision.description
     , onTitleChange = TitleChanged
     , onDescriptionChange = DescriptionChanged
-    , dependencies = model.clientRevision.dependencies
+    , packages = model.clientRevision.packages
     , onAddPackageClick = ToggleSearch
     , installingPackage = model.installingPackage
-    , removingHashes = model.removingDependencyHashes
-    , onRemove = RemoveDependencyRequested
+    , removingHashes = model.removingPackageHashes
+    , onRemove = RemovePackageRequested
     }
 
 
@@ -69,7 +66,7 @@ searchContext model =
     , onSearchChange = SearchChanged
     , results = model.searchResults
     , onInstall = PackageSelected
-    , dependencies = model.clientRevision.dependencies
+    , packages = model.clientRevision.packages
     }
 
 

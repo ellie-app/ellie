@@ -5,15 +5,13 @@ module Components.Sidebar.View
         )
 
 import Set exposing (Set)
-import Html exposing (Html, label, textarea, h3, button, aside, div, text, span, input, hr, option, select)
-import Html.Attributes exposing (type_, value, disabled)
+import Html exposing (Html, a, label, textarea, h3, button, aside, div, text, span, input, hr, option, select)
+import Html.Attributes exposing (href, target, type_, value, disabled)
 import Html.Events exposing (onInput, onClick)
 import Svg exposing (svg, circle)
 import Svg.Attributes exposing (fill, cx, cy, r, viewBox)
 import Shared.Icons as Icons
 import Components.Sidebar.Classes exposing (..)
-import Types.Dependency as Dependency exposing (Dependency)
-import Types.VersionRange as VersionRange exposing (VersionRange)
 import Types.Package as Package exposing (Package)
 import Types.Version as Version exposing (Version)
 import Shared.Utils as Utils exposing (renderIf)
@@ -24,11 +22,11 @@ type alias ViewModel msg =
     , description : String
     , onTitleChange : String -> msg
     , onDescriptionChange : String -> msg
-    , dependencies : List Dependency
+    , packages : List Package
     , onAddPackageClick : msg
     , installingPackage : Maybe Package
     , removingHashes : Set String
-    , onRemove : Dependency -> msg
+    , onRemove : Package -> msg
     }
 
 
@@ -92,17 +90,17 @@ viewLoading package =
 viewRemovingIndicator : Html msg
 viewRemovingIndicator =
     button
-        [ class [ PackagesItemRemove ]
+        [ class [ PackagesItemButton ]
         , disabled True
         ]
-        [ span [ class [ PackagesItemRemoveIcon ] ]
+        [ span [ class [ PackagesItemButtonIcon ] ]
             [ svg [ viewBox "0 0 50 10" ]
                 [ circle [ cx "5", cy "5", r "5" ] []
                 , circle [ cx "25", cy "5", r "5" ] []
                 , circle [ cx "45", cy "5", r "5" ] []
                 ]
             ]
-        , span [ class [ PackagesItemRemoveText ] ]
+        , span [ class [ PackagesItemButtonText ] ]
             [ text "Removing" ]
         ]
 
@@ -110,42 +108,67 @@ viewRemovingIndicator =
 viewRemoveButton : msg -> Html msg
 viewRemoveButton onRemove =
     button
-        [ class [ PackagesItemRemove ]
+        [ class [ PackagesItemButton ]
         , onClick onRemove
         ]
-        [ div [ class [ PackagesItemRemoveInner ] ]
-            [ span [ class [ PackagesItemRemoveIcon ] ]
+        [ div [ class [ PackagesItemButtonInner ] ]
+            [ span [ class [ PackagesItemButtonIcon ] ]
                 [ Icons.close ]
-            , span [ class [ PackagesItemRemoveText ] ]
+            , span [ class [ PackagesItemButtonText ] ]
                 [ text "Remove" ]
             ]
         ]
 
 
-viewPackageItem : ViewModel msg -> Dependency -> Html msg
-viewPackageItem viewModel dependency =
+viewDocsLink : Package -> Html msg
+viewDocsLink package =
+    a
+        [ class [ PackagesItemButton ]
+        , href <| Package.docsLink package
+        , target "_blank"
+        ]
+        [ div [ class [ PackagesItemButtonInner ] ]
+            [ span [ class [ PackagesItemButtonIcon ] ]
+                [ Icons.link ]
+            , span [ class [ PackagesItemButtonText ] ]
+                [ text "Docs" ]
+            ]
+        ]
+
+
+viewPackageItemVersion : Package -> Html msg
+viewPackageItemVersion package =
+    div [ class [ PackagesItemVersion ] ]
+        [ text <| "@" ++ Version.toString package.version
+        ]
+
+
+viewPackageItemActions : Package -> ViewModel msg -> Html msg
+viewPackageItemActions package viewModel =
+    div [ class [ PackagesItemActions ] ]
+        [ viewPackageItemVersion package
+        , viewDocsLink package
+        , viewRemoveButton (viewModel.onRemove package)
+        ]
+
+
+viewPackageItem : ViewModel msg -> Package -> Html msg
+viewPackageItem viewModel package =
     let
         isRemoving =
-            depInHash viewModel.removingHashes dependency
+            packageInHash viewModel.removingHashes package
     in
         div [ class [ PackagesItem ] ]
-            [ div [ class [ PackagesItemInfo ] ]
-                [ div [ class [ PackagesItemInfoName ] ]
-                    [ span [ class [ PackagesItemInfoNameUsername ] ]
-                        [ text <| dependency.username ++ " / " ]
-                    , span [] [ text dependency.name ]
-                    ]
-                , div [ class [ PackagesItemInfoVersion ] ]
-                    [ text <| VersionRange.toString dependency.range ]
-                ]
+            [ div [ class [ PackagesItemName ] ]
+                [ text <| package.username ++ " / " ++ package.name ]
             , renderIf isRemoving (\_ -> viewRemovingIndicator)
-            , renderIf (not isRemoving) (\_ -> viewRemoveButton (viewModel.onRemove dependency))
+            , renderIf (not isRemoving) (\_ -> viewPackageItemActions package viewModel)
             ]
 
 
-depInHash : Set String -> Dependency -> Bool
-depInHash removingHashes dependency =
-    Set.member (Dependency.hash dependency) removingHashes
+packageInHash : Set String -> Package -> Bool
+packageInHash removingHashes package =
+    Set.member (Package.hash package) removingHashes
 
 
 viewPackages : ViewModel msg -> Html msg
@@ -154,7 +177,7 @@ viewPackages viewModel =
         [ div [ class [ PackagesTitle ] ]
             [ text "Packages" ]
         , div [ class [ PackagesList ] ]
-            (List.map (viewPackageItem viewModel) viewModel.dependencies)
+            (List.map (viewPackageItem viewModel) viewModel.packages)
         , viewModel.installingPackage
             |> Maybe.map viewLoading
             |> Maybe.withDefault (viewAddButton viewModel)

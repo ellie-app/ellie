@@ -15,7 +15,6 @@ import Window exposing (Size)
 import Mouse exposing (Position)
 import RemoteData exposing (RemoteData(..))
 import Navigation
-import Types.Dependency as Dependency exposing (Dependency)
 import Types.ApiError as ApiError exposing (ApiError)
 import Types.Revision as Revision exposing (Revision)
 import Types.Session as Session exposing (Session)
@@ -89,8 +88,8 @@ type Msg
     | OnlineChanged Bool
     | FormattingRequested
     | FormattingCompleted (Result ApiError String)
-    | RemoveDependencyRequested Dependency
-    | RemoveDependencyCompleted (Result ApiError Dependency)
+    | RemovePackageRequested Package
+    | RemovePackageCompleted (Result ApiError Package)
     | WindowUnloaded
     | WindowBeforeUnloaded
     | NotificationReceived Notification
@@ -109,7 +108,7 @@ type Msg
     | SearchChanged String
     | SearchResultsCompleted String (Result ApiError (List Package))
     | PackageSelected Package
-    | AddDependencyCompleted Dependency (Result ApiError ())
+    | AddPackageCompleted Package (Result ApiError ())
     | ToggleEmbedLink
     | KeepSessionAlive
     | NoOp
@@ -160,29 +159,22 @@ saveCmd model =
     )
 
 
-addDependencyCmd : Package -> Model -> ( Model, Cmd Msg )
-addDependencyCmd package model =
-    let
-        dep =
-            Dependency
-                package.username
-                package.name
-                (VersionRange package.version (Version.nextMajor package.version))
-    in
-        model.session
-            |> RemoteData.map (\session -> Api.addDependencies session [ dep ])
-            |> RemoteData.map
-                (\req ->
-                    Cmd.batch
-                        [ Api.send (AddDependencyCompleted dep) req
-                        , MessageBus.notify
-                            Notification.Info
-                            "Installing Package"
-                            "Ellie is installing your package. Once it's installed and compiled you'll be able to use it in your code."
-                        ]
-                )
-            |> RemoteData.map ((,) model)
-            |> RemoteData.withDefault ( model, Cmd.none )
+addPackageCmd : Package -> Model -> ( Model, Cmd Msg )
+addPackageCmd package model =
+    model.session
+        |> RemoteData.map (\session -> Api.addPackage session package)
+        |> RemoteData.map
+            (\req ->
+                Cmd.batch
+                    [ Api.send (AddPackageCompleted package) req
+                    , MessageBus.notify
+                        Notification.Info
+                        "Installing Package"
+                        "Ellie is installing your package. Once it's installed and compiled you'll be able to use it in your code."
+                    ]
+            )
+        |> RemoteData.map ((,) model)
+        |> RemoteData.withDefault ( model, Cmd.none )
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -216,7 +208,7 @@ update msg model =
             , Cmd.none
             )
 
-        AddDependencyCompleted dependency result ->
+        AddPackageCompleted package result ->
             ( { model
                 | installingPackage =
                     result
@@ -226,8 +218,8 @@ update msg model =
                 |> Model.updateClientRevision
                     (\r ->
                         { r
-                            | dependencies =
-                                r.dependencies ++ (result |> Result.map (\_ -> [ dependency ]) |> Result.withDefault [])
+                            | packages =
+                                r.packages ++ (result |> Result.map (\_ -> [ package ]) |> Result.withDefault [])
                         }
                     )
             , case result of
@@ -247,7 +239,7 @@ update msg model =
         PackageSelected package ->
             { model | installingPackage = Just package }
                 |> Model.closeSearch
-                |> addDependencyCmd package
+                |> addPackageCmd package
 
         SearchChanged value ->
             ( { model | searchValue = value }
@@ -579,15 +571,15 @@ update msg model =
                         ("Ellie couldn't format your code. Here's what the server said:\n\n" ++ apiError.explanation)
             )
 
-        RemoveDependencyRequested dependency ->
+        RemovePackageRequested package ->
             ( { model
-                | removingDependencyHashes =
-                    Set.insert (Dependency.hash dependency) model.removingDependencyHashes
+                | removingPackageHashes =
+                    Set.insert (Package.hash package) model.removingPackageHashes
               }
             , Cmd.batch
                 [ model.session
-                    |> RemoteData.map (\s -> Api.removeDependency s dependency)
-                    |> RemoteData.map (Api.send RemoveDependencyCompleted)
+                    |> RemoteData.map (\s -> Api.removePackage s package)
+                    |> RemoteData.map (Api.send RemovePackageCompleted)
                     |> RemoteData.withDefault Cmd.none
                 , MessageBus.notify
                     Notification.Info
@@ -596,16 +588,16 @@ update msg model =
                 ]
             )
 
-        RemoveDependencyCompleted result ->
+        RemovePackageCompleted result ->
             ( case result of
-                Ok dep ->
-                    { model | removingDependencyHashes = Set.remove (Dependency.hash dep) model.removingDependencyHashes }
-                        |> Model.updateClientRevision (\r -> { r | dependencies = List.filter ((/=) dep) r.dependencies })
+                Ok package ->
+                    { model | removingPackageHashes = Set.remove (Package.hash package) model.removingPackageHashes }
+                        |> Model.updateClientRevision (\r -> { r | packages = List.filter ((/=) package) r.packages })
 
                 Err _ ->
                     model
             , case result of
-                Ok dep ->
+                Ok package ->
                     MessageBus.notify
                         Notification.Success
                         "Package Removed!"

@@ -10,7 +10,7 @@ module Types.Revision
 import Json.Encode as Encode exposing (Value)
 import Json.Decode as Decode exposing (Decoder)
 import Json.Decode.Pipeline as Decode
-import Types.Dependency as Dependency exposing (Dependency)
+import Types.Package as Package exposing (Package)
 import Types.CompileError as CompileError exposing (CompileError)
 import Shared.Utils as Utils
 
@@ -24,7 +24,7 @@ type Snapshot
 type alias Revision =
     { htmlCode : String
     , elmCode : String
-    , dependencies : List Dependency
+    , packages : List Package
     , owned : Bool
     , revisionNumber : Maybe Int
     , projectId : Maybe String
@@ -38,7 +38,7 @@ empty : Revision
 empty =
     { htmlCode = ""
     , elmCode = ""
-    , dependencies = []
+    , packages = []
     , owned = False
     , revisionNumber = Nothing
     , projectId = Nothing
@@ -53,7 +53,7 @@ encode revision =
     Encode.object
         [ ( "htmlCode", Encode.string revision.htmlCode )
         , ( "elmCode", Encode.string revision.elmCode )
-        , ( "dependencies", Encode.list <| List.map Dependency.encode revision.dependencies )
+        , ( "packages", Encode.list <| List.map Package.encode revision.packages )
         , ( "owned", Encode.bool revision.owned )
         , ( "revisionNumber", Utils.encodeNullable Encode.int revision.revisionNumber )
         , ( "projectId", Utils.encodeNullable Encode.string revision.projectId )
@@ -88,7 +88,7 @@ decode =
     Decode.decode Revision
         |> Decode.required "htmlCode" Decode.string
         |> Decode.required "elmCode" Decode.string
-        |> Decode.required "dependencies" (Decode.list Dependency.decode)
+        |> Decode.required "packages" (Decode.list Package.decode)
         |> Decode.optional "owned" Decode.bool True
         |> Decode.required "revisionNumber" (Decode.nullable Decode.int)
         |> Decode.required "projectId" (Decode.nullable Decode.string)

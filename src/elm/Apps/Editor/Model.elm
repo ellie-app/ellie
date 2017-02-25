@@ -74,7 +74,7 @@ type alias Model =
     , searchValue : String
     , searchResults : List Package
     , installingPackage : Maybe Package
-    , removingDependencyHashes : Set String
+    , removingPackageHashes : Set String
     , vimMode : Bool
     }
 
@@ -106,7 +106,7 @@ model flags =
     , searchValue = ""
     , searchResults = []
     , installingPackage = Nothing
-    , removingDependencyHashes = Set.empty
+    , removingPackageHashes = Set.empty
     , vimMode = flags.vimMode
     }
 

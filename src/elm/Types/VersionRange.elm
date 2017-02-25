@@ -31,7 +31,7 @@ parse string =
             split |> List.head |> Maybe.andThen Version.parse
 
         max =
-            split |> List.head |> Maybe.andThen Version.parse
+            split |> List.drop 1 |> List.head |> Maybe.andThen Version.parse
     in
         Just VersionRange
             |> (Maybe.map2 (|>) min)

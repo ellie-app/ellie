@@ -7,7 +7,7 @@ import Types.Version as Version exposing (Version)
 
 sidebarWidth : number
 sidebarWidth =
-    300
+    250
 
 
 headerHeight : number

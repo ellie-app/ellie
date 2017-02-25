@@ -6,9 +6,7 @@ import Html.Events exposing (onInput, onClick, on)
 import Components.Search.Classes exposing (..)
 import Shared.Icons as Icons
 import Types.Package as Package exposing (Package)
-import Types.Dependency as Dependency exposing (Dependency)
 import Types.Version as Version exposing (Version)
-import Types.VersionRange as VersionRange exposing (VersionRange)
 
 
 type alias ViewModel msg =
@@ -16,26 +14,16 @@ type alias ViewModel msg =
     , searchValue : String
     , onSearchChange : String -> msg
     , results : List Package
-    , dependencies : List Dependency
+    , packages : List Package
     , onInstall : Package -> msg
     }
 
 
-packageIsInstalled : List Dependency -> Package -> Bool
-packageIsInstalled dependencyList package =
+packageIsInstalled : List Package -> Package -> Bool
+packageIsInstalled packageList package =
     List.any
-        (\dep -> (dep.username == package.username) && (dep.name == package.name) && (VersionRange.includes package.version dep.range))
-        dependencyList
-
-
-docsLink : Package -> String
-docsLink package =
-    "http://package.elm-lang.org/packages/"
-        ++ package.username
-        ++ "/"
-        ++ package.name
-        ++ "/"
-        ++ Version.toString package.version
+        (\p -> (p.username == package.username) && (p.name == package.name))
+        packageList
 
 
 viewSearchBar : ViewModel msg -> Html msg
@@ -67,7 +55,7 @@ viewResultsItem onSelect package =
         , div [ class [ ResultsItemButtonGroup ] ]
             [ a
                 [ class [ ResultsItemButton, ResultsItemButtonInner ]
-                , href <| docsLink package
+                , href <| Package.docsLink package
                 , target "_blank"
                 ]
                 [ span [ class [ ResultsItemButtonIcon ] ]
@@ -97,7 +85,7 @@ viewResults viewModel =
     else
         div [ class [ Results ] ]
             (viewModel.results
-                |> List.filter (not << packageIsInstalled viewModel.dependencies)
+                |> List.filter (not << packageIsInstalled viewModel.packages)
                 |> List.map (viewResultsItem viewModel.onInstall)
             )
 

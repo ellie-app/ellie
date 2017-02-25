@@ -10,8 +10,8 @@ module Shared.Api
         , compile
         , writeIframe
         , format
-        , addDependencies
-        , removeDependency
+        , addPackage
+        , removePackage
         , latestRevision
         , exactRevision
         , createProjectFromRevision
@@ -240,29 +240,25 @@ format source =
 -- DEPENDENCIES
 
 
-addDependenciesPayload : List Dependency -> Value
-addDependenciesPayload dependencies =
-    dependencies
-        |> List.map Dependency.encode
-        |> Encode.list
-        |> (,) "dependencies"
-        |> listOf
-        |> Encode.object
+packagePayload : Package -> Value
+packagePayload package =
+    Encode.object
+        [ ( "package", Package.encode package ) ]
 
 
-addDependencies : Session -> List Dependency -> RequestBuilder ()
-addDependencies session dependencies =
-    put (fullUrl ("/sessions/" ++ session.id ++ "/dependencies"))
+addPackage : Session -> Package -> RequestBuilder ()
+addPackage session package =
+    put (fullUrl ("/sessions/" ++ session.id ++ "/packages"))
         |> withApiHeaders
-        |> withJsonBody (addDependenciesPayload dependencies)
+        |> withJsonBody (packagePayload package)
 
 
-removeDependency : Session -> Dependency -> RequestBuilder Dependency
-removeDependency session dependency =
-    delete (fullUrl ("/sessions/" ++ session.id ++ "/dependencies"))
+removePackage : Session -> Package -> RequestBuilder Package
+removePackage session package =
+    delete (fullUrl ("/sessions/" ++ session.id ++ "/packages"))
         |> withApiHeaders
-        |> withJsonBody (Dependency.encode dependency)
-        |> withExpect (expectValue dependency)
+        |> withJsonBody (packagePayload package)
+        |> withExpect (expectValue package)
 
 
 

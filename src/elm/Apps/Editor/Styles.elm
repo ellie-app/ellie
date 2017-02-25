@@ -33,7 +33,7 @@ styles =
             , position relative
             ]
         , (.) WorkArea
-            [ property "width" "calc(100% - 300px)"
+            [ property "width" <| "calc(100% - " ++ toString Constants.sidebarWidth ++ "px)"
             , height (pct 100)
             , displayFlex
             , position relative

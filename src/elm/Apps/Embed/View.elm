@@ -91,12 +91,12 @@ viewHeader activeTab projectId revisionNumber =
 
 viewHtml : String -> Html Msg
 viewHtml code =
-    Editors.html Nothing code
+    Editors.html False Nothing code
 
 
 viewElm : String -> List CompileError -> Html Msg
 viewElm code errors =
-    Editors.elm Nothing code errors
+    Editors.elm False Nothing code errors
 
 
 iframeSrc : String -> String

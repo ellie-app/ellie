@@ -4,6 +4,7 @@ module Types.Package
         , encode
         , decode
         , hash
+        , docsLink
         )
 
 import Json.Encode as Encode exposing (Value)
@@ -34,6 +35,16 @@ decode =
         |> Decode.required "username" Decode.string
         |> Decode.required "name" Decode.string
         |> Decode.required "version" Version.decode
+
+
+docsLink : Package -> String
+docsLink package =
+    "http://package.elm-lang.org/packages/"
+        ++ package.username
+        ++ "/"
+        ++ package.name
+        ++ "/"
+        ++ Version.toString package.version
 
 
 hash : Package -> String

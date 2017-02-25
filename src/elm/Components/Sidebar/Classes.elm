@@ -16,14 +16,13 @@ type Classes
     | PackagesList
     | PackagesTitle
     | PackagesItem
-    | PackagesItemInfo
-    | PackagesItemInfoName
-    | PackagesItemInfoNameUsername
-    | PackagesItemInfoVersion
-    | PackagesItemRemove
-    | PackagesItemRemoveInner
-    | PackagesItemRemoveIcon
-    | PackagesItemRemoveText
+    | PackagesItemVersion
+    | PackagesItemActions
+    | PackagesItemName
+    | PackagesItemButton
+    | PackagesItemButtonInner
+    | PackagesItemButtonIcon
+    | PackagesItemButtonText
     | AddPackage
     | Loading
     | LoadingPackageInfo
