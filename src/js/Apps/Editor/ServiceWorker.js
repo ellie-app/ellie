@@ -1,8 +1,8 @@
 var GENERAL_CACHE_NAME =
-  'ellie-cache-v5'
+  'ellie-cache-v6'
 
 var SEARCH_CACHE_NAME =
-  'ellie-cache-search-v1'
+  'ellie-cache-search-v2'
 
 var isApiRequest = function (url) {
   return url.indexOf(API_BASE) !== -1

@@ -1,5 +1,5 @@
 var CACHE_NAME =
-  'ellie-embed-cache-v1'
+  'ellie-embed-cache-v2'
 
 var isApiRequest = function (url) {
   return url.indexOf(API_BASE) !== -1
