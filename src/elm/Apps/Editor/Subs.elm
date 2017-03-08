@@ -13,9 +13,6 @@ import Apps.Editor.Update as Update exposing (Msg(..))
 port windowUnloadedIn : (() -> msg) -> Sub msg
 
 
-port windowBeforeUnloadedIn : (() -> msg) -> Sub msg
-
-
 port windowMessageIn : (Value -> msg) -> Sub msg
 
 
@@ -109,7 +106,6 @@ subscriptions model =
     Sub.batch
         [ online OnlineChanged
         , windowUnloadedIn (always WindowUnloaded)
-        , windowBeforeUnloadedIn (always WindowBeforeUnloaded)
         , MessageBus.notifications NotificationReceived
         , windowSize model
         , resultDrags model

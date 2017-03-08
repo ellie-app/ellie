@@ -37,3 +37,54 @@
 .components_search_SearchBarInput::placeholder {
   color: #8D8D97;
 }
+
+#carbon {
+  width: 100%;
+  background: #282A37;
+  padding: 12px;
+  padding-bottom: 6px;
+  border-radius: 3px;
+  min-height: 120px;
+}
+
+#carbonads {
+
+}
+
+#carbonads .carbon-wrap {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+}
+
+#carbonads .carbon-img {
+  border-radius: 3px;
+  position: relative;
+  display: block;
+  overflow: hidden;
+  margin-bottom: 8px;
+}
+
+#carbonads .carbon-img img {
+  display: block;
+}
+
+#carbonads .carbon-text {
+  font-size: 14px;
+  color: #E9EDED;
+  text-decoration: none;
+  text-align: center;
+  display: block;
+  width: 100%;
+}
+
+#carbonads .carbon-poweredby {
+  text-decoration: none;
+  color: #A3A7AB;
+  text-align: right;
+  width: 100%;
+  position: relative;
+  display: inline-block;
+  font-size: 12px;
+}

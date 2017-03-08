@@ -59,7 +59,27 @@ encode revision =
         , ( "projectId", Utils.encodeNullable Encode.string revision.projectId )
         , ( "title", Encode.string revision.title )
         , ( "description", Encode.string revision.description )
+        , ( "snapshot", encodeSnapshot revision.snapshot )
         ]
+
+
+encodeSnapshot : Snapshot -> Value
+encodeSnapshot snapshot =
+    case snapshot of
+        Errored errors ->
+            Encode.object
+                [ ( "result", Encode.string "ERROR" )
+                , ( "errors", Encode.list <| List.map CompileError.encode errors )
+                ]
+
+        Uploaded path ->
+            Encode.object
+                [ ( "result", Encode.string "SUCCESS" )
+                , ( "path", Encode.string path )
+                ]
+
+        NotSaved ->
+            Encode.object [ ( "result", Encode.string "UNKNOWN" ) ]
 
 
 decodeSnapshot : Decoder Snapshot

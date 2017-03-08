@@ -1,6 +1,5 @@
 module Shared.Constants exposing (..)
 
-import Types.Dependency as Dependency exposing (Dependency)
 import Types.VersionRange as VersionRange exposing (VersionRange)
 import Types.Version as Version exposing (Version)
 
@@ -12,7 +11,7 @@ sidebarWidth =
 
 headerHeight : number
 headerHeight =
-    50
+    52
 
 
 isProduction : Bool
@@ -53,19 +52,6 @@ asset relative =
     assetBase ++ relative
 
 
-defaultDependencies : List Dependency
-defaultDependencies =
-    [ Dependency
-        "elm-lang"
-        "core"
-        (VersionRange (Version 5 0 0) (Version 6 0 0))
-    , Dependency
-        "elm-lang"
-        "html"
-        (VersionRange (Version 2 0 0) (Version 3 0 0))
-    ]
-
-
 elmVersion : Version
 elmVersion =
     Version 0 18 0
@@ -79,3 +65,18 @@ scriptFont =
 sansFont : String
 sansFont =
     "Quicksand"
+
+
+carbonZoneId : String
+carbonZoneId =
+    "%CARBON_ZONE_ID%"
+
+
+carbonServe : String
+carbonServe =
+    "%CARBON_SERVE%"
+
+
+carbonPlacement : String
+carbonPlacement =
+    "%CARBON_PLACEMENT%"

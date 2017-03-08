@@ -6,6 +6,8 @@ import Html.CssHelpers
 
 type Classes
     = Sidebar
+    | TopStuff
+    | BottomStuff
     | ProjectInfo
     | ProjectInfoInput
     | ProjectInfoLabel

@@ -4,10 +4,12 @@ module Types.CompileError
         , Region
         , CompileError
         , decode
+        , encode
         )
 
 import Json.Decode as Decode exposing (Decoder)
 import Json.Decode.Pipeline as Decode
+import Json.Encode as Encode exposing (Value)
 
 
 type alias Location =
@@ -39,11 +41,27 @@ decodeLocation =
         |> Decode.required "column" Decode.int
 
 
+encodeLocation : Location -> Value
+encodeLocation location =
+    Encode.object
+        [ ( "line", Encode.int location.line )
+        , ( "column", Encode.int location.column )
+        ]
+
+
 decodeRegion : Decoder Region
 decodeRegion =
     Decode.succeed Region
         |> Decode.required "start" decodeLocation
         |> Decode.required "end" decodeLocation
+
+
+encodeRegion : Region -> Value
+encodeRegion region =
+    Encode.object
+        [ ( "start", encodeLocation region.start )
+        , ( "end", encodeLocation region.end )
+        ]
 
 
 decode : Decoder CompileError
@@ -55,3 +73,15 @@ decode =
         |> Decode.optional "subregion" (Decode.map Just decodeRegion) Nothing
         |> Decode.required "region" decodeRegion
         |> Decode.required "type" Decode.string
+
+
+encode : CompileError -> Value
+encode error =
+    Encode.object
+        [ ( "tag", Encode.string error.tag )
+        , ( "overview", Encode.string error.overview )
+        , ( "details", Encode.string error.details )
+        , ( "subregion", error.subregion |> Maybe.map encodeRegion |> Maybe.withDefault Encode.null )
+        , ( "region", encodeRegion error.region )
+        , ( "type", Encode.string error.level )
+        ]

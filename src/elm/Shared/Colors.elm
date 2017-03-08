@@ -46,6 +46,11 @@ darkGray =
     "#282a37"
 
 
+mediumGrayRgb : { r : Int, g : Int, b : Int }
+mediumGrayRgb =
+    { r = 86, g = 88, b = 104 }
+
+
 darkGrayRgb : { r : Int, g : Int, b : Int }
 darkGrayRgb =
     { r = 40, g = 42, b = 55 }

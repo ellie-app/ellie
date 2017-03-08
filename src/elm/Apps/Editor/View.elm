@@ -4,7 +4,6 @@ import Html exposing (Html, div, button, text, iframe, main_, header, span)
 import Html.Attributes exposing (style)
 import Html.Events exposing (onMouseDown)
 import RemoteData exposing (RemoteData(..))
-import Types.Session as Session exposing (Session)
 import Types.ProjectId as ProjectId exposing (ProjectId)
 import Apps.Editor.Update as Update exposing (Msg(..))
 import Apps.Editor.Model as Model exposing (Model, PopoutState(..))
@@ -53,8 +52,6 @@ sidebarContext model =
     , onDescriptionChange = DescriptionChanged
     , packages = model.clientRevision.packages
     , onAddPackageClick = ToggleSearch
-    , installingPackage = model.installingPackage
-    , removingHashes = model.removingPackageHashes
     , onRemove = RemovePackageRequested
     }
 
@@ -113,9 +110,7 @@ workAreaView model =
             , onMouseDown ResultDragStarted
             ]
             []
-        , model.session
-            |> RemoteData.map (outputView model)
-            |> RemoteData.withDefault (text "")
+        , outputView model
         ]
 
 
@@ -183,23 +178,22 @@ headerContext model =
     , compileButtonEnabled =
         Model.canCompile model
     , buttonsVisible =
-        RemoteData.isSuccess model.session
-            && RemoteData.isSuccess model.serverRevision
+        RemoteData.isSuccess model.serverRevision
             && model.isOnline
     }
 
 
-outputView : Model -> Session -> Html Msg
-outputView model session =
+outputView : Model -> Html Msg
+outputView model =
     div
         [ class [ OutputContainer ]
         , style [ ( "width", Utils.numberToPercent (1 - model.resultSplit) ) ]
         ]
-        [ case RemoteData.map2 (\a _ -> a) model.compileResult model.iframeResult of
+        [ case model.compileResult of
             Success errors ->
                 case List.filter (.level >> (==) "error") errors of
                     [] ->
-                        Output.success session.id
+                        Output.success
 
                     relevantErrors ->
                         Output.errors relevantErrors
@@ -224,13 +218,17 @@ view model =
             , ( ResizeNs, model.editorDragging )
             ]
         ]
-        [ case model.session of
-            Success _ ->
-                loadedView model
-
-            Failure _ ->
-                loadedView model
-
-            _ ->
-                Splash.view
+        [ div [ class [ LoadedContainer ] ]
+            [ Header.view <| headerContext model
+            , div [ class [ MainContainer ] ]
+                [ Sidebar.view <| sidebarContext model
+                , workAreaView model
+                , div [ class [ NotificationsContainer ] ]
+                    [ popoutView model ]
+                , embedLink model
+                ]
+            , renderIf
+                model.searchOpen
+                (\_ -> Search.view <| searchContext model)
+            ]
         ]

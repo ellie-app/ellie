@@ -5,16 +5,18 @@ module Components.Sidebar.View
         )
 
 import Set exposing (Set)
-import Html exposing (Html, a, label, textarea, h3, button, aside, div, text, span, input, hr, option, select)
-import Html.Attributes exposing (href, target, type_, value, disabled)
+import Html exposing (Html, a, label, textarea, h3, button, aside, div, text, span, input, hr, option, select, node, Attribute)
+import Html.Attributes exposing (href, target, type_, value, disabled, id, attribute)
 import Html.Events exposing (onInput, onClick)
 import Svg exposing (svg, circle)
 import Svg.Attributes exposing (fill, cx, cy, r, viewBox)
 import Shared.Icons as Icons
+import Shared.Constants as Constants
 import Components.Sidebar.Classes exposing (..)
 import Types.Package as Package exposing (Package)
 import Types.Version as Version exposing (Version)
 import Shared.Utils as Utils exposing (renderIf)
+import Native.CarbonAds
 
 
 type alias ViewModel msg =
@@ -24,10 +26,16 @@ type alias ViewModel msg =
     , onDescriptionChange : String -> msg
     , packages : List Package
     , onAddPackageClick : msg
-    , installingPackage : Maybe Package
-    , removingHashes : Set String
     , onRemove : Package -> msg
     }
+
+
+viewAd : Html msg
+viewAd =
+    Native.CarbonAds.ad
+        Constants.carbonZoneId
+        Constants.carbonServe
+        Constants.carbonPlacement
 
 
 viewProjectInfo : ViewModel msg -> Html msg
@@ -70,39 +78,6 @@ viewAddButton viewModel =
         , onClick viewModel.onAddPackageClick
         ]
         [ text "Add A Package" ]
-
-
-viewLoading : Package -> Html msg
-viewLoading package =
-    div [ class [ Loading ] ]
-        [ div [ class [ LoadingPackageInfo ] ]
-            [ text <| package.username ++ "/" ++ package.name ++ " @" ++ Version.toString package.version ]
-        , div [ class [ LoadingAnimContainer ] ]
-            [ svg [ viewBox "0 0 50 10" ]
-                [ circle [ cx "5", cy "5", r "5" ] []
-                , circle [ cx "25", cy "5", r "5" ] []
-                , circle [ cx "45", cy "5", r "5" ] []
-                ]
-            ]
-        ]
-
-
-viewRemovingIndicator : Html msg
-viewRemovingIndicator =
-    button
-        [ class [ PackagesItemButton ]
-        , disabled True
-        ]
-        [ span [ class [ PackagesItemButtonIcon ] ]
-            [ svg [ viewBox "0 0 50 10" ]
-                [ circle [ cx "5", cy "5", r "5" ] []
-                , circle [ cx "25", cy "5", r "5" ] []
-                , circle [ cx "45", cy "5", r "5" ] []
-                ]
-            ]
-        , span [ class [ PackagesItemButtonText ] ]
-            [ text "Removing" ]
-        ]
 
 
 viewRemoveButton : msg -> Html msg
@@ -154,16 +129,11 @@ viewPackageItemActions package viewModel =
 
 viewPackageItem : ViewModel msg -> Package -> Html msg
 viewPackageItem viewModel package =
-    let
-        isRemoving =
-            packageInHash viewModel.removingHashes package
-    in
-        div [ class [ PackagesItem ] ]
-            [ div [ class [ PackagesItemName ] ]
-                [ text <| package.username ++ " / " ++ package.name ]
-            , renderIf isRemoving (\_ -> viewRemovingIndicator)
-            , renderIf (not isRemoving) (\_ -> viewPackageItemActions package viewModel)
-            ]
+    div [ class [ PackagesItem ] ]
+        [ div [ class [ PackagesItemName ] ]
+            [ text <| package.username ++ " / " ++ package.name ]
+        , viewPackageItemActions package viewModel
+        ]
 
 
 packageInHash : Set String -> Package -> Bool
@@ -178,15 +148,28 @@ viewPackages viewModel =
             [ text "Packages" ]
         , div [ class [ PackagesList ] ]
             (List.map (viewPackageItem viewModel) viewModel.packages)
-        , viewModel.installingPackage
-            |> Maybe.map viewLoading
-            |> Maybe.withDefault (viewAddButton viewModel)
+        , viewAddButton viewModel
+        ]
+
+
+viewTopStuff : ViewModel msg -> Html msg
+viewTopStuff viewModel =
+    div [ class [ TopStuff ] ]
+        [ viewProjectInfo viewModel
+        , viewPackages viewModel
+        ]
+
+
+viewBottomStuff : Html msg
+viewBottomStuff =
+    div [ class [ BottomStuff ] ]
+        [ viewAd
         ]
 
 
 view : ViewModel msg -> Html msg
 view viewModel =
     aside [ class [ Sidebar ] ]
-        [ viewProjectInfo viewModel
-        , viewPackages viewModel
+        [ viewTopStuff viewModel
+        , viewBottomStuff
         ]

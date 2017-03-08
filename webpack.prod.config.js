@@ -55,6 +55,9 @@ module.exports = {
               { pattern: /\%CDN_BASE\%/g, replacement: () => process.env.CDN_BASE },
               { pattern: /\%EMBED_BASE\%/g, replacement: () => process.env.EMBED_BASE },
               { pattern: /\%EDITOR_BASE\%/g, replacement: () => process.env.EDITOR_BASE },
+              { pattern: /\%CARBON_ZONE_ID\%/g, replacement: () => process.env.CARBON_ZONE_ID },
+              { pattern: /\%CARBON_SERVE\%/g, replacement: () => process.env.CARBON_SERVE },
+              { pattern: /\%CARBON_PLACEMENT\%/g, replacement: () => process.env.CARBON_PLACEMENT },
               { pattern: /\%ENV\%/g, replacement: () => 'production' },
             ]
           }),

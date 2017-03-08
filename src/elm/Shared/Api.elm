@@ -3,15 +3,9 @@ module Shared.Api
         ( send
         , toTask
         , searchPackages
-        , createNewSession
-        , createSessionForRevision
         , removeSession
-        , refreshSession
         , compile
-        , writeIframe
         , format
-        , addPackage
-        , removePackage
         , latestRevision
         , exactRevision
         , createProjectFromRevision
@@ -28,8 +22,6 @@ import Types.ApiError as ApiError exposing (ApiError)
 import Types.Revision as Revision exposing (Revision)
 import Types.Version as Version exposing (Version)
 import Types.Package as Package exposing (Package)
-import Types.Session as Session exposing (Session)
-import Types.Dependency as Dependency exposing (Dependency)
 import Types.CompileError as CompileError exposing (CompileError)
 import Shared.Constants as Constants
 
@@ -143,49 +135,14 @@ searchPackages elmVersion searchTerm =
 -- SESSIONS
 
 
-createNewSession : RequestBuilder Session
-createNewSession =
-    post (fullUrl "/sessions")
-        |> withApiHeaders
-        |> withExpect (Http.expectJson Session.decode)
-
-
-sessionForRevisionPayload : String -> Int -> Value
-sessionForRevisionPayload projectId revisionNumber =
-    Encode.object
-        [ ( "projectId", Encode.string projectId )
-        , ( "revisionNumber", Encode.int revisionNumber )
-        ]
-
-
-createSessionForRevision : String -> Int -> RequestBuilder Session
-createSessionForRevision projectId revisionNumber =
-    post (fullUrl "/sessions")
-        |> withApiHeaders
-        |> withExpect (Http.expectJson Session.decode)
-        |> withJsonBody (sessionForRevisionPayload projectId revisionNumber)
-
-
-removeSession : Session -> RequestBuilder ()
-removeSession session =
-    delete (fullUrl ("/sessions/" ++ session.id))
-        |> withApiHeaders
-
-
-refreshSession : Session -> RequestBuilder ()
-refreshSession session =
-    post (fullUrl ("/sessions/" ++ session.id ++ "/refresh"))
+removeSession : RequestBuilder ()
+removeSession =
+    delete (fullUrl "/session")
         |> withApiHeaders
 
 
 
 -- COMPILATION
-
-
-compilePayload : String -> Value
-compilePayload elmCode =
-    Encode.object
-        [ ( "elmCode", Encode.string elmCode ) ]
 
 
 compileExpect : Expect (List CompileError)
@@ -194,26 +151,12 @@ compileExpect =
         |> Http.expectJson
 
 
-compile : String -> Session -> RequestBuilder (List CompileError)
-compile elmCode session =
-    post (fullUrl ("/sessions/" ++ session.id ++ "/compile"))
+compile : Revision -> RequestBuilder (List CompileError)
+compile revision =
+    post (fullUrl "/session/compile")
         |> withApiHeaders
-        |> withJsonBody (compilePayload elmCode)
+        |> withJsonBody (Encode.object [ ( "revision", Revision.encode revision ) ])
         |> withExpect compileExpect
-
-
-writeIframePayload : String -> Value
-writeIframePayload htmlCode =
-    Encode.object
-        [ ( "htmlCode", Encode.string htmlCode ) ]
-
-
-writeIframe : String -> Session -> RequestBuilder ()
-writeIframe htmlCode session =
-    post (fullUrl ("/sessions/" ++ session.id ++ "/iframe"))
-        |> withApiHeaders
-        |> withJsonBody (writeIframePayload htmlCode)
-        |> withExpect (expectValue ())
 
 
 formatPayload : String -> Value
@@ -237,31 +180,6 @@ format source =
 
 
 
--- DEPENDENCIES
-
-
-packagePayload : Package -> Value
-packagePayload package =
-    Encode.object
-        [ ( "package", Package.encode package ) ]
-
-
-addPackage : Session -> Package -> RequestBuilder ()
-addPackage session package =
-    put (fullUrl ("/sessions/" ++ session.id ++ "/packages"))
-        |> withApiHeaders
-        |> withJsonBody (packagePayload package)
-
-
-removePackage : Session -> Package -> RequestBuilder Package
-removePackage session package =
-    delete (fullUrl ("/sessions/" ++ session.id ++ "/packages"))
-        |> withApiHeaders
-        |> withJsonBody (packagePayload package)
-        |> withExpect (expectValue package)
-
-
-
 -- REVISIONS AND PROJECTS
 
 
@@ -279,21 +197,21 @@ exactRevision projectId revisionNumber =
         |> withExpect (Http.expectJson Revision.decode)
 
 
-createProjectFromRevision : Session -> Revision -> RequestBuilder Revision
-createProjectFromRevision session revision =
-    post (fullUrl ("/projects?sessionId=" ++ session.id))
+createProjectFromRevision : Revision -> RequestBuilder Revision
+createProjectFromRevision revision =
+    post (fullUrl "/projects")
         |> withApiHeaders
         |> withExpect (Http.expectJson Revision.decode)
-        |> withJsonBody (Revision.encode revision)
+        |> withJsonBody (Encode.object [ ( "revision", Revision.encode revision ) ])
 
 
-createRevision : Session -> Revision -> RequestBuilder Revision
-createRevision session revision =
+createRevision : Revision -> RequestBuilder Revision
+createRevision revision =
     revision.projectId
         |> Maybe.withDefault ""
-        |> (\s -> put (fullUrl "/projects/" ++ s ++ "/revisions?sessionId=" ++ session.id))
+        |> (\s -> put (fullUrl "/projects/" ++ s ++ "/revisions"))
         |> withApiHeaders
-        |> withJsonBody (Revision.encode revision)
+        |> withJsonBody (Encode.object [ ( "revision", Revision.encode revision ) ])
         |> withExpect (Http.expectJson (Decode.succeed revision))
 
 

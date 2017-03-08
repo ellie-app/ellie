@@ -1,11 +1,9 @@
 port module Apps.Editor.Cmds
     exposing
         ( withCmd
+        , withCmdWhen
         , withAdditionalCmd
         , compile
-        , writeIframe
-        , notifyIframeResult
-        , reloadIframe
         , hasUnsavedWork
         , pathChanged
         )
@@ -25,6 +23,14 @@ withCmd makeCmd model =
     ( model, makeCmd model )
 
 
+withCmdWhen : (Model -> Bool) -> (Model -> Cmd msg) -> Model -> ( Model, Cmd msg )
+withCmdWhen predicate makeCmd model =
+    if predicate model then
+        withCmd makeCmd model
+    else
+        ( model, Cmd.none )
+
+
 withAdditionalCmd : (Model -> Cmd msg) -> ( Model, Cmd msg ) -> ( Model, Cmd msg )
 withAdditionalCmd makeCmd ( model, cmd ) =
     ( model
@@ -33,9 +39,6 @@ withAdditionalCmd makeCmd ( model, cmd ) =
         , makeCmd model
         ]
     )
-
-
-port reloadIframePort : () -> Cmd msg
 
 
 port hasUnsavedWork : Bool -> Cmd msg
@@ -49,56 +52,23 @@ pathChanged =
     pathChangedOut ()
 
 
-reloadIframe : Cmd msg
-reloadIframe =
-    reloadIframePort ()
-
-
 compile : (Result ApiError (List CompileError) -> msg) -> Model -> Cmd msg
 compile completeMsg model =
-    case ( model.session, Model.shouldCompileElm model ) of
-        ( Success session, True ) ->
-            Cmd.batch
-                [ Api.compile model.stagedElmCode session
-                    |> Api.send completeMsg
-                , MessageBus.notify
-                    Notification.Info
-                    "Compilation Started"
-                    "Ellie is compiling your code."
-                ]
+    let
+        revision =
+            model.clientRevision
 
-        _ ->
-            Cmd.none
-
-
-writeIframe : Bool -> (Result ApiError () -> msg) -> Model -> Cmd msg
-writeIframe force completeMsg model =
-    case ( model.session, force || Model.shouldWriteIframe model ) of
-        ( Success session, True ) ->
-            Cmd.batch
-                [ Api.writeIframe model.stagedHtmlCode session
-                    |> Api.send completeMsg
-                , MessageBus.notify
-                    Notification.Info
-                    "IFrame Generation Started"
-                    "Ellie is building your HTML output. When it's done we'll show you the result below."
-                ]
-
-        _ ->
-            Cmd.none
-
-
-notifyIframeResult : Result ApiError () -> Model -> Cmd msg
-notifyIframeResult result model =
-    case result of
-        Ok _ ->
-            MessageBus.notify
-                Notification.Success
-                "IFrame Generation Succeeded"
-                "Ellie wrote your HTML output without any problems. Awesome!"
-
-        Err apiError ->
-            MessageBus.notify
-                Notification.Error
-                "IFrame Generation Failed"
-                ("Ellie couldn't write your HTML output. Here's what the server said:\n\n" ++ apiError.explanation)
+        outRevision =
+            { revision
+                | elmCode = model.stagedElmCode
+                , htmlCode = model.stagedHtmlCode
+            }
+    in
+        Cmd.batch
+            [ Api.compile outRevision
+                |> Api.send completeMsg
+            , MessageBus.notify
+                Notification.Info
+                "Compilation Started"
+                "Ellie is compiling your code."
+            ]

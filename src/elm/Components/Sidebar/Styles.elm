@@ -18,9 +18,24 @@ styles =
             , property "box-shadow" "2px 0 8px 0px rgba(0,0,0,0.50)"
             , position relative
             , property "z-index" "1"
+            , displayFlex
+            , flexDirection column
+            , property "justify-content" "space-between"
+            , overflow hidden
+            ]
+        , (.) TopStuff
+            [ displayFlex
+            , flexDirection column
+            , property "flex-shrink" "1"
+            , overflow hidden
+            ]
+        , (.) BottomStuff
+            [ displayFlex
+            , property "flex-shrink" "0"
             ]
         , (.) ProjectInfo
             [ padding2 (px 8) zero
+            , property "flex-shrink" "0"
             ]
         , (.) ProjectInfoTitle
             [ color (hex Colors.lightGray)
@@ -67,7 +82,7 @@ styles =
             , fontSize (px 16)
             , lineHeight (px 20)
             , property "resize" "none"
-            , height (px 120)
+            , height (px 100)
             , fontFamilies [ Constants.sansFont ]
             , fontWeight (int 500)
             ]
@@ -82,6 +97,10 @@ styles =
             ]
         , (.) Packages
             [ padding2 (px 8) zero
+            , property "flex-shrink" "1"
+            , displayFlex
+            , flexDirection column
+            , overflow hidden
             ]
         , (.) PackagesTitle
             [ color (hex Colors.lightGray)
@@ -91,8 +110,7 @@ styles =
             , paddingBottom (px 4)
             ]
         , (.) PackagesList
-            [ maxHeight (px 376)
-            , overflowY auto
+            [ overflowY auto
             ]
         , (.) PackagesItem
             [ backgroundColor (hex Colors.darkGray)
@@ -183,28 +201,4 @@ styles =
             , cursor pointer
             , marginTop (px 16)
             ]
-        , (.) Loading
-            [ padding2 (px 12) (px 16)
-            , backgroundColor (hex Colors.darkGray)
-            , displayFlex
-            , property "justify-content" "center"
-            , alignItems center
-            , flexDirection column
-            , borderRadius (px 3)
-            , marginTop (px 16)
-            ]
-        , (.) LoadingPackageInfo
-            [ fontSize (px 12)
-            , color (hex Colors.lightGray)
-            , paddingBottom (px 8)
-            , whiteSpace noWrap
-            ]
-        , (.) LoadingAnimContainer
-            [ width (px 50)
-            , position relative
-            , height (px 20)
-            , color (hex Colors.mediumGray)
-            ]
-        , (.) LoadingAnim
-            []
         ]

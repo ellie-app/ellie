@@ -20,7 +20,7 @@ module.exports = {
 
   output: {
     path: path.resolve(__dirname + '/dist', target),
-    publicPath: 'http://localhost:8000/',
+    publicPath: target === 'editor' ? 'http://localhost:8000/' : 'http://localhost:8001/',
     filename: '[name].js',
   },
 
@@ -55,6 +55,9 @@ module.exports = {
               { pattern: /\%CDN_BASE\%/g, replacement: () => 'http://localhost:1337/cdn-proxy' },
               { pattern: /\%EMBED_BASE\%/g, replacement: () => 'http://localhost:8001' },
               { pattern: /\%EDITOR_BASE\%/g, replacement: () => 'http://localhost:8000' },
+              { pattern: /\%CARBON_ZONE_ID\%/g, replacement: () => 'test' },
+              { pattern: /\%CARBON_SERVE\%/g, replacement: () => 'test' },
+              { pattern: /\%CARBON_PLACEMENT\%/g, replacement: () => 'test' },
               { pattern: /\%ENV\%/g, replacement: () => 'development' },
             ]
           }),

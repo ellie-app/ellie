@@ -25,7 +25,6 @@ import Set exposing (Set)
 import Window exposing (Size)
 import RemoteData exposing (RemoteData(..))
 import Types.ApiError as ApiError exposing (ApiError)
-import Types.Session as Session exposing (Session)
 import Types.Revision as Revision exposing (Revision)
 import Types.CompileError as CompileError exposing (CompileError)
 import Types.Notification as Notification exposing (Notification)
@@ -49,12 +48,10 @@ type PopoutState
 
 
 type alias Model =
-    { session : RemoteData ApiError Session
-    , serverRevision : RemoteData ApiError Revision
+    { serverRevision : RemoteData ApiError Revision
     , clientRevision : Revision
     , currentRoute : Route
     , compileResult : RemoteData ApiError (List CompileError)
-    , iframeResult : RemoteData ApiError ()
     , stagedElmCode : String
     , previousElmCode : String
     , stagedHtmlCode : String
@@ -73,16 +70,14 @@ type alias Model =
     , searchOpen : Bool
     , searchValue : String
     , searchResults : List Package
-    , installingPackage : Maybe Package
-    , removingPackageHashes : Set String
     , vimMode : Bool
+    , packagesChanged : Bool
     }
 
 
 model : Flags -> Model
 model flags =
-    { session = NotAsked
-    , serverRevision = NotAsked
+    { serverRevision = NotAsked
     , clientRevision = Revision.empty
     , stagedElmCode = .elmCode Revision.empty
     , previousElmCode = .elmCode Revision.empty
@@ -90,7 +85,6 @@ model flags =
     , previousHtmlCode = .htmlCode Revision.empty
     , currentRoute = NotFound
     , compileResult = NotAsked
-    , iframeResult = NotAsked
     , firstCompileComplete = False
     , saveState = NotAsked
     , isOnline = flags.online
@@ -105,9 +99,8 @@ model flags =
     , searchOpen = False
     , searchValue = ""
     , searchResults = []
-    , installingPackage = Nothing
-    , removingPackageHashes = Set.empty
     , vimMode = flags.vimMode
+    , packagesChanged = False
     }
 
 
@@ -133,9 +126,8 @@ canCompile model =
                 || (model.stagedHtmlCode /= model.previousHtmlCode)
     in
         not (RemoteData.isLoading model.compileResult)
-            && RemoteData.isSuccess model.session
             && RemoteData.isSuccess model.serverRevision
-            && ((not model.firstCompileComplete) || stagedCodeChanged)
+            && ((not model.firstCompileComplete) || stagedCodeChanged || model.packagesChanged)
             && model.isOnline
 
 

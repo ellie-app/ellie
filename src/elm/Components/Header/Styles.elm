@@ -13,7 +13,7 @@ styles =
         [ (.) Header
             [ width (pct 100)
             , height (px Constants.headerHeight)
-            , backgroundColor (hex Colors.pink)
+            , backgroundColor (hex Colors.darkGray)
             , displayFlex
             , alignItems center
             , boxShadow5 (px 0) (px 2) (px 15) (px -4) (rgba 0 0 0 0.5)
@@ -21,6 +21,9 @@ styles =
             , property "z-index" "4"
             , property "justify-content" "space-between"
             , padding2 zero (px 16)
+            , property "border-image" <| Colors.pinkPurpleGradient ++ " 1"
+            , borderBottomWidth (px 2)
+            , borderBottomStyle solid
             ]
         , (.) HeaderGroup
             [ displayFlex
@@ -35,9 +38,9 @@ styles =
         , (.) Button
             [ backgroundColor <|
                 rgba
-                    (.r Colors.darkGrayRgb)
-                    (.g Colors.darkGrayRgb)
-                    (.b Colors.darkGrayRgb)
+                    (.r Colors.mediumGrayRgb)
+                    (.g Colors.mediumGrayRgb)
+                    (.b Colors.mediumGrayRgb)
                     0.24
             , border zero
             , borderRadius (px 3)
@@ -50,23 +53,31 @@ styles =
             , cursor pointer
             , marginLeft (px 8)
             , disabled
-                [ opacity (num 0.5)
+                [ opacity (num 0.35)
                 , cursor notAllowed
                 ]
             , hover
                 [ backgroundColor <|
                     rgba
-                        (.r Colors.darkGrayRgb)
-                        (.g Colors.darkGrayRgb)
-                        (.b Colors.darkGrayRgb)
-                        0.33
+                        (.r Colors.mediumGrayRgb)
+                        (.g Colors.mediumGrayRgb)
+                        (.b Colors.mediumGrayRgb)
+                        0.4
+                , disabled
+                    [ backgroundColor <|
+                        rgba
+                            (.r Colors.mediumGrayRgb)
+                            (.g Colors.mediumGrayRgb)
+                            (.b Colors.mediumGrayRgb)
+                            0.24
+                    ]
                 ]
             , active
                 [ backgroundColor <|
                     rgba
-                        (.r Colors.darkGrayRgb)
-                        (.g Colors.darkGrayRgb)
-                        (.b Colors.darkGrayRgb)
+                        (.r Colors.mediumGrayRgb)
+                        (.g Colors.mediumGrayRgb)
+                        (.b Colors.mediumGrayRgb)
                         0.5
                 ]
             ]
