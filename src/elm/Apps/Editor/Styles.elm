@@ -31,6 +31,7 @@ styles =
             , height (pct 100)
             , displayFlex
             , position relative
+            , backgroundColor (hex Colors.mediumGray)
             ]
         , (.) WorkArea
             [ property "width" <| "calc(100% - " ++ toString Constants.sidebarWidth ++ "px)"
@@ -45,10 +46,14 @@ styles =
             , position relative
             , property "z-index" "1"
             ]
-        , (.) LoadedContainer
+        , (.) AppContainerInner
             [ position relative
             , width (pct 100)
             , height (pct 100)
+            , property "transition" "filter 0.3s 0.2s"
+            , withClass LoadingRevision
+                [ property "filter" "blur(30px)"
+                ]
             ]
         , (.) EditorsContainer
             [ displayFlex

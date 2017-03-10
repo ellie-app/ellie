@@ -9,7 +9,6 @@ import Apps.Editor.Update as Update exposing (Msg(..))
 import Apps.Editor.Model as Model exposing (Model, PopoutState(..))
 import Apps.Editor.Classes exposing (..)
 import Apps.Editor.Routing as Routing exposing (..)
-import Components.Splash.View as Splash
 import Components.Sidebar.View as Sidebar
 import Components.Editors.View as Editors
 import Components.Header.View as Header
@@ -218,7 +217,17 @@ view model =
             , ( ResizeNs, model.editorDragging )
             ]
         ]
-        [ div [ class [ LoadedContainer ] ]
+        [ div
+            [ classList
+                [ ( AppContainerInner
+                  , True
+                  )
+                , ( LoadingRevision
+                  , RemoteData.isLoading model.serverRevision
+                        || RemoteData.isNotAsked model.serverRevision
+                  )
+                ]
+            ]
             [ Header.view <| headerContext model
             , div [ class [ MainContainer ] ]
                 [ Sidebar.view <| sidebarContext model

@@ -33,3 +33,5 @@ type Classes
     | ResizeEw
     | EditorResizeHandle
     | EmbedLinkContainer
+    | LoadingRevision
+    | AppContainerInner

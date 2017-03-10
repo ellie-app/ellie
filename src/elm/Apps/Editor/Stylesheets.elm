@@ -9,7 +9,6 @@ import Components.Header.Styles as Header
 import Components.Search.Styles as Search
 import Components.Notifications.Styles as Notifications
 import Components.About.Styles as About
-import Components.Splash.Styles as Splash
 import Components.Editor.EmbedLink.Styles as EmbedLink
 
 
@@ -28,7 +27,6 @@ fileStructure =
                 , Header.styles
                 , Search.styles
                 , Notifications.styles
-                , Splash.styles
                 , About.styles
                 , EmbedLink.styles
                 ]
