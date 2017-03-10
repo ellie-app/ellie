@@ -302,6 +302,7 @@ update msg model =
             ( model
             , Api.removeSession
                 |> Api.send (\_ -> NoOp)
+                |> Debug.log "hi"
             )
 
         LoadRevisionCompleted revisionResult ->

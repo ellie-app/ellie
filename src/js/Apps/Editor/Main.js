@@ -71,11 +71,18 @@ function start() {
         }
       })
 
+      // We need to do this out here because unfortunately Elm's ports are
+      // asynchronous and by the time we get to the unload event we've only
+      // got one tick left.
       window.addEventListener('unload', function (e) {
-        app.ports.windowUnloadedIn.send(null)
+        var request = new XMLHttpRequest()
+        request.withCredentials = true
+        request.open('DELETE', API_BASE + '/session', false)
+        request.send()
       })
 
       window.addEventListener('message', function (event) {
+        if (event.origin !== API_BASE) return
         app.ports.windowMessageIn.send(event.data)
       })
     })

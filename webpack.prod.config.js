@@ -78,7 +78,7 @@ module.exports = {
   plugins: [
     // new WebpackMd5Hash(),
     new webpack.DefinePlugin({
-      API_BASE: JSON.stringify(process.env.API_BASE || 'http://localhost:1337'),
+      API_BASE: JSON.stringify(process.env.API_BASE),
       'process.env.NODE_ENV': JSON.stringify('production')
     }),
     new webpack.optimize.OccurrenceOrderPlugin(),
