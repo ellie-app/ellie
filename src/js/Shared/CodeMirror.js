@@ -11,6 +11,7 @@ module.exports = function (vimMode) {
       'codemirror/theme/material.css',
       './CodeMirror.css'
     ], function() {
+
       require('./CodeMirror.css')
       require('codemirror/addon/lint/lint.css')
       require('codemirror/lib/codemirror.css')
@@ -32,6 +33,7 @@ module.exports = function (vimMode) {
         'codemirror/addon/dialog/dialog',
         'codemirror/addon/dialog/dialog.css'
       ], function () {
+
         require('codemirror/keymap/vim')
         require('codemirror/addon/dialog/dialog')
         require('codemirror/addon/dialog/dialog.css')

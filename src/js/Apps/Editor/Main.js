@@ -82,7 +82,6 @@ function start() {
       })
 
       window.addEventListener('message', function (event) {
-        if (event.origin !== API_BASE) return
         app.ports.windowMessageIn.send(event.data)
       })
     })
