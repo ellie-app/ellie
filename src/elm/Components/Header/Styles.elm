@@ -16,7 +16,7 @@ styles =
             , backgroundColor (hex Colors.darkGray)
             , displayFlex
             , alignItems center
-            , boxShadow5 (px 0) (px 2) (px 15) (px -4) (rgba 0 0 0 0.5)
+            , boxShadow5 (px 0) (px 2) (px 15) (px -2) (rgba 0 0 0 0.5)
             , position relative
             , property "z-index" "4"
             , property "justify-content" "space-between"
