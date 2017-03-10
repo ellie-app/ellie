@@ -21,6 +21,7 @@ styles =
             , property "z-index" "4"
             , property "justify-content" "space-between"
             , padding2 zero (px 16)
+            , border zero
             , property "border-image" <| Colors.pinkPurpleGradient ++ " 1"
             , borderBottomWidth (px 2)
             , borderBottomStyle solid
