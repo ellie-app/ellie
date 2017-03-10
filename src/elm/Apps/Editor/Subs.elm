@@ -105,7 +105,6 @@ subscriptions : Model -> Sub Msg
 subscriptions model =
     Sub.batch
         [ online OnlineChanged
-        , windowUnloadedIn (always WindowUnloaded)
         , MessageBus.notifications NotificationReceived
         , windowSize model
         , resultDrags model

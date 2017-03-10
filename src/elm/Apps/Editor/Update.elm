@@ -86,7 +86,6 @@ type Msg
     | FormattingRequested
     | FormattingCompleted (Result ApiError String)
     | RemovePackageRequested Package
-    | WindowUnloaded
     | NotificationReceived Notification
     | ToggleNotifications
     | ToggleAbout
@@ -296,13 +295,6 @@ update msg model =
                         model.popoutState
               }
             , Cmd.none
-            )
-
-        WindowUnloaded ->
-            ( model
-            , Api.removeSession
-                |> Api.send (\_ -> NoOp)
-                |> Debug.log "hi"
             )
 
         LoadRevisionCompleted revisionResult ->

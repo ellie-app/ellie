@@ -3,7 +3,6 @@ module Shared.Api
         ( send
         , toTask
         , searchPackages
-        , removeSession
         , compile
         , format
         , latestRevision
@@ -129,16 +128,6 @@ searchPackages elmVersion searchTerm =
             ]
         |> withApiHeaders
         |> withExpect (Http.expectJson (Decode.list Package.decode))
-
-
-
--- SESSIONS
-
-
-removeSession : RequestBuilder ()
-removeSession =
-    delete (fullUrl "/session")
-        |> withApiHeaders
 
 
 
