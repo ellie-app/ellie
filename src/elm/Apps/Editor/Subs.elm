@@ -19,6 +19,9 @@ port windowMessageIn : (Value -> msg) -> Sub msg
 port online : (Bool -> msg) -> Sub msg
 
 
+port jsError : (String -> msg) -> Sub msg
+
+
 windowMessageDecoder : Model -> Decoder Msg
 windowMessageDecoder model =
     (Decode.field "type" Decode.string)
@@ -46,10 +49,6 @@ windowMessageDecoder model =
                                     else
                                         NoOp
                                 )
-
-                    "error" ->
-                        Decode.field "message" Decode.string
-                            |> Decode.map IframeJsError
 
                     _ ->
                         Decode.fail "unrecognized message"
@@ -115,4 +114,5 @@ subscriptions model =
         , editorDrags model
         , windowMessage model
         , closeSearch model
+        , jsError IframeJsError
         ]

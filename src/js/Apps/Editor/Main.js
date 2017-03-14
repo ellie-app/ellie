@@ -72,6 +72,11 @@ function start() {
       })
 
       window.addEventListener('message', function (event) {
+        if (event.data.type === 'error') {
+          app.ports.jsError.send(event.data.message)
+          return
+        }
+        
         app.ports.windowMessageIn.send(event.data)
       })
     })
