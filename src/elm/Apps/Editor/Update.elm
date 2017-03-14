@@ -6,11 +6,8 @@ module Apps.Editor.Update
         , Msg(..)
         )
 
-import Time
-import Process
 import Task
 import Dom
-import Set exposing (Set)
 import Window exposing (Size)
 import Mouse exposing (Position)
 import RemoteData exposing (RemoteData(..))
@@ -20,8 +17,6 @@ import Types.Revision as Revision exposing (Revision)
 import Types.CompileError as CompileError exposing (CompileError)
 import Types.Notification as Notification exposing (Notification)
 import Types.Package as Package exposing (Package)
-import Types.VersionRange as VersionRange exposing (VersionRange)
-import Types.Version as Version exposing (Version)
 import Types.ProjectId as ProjectId exposing (ProjectId)
 import Apps.Editor.Model as Model exposing (Model, Flags, PopoutState(..))
 import Apps.Editor.Routing as Routing exposing (Route(..))
@@ -103,6 +98,7 @@ type Msg
     | SearchResultsCompleted String (Result ApiError (List Package))
     | PackageSelected Package
     | ToggleEmbedLink
+    | IframeJsError String
     | NoOp
 
 
@@ -149,6 +145,14 @@ saveCmd model =
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
+        IframeJsError message ->
+            ( model
+            , MessageBus.notify
+                Notification.Error
+                "JavaScript Error"
+                ("A JavaScript Error was thrown by your program:\n\n" ++ message)
+            )
+
         ToggleEmbedLink ->
             ( { model
                 | popoutState =

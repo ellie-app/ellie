@@ -47,6 +47,10 @@ windowMessageDecoder model =
                                         NoOp
                                 )
 
+                    "error" ->
+                        Decode.field "message" Decode.string
+                            |> Decode.map IframeJsError
+
                     _ ->
                         Decode.fail "unrecognized message"
             )
