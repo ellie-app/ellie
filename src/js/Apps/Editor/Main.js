@@ -63,6 +63,11 @@ function start() {
         iframe.src = iframe.src
       })
 
+      app.ports.openNewWindow.subscribe(function (url) {
+        var win = window.open(url, '_blank')
+        win.focus()
+      })
+
       window.addEventListener('online', function () {
         app.ports.online.send(true)
       })

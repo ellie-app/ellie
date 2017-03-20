@@ -102,6 +102,8 @@ type Msg
     | ToggleHtmlCollapse
     | ToggleElmCollapse
     | ReloadIframe
+    | CreateGist
+    | CreateGistComplete (Result ApiError String)
     | NoOp
 
 
@@ -148,6 +150,32 @@ saveCmd model =
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
+        CreateGist ->
+            let
+                originalRevision =
+                    model.clientRevision
+
+                updatedRevision =
+                    { originalRevision | elmCode = model.stagedElmCode, htmlCode = model.stagedHtmlCode }
+            in
+                ( { model | creatingGist = True }
+                , Api.createGist updatedRevision
+                    |> Api.send CreateGistComplete
+                )
+
+        CreateGistComplete result ->
+            ( { model | creatingGist = False }
+            , case result of
+                Ok gistUrl ->
+                    Cmds.openNewWindow gistUrl
+
+                Err apiError ->
+                    MessageBus.notify
+                        Notification.Error
+                        "Creating Gist Failed"
+                        ("We couldn't create a Gist for your project. Here's what GitHub said:\n\n" ++ apiError.explanation)
+            )
+
         ReloadIframe ->
             ( model
             , Cmds.reloadIframe

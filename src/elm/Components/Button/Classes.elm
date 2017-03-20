@@ -1,25 +1,26 @@
-module Components.Editor.EmbedLink.Classes exposing (..)
+module Components.About.Classes exposing (..)
 
 import Html exposing (Attribute)
 import Html.CssHelpers
 
 
 type Classes
-    = Container
-    | Links
+    = Popout
+    | Title
+    | Paragraph
     | Link
-    | LinkTitle
-    | LinkContent
-    | Buttons
-    | Button
-    | ButtonInner
-    | ButtonText
-    | ButtonIcon
+    | Creators
+    | CreatorLine
+    | Logo
+    | ImagesAndHsLogo
+    | PartnerImageContainer
+    | PartnerImage
+    | HsLogoImage
 
 
 helpers : Html.CssHelpers.Namespace String class id msg
 helpers =
-    Html.CssHelpers.withNamespace "components_editor_embedLink_"
+    Html.CssHelpers.withNamespace "components_about_"
 
 
 class : List class -> Attribute msg

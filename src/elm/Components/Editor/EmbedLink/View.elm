@@ -4,12 +4,12 @@ module Components.Editor.EmbedLink.View
         , view
         )
 
-import Html exposing (Html, div, text, input)
-import Html.Attributes exposing (id, type_, value, readonly)
-import Html.Events exposing (onFocus)
+import Html exposing (Html, span, div, text, input, button)
+import Html.Attributes exposing (id, type_, value, readonly, disabled)
+import Html.Events exposing (onFocus, onClick)
 import Components.Editor.EmbedLink.Classes exposing (..)
-import Types.Revision as Revision exposing (Revision)
 import Shared.Constants as Constants
+import Shared.Icons as Icons
 
 
 autoselect : Html.Attribute msg
@@ -17,13 +17,15 @@ autoselect =
     Html.Attributes.attribute "onmouseup" "this.blur();this.select();"
 
 
-type alias ViewModel =
+type alias ViewModel msg =
     { projectId : String
     , revisionNumber : Int
+    , onGist : msg
+    , gistButtonEnabled : Bool
     }
 
 
-directLink : ViewModel -> String
+directLink : ViewModel msg -> String
 directLink { projectId, revisionNumber } =
     Constants.editorBase
         ++ "/"
@@ -32,7 +34,7 @@ directLink { projectId, revisionNumber } =
         ++ toString revisionNumber
 
 
-iframe : ViewModel -> String
+iframe : ViewModel msg -> String
 iframe viewModel =
     "<iframe src=\""
         ++ embedLink viewModel
@@ -41,7 +43,7 @@ iframe viewModel =
         ++ "></iframe>"
 
 
-embedLink : ViewModel -> String
+embedLink : ViewModel msg -> String
 embedLink { projectId, revisionNumber } =
     Constants.embedBase
         ++ "/"
@@ -50,48 +52,62 @@ embedLink { projectId, revisionNumber } =
         ++ toString revisionNumber
 
 
-view : ViewModel -> Html msg
+view : ViewModel msg -> Html msg
 view viewModel =
     div [ class [ Container ] ]
-        [ div [ class [ Option ] ]
-            [ div
-                [ class [ OptionTitle ] ]
-                [ text "Direct Link (Medium, embed.ly)" ]
-            , input
-                [ type_ "text"
-                , value <| directLink viewModel
-                , readonly True
-                , id "embedly_link"
-                , class [ OptionContent ]
-                , autoselect
+        [ div [ class [ Links ] ]
+            [ div [ class [ Link ] ]
+                [ div
+                    [ class [ LinkTitle ] ]
+                    [ text "Direct Link (Medium, embed.ly)" ]
+                , input
+                    [ type_ "text"
+                    , value <| directLink viewModel
+                    , readonly True
+                    , id "embedly_link"
+                    , class [ LinkContent ]
+                    , autoselect
+                    ]
+                    []
                 ]
-                []
+            , div [ class [ Link ] ]
+                [ div
+                    [ class [ LinkTitle ] ]
+                    [ text "Embed Link" ]
+                , input
+                    [ type_ "text"
+                    , value <| embedLink viewModel
+                    , readonly True
+                    , id "direct_link"
+                    , class [ LinkContent ]
+                    , autoselect
+                    ]
+                    []
+                ]
+            , div [ class [ Link ] ]
+                [ div
+                    [ class [ LinkTitle ] ]
+                    [ text "IFrame" ]
+                , input
+                    [ id "iframe_link"
+                    , value <| iframe viewModel
+                    , type_ "text"
+                    , class [ LinkContent ]
+                    , autoselect
+                    ]
+                    []
+                ]
             ]
-        , div [ class [ Option ] ]
-            [ div
-                [ class [ OptionTitle ] ]
-                [ text "Embed Link" ]
-            , input
-                [ type_ "text"
-                , value <| embedLink viewModel
-                , readonly True
-                , id "direct_link"
-                , class [ OptionContent ]
-                , autoselect
+        , div [ class [ Buttons ] ]
+            [ button
+                [ class [ Button ]
+                , disabled (not viewModel.gistButtonEnabled)
+                , onClick viewModel.onGist
                 ]
-                []
-            ]
-        , div [ class [ Option ] ]
-            [ div
-                [ class [ OptionTitle ] ]
-                [ text "IFrame" ]
-            , input
-                [ id "iframe_link"
-                , value <| iframe viewModel
-                , type_ "text"
-                , class [ OptionContent ]
-                , autoselect
+                [ div [ class [ ButtonInner ] ]
+                    [ span [ class [ ButtonIcon ] ] [ Icons.gitHub ]
+                    , span [ class [ ButtonText ] ] [ text "Create Gist" ]
+                    ]
                 ]
-                []
             ]
         ]

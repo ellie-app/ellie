@@ -5,6 +5,7 @@ module Types.Revision
         , encode
         , decode
         , empty
+        , moduleName
         )
 
 import Json.Encode as Encode exposing (Value)
@@ -13,6 +14,16 @@ import Json.Decode.Pipeline as Decode
 import Types.Package as Package exposing (Package)
 import Types.CompileError as CompileError exposing (CompileError)
 import Shared.Utils as Utils
+import Regex exposing (Regex)
+
+
+moduleName : Revision -> String
+moduleName revision =
+    Regex.find (Regex.AtMost 1) (Regex.regex "^module ([a-zA-Z.]+) exposing") revision.elmCode
+        |> List.head
+        |> Maybe.andThen (.submatches >> List.head)
+        |> Maybe.andThen identity
+        |> Maybe.withDefault "Main"
 
 
 type Snapshot

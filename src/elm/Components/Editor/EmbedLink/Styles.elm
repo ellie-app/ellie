@@ -28,7 +28,8 @@ styles =
             , fontSize (px 14)
             , overflowY auto
             ]
-        , (.) Option
+        , (.) Links []
+        , (.) Link
             [ backgroundColor (hex Colors.darkGray)
             , marginBottom (px 2)
             , padding3 (px 8) (px 8) (px 16)
@@ -42,13 +43,13 @@ styles =
                 , marginBottom (px 2)
                 ]
             ]
-        , (.) OptionTitle
+        , (.) LinkTitle
             [ fontSize (px 12)
             , lineHeight (px 12)
             , textTransform uppercase
             , color (hex Colors.lightGray)
             ]
-        , (.) OptionContent
+        , (.) LinkContent
             [ paddingTop (px 8)
             , whiteSpace noWrap
             , overflowX hidden
@@ -60,5 +61,39 @@ styles =
             , width (pct 100)
             , fontSize (px 14)
             , color (hex Colors.white)
+            ]
+        , (.) Buttons
+            [ paddingTop (px 16)
+            ]
+        , (.) Button
+            [ display block
+            , backgroundColor (hex Colors.darkGray)
+            , color (hex Colors.lightGray)
+            , borderRadius (px 3)
+            , border zero
+            , width (pct 100)
+            , padding (px 12)
+            , fontSize (px 16)
+            , textTransform uppercase
+            , fontFamily inherit
+            , fontWeight (int 500)
+            , cursor pointer
+            , disabled
+                [ opacity (num 0.5)
+                ]
+            ]
+        , (.) ButtonInner
+            [ displayFlex
+            , property "justify-content" "center"
+            , alignItems center
+            ]
+        , (.) ButtonIcon
+            [ width (px 20)
+            , height (px 20)
+            , adjacentSiblings
+                [ (.) ButtonText
+                    [ marginLeft (px 12)
+                    ]
+                ]
             ]
         ]

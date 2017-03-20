@@ -82,6 +82,7 @@ type alias Model =
     , packagesChanged : Bool
     , editorsCollapse : EditorCollapseState
     , resultsCollapse : Bool
+    , creatingGist : Bool
     }
 
 
@@ -113,6 +114,7 @@ model flags =
     , packagesChanged = False
     , editorsCollapse = BothOpen
     , resultsCollapse = False
+    , creatingGist = False
     }
 
 

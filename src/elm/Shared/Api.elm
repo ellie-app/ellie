@@ -10,6 +10,7 @@ module Shared.Api
         , createProjectFromRevision
         , createRevision
         , defaultRevision
+        , createGist
         )
 
 import Task exposing (Task)
@@ -209,3 +210,59 @@ defaultRevision =
     get (fullUrl "/defaults/revision")
         |> withApiHeaders
         |> withExpect (Http.expectJson Revision.decode)
+
+
+
+-- EXPORTS
+
+
+elmPackageJson : Revision -> String
+elmPackageJson revision =
+    Encode.object
+        [ ( "version", Encode.string "1.0.0" )
+        , ( "summary", Encode.string revision.description )
+        , ( "repository", Encode.string "https://github.com/user/project.git" )
+        , ( "license", Encode.string "BSD3" )
+        , ( "source-directories", Encode.list [ Encode.string "." ] )
+        , ( "exposed-modules", Encode.list [] )
+        , ( "dependencies"
+          , Encode.object <|
+                List.map
+                    (\p ->
+                        ( p.username ++ "/" ++ p.name
+                        , Encode.string <| Version.toString p.version ++ " <= v < " ++ Version.toString p.version
+                        )
+                    )
+                    revision.packages
+          )
+        , ( "elm-version", Encode.string "0.18.0 <= v < 0.19.0" )
+        ]
+        |> Encode.encode 4
+
+
+createGistPayload : Revision -> Value
+createGistPayload revision =
+    Encode.object
+        [ ( "description", Encode.string revision.title )
+        , ( "public", Encode.bool True )
+        , ( "files"
+          , Encode.object
+                [ ( Revision.moduleName revision ++ ".elm", Encode.object [ ( "content", Encode.string revision.elmCode ) ] )
+                , ( "index.html", Encode.object [ ( "content", Encode.string revision.htmlCode ) ] )
+                , ( "elm-package.json", Encode.object [ ( "content", Encode.string <| elmPackageJson revision ) ] )
+                ]
+          )
+        ]
+
+
+createGistExpect : Expect String
+createGistExpect =
+    Decode.field "html_url" Decode.string
+        |> Http.expectJson
+
+
+createGist : Revision -> RequestBuilder String
+createGist revision =
+    post "https://api.github.com/gists"
+        |> withJsonBody (createGistPayload revision)
+        |> withExpect createGistExpect

@@ -91,16 +91,22 @@ searchContext model =
     }
 
 
-embedLink : Model -> Html msg
+embedLinkVm : ProjectId -> Int -> Model -> EmbedLink.ViewModel Msg
+embedLinkVm projectId revisionNumber model =
+    { projectId = ProjectId.toEncodedString projectId
+    , revisionNumber = revisionNumber
+    , onGist = CreateGist
+    , gistButtonEnabled = not model.creatingGist
+    }
+
+
+embedLink : Model -> Html Msg
 embedLink model =
     case ( model.popoutState, model.currentRoute ) of
         ( EmbedLinkOpen, SpecificRevision projectId revisionNumber ) ->
             div
                 [ class [ EmbedLinkContainer ] ]
-                [ EmbedLink.view
-                    { projectId = ProjectId.toEncodedString projectId
-                    , revisionNumber = revisionNumber
-                    }
+                [ EmbedLink.view <| embedLinkVm projectId revisionNumber model
                 ]
 
         _ ->

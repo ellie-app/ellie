@@ -40,6 +40,7 @@ styles =
             [ displayFlex
             , property "align-items" "center"
             , color (hex Colors.white)
+            , property "white-space" "pre-wrap"
             ]
         , (.) ItemMessage
             [ property "width" "calc(100% - 24px)"
