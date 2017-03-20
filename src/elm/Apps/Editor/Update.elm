@@ -101,6 +101,7 @@ type Msg
     | IframeJsError String
     | ToggleHtmlCollapse
     | ToggleElmCollapse
+    | ReloadIframe
     | NoOp
 
 
@@ -147,6 +148,11 @@ saveCmd model =
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
+        ReloadIframe ->
+            ( model
+            , Cmds.reloadIframe
+            )
+
         ToggleElmCollapse ->
             ( { model
                 | editorsCollapse =

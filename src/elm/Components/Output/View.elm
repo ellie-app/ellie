@@ -8,7 +8,7 @@ module Components.Output.View
         )
 
 import Html exposing (Html, div, iframe, text)
-import Html.Attributes exposing (src)
+import Html.Attributes exposing (src, id)
 import Types.CompileError as CompileError exposing (CompileError)
 import Components.Output.Classes exposing (Classes(..), class)
 import Shared.Utils as Utils
@@ -48,6 +48,7 @@ success =
     iframe
         [ src <| (Constants.apiBase ++ "/session/iframe")
         , class [ Iframe ]
+        , id "results_iframe"
         ]
         []
 

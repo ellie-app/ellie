@@ -76,10 +76,10 @@ styles =
                 [ borderTop3 (px 1) solid (hex Colors.mediumGray)
                 ]
             , withClass EditorContainerCollapse
-                [ height (px 34)
+                [ height (px 40)
                 ]
             , withClass EditorContainerFull
-                [ property "height" "calc(100% - 34px)"
+                [ property "height" "calc(100% - 40px)"
                 ]
             ]
         , (.) OutputContainer
@@ -89,6 +89,12 @@ styles =
             , property "z-index" "1"
             , boxShadow5 (px -2) zero (px 8) zero (rgba 0 0 0 0.5)
             , overflow hidden
+            , hover
+                [ descendants
+                    [ (.) ReloadButton
+                        [ display unset ]
+                    ]
+                ]
             ]
         , (.) NotificationsContainer
             [ position absolute
@@ -126,31 +132,45 @@ styles =
             , left (px 448)
             , top (px 16)
             ]
-        , (.) CollapseButton
+        , (.) OverlayButton
             [ position absolute
-            , top (px 6)
-            , right (px 4)
             , property "background" "none"
             , border zero
-            , color (hex Colors.lightGray)
+            , color (hex Colors.white)
             , displayFlex
             , property "z-index" "7"
             , cursor pointer
             , borderRadius (px 3)
+            , padding (px 6)
             , backgroundColor <|
                 rgba
                     (.r Colors.darkGrayRgb)
                     (.g Colors.darkGrayRgb)
                     (.b Colors.darkGrayRgb)
                     0.5
+            , withClass CollapseButton
+                [ top (px 6)
+                , right (px 6)
+                ]
+            , withClass ReloadButton
+                [ bottom (px 6)
+                , right (px 6)
+                ]
             ]
-        , (.) CollapseButtonText
+        , (.) ReloadButton
+            [ display none
+            ]
+        , (.) OverlayButtonText
             [ fontSize (px 16)
             , textTransform uppercase
             , lineHeight (px 16)
-            , paddingRight (px 8)
+            , adjacentSiblings
+                [ (.) OverlayButtonIcon
+                    [ marginLeft (px 6)
+                    ]
+                ]
             ]
-        , (.) CollapseButtonIcon
+        , (.) OverlayButtonIcon
             [ display block
             , width (px 16)
             , height (px 16)

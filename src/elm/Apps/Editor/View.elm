@@ -45,6 +45,14 @@ elmHeightCss model =
         Utils.numberToPercent model.editorSplit
 
 
+expandButtonIcon : Bool -> Html msg
+expandButtonIcon isHidden =
+    if isHidden then
+        Icons.expand
+    else
+        Icons.collapse
+
+
 popoutView : Model -> Html Msg
 popoutView model =
     case model.popoutState of
@@ -158,11 +166,11 @@ editorsView model =
                         (model.compileResult |> RemoteData.withDefault [])
                 )
             , button
-                [ class [ CollapseButton ]
+                [ class [ OverlayButton, CollapseButton ]
                 , onClick ToggleElmCollapse
                 ]
-                [ span [ class [ CollapseButtonText ] ] [ text "Elm" ]
-                , span [ class [ CollapseButtonIcon ] ] [ Icons.collapse ]
+                [ span [ class [ OverlayButtonText ] ] [ text "Elm" ]
+                , span [ class [ OverlayButtonIcon ] ] [ expandButtonIcon <| Model.elmIsHidden model ]
                 ]
             ]
         , renderIf
@@ -196,11 +204,11 @@ editorsView model =
                         model.stagedHtmlCode
                 )
             , button
-                [ class [ CollapseButton ]
+                [ class [ OverlayButton, CollapseButton ]
                 , onClick ToggleHtmlCollapse
                 ]
-                [ span [ class [ CollapseButtonText ] ] [ text "HTML" ]
-                , span [ class [ CollapseButtonIcon ] ] [ Icons.collapse ]
+                [ span [ class [ OverlayButtonText ] ] [ text "HTML" ]
+                , span [ class [ OverlayButtonIcon ] ] [ expandButtonIcon <| Model.htmlIsHidden model ]
                 ]
             ]
         ]
@@ -262,6 +270,16 @@ outputView model =
 
             NotAsked ->
                 Output.waiting
+        , renderIf
+            (RemoteData.isSuccess model.compileResult)
+            (\_ ->
+                button
+                    [ class [ OverlayButton, ReloadButton ]
+                    , onClick ReloadIframe
+                    ]
+                    [ span [ class [ OverlayButtonText ] ] [ text "Reload" ]
+                    ]
+            )
         ]
 
 

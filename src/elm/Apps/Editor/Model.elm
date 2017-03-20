@@ -24,7 +24,6 @@ module Apps.Editor.Model
         , elmIsHidden
         )
 
-import Set exposing (Set)
 import Window exposing (Size)
 import RemoteData exposing (RemoteData(..))
 import Types.ApiError as ApiError exposing (ApiError)

@@ -23,8 +23,8 @@ type alias ViewModel =
     }
 
 
-embedlyLink : ViewModel -> String
-embedlyLink { projectId, revisionNumber } =
+directLink : ViewModel -> String
+directLink { projectId, revisionNumber } =
     Constants.editorBase
         ++ "/"
         ++ projectId
@@ -35,14 +35,14 @@ embedlyLink { projectId, revisionNumber } =
 iframe : ViewModel -> String
 iframe viewModel =
     "<iframe src=\""
-        ++ directLink viewModel
+        ++ embedLink viewModel
         ++ "\" style=\"width:100%; height:400px; border:0; border-radius: 3px; overflow:hidden;\""
         ++ " sandbox=\"allow-modals allow-forms allow-popups allow-scripts allow-same-origin\""
         ++ "></iframe>"
 
 
-directLink : ViewModel -> String
-directLink { projectId, revisionNumber } =
+embedLink : ViewModel -> String
+embedLink { projectId, revisionNumber } =
     Constants.embedBase
         ++ "/"
         ++ projectId
@@ -56,10 +56,10 @@ view viewModel =
         [ div [ class [ Option ] ]
             [ div
                 [ class [ OptionTitle ] ]
-                [ text "Medium, embed.ly" ]
+                [ text "Direct Link (Medium, embed.ly)" ]
             , input
                 [ type_ "text"
-                , value <| embedlyLink viewModel
+                , value <| directLink viewModel
                 , readonly True
                 , id "embedly_link"
                 , class [ OptionContent ]
@@ -70,10 +70,10 @@ view viewModel =
         , div [ class [ Option ] ]
             [ div
                 [ class [ OptionTitle ] ]
-                [ text "Direct Link" ]
+                [ text "Embed Link" ]
             , input
                 [ type_ "text"
-                , value <| directLink viewModel
+                , value <| embedLink viewModel
                 , readonly True
                 , id "direct_link"
                 , class [ OptionContent ]

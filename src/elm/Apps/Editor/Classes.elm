@@ -37,6 +37,8 @@ type Classes
     | EmbedLinkContainer
     | LoadingRevision
     | AppContainerInner
+    | OverlayButton
+    | OverlayButtonText
+    | OverlayButtonIcon
     | CollapseButton
-    | CollapseButtonText
-    | CollapseButtonIcon
+    | ReloadButton

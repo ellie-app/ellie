@@ -6,6 +6,7 @@ port module Apps.Editor.Cmds
         , compile
         , hasUnsavedWork
         , pathChanged
+        , reloadIframe
         )
 
 import Navigation
@@ -45,6 +46,14 @@ port hasUnsavedWork : Bool -> Cmd msg
 
 
 port pathChangedOut : () -> Cmd msg
+
+
+port reloadIframeOut : () -> Cmd msg
+
+
+reloadIframe : Cmd msg
+reloadIframe =
+    reloadIframeOut ()
 
 
 pathChanged : Cmd msg

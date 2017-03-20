@@ -57,6 +57,12 @@ function start() {
         hasUnsavedWork = nextValue
       })
 
+      app.ports.reloadIframeOut.subscribe(function () {
+        var iframe = document.getElementById('results_iframe')
+        if (!iframe) return
+        iframe.src = iframe.src
+      })
+
       window.addEventListener('online', function () {
         app.ports.online.send(true)
       })
@@ -76,7 +82,7 @@ function start() {
           app.ports.jsError.send(event.data.message)
           return
         }
-        
+
         app.ports.windowMessageIn.send(event.data)
       })
     })
