@@ -13,6 +13,7 @@ module Components.Editors.CodeMirror
         , linterMessages
         , vimMode
         , editor
+        , indentWidth
         )
 
 import Json.Encode as Encode exposing (Value)
@@ -94,6 +95,11 @@ value =
 vimMode : Bool -> Attribute msg
 vimMode =
     Encode.bool >> property "vimMode"
+
+
+indentWidth : Int -> Attribute msg
+indentWidth =
+    Encode.int >> property "tabWidth"
 
 
 linterMessages : List LinterMessage -> Attribute msg

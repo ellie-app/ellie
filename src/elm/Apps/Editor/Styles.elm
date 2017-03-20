@@ -63,14 +63,23 @@ styles =
             , height (pct 100)
             , width (pct 50)
             , borderRight3 (px 2) solid (hex Colors.mediumGray)
+            , overflow hidden
             ]
         , (.) EditorContainer
             [ height (pct 50)
+            , position relative
+            , backgroundColor (hex Colors.darkGray)
             , firstChild
                 [ borderBottom3 (px 1) solid (hex Colors.mediumGray)
                 ]
             , lastChild
                 [ borderTop3 (px 1) solid (hex Colors.mediumGray)
+                ]
+            , withClass EditorContainerCollapse
+                [ height (px 34)
+                ]
+            , withClass EditorContainerFull
+                [ property "height" "calc(100% - 34px)"
                 ]
             ]
         , (.) OutputContainer
@@ -116,5 +125,34 @@ styles =
             , width (px 320)
             , left (px 448)
             , top (px 16)
+            ]
+        , (.) CollapseButton
+            [ position absolute
+            , top (px 6)
+            , right (px 4)
+            , property "background" "none"
+            , border zero
+            , color (hex Colors.lightGray)
+            , displayFlex
+            , property "z-index" "7"
+            , cursor pointer
+            , borderRadius (px 3)
+            , backgroundColor <|
+                rgba
+                    (.r Colors.darkGrayRgb)
+                    (.g Colors.darkGrayRgb)
+                    (.b Colors.darkGrayRgb)
+                    0.5
+            ]
+        , (.) CollapseButtonText
+            [ fontSize (px 16)
+            , textTransform uppercase
+            , lineHeight (px 16)
+            , paddingRight (px 8)
+            ]
+        , (.) CollapseButtonIcon
+            [ display block
+            , width (px 16)
+            , height (px 16)
             ]
         ]

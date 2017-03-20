@@ -33,15 +33,16 @@ var _user$project$Native_CodeMirror = (function () {
       lineNumbers: true,
       styleActiveLine: { nonEmpty: true },
       smartIndent: true,
-      indentUnit: 4,
       indentWithTabs: false,
-      tabSize: 4,
       lint: { lintOnChange: false },
       keyMap: 'default',
       extraKeys: {
         Tab: function(cm) {
-          var spaces = Array(cm.getOption("indentUnit") + 1).join(" ");
-          cm.replaceSelection(spaces);
+          var x = ""
+          for (var i = cm.getOption('indentUnit'); i > 0; i--) {
+            x += " "
+          }
+          cm.replaceSelection(x);
         }
       }
     })
@@ -57,6 +58,15 @@ var _user$project$Native_CodeMirror = (function () {
         },
         set: function (value) {
           instance.setOption('keyMap', value ? 'vim' : 'default')
+        }
+      },
+      indentWidth: {
+        get: function () {
+          return instance.getOption('indentUnit')
+        },
+        set: function (value) {
+          instance.setOption('indentUnit', value)
+          instance.setOption('tabSize', value)
         }
       },
       readOnly: {

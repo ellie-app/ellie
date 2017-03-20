@@ -107,6 +107,7 @@ elm vimMode onUpdate content compileErrors =
             , CodeMirror.theme "material"
             , CodeMirror.mode "elm"
             , CodeMirror.vimMode vimMode
+            , CodeMirror.indentWidth 4
             , style
                 [ ( "height", "100%" )
                 , ( "width", "100%" )
@@ -129,6 +130,7 @@ html vimMode onUpdate content =
             , CodeMirror.theme "material"
             , CodeMirror.mode "htmlmixed"
             , CodeMirror.vimMode vimMode
+            , CodeMirror.indentWidth 2
             , style
                 [ ( "height", "100%" )
                 , ( "width", "100%" )

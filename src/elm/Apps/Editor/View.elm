@@ -2,7 +2,7 @@ module Apps.Editor.View exposing (view)
 
 import Html exposing (Html, div, button, text, iframe, main_, header, span)
 import Html.Attributes exposing (style)
-import Html.Events exposing (onMouseDown)
+import Html.Events exposing (onMouseDown, onClick)
 import RemoteData exposing (RemoteData(..))
 import Types.ProjectId as ProjectId exposing (ProjectId)
 import Apps.Editor.Update as Update exposing (Msg(..))
@@ -18,6 +18,7 @@ import Components.About.View as About
 import Components.Search.View as Search
 import Components.Editor.EmbedLink.View as EmbedLink
 import Shared.Utils as Utils
+import Shared.Icons as Icons
 
 
 renderIf : Bool -> (() -> Html msg) -> Html msg
@@ -26,6 +27,22 @@ renderIf predicate thunk =
         thunk ()
     else
         text ""
+
+
+htmlHeightCss : Model -> String
+htmlHeightCss model =
+    if Model.htmlIsHidden model || Model.elmIsHidden model then
+        ""
+    else
+        Utils.numberToPercent (1 - model.editorSplit)
+
+
+elmHeightCss : Model -> String
+elmHeightCss model =
+    if Model.htmlIsHidden model || Model.elmIsHidden model then
+        ""
+    else
+        Utils.numberToPercent model.editorSplit
 
 
 popoutView : Model -> Html Msg
@@ -120,31 +137,71 @@ editorsView model =
         , style [ ( "width", Utils.numberToPercent model.resultSplit ) ]
         ]
         [ div
-            [ class [ EditorContainer ]
-            , style [ ( "height", Utils.numberToPercent model.editorSplit ) ]
-            ]
-            [ Editors.elm
-                model.vimMode
-                (Just ElmCodeChanged)
-                model.stagedElmCode
-                (model.compileResult |> RemoteData.withDefault [])
-            ]
-        , div
-            [ class [ EditorResizeHandle ]
-            , style [ ( "top", Utils.numberToPercent model.editorSplit ) ]
-            , onMouseDown EditorDragStarted
-            ]
-            []
-        , div
-            [ class [ EditorContainer ]
+            [ classList
+                [ ( EditorContainer, True )
+                , ( EditorContainerCollapse, Model.elmIsHidden model )
+                , ( EditorContainerFull, Model.htmlIsHidden model )
+                ]
             , style
-                [ ( "height", Utils.numberToPercent (1 - model.editorSplit) )
+                [ ( "height"
+                  , elmHeightCss model
+                  )
                 ]
             ]
-            [ Editors.html
-                model.vimMode
-                (Just HtmlCodeChanged)
-                model.stagedHtmlCode
+            [ renderIf
+                (not <| Model.elmIsHidden model)
+                (\_ ->
+                    Editors.elm
+                        model.vimMode
+                        (Just ElmCodeChanged)
+                        model.stagedElmCode
+                        (model.compileResult |> RemoteData.withDefault [])
+                )
+            , button
+                [ class [ CollapseButton ]
+                , onClick ToggleElmCollapse
+                ]
+                [ span [ class [ CollapseButtonText ] ] [ text "Elm" ]
+                , span [ class [ CollapseButtonIcon ] ] [ Icons.collapse ]
+                ]
+            ]
+        , renderIf
+            (not (Model.elmIsHidden model) && not (Model.htmlIsHidden model))
+            (\_ ->
+                div
+                    [ class [ EditorResizeHandle ]
+                    , style [ ( "top", elmHeightCss model ) ]
+                    , onMouseDown EditorDragStarted
+                    ]
+                    []
+            )
+        , div
+            [ classList
+                [ ( EditorContainer, True )
+                , ( EditorContainerCollapse, Model.htmlIsHidden model )
+                , ( EditorContainerFull, Model.elmIsHidden model )
+                ]
+            , style
+                [ ( "height"
+                  , htmlHeightCss model
+                  )
+                ]
+            ]
+            [ renderIf
+                (not <| Model.htmlIsHidden model)
+                (\_ ->
+                    Editors.html
+                        model.vimMode
+                        (Just HtmlCodeChanged)
+                        model.stagedHtmlCode
+                )
+            , button
+                [ class [ CollapseButton ]
+                , onClick ToggleHtmlCollapse
+                ]
+                [ span [ class [ CollapseButtonText ] ] [ text "HTML" ]
+                , span [ class [ CollapseButtonIcon ] ] [ Icons.collapse ]
+                ]
             ]
         ]
 

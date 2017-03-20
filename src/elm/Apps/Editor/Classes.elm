@@ -24,6 +24,8 @@ type Classes
     | MainContainer
     | WorkArea
     | EditorsContainer
+    | EditorContainerCollapse
+    | EditorContainerFull
     | EditorContainer
     | LoadedContainer
     | OutputContainer
@@ -35,3 +37,6 @@ type Classes
     | EmbedLinkContainer
     | LoadingRevision
     | AppContainerInner
+    | CollapseButton
+    | CollapseButtonText
+    | CollapseButtonIcon

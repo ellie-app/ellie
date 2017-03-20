@@ -2,6 +2,7 @@ module Apps.Editor.Model
     exposing
         ( Model
         , PopoutState(..)
+        , EditorCollapseState(..)
         , Flags
         , model
         , resetToNew
@@ -19,6 +20,8 @@ module Apps.Editor.Model
         , shouldCompileElm
         , hasUnsavedWork
         , activeProjectIdUrlEncoding
+        , htmlIsHidden
+        , elmIsHidden
         )
 
 import Set exposing (Set)
@@ -47,6 +50,12 @@ type PopoutState
     | EmbedLinkOpen
 
 
+type EditorCollapseState
+    = BothOpen
+    | JustHtmlOpen
+    | JustElmOpen
+
+
 type alias Model =
     { serverRevision : RemoteData ApiError Revision
     , clientRevision : Revision
@@ -72,6 +81,8 @@ type alias Model =
     , searchResults : List Package
     , vimMode : Bool
     , packagesChanged : Bool
+    , editorsCollapse : EditorCollapseState
+    , resultsCollapse : Bool
     }
 
 
@@ -101,6 +112,8 @@ model flags =
     , searchResults = []
     , vimMode = flags.vimMode
     , packagesChanged = False
+    , editorsCollapse = BothOpen
+    , resultsCollapse = False
     }
 
 
@@ -224,3 +237,13 @@ activeProjectIdUrlEncoding model =
 
         _ ->
             ProjectId.latestVersion
+
+
+htmlIsHidden : Model -> Bool
+htmlIsHidden model =
+    model.editorsCollapse == JustElmOpen
+
+
+elmIsHidden : Model -> Bool
+elmIsHidden model =
+    model.editorsCollapse == JustHtmlOpen

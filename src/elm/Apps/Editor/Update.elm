@@ -18,7 +18,7 @@ import Types.CompileError as CompileError exposing (CompileError)
 import Types.Notification as Notification exposing (Notification)
 import Types.Package as Package exposing (Package)
 import Types.ProjectId as ProjectId exposing (ProjectId)
-import Apps.Editor.Model as Model exposing (Model, Flags, PopoutState(..))
+import Apps.Editor.Model as Model exposing (Model, Flags, PopoutState(..), EditorCollapseState(..))
 import Apps.Editor.Routing as Routing exposing (Route(..))
 import Apps.Editor.Cmds as Cmds
 import Shared.Api as Api
@@ -99,6 +99,8 @@ type Msg
     | PackageSelected Package
     | ToggleEmbedLink
     | IframeJsError String
+    | ToggleHtmlCollapse
+    | ToggleElmCollapse
     | NoOp
 
 
@@ -145,6 +147,32 @@ saveCmd model =
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
+        ToggleElmCollapse ->
+            ( { model
+                | editorsCollapse =
+                    case model.editorsCollapse of
+                        JustHtmlOpen ->
+                            BothOpen
+
+                        _ ->
+                            JustHtmlOpen
+              }
+            , Cmd.none
+            )
+
+        ToggleHtmlCollapse ->
+            ( { model
+                | editorsCollapse =
+                    case model.editorsCollapse of
+                        JustElmOpen ->
+                            BothOpen
+
+                        _ ->
+                            JustElmOpen
+              }
+            , Cmd.none
+            )
+
         IframeJsError message ->
             ( model
             , MessageBus.notify
