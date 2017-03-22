@@ -286,6 +286,16 @@ outputView model =
                     [ span [ class [ OverlayButtonText ] ] [ text "Reload" ]
                     ]
             )
+        , renderIf
+            (RemoteData.isSuccess model.compileResult)
+            (\_ ->
+                button
+                    [ class [ OverlayButton, DebugButton ]
+                    , onClick OpenDebugger
+                    ]
+                    [ span [ class [ OverlayButtonText ] ] [ text "Debug" ]
+                    ]
+            )
         ]
 
 

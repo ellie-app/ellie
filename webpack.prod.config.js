@@ -51,7 +51,8 @@ module.exports = {
         loaders:  [
           StringReplacePlugin.replace({
             replacements: [
-              { pattern: /\%API_BASE\%/g, replacement: () => process.env.API_BASE },
+              { pattern: /\%API_ORIGIN\%/g, replacement: () => process.env.API_ORIGIN },
+              { pattern: /\%API_VERSION\%/g, replacement: () => process.env.API_VERSON },
               { pattern: /\%CDN_BASE\%/g, replacement: () => process.env.CDN_BASE },
               { pattern: /\%EMBED_BASE\%/g, replacement: () => process.env.EMBED_BASE },
               { pattern: /\%EDITOR_BASE\%/g, replacement: () => process.env.EDITOR_BASE },
@@ -76,9 +77,8 @@ module.exports = {
   },
 
   plugins: [
-    // new WebpackMd5Hash(),
     new webpack.DefinePlugin({
-      API_BASE: JSON.stringify(process.env.API_BASE),
+      API_ORIGIN: JSON.stringify(process.env.API_ORIGIN),
       'process.env.NODE_ENV': JSON.stringify('production')
     }),
     new webpack.optimize.OccurrenceOrderPlugin(),

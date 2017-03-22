@@ -93,6 +93,8 @@ styles =
                 [ descendants
                     [ (.) ReloadButton
                         [ display unset ]
+                    , (.) DebugButton
+                        [ display unset ]
                     ]
                 ]
             ]
@@ -156,8 +158,15 @@ styles =
                 [ bottom (px 6)
                 , right (px 6)
                 ]
+            , withClass DebugButton
+                [ bottom (px 6)
+                , left (px 6)
+                ]
             ]
         , (.) ReloadButton
+            [ display none
+            ]
+        , (.) DebugButton
             [ display none
             ]
         , (.) OverlayButtonText

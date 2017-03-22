@@ -70,6 +70,7 @@ onlyErrors errors =
 
 type Msg
     = RouteChanged Route
+    | OpenDebugger
     | LoadRevisionCompleted (Result ApiError Revision)
     | CompileRequested
     | CompileCompleted (Result ApiError (List CompileError))
@@ -150,6 +151,11 @@ saveCmd model =
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
+        OpenDebugger ->
+            ( model
+            , Cmds.openDebugger
+            )
+
         CreateGist ->
             let
                 originalRevision =

@@ -8,10 +8,9 @@ port module Apps.Editor.Cmds
         , pathChanged
         , reloadIframe
         , openNewWindow
+        , openDebugger
         )
 
-import Navigation
-import RemoteData exposing (RemoteData(..))
 import Types.CompileError as CompileError exposing (CompileError)
 import Types.ApiError as ApiError exposing (ApiError)
 import Types.Notification as Notification exposing (Notification)
@@ -53,6 +52,14 @@ port reloadIframeOut : () -> Cmd msg
 
 
 port openNewWindow : String -> Cmd msg
+
+
+port openDebuggerOut : () -> Cmd msg
+
+
+openDebugger : Cmd msg
+openDebugger =
+    openDebuggerOut ()
 
 
 reloadIframe : Cmd msg

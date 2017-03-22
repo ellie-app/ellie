@@ -51,7 +51,7 @@ module.exports = {
         loaders:  [
           StringReplacePlugin.replace({
             replacements: [
-              { pattern: /\%API_BASE\%/g, replacement: () => 'http://localhost:1337' },
+              { pattern: /\%API_ORIGIN\%/g, replacement: () => 'http://localhost:1337' },
               { pattern: /\%CDN_BASE\%/g, replacement: () => 'http://localhost:1337/cdn-proxy' },
               { pattern: /\%EMBED_BASE\%/g, replacement: () => 'http://localhost:8001' },
               { pattern: /\%EDITOR_BASE\%/g, replacement: () => 'http://localhost:1338' },
@@ -77,7 +77,7 @@ module.exports = {
 
   plugins: [
     new webpack.DefinePlugin({
-      API_BASE: JSON.stringify(process.env.API_BASE || 'http://localhost:1337'),
+      API_ORIGIN: JSON.stringify(process.env.API_ORIGIN || 'http://localhost:1337'),
       'process.env.NODE_ENV': JSON.stringify(process.env.NODE_ENV)
     }),
     new DashboardPlugin(),

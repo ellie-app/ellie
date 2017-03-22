@@ -63,6 +63,12 @@ function start() {
         iframe.src = iframe.src
       })
 
+      app.ports.openDebuggerOut.subscribe(function () {
+        var iframe = document.getElementById('results_iframe')
+        if (!iframe) return
+        iframe.contentWindow.postMessage({ type: 'debug' }, API_ORIGIN)
+      })
+
       app.ports.openNewWindow.subscribe(function (url) {
         var win = window.open(url, '_blank')
         win.focus()

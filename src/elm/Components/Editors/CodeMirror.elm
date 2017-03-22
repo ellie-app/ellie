@@ -99,7 +99,7 @@ vimMode =
 
 indentWidth : Int -> Attribute msg
 indentWidth =
-    Encode.int >> property "tabWidth"
+    Encode.int >> property "indentWidth"
 
 
 linterMessages : List LinterMessage -> Attribute msg

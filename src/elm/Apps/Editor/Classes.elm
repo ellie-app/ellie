@@ -42,3 +42,4 @@ type Classes
     | OverlayButtonIcon
     | CollapseButton
     | ReloadButton
+    | DebugButton

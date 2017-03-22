@@ -34,6 +34,8 @@ var _user$project$Native_CodeMirror = (function () {
       styleActiveLine: { nonEmpty: true },
       smartIndent: true,
       indentWithTabs: false,
+      indentWidth: 2,
+      tabSize: 2,
       lint: { lintOnChange: false },
       keyMap: 'default',
       extraKeys: {
@@ -62,9 +64,11 @@ var _user$project$Native_CodeMirror = (function () {
       },
       indentWidth: {
         get: function () {
+          console.log('getter')
           return instance.getOption('indentUnit')
         },
         set: function (value) {
+          console.log(value)
           instance.setOption('indentUnit', value)
           instance.setOption('tabSize', value)
         }
