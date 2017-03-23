@@ -5,7 +5,7 @@ var SEARCH_CACHE_NAME =
   'ellie-cache-search-v3'
 
 var isApiRequest = function (url) {
-  return url.indexOf(API_BASE) !== -1
+  return url.indexOf(API_ORIGIN) !== -1
 }
 
 var searchRegex = /\/packages\/search/;

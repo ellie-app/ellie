@@ -22,7 +22,7 @@ isProduction =
 apiBase : String
 apiBase =
     if isProduction then
-        "%API_ORIGIN%/v%API_VERSION"
+        "%API_ORIGIN%/v%API_VERSION%"
     else
         "%API_ORIGIN%"
 

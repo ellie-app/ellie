@@ -52,7 +52,7 @@ module.exports = {
           StringReplacePlugin.replace({
             replacements: [
               { pattern: /\%API_ORIGIN\%/g, replacement: () => process.env.API_ORIGIN },
-              { pattern: /\%API_VERSION\%/g, replacement: () => process.env.API_VERSON },
+              { pattern: /\%API_VERSION\%/g, replacement: () => process.env.API_VERSION },
               { pattern: /\%CDN_BASE\%/g, replacement: () => process.env.CDN_BASE },
               { pattern: /\%EMBED_BASE\%/g, replacement: () => process.env.EMBED_BASE },
               { pattern: /\%EDITOR_BASE\%/g, replacement: () => process.env.EDITOR_BASE },
