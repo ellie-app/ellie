@@ -1,18 +1,32 @@
 var path = require("path");
 var webpack = require('webpack');
-var DashboardPlugin = require('webpack-dashboard/plugin');
 var StringReplacePlugin = require('string-replace-webpack-plugin');
 var HtmlWebpackPlugin = require('html-webpack-plugin');
+var CopyPlugin = require('copy-webpack-plugin');
 
 var target = process.env.BUILD_TARGET || 'editor'
 
 var entries = {
-  editor: ['webpack-dev-server/client?http://localhost:8000/', './js/Apps/Editor/Main.js'],
-  embed: ['webpack-dev-server/client?http://localhost:8001/', './js/Apps/Embed/Main.js']
+  editor: ['webpack-dev-server/client?http://localhost:8000/', path.join(__dirname, 'src/js/Apps/Editor/Main.js')],
+  embed: ['webpack-dev-server/client?http://localhost:8001/', path.join(__dirname, 'src/js/Apps/Embed/Main.js')]
 }
 
+const loggingPoxy = obj => new Proxy(obj, {
+  get(target, prop) {
+    console.log('get', prop)
+    return typeof target[prop] === 'object' ?
+      loggingPoxy(target[prop]) :
+      target[prop]
+  }
+})
+
 module.exports = {
-  context: path.join(__dirname, 'src'),
+  cache: true,
+  target: 'web',
+
+  node: {
+    fs: 'empty'
+  },
 
   entry: {
     app: entries[target]
@@ -28,22 +42,29 @@ module.exports = {
     loaders: [
       {
         test: /\.css$/,
-        loader: 'style!css',
+        loader: 'style-loader!css-loader',
+      },
+      { test: /\.json$/,
+        loader: 'json-loader'
       },
       {
         test: /Stylesheets\.elm$/,
-        loader: 'style!css!elm-css-webpack',
+        loader: 'style-loader!css-loader!elm-css-webpack-loader',
         exclude: [/node_modules/]
       },
       {
         test:    /\.html$/,
         exclude: /node_modules/,
-        loader:  'file?name=[name].[ext]',
+        loader:  'file-loader?name=[name].[ext]',
       },
       {
         test: /ServiceWorker\.js$/,
         exclude: /node_modules/,
-        loader: 'serviceworker',
+        loader: 'serviceworker-loader',
+      },
+      {
+        test: /\.worker\.js$/,
+        loader: 'worker-loader?inline'
       },
       {
         test:    /Main\.elm$/,
@@ -76,11 +97,23 @@ module.exports = {
   },
 
   plugins: [
+    new webpack.LoaderOptionsPlugin({
+      options: {
+        worker: {
+          plugins: [
+            new webpack.DllReferencePlugin({
+              scope: 'Dll',
+              manifest: require("./build/dll/ElmCompiler-manifest.json"),
+              context: path.join(__dirname, 'dll')
+            })
+          ]
+        }
+      }
+    }),
     new webpack.DefinePlugin({
       API_ORIGIN: JSON.stringify(process.env.API_ORIGIN || 'http://localhost:1337'),
       'process.env.NODE_ENV': JSON.stringify(process.env.NODE_ENV)
     }),
-    new DashboardPlugin(),
     new StringReplacePlugin(),
     new HtmlWebpackPlugin({
       inject: true,
@@ -101,8 +134,10 @@ module.exports = {
         minifyCSS: true,
         minifyURLs: true
       }
-    })
-
+    }),
+    new CopyPlugin([
+      { from: path.join(__dirname, 'build/dll/*.js'), flatten: true }
+    ])
   ],
 
   devServer: {

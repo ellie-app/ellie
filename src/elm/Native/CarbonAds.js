@@ -26,7 +26,9 @@ var _user$project$Native_CarbonAds = (function () {
     script.id = '_carbonads_js'
     script.type = 'text/javascript'
 
-    element.appendChild(script)
+    if (process.env.NODE_ENV === 'production') {
+      element.appendChild(script)
+    }
 
     return element
   }

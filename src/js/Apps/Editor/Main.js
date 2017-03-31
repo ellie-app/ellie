@@ -16,11 +16,11 @@ function start() {
   var vimMode = window.location.search.indexOf('vim=true') !== -1
 
   var promise =
-    process.env.NODE_ENV === 'production' && navigator.serviceWorker ?
+    // process.env.NODE_ENV === 'production' && navigator.serviceWorker ?
       register({ scope: '/' })
         .catch(function () {})
-        .then(function () { return initCodeMirror(vimMode) }) :
-      initCodeMirror(vimMode)
+        .then(function () { return initCodeMirror(vimMode) })// :
+      // initCodeMirror(vimMode)
 
   promise
     .then(function () {
@@ -96,5 +96,7 @@ function start() {
 
         app.ports.windowMessageIn.send(event.data)
       })
+
+      var worker = require('../../Shared/Compiler.worker')()
     })
 }
