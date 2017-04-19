@@ -5,7 +5,9 @@ import Mouse
 import Keyboard
 import Json.Decode as Decode exposing (Decoder, Value)
 import Json.Decode.Pipeline as Decode
+import Types.CompileStage as CompileStage exposing (CompileStage)
 import Shared.MessageBus as MessageBus
+import Shared.Utils as Utils
 import Apps.Editor.Model as Model exposing (Model, PopoutState(..))
 import Apps.Editor.Update as Update exposing (Msg(..))
 
@@ -20,6 +22,20 @@ port online : (Bool -> msg) -> Sub msg
 
 
 port jsError : (String -> msg) -> Sub msg
+
+
+port compilerMessagesIn : (Value -> msg) -> Sub msg
+
+
+compilerMessages : Sub Msg
+compilerMessages =
+    let
+        parse value =
+            Decode.decodeValue CompileStage.decode value
+                |> Result.map CompileStageChanged
+                |> Result.withDefault NoOp
+    in
+        compilerMessagesIn parse
 
 
 windowMessageDecoder : Model -> Decoder Msg
@@ -115,4 +131,5 @@ subscriptions model =
         , windowMessage model
         , closeSearch model
         , jsError IframeJsError
+        , compilerMessages
         ]

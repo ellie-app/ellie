@@ -12,16 +12,14 @@ module Apps.Editor.Model
         , isRevisionChanged
         , commitStagedCode
         , resetStagedCode
-        , canCompile
         , canSave
         , closeSearch
         , elmCodeForCompile
-        , shouldWriteIframe
-        , shouldCompileElm
         , hasUnsavedWork
         , activeProjectIdUrlEncoding
         , htmlIsHidden
         , elmIsHidden
+        , compileErrors
         )
 
 import Window exposing (Size)
@@ -32,6 +30,7 @@ import Types.CompileError as CompileError exposing (CompileError)
 import Types.Notification as Notification exposing (Notification)
 import Types.Package as Package exposing (Package)
 import Types.ProjectId as ProjectId exposing (ProjectId)
+import Types.CompileStage as CompileStage exposing (CompileStage)
 import Apps.Editor.Routing as Routing exposing (Route(..))
 
 
@@ -56,15 +55,14 @@ type EditorCollapseState
 
 
 type alias Model =
-    { serverRevision : RemoteData ApiError Revision
+    { currentRoute : Route
+    , serverRevision : RemoteData ApiError Revision
     , clientRevision : Revision
-    , currentRoute : Route
-    , compileResult : RemoteData ApiError (List CompileError)
     , stagedElmCode : String
-    , previousElmCode : String
     , stagedHtmlCode : String
+    , previousElmCode : String
     , previousHtmlCode : String
-    , firstCompileComplete : Bool
+    , compileStage : CompileStage
     , saveState : RemoteData ApiError ()
     , isOnline : Bool
     , notifications : List Notification
@@ -94,9 +92,8 @@ model flags =
     , previousElmCode = .elmCode Revision.empty
     , stagedHtmlCode = .htmlCode Revision.empty
     , previousHtmlCode = .htmlCode Revision.empty
+    , compileStage = CompileStage.Initial
     , currentRoute = NotFound
-    , compileResult = NotAsked
-    , firstCompileComplete = False
     , saveState = NotAsked
     , isOnline = flags.online
     , notifications = []
@@ -130,19 +127,6 @@ closeSearch model =
         , searchResults = []
         , searchValue = ""
     }
-
-
-canCompile : Model -> Bool
-canCompile model =
-    let
-        stagedCodeChanged =
-            (model.stagedElmCode /= model.previousElmCode)
-                || (model.stagedHtmlCode /= model.previousHtmlCode)
-    in
-        not (RemoteData.isLoading model.compileResult)
-            && RemoteData.isSuccess model.serverRevision
-            && ((not model.firstCompileComplete) || stagedCodeChanged || model.packagesChanged)
-            && model.isOnline
 
 
 canSave : Model -> Bool
@@ -208,16 +192,6 @@ elmCodeForCompile model =
         Just model.stagedElmCode
 
 
-shouldCompileElm : Model -> Bool
-shouldCompileElm model =
-    (not model.firstCompileComplete) || model.stagedElmCode /= model.previousElmCode
-
-
-shouldWriteIframe : Model -> Bool
-shouldWriteIframe model =
-    model.stagedHtmlCode /= model.previousHtmlCode
-
-
 hasUnsavedWork : Model -> Bool
 hasUnsavedWork model =
     case model.serverRevision of
@@ -248,3 +222,13 @@ htmlIsHidden model =
 elmIsHidden : Model -> Bool
 elmIsHidden model =
     model.editorsCollapse == JustHtmlOpen
+
+
+compileErrors : Model -> List CompileError
+compileErrors model =
+    case model.compileStage of
+        CompileStage.FinishedWithErrors errors ->
+            errors
+
+        _ ->
+            []

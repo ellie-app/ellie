@@ -11,11 +11,8 @@ port module Apps.Editor.Cmds
         , openDebugger
         )
 
-import Types.CompileError as CompileError exposing (CompileError)
-import Types.ApiError as ApiError exposing (ApiError)
-import Types.Notification as Notification exposing (Notification)
-import Shared.MessageBus as MessageBus
-import Shared.Api as Api
+import Json.Encode as Encode exposing (Value)
+import Types.Package as Package exposing (Package)
 import Apps.Editor.Model as Model exposing (Model)
 
 
@@ -57,6 +54,9 @@ port openNewWindow : String -> Cmd msg
 port openDebuggerOut : () -> Cmd msg
 
 
+port compileOnClientOut : ( String, String, Value ) -> Cmd msg
+
+
 openDebugger : Cmd msg
 openDebugger =
     openDebuggerOut ()
@@ -72,23 +72,10 @@ pathChanged =
     pathChangedOut ()
 
 
-compile : (Result ApiError (List CompileError) -> msg) -> Model -> Cmd msg
-compile completeMsg model =
-    let
-        revision =
-            model.clientRevision
-
-        outRevision =
-            { revision
-                | elmCode = model.stagedElmCode
-                , htmlCode = model.stagedHtmlCode
-            }
-    in
-        Cmd.batch
-            [ Api.compile outRevision
-                |> Api.send completeMsg
-            , MessageBus.notify
-                Notification.Info
-                "Compilation Started"
-                "Ellie is compiling your code."
-            ]
+compile : Model -> Cmd msg
+compile model =
+    compileOnClientOut
+        ( model.stagedHtmlCode
+        , model.stagedElmCode
+        , Encode.list <| List.map Package.encode model.clientRevision.packages
+        )

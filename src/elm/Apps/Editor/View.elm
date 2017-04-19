@@ -5,6 +5,7 @@ import Html.Attributes exposing (style)
 import Html.Events exposing (onMouseDown, onClick)
 import RemoteData exposing (RemoteData(..))
 import Types.ProjectId as ProjectId exposing (ProjectId)
+import Types.CompileStage as CompileStage exposing (CompileStage)
 import Apps.Editor.Update as Update exposing (Msg(..))
 import Apps.Editor.Model as Model exposing (Model, PopoutState(..))
 import Apps.Editor.Classes exposing (..)
@@ -169,7 +170,7 @@ editorsView model =
                         model.vimMode
                         (Just ElmCodeChanged)
                         model.stagedElmCode
-                        (model.compileResult |> RemoteData.withDefault [])
+                        (Model.compileErrors model)
                 )
             , button
                 [ class [ OverlayButton, CollapseButton ]
@@ -246,7 +247,7 @@ headerContext model =
     , saveButtonOption =
         headerSaveOption model
     , compileButtonEnabled =
-        Model.canCompile model
+        True
     , buttonsVisible =
         RemoteData.isSuccess model.serverRevision
             && model.isOnline
@@ -259,43 +260,44 @@ outputView model =
         [ class [ OutputContainer ]
         , style [ ( "width", Utils.numberToPercent (1 - model.resultSplit) ) ]
         ]
-        [ case model.compileResult of
-            Success errors ->
-                case List.filter (.level >> (==) "error") errors of
-                    [] ->
-                        Output.success
+        [ case model.compileStage of
+            CompileStage.Initial ->
+                Output.initial
 
-                    relevantErrors ->
-                        Output.errors relevantErrors
+            CompileStage.LoadingCompiler percentage ->
+                Output.loadingCompiler percentage
 
-            Failure _ ->
+            CompileStage.Compiling total complete ->
+                Output.compiling total complete
+
+            CompileStage.Success url ->
+                Output.success url
+
+            CompileStage.FinishedWithErrors errors ->
+                Output.errors errors
+
+            CompileStage.Failed message ->
                 Output.failure
-
-            Loading ->
-                Output.compiling
-
-            NotAsked ->
-                Output.waiting
-        , renderIf
-            (RemoteData.isSuccess model.compileResult)
-            (\_ ->
-                button
-                    [ class [ OverlayButton, ReloadButton ]
-                    , onClick ReloadIframe
-                    ]
-                    [ span [ class [ OverlayButtonText ] ] [ text "Reload" ]
-                    ]
-            )
-        , renderIf
-            (RemoteData.isSuccess model.compileResult)
-            (\_ ->
-                button
-                    [ class [ OverlayButton, DebugButton ]
-                    , onClick OpenDebugger
-                    ]
-                    [ span [ class [ OverlayButtonText ] ] [ text "Debug" ]
-                    ]
-            )
+          -- , renderIf
+          --     (RemoteData.isSuccess model.compileResult)
+          --     (\_ ->
+          --         button
+          --             [ class [ OverlayButton, ReloadButton ]
+          --             , onClick ReloadIframe
+          --             ]
+          --             [ span [ class [ OverlayButtonText ] ] [ text "Reload" ]
+          --             ]
+          --     )
+          -- , renderIf
+          --     (RemoteData.isSuccess model.compileResult)
+          --     (\_ ->
+          --         button
+          --             [ class [ OverlayButton, DebugButton ]
+          --             , onClick OpenDebugger
+          --             ]
+          --             [ span [ class [ OverlayButtonText ] ] [ text "Debug" ]
+          --             ]
+          --     )
         ]
 
 

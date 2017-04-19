@@ -7,8 +7,8 @@ var CopyPlugin = require('copy-webpack-plugin');
 var target = process.env.BUILD_TARGET || 'editor'
 
 var entries = {
-  editor: ['webpack-dev-server/client?http://localhost:8000/', path.join(__dirname, 'src/js/Apps/Editor/Main.js')],
-  embed: ['webpack-dev-server/client?http://localhost:8001/', path.join(__dirname, 'src/js/Apps/Embed/Main.js')]
+  editor: ['es6-promise', path.join(__dirname, 'src/js/Shared/Polyfills'), 'webpack-dev-server/client?http://localhost:8000/', path.join(__dirname, 'src/js/Apps/Editor/Main.js')],
+  embed: ['src/js/Shared/Polyfills', 'webpack-dev-server/client?http://localhost:8001/', path.join(__dirname, 'src/js/Apps/Embed/Main.js')]
 }
 
 const loggingPoxy = obj => new Proxy(obj, {
@@ -24,8 +24,8 @@ module.exports = {
   cache: true,
   target: 'web',
 
-  node: {
-    fs: 'empty'
+  externals: {
+    'fs': '__fileSystem'
   },
 
   entry: {
@@ -112,7 +112,8 @@ module.exports = {
     }),
     new webpack.DefinePlugin({
       API_ORIGIN: JSON.stringify(process.env.API_ORIGIN || 'http://localhost:1337'),
-      'process.env.NODE_ENV': JSON.stringify(process.env.NODE_ENV)
+      'process.env.NODE_ENV': JSON.stringify(process.env.NODE_ENV),
+      'process.version': '"v0.8"'
     }),
     new StringReplacePlugin(),
     new HtmlWebpackPlugin({

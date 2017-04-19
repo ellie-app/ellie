@@ -1,5 +1,6 @@
 var path = require("path");
 var webpack = require("webpack");
+var ClosureCompilerPlugin = require('webpack-closure-compiler')
 
 module.exports = {
     entry: {
@@ -9,6 +10,10 @@ module.exports = {
     node: {
       fs: 'empty',
       child_process: 'empty',
+    },
+    externals: {
+      'node-localstorage': 'undefined',
+      'xmlhttprequest': 'self'
     },
     module: {
       loaders: [

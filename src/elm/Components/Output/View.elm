@@ -1,18 +1,30 @@
 module Components.Output.View
     exposing
         ( success
-        , waiting
+        , initial
         , compiling
         , errors
         , failure
+        , loadingCompiler
         )
 
 import Html exposing (Html, div, iframe, text)
 import Html.Attributes exposing (src, id)
 import Types.CompileError as CompileError exposing (CompileError)
+import Types.CompileStage as CompileStage exposing (CompileStage)
 import Components.Output.Classes exposing (Classes(..), class)
 import Shared.Utils as Utils
 import Shared.Constants as Constants
+
+
+overlayDisplay : String -> String -> Html msg
+overlayDisplay title subtitle =
+    div [ class [ Overlay ] ]
+        [ div [ class [ OverlayTitle ] ]
+            [ text title ]
+        , div [ class [ OverlaySubtitle ] ]
+            [ text subtitle ]
+        ]
 
 
 errorSection : CompileError -> Html msg
@@ -43,10 +55,10 @@ errors compileErrors =
         (List.map errorSection compileErrors)
 
 
-success : Html msg
-success =
+success : String -> Html msg
+success iframeUrl =
     iframe
-        [ src <| (Constants.apiBase ++ "/session/iframe")
+        [ src <| iframeUrl
         , class [ Iframe ]
         , id "results_iframe"
         ]
@@ -58,21 +70,20 @@ failure =
     overlayDisplay "Oh no!" "Something went wrong when compiling."
 
 
-overlayDisplay : String -> String -> Html msg
-overlayDisplay title subtitle =
-    div [ class [ Overlay ] ]
-        [ div [ class [ OverlayTitle ] ]
-            [ text title ]
-        , div [ class [ OverlaySubtitle ] ]
-            [ text subtitle ]
-        ]
+compiling : Int -> Int -> Html msg
+compiling total complete =
+    overlayDisplay
+        "Compiling..."
+        ("Compiled " ++ toString complete ++ " of " ++ toString total ++ " modules")
 
 
-compiling : Html msg
-compiling =
-    overlayDisplay "Compiling!" "This shouldn't take too long."
+loadingCompiler : Float -> Html msg
+loadingCompiler percentage =
+    overlayDisplay
+        "Loading Compiler..."
+        (toString (round (percentage * 100)) ++ "% loaded")
 
 
-waiting : Html msg
-waiting =
+initial : Html msg
+initial =
     overlayDisplay "Ready!" "Run the compiler to see your program."

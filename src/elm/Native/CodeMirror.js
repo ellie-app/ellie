@@ -64,11 +64,9 @@ var _user$project$Native_CodeMirror = (function () {
       },
       indentWidth: {
         get: function () {
-          console.log('getter')
           return instance.getOption('indentUnit')
         },
         set: function (value) {
-          console.log(value)
           instance.setOption('indentUnit', value)
           instance.setOption('tabSize', value)
         }
@@ -139,7 +137,7 @@ var _user$project$Native_CodeMirror = (function () {
 
     var runDispatch = debounce(function () {
       element.__debouncedValue = instance.getValue()
-      var event = new Event('CodeMirror.updated')
+      var event = new CustomEvent('CodeMirror.updated')
       element.dispatchEvent(event)
     }, 200)
 

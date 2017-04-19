@@ -97,6 +97,19 @@ function start() {
         app.ports.windowMessageIn.send(event.data)
       })
 
+      var workQueue = []
       var worker = require('../../Shared/Compiler.worker')()
+      worker.addEventListener('message', function (event) {
+        workQueue.push(event.data)
+        setTimeout(function work() {
+          if (!workQueue.length) return
+          var next = workQueue.shift()
+          app.ports.compilerMessagesIn.send(next)
+          setTimeout(work)
+        })
+      })
+      app.ports.compileOnClientOut.subscribe(function ([html, elm, packages]) {
+        worker.postMessage({ html, elm, packages })
+      })
     })
 }

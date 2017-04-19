@@ -17,6 +17,7 @@ import Types.Revision as Revision exposing (Revision)
 import Types.CompileError as CompileError exposing (CompileError)
 import Types.Notification as Notification exposing (Notification)
 import Types.Package as Package exposing (Package)
+import Types.CompileStage as CompileStage exposing (CompileStage)
 import Types.ProjectId as ProjectId exposing (ProjectId)
 import Apps.Editor.Model as Model exposing (Model, Flags, PopoutState(..), EditorCollapseState(..))
 import Apps.Editor.Routing as Routing exposing (Route(..))
@@ -73,7 +74,7 @@ type Msg
     | OpenDebugger
     | LoadRevisionCompleted (Result ApiError Revision)
     | CompileRequested
-    | CompileCompleted (Result ApiError (List CompileError))
+    | CompileStageChanged CompileStage
     | ElmCodeChanged String
     | HtmlCodeChanged String
     | SaveRequested
@@ -396,35 +397,13 @@ update msg model =
             handleRouteChanged route ( { model | currentRoute = route }, Cmd.none )
 
         CompileRequested ->
-            model
-                |> when Model.canCompile (\m -> { m | compileResult = Loading })
-                |> Cmds.withCmdWhen (\_ -> Model.canCompile model) (Cmds.compile CompileCompleted)
-
-        CompileCompleted compileResult ->
             ( model
-                |> (\m -> { m | compileResult = RemoteData.fromResult compileResult })
-                |> (\m -> { m | packagesChanged = not (resultIsSuccess compileResult) })
-                |> (\m -> { m | firstCompileComplete = model.firstCompileComplete || resultIsSuccess compileResult })
-                |> (\m -> { m | previousElmCode = compileResult |> Result.map (\_ -> model.stagedElmCode) |> Result.withDefault model.previousElmCode })
-                |> (\m -> { m | previousHtmlCode = compileResult |> Result.map (\_ -> model.stagedHtmlCode) |> Result.withDefault model.previousHtmlCode })
-            , case Result.map onlyErrors compileResult of
-                Ok [] ->
-                    MessageBus.notify
-                        Notification.Success
-                        "Compilation Succeeded"
-                        "Your code compiled without any problems. Nice!"
+            , Cmds.compile model
+            )
 
-                Ok _ ->
-                    MessageBus.notify
-                        Notification.Warning
-                        "Compilation Finished With Errors"
-                        "Ellie found some compilation errors in your code. Fix them and try again!"
-
-                Err apiError ->
-                    MessageBus.notify
-                        Notification.Error
-                        "Compilation Failed"
-                        ("Ellie couldn't even run the compiler. Here's what the server said:\n\n" ++ apiError.explanation)
+        CompileStageChanged stage ->
+            ( { model | compileStage = stage }
+            , Cmd.none
             )
 
         ElmCodeChanged code ->
@@ -572,7 +551,7 @@ handleRouteChanged route ( model, cmd ) =
             if model.clientRevision.projectId == Just (ProjectId.toIdString projectId) && model.clientRevision.revisionNumber == Just revisionNumber then
                 model
             else
-                { model | serverRevision = Loading, compileResult = NotAsked }
+                { model | serverRevision = Loading, compileStage = CompileStage.Initial }
     , Cmd.batch
         [ cmd
         , Cmds.pathChanged
