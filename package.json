@@ -41,7 +41,9 @@
     "webpack-manifest-plugin": "1.1.0",
     "webpack-md5-hash": "^0.0.5",
     "whatwg-fetch": "^2.0.3",
-    "worker-loader": "^0.8.0"
+    "worker-loader": "^0.8.0",
+    "babel-core": "^6.24.1",
+    "babel-loader": "^7.0.0"
   },
   "scripts": {
     "watch": "webpack-dev-server --watch --config ./webpack.dev.config.js",
@@ -54,10 +56,5 @@
     "build:production": "npm run install:elm && npm run clean && npm run build:editor:production && npm run build:embed:production",
     "deploy": "python ./scripts/deploy_assets.py",
     "heroku-postbuild": "npm run build:production && npm run deploy"
-  },
-  "devDependencies": {
-    "babel-core": "^6.24.1",
-    "babel-loader": "^7.0.0",
-    "babel-plugin-dynamic-import-webpack": "^1.0.1"
   }
 }
