@@ -142,8 +142,7 @@ def run():
     num_cores = multiprocessing.cpu_count()
     packages = organize_packages(data)
     searchable = download_searchable_packages()
-    existing_keys = get_existing_keys()
-    filtered_packages = filter(lambda x: x.s3_package_key() not in existing_keys, packages)
+    filtered_packages = filter(lambda x: x not in searchable, packages)
     package_groups = [filtered_packages[x : x + num_cores] for x in xrange(0, len(filtered_packages), num_cores)]
     counter = 0.0
     total = float(len(filtered_packages))
