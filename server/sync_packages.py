@@ -140,7 +140,7 @@ def run():
     packages = organize_packages(data)
     searchable = download_searchable_packages()
     filtered_packages = filter(lambda x: x not in searchable, packages)
-    package_groups = [filtered_packages[x : x + num_cores] for x in xrange(0, len(filtered_packages), num_cores)][0:1]
+    package_groups = [filtered_packages[x : x + num_cores] for x in xrange(0, len(filtered_packages), num_cores)]
     counter = 0.0
     total = float(len(filtered_packages))
     to_upload = []
