@@ -12,13 +12,13 @@ import Window exposing (Size)
 import Mouse exposing (Position)
 import RemoteData exposing (RemoteData(..))
 import Navigation
-import Types.ApiError as ApiError exposing (ApiError)
-import Types.Revision as Revision exposing (Revision)
-import Types.CompileError as CompileError exposing (CompileError)
-import Types.Notification as Notification exposing (Notification)
-import Types.Package as Package exposing (Package)
-import Types.CompileStage as CompileStage exposing (CompileStage)
-import Types.ProjectId as ProjectId exposing (ProjectId)
+import Data.Ellie.ApiError as ApiError exposing (ApiError)
+import Data.Ellie.Revision as Revision exposing (Revision)
+import Data.Elm.Compiler.Error as CompilerError
+import Data.Ellie.Notification as Notification exposing (Notification)
+import Data.Elm.Package as Package exposing (Package)
+import Data.Ellie.CompileStage as CompileStage exposing (CompileStage)
+import Make.Elm.Compiler as Compiler
 import Apps.Editor.Model as Model exposing (Model, Flags, PopoutState(..), EditorCollapseState(..))
 import Apps.Editor.Routing as Routing exposing (Route(..))
 import Apps.Editor.Cmds as Cmds
@@ -60,7 +60,7 @@ clamp minimum maximum current =
         current
 
 
-onlyErrors : List CompileError -> List CompileError
+onlyErrors : List CompilerError.Error -> List CompilerError.Error
 onlyErrors errors =
     List.filter (.level >> (==) "error") errors
 
@@ -78,7 +78,9 @@ type Msg
     | ElmCodeChanged String
     | HtmlCodeChanged String
     | SaveRequested
-    | SaveCompleted (Result ApiError Revision)
+    | SaveCompileSucceeded (Result (List CompilerError.Error) String)
+    | SaveCompileFailed String
+    | SaveUploadCompleted (Result ApiError Revision)
     | OnlineChanged Bool
     | FormattingRequested
     | FormattingCompleted (Result ApiError String)
@@ -109,17 +111,22 @@ type Msg
     | NoOp
 
 
-saveProject : Model -> Cmd Msg
-saveProject model =
-    if Model.isSavedProject model && Model.isOwnedProject model then
-        model.clientRevision
-            |> (\r -> { r | revisionNumber = Maybe.map ((+) 1) r.revisionNumber })
-            |> Api.createRevision
-            |> Api.send SaveCompleted
-    else
-        model.clientRevision
-            |> Api.createProjectFromRevision
-            |> Api.send SaveCompleted
+
+-- saveProject : Model -> Cmd Msg
+-- saveProject model =
+--     model.clientRevision
+--         |> Api.createProject (Err [])
+--         |> Task.attempt SaveUploadCompleted
+--
+-- if Model.isSavedProject model && Model.isOwnedProject model then
+--     model.clientRevision
+--         |> (\r -> { r | revisionNumber = Maybe.map ((+) 1) r.revisionNumber })
+--         |> Api.createRevision
+--         |> Api.send SaveCompleted
+-- else
+--     model.clientRevision
+--         |> Api.createProjectFromRevision
+--         |> Api.send SaveCompleted
 
 
 onlineNotification : Bool -> Cmd Msg
@@ -136,17 +143,18 @@ onlineNotification isOnline =
             "Ellie can't connect to the server right now, so we've disabled most features."
 
 
-saveCmd : Model -> ( Model, Cmd Msg )
-saveCmd model =
-    ( model
-    , Cmd.batch
-        [ saveProject model
-        , MessageBus.notify
-            Notification.Info
-            "Saving Your Project"
-            "Ellie is saving your work! Any changes to code or settings since you last saved will be included."
-        ]
-    )
+
+-- saveCmd : Model -> ( Model, Cmd Msg )
+-- saveCmd model =
+--     ( model
+--     , Cmd.batch
+--         [ saveProject model
+--         , MessageBus.notify
+--             Notification.Info
+--             "Saving Your Project"
+--             "Ellie is saving your work! Any changes to code or settings since you last saved will be included."
+--         ]
+--     )
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -243,7 +251,7 @@ update msg model =
 
         SearchChanged value ->
             ( { model | searchValue = value }
-            , Api.searchPackages Constants.elmVersion value
+            , Api.searchPackages Compiler.version value
                 |> Api.send (SearchResultsCompleted value)
             )
 
@@ -398,7 +406,7 @@ update msg model =
 
         CompileRequested ->
             ( model
-            , Cmds.compile model
+            , Cmds.compile model False
             )
 
         CompileStageChanged stage ->
@@ -422,9 +430,22 @@ update msg model =
             model
                 |> (\m -> { m | saveState = Loading })
                 |> Model.commitStagedCode
-                |> saveCmd
+                |> (\m -> ( m, Cmds.compile model True ))
 
-        SaveCompleted saveResult ->
+        SaveCompileSucceeded result ->
+            ( model
+            , Api.uploadRevision result model.clientRevision
+                |> Task.attempt SaveUploadCompleted
+            )
+
+        SaveCompileFailed message ->
+            let
+                _ =
+                    Debug.log "failed" message
+            in
+                ( model, Cmd.none )
+
+        SaveUploadCompleted saveResult ->
             ( { model
                 | saveState =
                     saveResult
@@ -441,16 +462,8 @@ update msg model =
             , Cmd.batch
                 [ saveResult
                     |> Result.toMaybe
-                    |> Maybe.andThen (\r -> Maybe.map2 (,) r.projectId r.revisionNumber)
-                    |> Maybe.map
-                        (\( projectId, revisionNumber ) ->
-                            if Model.isOwnedProject model then
-                                SpecificRevision
-                                    (ProjectId.fromIdStringWithVersion (Model.activeProjectIdUrlEncoding model) projectId)
-                                    revisionNumber
-                            else
-                                SpecificRevision (ProjectId.fromIdString projectId) revisionNumber
-                        )
+                    |> Maybe.andThen .id
+                    |> Maybe.map SpecificRevision
                     |> Maybe.map (Routing.construct >> Navigation.newUrl)
                     |> Maybe.withDefault Cmd.none
                 , case saveResult of
@@ -547,8 +560,8 @@ handleRouteChanged route ( model, cmd ) =
         NewProject ->
             Model.resetToNew model
 
-        SpecificRevision projectId revisionNumber ->
-            if model.clientRevision.projectId == Just (ProjectId.toIdString projectId) && model.clientRevision.revisionNumber == Just revisionNumber then
+        SpecificRevision revisionId ->
+            if model.clientRevision.id == Just revisionId then
                 model
             else
                 { model | serverRevision = Loading, compileStage = CompileStage.Initial }
@@ -562,15 +575,15 @@ handleRouteChanged route ( model, cmd ) =
             NewProject ->
                 Api.defaultRevision |> Api.send LoadRevisionCompleted
 
-            SpecificRevision projectId revisionNumber ->
+            SpecificRevision revisionId ->
                 model.clientRevision
-                    |> (\r -> Maybe.map2 (,) r.projectId r.revisionNumber)
-                    |> Maybe.map (\( p, r ) -> p /= (ProjectId.toIdString projectId) || r /= revisionNumber)
+                    |> .id
+                    |> Maybe.map ((/=) revisionId)
                     |> Maybe.withDefault True
                     |> boolToMaybe
                     |> Maybe.map
                         (\() ->
-                            Api.exactRevision (ProjectId.toIdString projectId) revisionNumber
+                            Api.exactRevision revisionId
                                 |> Api.send LoadRevisionCompleted
                         )
                     |> Maybe.withDefault Cmd.none

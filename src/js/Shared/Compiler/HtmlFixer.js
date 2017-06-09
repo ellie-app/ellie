@@ -1,5 +1,5 @@
-var Cheerio = require('cheerio')
-var Memoize = require('./Memoize')
+import * as Cheerio from 'cheerio'
+import * as Memoize from './Memoize'
 
 var embeddedApi =
   '<script>\n' +
@@ -58,10 +58,10 @@ function wrapOnReady(random, script) {
   return '__ellie_onReady_' + random + '(function () {' + script + '})'
 }
 
-function fix(inputs) {
+export function fix({ htmlCode, embedApi, sourceScript }) {
   return new Promise(function (resolve, reject) {
     try {
-      var $ = Cheerio.load(inputs.htmlCode)
+      var $ = Cheerio.load(htmlCode)
       var needsHtml = $('html').length === 0
       var needsHead = $('head').length === 0
       var needsBody = $('body').length === 0
@@ -89,10 +89,10 @@ function fix(inputs) {
         firstChild.data = wrapOnReady(random, firstChild.data)
       })
 
-      if (inputs.embedApi) $('head').append(embeddedApi)
+      if (embedApi) $('head').append(embeddedApi)
       $('head').append(onReady(random))
 
-      $('body').prepend(inputs.sourceScript)
+      $('body').prepend(sourceScript)
 
       var blob = new Blob([$.html()], { type: 'text/html' })
       resolve(URL.createObjectURL(blob))
@@ -100,8 +100,4 @@ function fix(inputs) {
       reject(error)
     }
   })
-}
-
-module.exports = {
-  fix: Memoize.memoize(fix)
 }

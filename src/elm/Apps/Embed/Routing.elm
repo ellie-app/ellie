@@ -7,17 +7,12 @@ module Apps.Embed.Routing
 
 import Navigation
 import UrlParser exposing ((</>))
-import Types.ProjectId as ProjectId exposing (ProjectId)
+import Data.Ellie.RevisionId as RevisionId exposing (RevisionId)
 
 
 type Route
-    = SpecificRevision ProjectId Int
+    = SpecificRevision RevisionId
     | NotFound
-
-
-parseProjectId : UrlParser.Parser (ProjectId -> b) b
-parseProjectId =
-    UrlParser.custom "PROJECT ID" (ProjectId.fromEncodedString >> Ok)
 
 
 parse : Navigation.Location -> Route
@@ -25,7 +20,7 @@ parse =
     let
         parser =
             UrlParser.oneOf
-                [ UrlParser.map SpecificRevision <| parseProjectId </> UrlParser.int
+                [ UrlParser.map SpecificRevision <| UrlParser.map RevisionId <| UrlParser.s "embed" </> UrlParser.string </> UrlParser.int
                 ]
     in
         UrlParser.parsePath parser
@@ -35,8 +30,8 @@ parse =
 construct : Route -> String
 construct route =
     case route of
-        SpecificRevision projectId revisionNumber ->
-            "/" ++ ProjectId.toEncodedString projectId ++ "/" ++ toString revisionNumber
+        SpecificRevision { projectId, revisionNumber } ->
+            "/embed/" ++ projectId ++ "/" ++ toString revisionNumber
 
         NotFound ->
-            "/not-found"
+            "/embed/not-found"

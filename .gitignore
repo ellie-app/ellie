@@ -4,3 +4,4 @@ elm-stuff/
 .DS_Store
 .env
 build/
+*.pyc

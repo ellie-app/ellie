@@ -1,8 +1,5 @@
 module Shared.Constants exposing (..)
 
-import Types.VersionRange as VersionRange exposing (VersionRange)
-import Types.Version as Version exposing (Version)
-
 
 sidebarWidth : number
 sidebarWidth =
@@ -22,19 +19,19 @@ isProduction =
 apiBase : String
 apiBase =
     if isProduction then
-        "%API_ORIGIN%/v%API_VERSION%"
+        "%SERVER_ORIGIN%/v%API_VERSION%"
     else
-        "%API_ORIGIN%"
+        "%SERVER_ORIGIN%/%API_PATH%"
 
 
 editorBase : String
 editorBase =
-    "%EDITOR_BASE%"
+    "%SERVER_ORIGIN%"
 
 
 embedBase : String
 embedBase =
-    "%EMBED_BASE%"
+    "%SERVER_ORIGIN%/embed"
 
 
 cdnBase : String
@@ -53,11 +50,6 @@ assetBase =
 asset : String -> String
 asset relative =
     assetBase ++ relative
-
-
-elmVersion : Version
-elmVersion =
-    Version 0 18 0
 
 
 scriptFont : String

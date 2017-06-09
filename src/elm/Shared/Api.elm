@@ -3,14 +3,11 @@ module Shared.Api
         ( send
         , toTask
         , searchPackages
-        , compile
         , format
-        , latestRevision
         , exactRevision
-        , createProjectFromRevision
-        , createRevision
         , defaultRevision
         , createGist
+        , uploadRevision
         )
 
 import Task exposing (Task)
@@ -18,11 +15,17 @@ import Json.Encode as Encode exposing (Value)
 import Json.Decode as Decode exposing (Decoder)
 import Http exposing (Request, Expect, Error(..))
 import HttpBuilder exposing (..)
-import Types.ApiError as ApiError exposing (ApiError)
-import Types.Revision as Revision exposing (Revision)
-import Types.Version as Version exposing (Version)
-import Types.Package as Package exposing (Package)
-import Types.CompileError as CompileError exposing (CompileError)
+import Data.Aws.UploadSignature as UploadSignature exposing (UploadSignature)
+import Data.File as File exposing (File)
+import Data.Ellie.ApiError as ApiError exposing (ApiError)
+import Data.Ellie.Revision as Revision exposing (Revision, Snapshot(..))
+import Data.Ellie.RevisionId as RevisionId exposing (RevisionId)
+import Data.Elm.Package.Version as Version exposing (Version)
+import Data.Elm.Package as Package exposing (Package)
+import Data.Elm.Make.Constraint as Constraint exposing (Constraint)
+import Data.Elm.Package.Description as Description exposing (Description)
+import Data.Elm.Compiler.Error as CompilerError
+import Make.Elm.Compiler as Compiler
 import Shared.Constants as Constants
 
 
@@ -122,31 +125,17 @@ upgradeError error =
 
 searchPackages : Version -> String -> RequestBuilder (List Package)
 searchPackages elmVersion searchTerm =
-    get (fullUrl "/packages/search")
+    get (fullUrl "/search")
         |> withQueryParams
             [ ( "query", searchTerm )
             , ( "elmVersion", Version.toString elmVersion )
             ]
         |> withApiHeaders
-        |> withExpect (Http.expectJson (Decode.list Package.decode))
+        |> withExpect (Http.expectJson (Decode.list Package.decoder))
 
 
 
--- COMPILATION
-
-
-compileExpect : Expect (List CompileError)
-compileExpect =
-    Decode.list CompileError.decode
-        |> Http.expectJson
-
-
-compile : Revision -> RequestBuilder (List CompileError)
-compile revision =
-    post (fullUrl "/session/compile")
-        |> withApiHeaders
-        |> withJsonBody (Encode.object [ ( "revision", Revision.encode revision ) ])
-        |> withExpect compileExpect
+-- FORMAT
 
 
 formatPayload : String -> Value
@@ -173,43 +162,18 @@ format source =
 -- REVISIONS AND PROJECTS
 
 
-latestRevision : String -> RequestBuilder Revision
-latestRevision projectId =
-    get (fullUrl ("/projects/" ++ projectId ++ "/revisions/latest"))
+exactRevision : RevisionId -> RequestBuilder Revision
+exactRevision { projectId, revisionNumber } =
+    get (fullUrl ("/revisions/" ++ projectId ++ "/" ++ toString revisionNumber))
         |> withApiHeaders
-        |> withExpect (Http.expectJson Revision.decode)
-
-
-exactRevision : String -> Int -> RequestBuilder Revision
-exactRevision projectId revisionNumber =
-    get (fullUrl ("/projects/" ++ projectId ++ "/revisions/" ++ toString revisionNumber))
-        |> withApiHeaders
-        |> withExpect (Http.expectJson Revision.decode)
-
-
-createProjectFromRevision : Revision -> RequestBuilder Revision
-createProjectFromRevision revision =
-    post (fullUrl "/projects")
-        |> withApiHeaders
-        |> withExpect (Http.expectJson Revision.decode)
-        |> withJsonBody (Encode.object [ ( "revision", Revision.encode revision ) ])
-
-
-createRevision : Revision -> RequestBuilder Revision
-createRevision revision =
-    revision.projectId
-        |> Maybe.withDefault ""
-        |> (\s -> put (fullUrl "/projects/" ++ s ++ "/revisions"))
-        |> withApiHeaders
-        |> withJsonBody (Encode.object [ ( "revision", Revision.encode revision ) ])
-        |> withExpect (Http.expectJson (Decode.succeed revision))
+        |> withExpect (Http.expectJson Revision.decoder)
 
 
 defaultRevision : RequestBuilder Revision
 defaultRevision =
-    get (fullUrl "/defaults/revision")
+    get (fullUrl "/revisions/default")
         |> withApiHeaders
-        |> withExpect (Http.expectJson Revision.decode)
+        |> withExpect (Http.expectJson Revision.decoder)
 
 
 
@@ -218,25 +182,18 @@ defaultRevision =
 
 elmPackageJson : Revision -> String
 elmPackageJson revision =
-    Encode.object
-        [ ( "version", Encode.string "1.0.0" )
-        , ( "summary", Encode.string revision.description )
-        , ( "repository", Encode.string "https://github.com/user/project.git" )
-        , ( "license", Encode.string "BSD3" )
-        , ( "source-directories", Encode.list [ Encode.string "." ] )
-        , ( "exposed-modules", Encode.list [] )
-        , ( "dependencies"
-          , Encode.object <|
-                List.map
-                    (\p ->
-                        ( p.username ++ "/" ++ p.name
-                        , Encode.string <| Version.toString p.version ++ " <= v < " ++ Version.toString p.version
-                        )
-                    )
-                    revision.packages
-          )
-        , ( "elm-version", Encode.string "0.18.0 <= v < 0.19.0" )
-        ]
+    Description
+        { user = "user", project = "project" }
+        "https://github.com/user/project.git"
+        (Version 1 0 0)
+        (Constraint.fromVersion Compiler.version)
+        revision.description
+        "BSD3"
+        [ "." ]
+        []
+        False
+        (List.map (Tuple.mapSecond Constraint.fromVersion) revision.packages)
+        |> Description.encoder
         |> Encode.encode 4
 
 
@@ -266,3 +223,98 @@ createGist revision =
     post "https://api.github.com/gists"
         |> withJsonBody (createGistPayload revision)
         |> withExpect createGistExpect
+
+
+
+-- UPLOAD
+
+
+uploadExpect : Expect ( UploadSignature, UploadSignature )
+uploadExpect =
+    Decode.map2 (,)
+        (Decode.field "revision" UploadSignature.decoder)
+        (Decode.field "result" UploadSignature.decoder)
+        |> Http.expectJson
+
+
+revisionFile : Revision -> File
+revisionFile revision =
+    revision
+        |> Revision.encoder
+        |> Encode.encode 0
+        |> List.singleton
+        |> File.fromStringParts "revision.json" "application/json"
+
+
+postBody : List ( String, String ) -> File -> Http.Body
+postBody fields file =
+    Http.multipartBody ((List.map (uncurry Http.stringPart) fields) ++ [ File.toPart "file" file ])
+
+
+uploadSignatures : Revision -> Task ApiError ( UploadSignature, UploadSignature )
+uploadSignatures revision =
+    get (fullUrl "/upload")
+        |> withExpect uploadExpect
+        |> (\builder ->
+                case ( revision.id, revision.owned ) of
+                    ( Just { projectId, revisionNumber }, True ) ->
+                        builder
+                            |> withQueryParams [ ( "projectId", projectId ), ( "revisionNumber", toString (revisionNumber + 1) ) ]
+
+                    _ ->
+                        builder
+           )
+        |> toTask
+
+
+uploadRevision : Result (List CompilerError.Error) String -> Revision -> Task ApiError Revision
+uploadRevision compileResult revision =
+    case compileResult of
+        Ok resultUrl ->
+            get resultUrl
+                |> withExpect (File.expect "result.html" "text/html")
+                |> toTask
+                |> Task.andThen
+                    (\result ->
+                        uploadSignatures revision
+                            |> Task.andThen
+                                (\( revSig, resultSig ) ->
+                                    let
+                                        updatedRevision =
+                                            { revision
+                                                | snapshot = Uploaded
+                                                , id = Just <| RevisionId revSig.projectId revSig.revisionNumber
+                                            }
+                                    in
+                                        post resultSig.url
+                                            |> withBody (postBody resultSig.fields result)
+                                            |> withExpect (expectValue ())
+                                            |> toTask
+                                            |> Task.andThen
+                                                (\_ ->
+                                                    post revSig.url
+                                                        |> withBody (postBody revSig.fields (revisionFile updatedRevision))
+                                                        |> withExpect (expectValue ())
+                                                        |> toTask
+                                                )
+                                            |> Task.map (\_ -> updatedRevision)
+                                )
+                    )
+
+        Err compilerErrors ->
+            uploadSignatures revision
+                |> Task.andThen
+                    (\( revSig, _ ) ->
+                        let
+                            updatedRevision =
+                                { revision
+                                    | snapshot = Errored compilerErrors
+                                    , id = Just <| RevisionId revSig.projectId revSig.revisionNumber
+                                }
+                        in
+                            post revSig.url
+                                |> withBody (postBody revSig.fields (revisionFile updatedRevision))
+                                |> withExpect (expectValue ())
+                                |> toTask
+                                |> Task.map (\_ -> updatedRevision)
+                    )

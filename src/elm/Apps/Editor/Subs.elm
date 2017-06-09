@@ -5,9 +5,8 @@ import Mouse
 import Keyboard
 import Json.Decode as Decode exposing (Decoder, Value)
 import Json.Decode.Pipeline as Decode
-import Types.CompileStage as CompileStage exposing (CompileStage)
+import Data.Ellie.CompileStage as CompileStage exposing (CompileStage(..))
 import Shared.MessageBus as MessageBus
-import Shared.Utils as Utils
 import Apps.Editor.Model as Model exposing (Model, PopoutState(..))
 import Apps.Editor.Update as Update exposing (Msg(..))
 
@@ -27,15 +26,47 @@ port jsError : (String -> msg) -> Sub msg
 port compilerMessagesIn : (Value -> msg) -> Sub msg
 
 
+port compileForSaveIn : (Value -> msg) -> Sub msg
+
+
 compilerMessages : Sub Msg
 compilerMessages =
     let
         parse value =
-            Decode.decodeValue CompileStage.decode value
+            Decode.decodeValue CompileStage.decoder value
                 |> Result.map CompileStageChanged
                 |> Result.withDefault NoOp
     in
         compilerMessagesIn parse
+
+
+compileForSave : Sub Msg
+compileForSave =
+    let
+        parse value =
+            let
+                _ =
+                    Debug.log "v" value
+            in
+                Decode.decodeValue CompileStage.decoder value
+                    |> Result.map
+                        (\stage ->
+                            case (Debug.log "stage" stage) of
+                                Success url ->
+                                    SaveCompileSucceeded (Ok url)
+
+                                FinishedWithErrors errors ->
+                                    SaveCompileSucceeded (Err errors)
+
+                                Failed message ->
+                                    SaveCompileFailed message
+
+                                _ ->
+                                    NoOp
+                        )
+                    |> Result.withDefault NoOp
+    in
+        compileForSaveIn parse
 
 
 windowMessageDecoder : Model -> Decoder Msg
@@ -132,4 +163,5 @@ subscriptions model =
         , closeSearch model
         , jsError IframeJsError
         , compilerMessages
+        , compileForSave
         ]

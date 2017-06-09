@@ -16,7 +16,6 @@ module Apps.Editor.Model
         , closeSearch
         , elmCodeForCompile
         , hasUnsavedWork
-        , activeProjectIdUrlEncoding
         , htmlIsHidden
         , elmIsHidden
         , compileErrors
@@ -24,13 +23,12 @@ module Apps.Editor.Model
 
 import Window exposing (Size)
 import RemoteData exposing (RemoteData(..))
-import Types.ApiError as ApiError exposing (ApiError)
-import Types.Revision as Revision exposing (Revision)
-import Types.CompileError as CompileError exposing (CompileError)
-import Types.Notification as Notification exposing (Notification)
-import Types.Package as Package exposing (Package)
-import Types.ProjectId as ProjectId exposing (ProjectId)
-import Types.CompileStage as CompileStage exposing (CompileStage)
+import Data.Ellie.ApiError as ApiError exposing (ApiError)
+import Data.Ellie.Revision as Revision exposing (Revision)
+import Data.Ellie.Notification as Notification exposing (Notification)
+import Data.Elm.Compiler.Error as CompilerError
+import Data.Elm.Package as Package exposing (Package)
+import Data.Ellie.CompileStage as CompileStage exposing (CompileStage)
 import Apps.Editor.Routing as Routing exposing (Route(..))
 
 
@@ -152,7 +150,8 @@ isSavedProject : Model -> Bool
 isSavedProject model =
     model.serverRevision
         |> RemoteData.toMaybe
-        |> Maybe.andThen .projectId
+        |> Maybe.andThen .id
+        |> Maybe.map .projectId
         |> Maybe.map (\_ -> True)
         |> Maybe.withDefault False
 
@@ -204,16 +203,6 @@ hasUnsavedWork model =
             False
 
 
-activeProjectIdUrlEncoding : Model -> ProjectId.EncodingVersion
-activeProjectIdUrlEncoding model =
-    case model.currentRoute of
-        SpecificRevision projectId _ ->
-            ProjectId.encodingVersion projectId
-
-        _ ->
-            ProjectId.latestVersion
-
-
 htmlIsHidden : Model -> Bool
 htmlIsHidden model =
     model.editorsCollapse == JustElmOpen
@@ -224,7 +213,7 @@ elmIsHidden model =
     model.editorsCollapse == JustHtmlOpen
 
 
-compileErrors : Model -> List CompileError
+compileErrors : Model -> List CompilerError.Error
 compileErrors model =
     case model.compileStage of
         CompileStage.FinishedWithErrors errors ->

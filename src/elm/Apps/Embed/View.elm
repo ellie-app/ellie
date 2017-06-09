@@ -8,11 +8,11 @@ import Apps.Embed.Routing exposing (Route(..))
 import Apps.Embed.Update as Update exposing (Msg(..))
 import Apps.Embed.Model as Model exposing (Model, Tab(..))
 import Apps.Embed.Classes exposing (..)
-import Components.Editors.View as Editors
-import Components.Output.View as Output
-import Types.Revision as Revision exposing (Revision, Snapshot(..))
-import Types.CompileError as CompileError exposing (CompileError)
-import Types.ProjectId as ProjectId exposing (ProjectId)
+import Views.Editors.View as Editors
+import Views.Output.View as Output
+import Data.Ellie.Revision as Revision exposing (Revision, Snapshot(..))
+import Data.Elm.Compiler.Error as CompilerError
+import Data.Ellie.RevisionId as RevisionId exposing (RevisionId)
 import Shared.Icons as Icons
 import Shared.Constants as Constants
 
@@ -66,8 +66,8 @@ viewHeaderButton activeTab myTab icon label =
         ]
 
 
-viewHeader : Tab -> String -> Int -> Html Msg
-viewHeader activeTab projectId revisionNumber =
+viewHeader : Tab -> RevisionId -> Html Msg
+viewHeader activeTab { projectId, revisionNumber } =
     header [ class [ Header ] ]
         [ div [ class [ HeaderLeft ] ]
             [ viewHeaderButton activeTab ElmTab Icons.elmLogo "Elm"
@@ -94,26 +94,26 @@ viewHtml code =
     Editors.html False Nothing code
 
 
-viewElm : String -> List CompileError -> Html Msg
+viewElm : String -> List CompilerError.Error -> Html Msg
 viewElm code errors =
     Editors.elm False Nothing code errors
 
 
-iframeSrc : String -> String
-iframeSrc path =
-    Constants.cdnBase ++ "/compiler-output/" ++ path ++ ".html"
+iframeSrc : RevisionId -> String
+iframeSrc { projectId, revisionNumber } =
+    Constants.cdnBase ++ "/revisions/" ++ projectId ++ "/" ++ (toString revisionNumber) ++ ".html"
 
 
-viewResultsUploaded : String -> Html Msg
-viewResultsUploaded path =
+viewResultsUploaded : RevisionId -> Html Msg
+viewResultsUploaded revisionId =
     iframe
-        [ src <| iframeSrc path
+        [ src <| iframeSrc revisionId
         , class [ Iframe ]
         ]
         []
 
 
-viewResultsErrors : List CompileError -> Html Msg
+viewResultsErrors : List CompilerError.Error -> Html Msg
 viewResultsErrors errors =
     Output.errors errors
 
@@ -121,8 +121,9 @@ viewResultsErrors errors =
 viewResults : Revision -> Html Msg
 viewResults revision =
     case revision.snapshot of
-        Uploaded path ->
-            viewResultsUploaded path
+        Uploaded ->
+            Maybe.map viewResultsUploaded revision.id
+                |> Maybe.withDefault (text "")
 
         Errored errors ->
             viewResultsErrors errors
@@ -135,8 +136,8 @@ viewLoaded : Model -> Revision -> Html Msg
 viewLoaded model revision =
     div [ class [ LoadedContainer ] ]
         [ case model.currentRoute of
-            SpecificRevision projectId revisionNumber ->
-                viewHeader model.tab (ProjectId.toEncodedString projectId) revisionNumber
+            SpecificRevision revisionId ->
+                viewHeader model.tab revisionId
 
             _ ->
                 text ""
@@ -182,7 +183,7 @@ view model =
             NotFound ->
                 viewNotFound
 
-            SpecificRevision _ _ ->
+            SpecificRevision _ ->
                 case model.revision of
                     Success revision ->
                         viewLoaded

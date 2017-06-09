@@ -7,8 +7,8 @@ module Apps.Embed.Model
 
 import RemoteData exposing (RemoteData(..))
 import Apps.Embed.Routing as Routing exposing (Route(..))
-import Types.ApiError as ApiError exposing (ApiError)
-import Types.Revision as Revision exposing (Revision)
+import Data.Ellie.ApiError as ApiError exposing (ApiError)
+import Data.Ellie.Revision as Revision exposing (Revision)
 
 
 type Tab

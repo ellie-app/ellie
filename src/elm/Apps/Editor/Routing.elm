@@ -8,18 +8,13 @@ module Apps.Editor.Routing
 
 import Navigation
 import UrlParser exposing ((</>))
-import Types.ProjectId as ProjectId exposing (ProjectId)
+import Data.Ellie.RevisionId exposing (RevisionId)
 
 
 type Route
     = NewProject
-    | SpecificRevision ProjectId Int
+    | SpecificRevision RevisionId
     | NotFound
-
-
-parseProjectId : UrlParser.Parser (ProjectId -> b) b
-parseProjectId =
-    UrlParser.custom "PROJECT ID" (ProjectId.fromEncodedString >> Ok)
 
 
 parse : Navigation.Location -> Route
@@ -28,7 +23,7 @@ parse =
         parser =
             UrlParser.oneOf
                 [ UrlParser.map NewProject (UrlParser.s "new")
-                , UrlParser.map SpecificRevision (parseProjectId </> UrlParser.int)
+                , UrlParser.map SpecificRevision <| UrlParser.map RevisionId (UrlParser.string </> UrlParser.int)
                 ]
     in
         UrlParser.parsePath parser
@@ -41,8 +36,8 @@ construct route =
         NewProject ->
             "/new"
 
-        SpecificRevision projectId revisionNumber ->
-            "/" ++ (ProjectId.toEncodedString projectId) ++ "/" ++ toString revisionNumber
+        SpecificRevision { projectId, revisionNumber } ->
+            "/" ++ projectId ++ "/" ++ toString revisionNumber
 
         NotFound ->
             "/"
@@ -51,7 +46,7 @@ construct route =
 isSpecificRevision : Route -> Bool
 isSpecificRevision route =
     case route of
-        SpecificRevision _ _ ->
+        SpecificRevision _ ->
             True
 
         _ ->

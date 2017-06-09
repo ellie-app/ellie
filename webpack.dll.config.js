@@ -11,10 +11,6 @@ module.exports = {
       fs: 'empty',
       child_process: 'empty',
     },
-    externals: {
-      'node-localstorage': 'undefined',
-      'xmlhttprequest': 'self'
-    },
     module: {
       loaders: [
         {
@@ -29,10 +25,16 @@ module.exports = {
   		library: "[name]_[hash]"
     },
     plugins: [
+      new webpack.optimize.UglifyJsPlugin({
+        compress: {
+          warnings: false,
+          dead_code: true,
+        }
+      }),
       new webpack.DllPlugin({
         context: path.join(__dirname, 'dll'),
-  			path: path.join(__dirname, "build/dll/", "[name]-manifest.json"),
-  			name: "[name]_[hash]"
-  		})
+        path: path.join(__dirname, "build/dll/", "[name]-manifest.json"),
+        name: "[name]_[hash]"
+      }),
     ]
 };

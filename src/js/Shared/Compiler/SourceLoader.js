@@ -1,5 +1,5 @@
-function openDb() {
-  return new Promise(function (resolve, reject) {
+const withDb = (fn) => {
+  return new Promise((resolve, reject) => {
     var open = indexedDB.open('ElmCompiler:SourceLoader')
     open.onerror = reject
 
@@ -11,9 +11,14 @@ function openDb() {
       open.result.createObjectStore('ElmCompiler:SourceLoader')
     }
   })
+  .then(db => {
+    return fn(db)
+      .then(result => { db.close(); return result; })
+      .catch(error => { db.close(); return Promise.reject(error); })
+  })
 }
 
-function saveBlob(db, blob) {
+const saveBlob = (db, blob) => {
   return new Promise(function (resolve, reject) {
     var store = db.transaction(['ElmCompiler:SourceLoader'], 'readwrite').objectStore('ElmCompiler:SourceLoader')
     var req = store.put(blob, 'script')
@@ -24,12 +29,12 @@ function saveBlob(db, blob) {
   })
 }
 
-function loadBlob(db) {
+const loadBlob = db => {
   return new Promise(function (resolve, reject) {
     var store = db.transaction(['ElmCompiler:SourceLoader'], 'readwrite').objectStore('ElmCompiler:SourceLoader')
     var req = store.get('script')
     req.onerror = reject
-    req.onsuccess = function(event) {
+    req.onsuccess = event => {
       if (!event.target.result) reject(Error('script not loaded yet'))
       else {
         if (event.target.result instanceof Blob) {
@@ -42,49 +47,33 @@ function loadBlob(db) {
   })
 }
 
-function fetchScript(path, onProgress) {
-  return new Promise(function (resolve, reject) {
+const fetchScript = (path, onProgress) => {
+  return new Promise((resolve, reject) => {
     var request = new XMLHttpRequest()
-    request.addEventListener('error', function() {
+    request.addEventListener('error', () => {
       reject({status: request.status, text: "could not load " + path})
     })
-    request.addEventListener('load', function() {
+    request.addEventListener('load', () => {
       if (request.status != 200) {
         reject({status: request.status, text: request.responseText})
       } else {
         resolve(new Blob([request.responseText]))
       }
     })
-    request.addEventListener('progress', onProgress)
+    request.addEventListener('progress', event => onProgress(event.loaded/event.total))
     request.open('GET', path)
     request.setRequestHeader('Accept', 'application/javascript')
     request.send()
   })
 }
 
-function executeScript(blob) {
-  return new Promise(function (resolve, reject) {
-    var url = URL.createObjectURL(blob)
-    importScripts(url)
-    resolve(require('Dll/ElmCompiler'))
+export const load = (url, onProgress) =>
+  withDb(db => {
+    return loadBlob(db)
+      .then(blob => URL.createObjectURL(blob))
+      .catch(error => {
+        return fetchScript(url, onProgress)
+          .then(blob => saveBlob(db, blob))
+          .then(blob => URL.createObjectURL(blob))
+      })
   })
-}
-
-function load(url, onProgress) {
-  return openDb()
-    .then(function (db) {
-      return loadBlob(db)
-        .then(executeScript)
-        .catch(function (error) {
-          return fetchScript(url, onProgress)
-            .then(function (blob) { return saveBlob(db, blob) })
-            .then(executeScript)
-        })
-        .then(function (result) { db.close(); return result; })
-        .catch(function (error) { db.close(); return Promise.reject(error); })
-    })
-}
-
-module.exports = {
-  load: load
-}

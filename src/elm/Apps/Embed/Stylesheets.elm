@@ -2,7 +2,7 @@ port module Stylesheets exposing (..)
 
 import Css.File exposing (..)
 import Apps.Embed.Styles as App
-import Components.Output.Styles as Output
+import Views.Output.Styles as Output
 
 
 port files : CssFileStructure -> Cmd msg

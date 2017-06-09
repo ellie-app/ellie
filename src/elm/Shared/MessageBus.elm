@@ -8,7 +8,7 @@ effect module Shared.MessageBus
 import Date
 import Time
 import Task exposing (Task)
-import Types.Notification as Notification exposing (Notification)
+import Data.Ellie.Notification as Notification exposing (Notification)
 
 
 notifications : (Notification -> msg) -> Sub msg

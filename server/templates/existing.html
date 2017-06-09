@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <base href="/" />
+    <link rel="icon" href="{{ constants.CDN_BASE }}/images/favicon.ico" />
+    <title>Ellie - {{ data.title }}</title>
+    <link rel="alternate" type="application/json+oembed" href="{{ constants.API_BASE }}/oembed?url={{ data.url }}&format=json" title="Ellie - {{ data.title }}" />
+    <meta property="og:image" content="{{ constants.PROFILE_PIC }}" itemprop="thumbnailUrl" />
+    <meta property="og:title" content="Ellie - {{ data.title }}" />
+    <meta property="og:url" content="{{ data.url }}" />
+    <meta property="og:site_name" content="Ellie" />
+    <meta property="og:description" content="{{ data.description }}" />
+    <meta name="twitter:card" content="summary" />
+    <meta name="twitter:url" content="{{ data.url }}" />
+    <meta name="twitter:title" content="Ellie - {{ data.title }}" />
+    <meta name="twitter:description" content="{{ data.description }}" />
+    <meta name="twitter:image" content="{{ constants.PROFILE_PIC }}" />
+    <meta name="twitter:site" content="@ellie_editor" />`
+    <link href="https://fonts.googleapis.com/css?family=Leckerli+One|Quicksand" rel="stylesheet" />
+    <link href="{{ constants.APP_CSS }}" rel="stylesheet" />
+    <script src="{{ constants.APP_JS }}" async></script>
+    {% if constants.ENV == "production" %}
+      <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src='https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);})(window,document,'script','dataLayer','{{ constants.GTM_ID }}');</script>
+    {% endif %}
+  </head>
+  <body>
+    {% if constants.ENV == "production" %}
+      <noscript><iframe src="https://www.googletagmanager.com/ns.html?id={{ constants.GTM_ID }}" height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+    {% endif %}
+  </body>
+</html>

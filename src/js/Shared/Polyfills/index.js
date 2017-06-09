@@ -1,3 +1,3 @@
-require('./Promise')
-require('./Fetch')
-require('./CustomEvent')
+import 'es6-promise/auto'
+import './Fetch'
+import './CustomEvent'

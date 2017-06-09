@@ -11,9 +11,9 @@ import RemoteData exposing (RemoteData(..))
 import Apps.Embed.Model as Model exposing (Model, Tab(..))
 import Apps.Embed.Routing as Routing exposing (Route(..))
 import Shared.Api as Api
-import Types.ApiError as ApiError exposing (ApiError)
-import Types.Revision as Revision exposing (Revision)
-import Types.ProjectId as ProjectId exposing (ProjectId)
+import Data.Ellie.ApiError as ApiError exposing (ApiError)
+import Data.Ellie.Revision as Revision exposing (Revision)
+import Data.Ellie.RevisionId as RevisionId exposing (RevisionId)
 
 
 resultOnError : (x -> Result y a) -> Result x a -> Result y a
@@ -85,20 +85,20 @@ initialize location =
 ------------------------
 
 
-loadRevision : String -> Int -> Cmd Msg
-loadRevision projectId revisionNumber =
-    Api.exactRevision projectId revisionNumber
+loadRevision : RevisionId -> Cmd Msg
+loadRevision revisionId =
+    Api.exactRevision revisionId
         |> Api.send LoadRevisionCompleted
 
 
 handleRouteChanged : Route -> ( Model, Cmd Msg ) -> ( Model, Cmd Msg )
 handleRouteChanged route ( model, cmd ) =
     case route of
-        SpecificRevision projectId revisionNumber ->
+        SpecificRevision revisionId ->
             ( { model | revision = Loading }
             , Cmd.batch
                 [ cmd
-                , loadRevision (ProjectId.toIdString projectId) revisionNumber
+                , loadRevision revisionId
                 ]
             )
 

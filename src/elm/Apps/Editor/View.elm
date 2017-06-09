@@ -4,20 +4,20 @@ import Html exposing (Html, div, button, text, iframe, main_, header, span)
 import Html.Attributes exposing (style)
 import Html.Events exposing (onMouseDown, onClick)
 import RemoteData exposing (RemoteData(..))
-import Types.ProjectId as ProjectId exposing (ProjectId)
-import Types.CompileStage as CompileStage exposing (CompileStage)
+import Data.Ellie.RevisionId as RevisionId exposing (RevisionId)
+import Data.Ellie.CompileStage as CompileStage exposing (CompileStage)
 import Apps.Editor.Update as Update exposing (Msg(..))
 import Apps.Editor.Model as Model exposing (Model, PopoutState(..))
 import Apps.Editor.Classes exposing (..)
 import Apps.Editor.Routing as Routing exposing (..)
-import Components.Sidebar.View as Sidebar
-import Components.Editors.View as Editors
-import Components.Header.View as Header
-import Components.Output.View as Output
-import Components.Notifications.View as Notifications
-import Components.About.View as About
-import Components.Search.View as Search
-import Components.Editor.EmbedLink.View as EmbedLink
+import Views.Sidebar.View as Sidebar
+import Views.Editors.View as Editors
+import Views.Header.View as Header
+import Views.Output.View as Output
+import Views.Notifications.View as Notifications
+import Views.About.View as About
+import Views.Search.View as Search
+import Views.Editor.EmbedLink.View as EmbedLink
 import Shared.Utils as Utils
 import Shared.Icons as Icons
 
@@ -92,9 +92,9 @@ searchContext model =
     }
 
 
-embedLinkVm : ProjectId -> Int -> Model -> EmbedLink.ViewModel Msg
-embedLinkVm projectId revisionNumber model =
-    { projectId = ProjectId.toEncodedString projectId
+embedLinkVm : RevisionId -> Model -> EmbedLink.ViewModel Msg
+embedLinkVm { projectId, revisionNumber } model =
+    { projectId = projectId
     , revisionNumber = revisionNumber
     , onGist = CreateGist
     , gistButtonEnabled = not model.creatingGist
@@ -104,10 +104,10 @@ embedLinkVm projectId revisionNumber model =
 embedLink : Model -> Html Msg
 embedLink model =
     case ( model.popoutState, model.currentRoute ) of
-        ( EmbedLinkOpen, SpecificRevision projectId revisionNumber ) ->
+        ( EmbedLinkOpen, SpecificRevision revisionId ) ->
             div
                 [ class [ EmbedLinkContainer ] ]
-                [ EmbedLink.view <| embedLinkVm projectId revisionNumber model
+                [ EmbedLink.view <| embedLinkVm revisionId model
                 ]
 
         _ ->
@@ -267,8 +267,17 @@ outputView model =
             CompileStage.LoadingCompiler percentage ->
                 Output.loadingCompiler percentage
 
+            CompileStage.InstallingPackages ->
+                Output.installing
+
+            CompileStage.PlanningBuild ->
+                Output.planning
+
             CompileStage.Compiling total complete ->
                 Output.compiling total complete
+
+            CompileStage.GeneratingCode ->
+                Output.generating
 
             CompileStage.Success url ->
                 Output.success url
@@ -278,26 +287,6 @@ outputView model =
 
             CompileStage.Failed message ->
                 Output.failure
-          -- , renderIf
-          --     (RemoteData.isSuccess model.compileResult)
-          --     (\_ ->
-          --         button
-          --             [ class [ OverlayButton, ReloadButton ]
-          --             , onClick ReloadIframe
-          --             ]
-          --             [ span [ class [ OverlayButtonText ] ] [ text "Reload" ]
-          --             ]
-          --     )
-          -- , renderIf
-          --     (RemoteData.isSuccess model.compileResult)
-          --     (\_ ->
-          --         button
-          --             [ class [ OverlayButton, DebugButton ]
-          --             , onClick OpenDebugger
-          --             ]
-          --             [ span [ class [ OverlayButtonText ] ] [ text "Debug" ]
-          --             ]
-          --     )
         ]
 
 

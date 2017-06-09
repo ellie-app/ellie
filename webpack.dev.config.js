@@ -8,7 +8,7 @@ var target = process.env.BUILD_TARGET || 'editor'
 
 var entries = {
   editor: ['es6-promise', path.join(__dirname, 'src/js/Shared/Polyfills'), 'webpack-dev-server/client?http://localhost:8000/', path.join(__dirname, 'src/js/Apps/Editor/Main.js')],
-  embed: ['src/js/Shared/Polyfills', 'webpack-dev-server/client?http://localhost:8001/', path.join(__dirname, 'src/js/Apps/Embed/Main.js')]
+  embed: ['es6-promise', path.join(__dirname, 'src/js/Shared/Polyfills'), 'webpack-dev-server/client?http://localhost:8001/', path.join(__dirname, 'src/js/Apps/Embed/Main.js')]
 }
 
 const loggingPoxy = obj => new Proxy(obj, {
@@ -39,7 +39,18 @@ module.exports = {
   },
 
   module: {
-    loaders: [
+    rules: [
+      {
+        test: /\.js$/,
+        exclude: /(node_modules|bower_components)/,
+        use: {
+          loader: 'babel-loader',
+          options: {
+            presets: ['es2017', 'flow'],
+            plugins: ['dynamic-import-webpack']
+          }
+        }
+      },
       {
         test: /\.css$/,
         loader: 'style-loader!css-loader',
@@ -50,7 +61,7 @@ module.exports = {
       {
         test: /Stylesheets\.elm$/,
         loader: 'style-loader!css-loader!elm-css-webpack-loader',
-        exclude: [/node_modules/]
+        exclude: /node_modules/
       },
       {
         test:    /\.html$/,
@@ -72,10 +83,9 @@ module.exports = {
         loaders:  [
           StringReplacePlugin.replace({
             replacements: [
-              { pattern: /\%API_ORIGIN\%/g, replacement: () => 'http://localhost:1337' },
-              { pattern: /\%CDN_BASE\%/g, replacement: () => 'http://localhost:1337/cdn-proxy' },
-              { pattern: /\%EMBED_BASE\%/g, replacement: () => 'http://localhost:8001' },
-              { pattern: /\%EDITOR_BASE\%/g, replacement: () => 'http://localhost:1338' },
+              { pattern: /\%API_PATH\%/g, replacement: () => 'api' },
+              { pattern: /\%CDN_BASE\%/g, replacement: () => 'https://s3.us-east-2.amazonaws.com/cdn.ellie-app.com' },
+              { pattern: /\%SERVER_ORIGIN\%/g, replacement: () => 'http://localhost:5000' },
               { pattern: /\%CARBON_ZONE_ID\%/g, replacement: () => 'test' },
               { pattern: /\%CARBON_SERVE\%/g, replacement: () => 'test' },
               { pattern: /\%CARBON_PLACEMENT\%/g, replacement: () => 'test' },
@@ -111,7 +121,7 @@ module.exports = {
       }
     }),
     new webpack.DefinePlugin({
-      API_ORIGIN: JSON.stringify(process.env.API_ORIGIN || 'http://localhost:1337'),
+      SERVER_ORIGIN: JSON.stringify(process.env.SERVER_ORIGIN || 'http://localhost:5000'),
       'process.env.NODE_ENV': JSON.stringify(process.env.NODE_ENV),
       'process.version': '"v0.8"'
     }),

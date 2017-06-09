@@ -12,8 +12,10 @@ port module Apps.Editor.Cmds
         )
 
 import Json.Encode as Encode exposing (Value)
-import Types.Package as Package exposing (Package)
+import Data.Elm.Package.Name as Name exposing (Name)
+import Data.Elm.Make.Constraint as Constraint exposing (Constraint)
 import Apps.Editor.Model as Model exposing (Model)
+import Data.Ellie.Revision as Revision exposing (Revision)
 
 
 withCmd : (Model -> Cmd msg) -> Model -> ( Model, Cmd msg )
@@ -54,7 +56,7 @@ port openNewWindow : String -> Cmd msg
 port openDebuggerOut : () -> Cmd msg
 
 
-port compileOnClientOut : ( String, String, Value ) -> Cmd msg
+port compileOnClientOut : ( String, String, Value, Bool ) -> Cmd msg
 
 
 openDebugger : Cmd msg
@@ -72,10 +74,15 @@ pathChanged =
     pathChangedOut ()
 
 
-compile : Model -> Cmd msg
-compile model =
+compile : Model -> Bool -> Cmd msg
+compile model forSave =
     compileOnClientOut
         ( model.stagedHtmlCode
         , model.stagedElmCode
-        , Encode.list <| List.map Package.encode model.clientRevision.packages
+        , model.clientRevision
+            |> Revision.toDescription
+            |> .dependencies
+            |> List.map (\( l, r ) -> ( Name.toString l, Constraint.encoder r ))
+            |> Encode.object
+        , forSave
         )

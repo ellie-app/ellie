@@ -2,7 +2,7 @@ function defaultSerialize() {
   return JSON.stringify(arguments)
 }
 
-function memoize(fn, serializeArguments) {
+export function memoize(fn, serializeArguments) {
   var cache = Object.create(null)
 
   var serialize = typeof serializeArguments === 'function' ?
@@ -26,7 +26,7 @@ function defaultSerializeAsync() {
   return Promise.resolve(JSON.stringify(arguments))
 }
 
-function memoizeAsync(fn, serializeArguments) {
+export function memoizeAsync(fn, serializeArguments) {
   var cache = Object.create(null)
 
   var serialize = typeof serializeArguments === 'function' ?
@@ -50,9 +50,4 @@ function memoizeAsync(fn, serializeArguments) {
 
     return Promise.resolve(cache[cacheKey])
   }
-}
-
-module.exports = {
-  memoize: memoize,
-  memoizeAsync: memoizeAsync
 }
