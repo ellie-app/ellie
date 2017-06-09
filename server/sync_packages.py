@@ -141,6 +141,7 @@ def run():
     data = download_packages()
     num_cores = multiprocessing.cpu_count()
     packages = organize_packages(data)
+    searchable = download_searchable_packages()
     existing_keys = get_existing_keys()
     filtered_packages = filter(lambda x: x.s3_package_key() not in existing_keys, packages)
     package_groups = [filtered_packages[x : x + num_cores] for x in xrange(0, len(filtered_packages), num_cores)]
@@ -153,13 +154,13 @@ def run():
         counter += num_cores
         for (succeeded, package) in results:
             if succeeded:
-                to_upload.append(package)
+                searchable.append(package)
             else:
                 failed.append(package)
 
         print str(counter / total * 100) + '%'
 
-    upload_searchable_packages(to_upload)
+    upload_searchable_packages(searchable)
 
 
 if __name__ == "__main__":
