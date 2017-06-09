@@ -131,7 +131,7 @@ def download_searchable_packages():
         body.close()
         return packages
     except:
-        return []
+        return set()
 
 def run():
     data = download_packages()
