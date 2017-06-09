@@ -114,7 +114,7 @@ module.exports = {
       }
     }),
     new webpack.DefinePlugin({
-      SERVER_ORIGIN: JSON.stringify(process.env.SERVER_ORIGIN),
+      SERVER_ORIGIN: JSON.stringify(process.env.SERVER_HOSTNAME),
       CDN_BASE: JSON.stringify(process.env.CDN_BASE),
       'process.env.NODE_ENV': JSON.stringify('production'),
       'process.version': '"v0.8"'
