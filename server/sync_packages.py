@@ -159,7 +159,12 @@ def run():
 
         print str(counter / total * 100) + '%'
 
-    upload_searchable_packages(searchable)
+    try:
+        upload_searchable_packages(searchable)
+    except:
+        print 'failed'
+    else:
+        print 'uploaded'
 
 
 if __name__ == "__main__":
