@@ -51,7 +51,7 @@
     "build:embed:production": "yarn clean:elm && BUILD_TARGET=embed webpack --config ./webpack.prod.config.js",
     "build:production": "elm-package install --yes && yarn run clean && yarn build:editor:production && yarn build:embed:production",
     "deploy": "python ./scripts/deploy_assets.py",
-    "heroku-postinstall": "yarn build:production && yarn deploy"
+    "heroku-postbuild": "yarn build:production && yarn deploy"
   },
   "devDependencies": {
     "babel-core": "^6.24.1",
