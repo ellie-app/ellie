@@ -1,6 +1,9 @@
+import logging
 from apscheduler.schedulers.blocking import BlockingScheduler
 import sync_packages
 import os
+
+logging.basicConfig()
 
 sched = BlockingScheduler()
 SYNC_INTERVAL = int(os.environ['PACKAGE_SYNC_INTERVAL_MINUTES'])
