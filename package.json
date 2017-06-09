@@ -49,11 +49,11 @@
     "install:elm": "elm-package install --yes",
     "clean:elm": "rimraf ./elm-stuff/build-artifacts/0.18.0/user",
     "build:dll": "NODE_ENV=production webpack --config ./webpack.dll.config.js",
-    "build:editor:production": "yarn clean:elm && BUILD_TARGET=editor webpack --config ./webpack.prod.config.js",
-    "build:embed:production": "yarn clean:elm && BUILD_TARGET=embed webpack --config ./webpack.prod.config.js",
-    "build:production": "yarn install:elm && yarn run clean && yarn build:editor:production && yarn build:embed:production",
+    "build:editor:production": "npm run clean:elm && BUILD_TARGET=editor webpack --config ./webpack.prod.config.js",
+    "build:embed:production": "npm run clean:elm && BUILD_TARGET=embed webpack --config ./webpack.prod.config.js",
+    "build:production": "npm run install:elm && npm run clean && npm run build:editor:production && npm run build:embed:production",
     "deploy": "python ./scripts/deploy_assets.py",
-    "heroku-postbuild": "yarn build:production && yarn deploy"
+    "heroku-postbuild": "npm run build:production && npm run deploy"
   },
   "devDependencies": {
     "babel-core": "^6.24.1",
