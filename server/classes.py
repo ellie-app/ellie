@@ -176,13 +176,21 @@ class PackageInfo(object):
         return '<PackageInfo ' + self.__str__() + '>'
 
     def __eq__(self, other):
+        if not isinstance(other, PackageInfo):
+            return False
         return self.username == other.username and self.package == other.package and self.version == other.version and self.elm_constraint == other.elm_constraint
 
+    def __neq__(self, other):
+        return not self.__eq__(other)
+
+    def __hash__(self):
+        return hash(self.__str__())
+
     def s3_package_key(self):
-        return 'package-artifacts/package-' + self.username + '-' + self.package + '-' + self.version + '.json'
+        return 'package-artifacts/package-' + self.username + '-' + self.package + '-' + str(self.version) + '.json'
 
     def s3_source_key(self):
-        return 'package-artifacts/source-' + self.username + '-' + self.package + '-' + self.version + '.json'
+        return 'package-artifacts/source-' + self.username + '-' + self.package + '-' + str(self.version) + '.json'
 
     def set_elm_constraint(self, constraint):
         self.elm_constraint = constraint

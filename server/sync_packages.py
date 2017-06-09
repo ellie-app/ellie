@@ -44,7 +44,7 @@ def make_temp_directory():
     return tempfile.mkdtemp(prefix='ellie-package-temp-')
 
 def download_package_zip(base_dir, package):
-    url = 'https://github.com/' + package.username + '/' + package.package + '/archive/' + package.version + '.zip'
+    url = 'https://github.com/' + package.username + '/' + package.package + '/archive/' + str(package.version) + '.zip'
     zip_path = os.path.join(base_dir, 'temp.zip')
     try:
         request = urllib2.urlopen(url)
@@ -63,11 +63,11 @@ def unzip_and_delete(base_dir):
     os.remove(zip_path)
 
 def read_package_json(base_dir, package):
-    package_json_path = os.path.join(base_dir, package.package + '-' + package.version, 'elm-package.json')
+    package_json_path = os.path.join(base_dir, package.package + '-' + str(package.version), 'elm-package.json')
     return json.loads(open(package_json_path, 'r').read())
 
 def read_source_files(base_dir, package, package_json):
-    package_dir = os.path.join(base_dir, package.package + '-' + package.version)
+    package_dir = os.path.join(base_dir, package.package + '-' + str(package.version))
     top_elm = map(lambda a: os.path.join(package_dir, a, '*.elm'), package_json['source-directories'])
     nested_elm = map(lambda a: os.path.join(package_dir, a, '**/*.elm'), package_json['source-directories'])
     nested_js = map(lambda a: os.path.join(package_dir, a, '**/*.js'), package_json['source-directories'])
@@ -76,9 +76,6 @@ def read_source_files(base_dir, package, package_json):
     for filename in filenames:
         output[filename.replace(package_dir + '/', '')] = open(filename, 'r').read()
     return output
-
-def get_existing_keys():
-    return set(map(lambda x: x.key, bucket.objects.filter(Prefix='package-artifacts/package-')))
 
 def get_last_updated():
     body = s3.Object(BUCKET_NAME, 'package-artifacts/last-updated').get()['Body']
@@ -131,7 +128,7 @@ def download_searchable_packages():
     try:
         body = s3.Object(BUCKET_NAME, 'package-artifacts/searchable.json').get()['Body']
         data = body.read()
-        packages = [PackageInfo.from_json(x) for x in json.loads(data)]
+        packages = set(PackageInfo.from_json(x) for x in json.loads(data))
         body.close()
         return packages
     except:
@@ -153,13 +150,13 @@ def run():
         counter += num_cores
         for (succeeded, package) in results:
             if succeeded:
-                searchable.append(package)
+                searchable.add(package)
             else:
                 failed.append(package)
 
         print str(counter / total * 100) + '%'
 
-    upload_searchable_packages(searchable)
+    upload_searchable_packages(list(searchable))
 
 
 if __name__ == "__main__":
