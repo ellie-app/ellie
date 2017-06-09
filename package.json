@@ -46,11 +46,12 @@
   "scripts": {
     "watch": "webpack-dev-server --watch --config ./webpack.dev.config.js",
     "clean": "rimraf ./build",
+    "install:elm": "elm-package install --yes",
     "clean:elm": "rimraf ./elm-stuff/build-artifacts/0.18.0/user",
     "build:dll": "NODE_ENV=production webpack --config ./webpack.dll.config.js",
     "build:editor:production": "yarn clean:elm && BUILD_TARGET=editor webpack --config ./webpack.prod.config.js",
     "build:embed:production": "yarn clean:elm && BUILD_TARGET=embed webpack --config ./webpack.prod.config.js",
-    "build:production": "elm-package install --yes && yarn run clean && yarn build:editor:production && yarn build:embed:production",
+    "build:production": "yarn install:elm && yarn run clean && yarn build:editor:production && yarn build:embed:production",
     "deploy": "python ./scripts/deploy_assets.py",
     "heroku-postbuild": "yarn build:production && yarn deploy"
   },
