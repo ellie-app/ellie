@@ -79,6 +79,8 @@ class Constraint(object):
         return '<Constraint ' + self.__str__() + '>'
 
     def __eq__(self, other):
+        if not isinstance(other, Constraint):
+            return False
         return self.min_version() == other.min_version() and self.max_version() == other.max_version()
 
     def is_satisfied(self, version):
