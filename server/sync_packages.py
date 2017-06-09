@@ -68,10 +68,9 @@ def read_package_json(base_dir, package):
 
 def read_source_files(base_dir, package, package_json):
     package_dir = os.path.join(base_dir, package.package + '-' + str(package.version))
-    top_elm = map(lambda a: os.path.join(package_dir, a, '*.elm'), package_json['source-directories'])
     nested_elm = map(lambda a: os.path.join(package_dir, a, '**/*.elm'), package_json['source-directories'])
     nested_js = map(lambda a: os.path.join(package_dir, a, '**/*.js'), package_json['source-directories'])
-    filenames = glob_all(top_elm + nested_elm + nested_js)
+    filenames = glob_all(nested_elm + nested_js)
     output = {}
     for filename in filenames:
         output[filename.replace(package_dir + '/', '')] = open(filename, 'r').read()
