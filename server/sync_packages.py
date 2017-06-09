@@ -5,7 +5,7 @@ import tempfile
 import os
 import zipfile
 import shutil
-import glob
+import glob2
 from joblib import Parallel, delayed
 import multiprocessing
 import boto3
@@ -22,7 +22,7 @@ bucket = s3.Bucket(BUCKET_NAME)
 def glob_all(paths):
     output = []
     for path in paths:
-        output = output + glob.glob(path)
+        output = output + glob2.glob(path)
     return output
 
 def download_packages():
