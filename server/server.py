@@ -9,6 +9,8 @@ from itertools import *
 from operator import *
 import storage
 from urlparse import urlparse
+import assets
+import os
 
 app = Flask(__name__)
 
@@ -235,21 +237,20 @@ def get_revision(project_id, revision_number):
         raise ApiError(404)
     return jsonify(revision)
 
-constants = {
-    'ENV': 'development',
-    'APP_JS': 'http://localhost:8000/app.js',
-    'APP_CSS': 'http://localhost:8000/main.css',
-    'GTM_ID': '',
+EDITOR_CONSTANTS = {
+    'ENV': os.environ['ENV'],
+    'APP_JS': assets.asset_path('editor/app.js'),
+    'APP_CSS': assets.asset_path('editor/app.css'),
+    'GTM_ID': os.environ['GTM_ID'],
     'PROFILE_PIC': 'idk.jpg',
-    'CDN_BASE': 'http://localhost:8000',
-    'EDITOR_BASE': 'http://localhost:5000',
-    'EMBED_BASE': 'http://localhost:5000/embed'
+    'CDN_BASE': os.environ['CDN_BASE'],
+    'SERVER_HOSTNAME': os.environ['SERVER_HOSTNAME']
 }
 
 @app.route('/')
 @app.route('/new')
 def new():
-    return render_template('new.html', constants=constants)
+    return render_template('new.html', constants=EDITOR_CONSTANTS)
 
 @app.route('/<project_id:project_id>/<int(min=0):revision_number>')
 def existing(project_id, revision_number):
@@ -264,21 +265,20 @@ def existing(project_id, revision_number):
     data = {
         'title': revision['title'],
         'description': revision['description'],
-        'url': constants['EMBED_BASE'] + '/' + str(project_id) + '/' + str(revision_number)
+        'url': EDITOR_CONSTANTS['SERVER_HOSTNAME'] + '/' + str(project_id) + '/' + str(revision_number)
     }
 
-    return render_template('existing.html', constants=constants, data=data)
+    return render_template('existing.html', constants=EDITOR_CONSTANTS, data=data)
 
 
 EMBED_CONSTANTS = {
-    'ENV': 'development',
-    'APP_JS': 'http://localhost:8001/app.js',
-    'APP_CSS': 'http://localhost:8001/main.css',
-    'GTM_ID': '',
+    'ENV': os.environ['ENV'],
+    'APP_JS': assets.asset_path('embed/app.js'),
+    'APP_CSS': assets.asset_path('embed/app.css'),
+    'GTM_ID': os.environ['GTM_ID'],
     'PROFILE_PIC': 'idk.jpg',
-    'CDN_BASE': 'http://localhost:8000',
-    'EDITOR_BASE': 'http://localhost:5000',
-    'EMBED_BASE': 'http://localhost:5000/embed'
+    'CDN_BASE': os.environ['CDN_BASE'],
+    'SERVER_HOSTNAME': os.environ['SERVER_HOSTNAME']
 }
 
 @app.route('/embed/<project_id:project_id>/<int(min=0):revision_number>')
@@ -292,7 +292,7 @@ def embed(project_id, revision_number):
     if revision is not None:
         data['title'] = revision['title']
         data['description'] = revision['description']
-        data['url'] = constants['EMBED_BASE'] + '/' + str(project_id) + '/' + str(revision_number)
+        data['url'] = EBMED_CONSTANTS['SERVER_HOSTNAME'] + '/embed/' + str(project_id) + '/' + str(revision_number)
 
     return render_template('embed.html', constants=EMBED_CONSTANTS, data=data)
 
@@ -335,5 +335,5 @@ def oembed():
         'title': revision['title'],
         'provider_name': 'ellie-app.com',
         'provider_url': 'https://ellie-app.com',
-        'html': '<iframe src="'+ constants['EMBED_BASE'] + '/' + str(project_id) + '/' + str(revision_number) + '" width=' + str(width) + ' height=' + str(height) + ' frameBorder="0" allowtransparency="true"></iframe>'
+        'html': '<iframe src="'+ EDITOR_CONSTANTS['SERVER_HOSTNAME'] + '/embed/' + str(project_id) + '/' + str(revision_number) + '" width=' + str(width) + ' height=' + str(height) + ' frameBorder="0" allowtransparency="true"></iframe>'
     })

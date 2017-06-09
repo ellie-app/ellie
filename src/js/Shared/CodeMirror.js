@@ -1,23 +1,23 @@
 export default function (vimMode) {
   return Promise.all([
-    import('codemirror/lib/codemirror'),
-    import('codemirror/lib/codemirror.css'),
-    import('codemirror/mode/elm/elm'),
-    import('codemirror/mode/htmlmixed/htmlmixed'),
-    import('codemirror/addon/lint/lint'),
-    import('codemirror/addon/selection/active-line'),
-    import('codemirror/addon/lint/lint.css'),
-    import('codemirror/theme/material.css'),
-    import('./CodeMirror.css')
+    import(/* webpackChunkName: "codemirror-base" */ 'codemirror/lib/codemirror'),
+    import(/* webpackChunkName: "codemirror-base", webpackMode: "eager" */ 'codemirror/lib/codemirror.css'),
+    import(/* webpackChunkName: "codemirror-base" */ 'codemirror/mode/elm/elm'),
+    import(/* webpackChunkName: "codemirror-base" */ 'codemirror/mode/htmlmixed/htmlmixed'),
+    import(/* webpackChunkName: "codemirror-base" */ 'codemirror/addon/lint/lint'),
+    import(/* webpackChunkName: "codemirror-base" */ 'codemirror/addon/selection/active-line'),
+    import(/* webpackChunkName: "codemirror-base", webpackMode: "eager" */ 'codemirror/addon/lint/lint.css'),
+    import(/* webpackChunkName: "codemirror-base", webpackMode: "eager" */ 'codemirror/theme/material.css'),
+    import(/* webpackChunkName: "codemirror-base", webpackMode: "eager" */ './CodeMirror.css')
   ]).then(([CodeMirror]) => {
     window.CodeMirror = CodeMirror
 
     if (!vimMode) return
 
     return Promise.all([
-      import('codemirror/keymap/vim'),
-      import('codemirror/addon/dialog/dialog'),
-      import('codemirror/addon/dialog/dialog.css')
+      import(/* webpackChunkName: "codemirror-vim" */ 'codemirror/keymap/vim'),
+      import(/* webpackChunkName: "codemirror-vim" */ 'codemirror/addon/dialog/dialog'),
+      import(/* webpackChunkName: "codemirror-vim", webpackMode: "eager" */ 'codemirror/addon/dialog/dialog.css')
     ]).then(() => {})
   })
 }

@@ -1,24 +1,29 @@
 var path = require("path");
 var webpack = require('webpack');
-var DashboardPlugin = require('webpack-dashboard/plugin');
 var StringReplacePlugin = require('string-replace-webpack-plugin');
 var ExtractTextPlugin = require('extract-text-webpack-plugin');
-var WebpackMd5Hash = require('webpack-md5-hash');
 var HtmlWebpackPlugin = require('html-webpack-plugin');
 var ManifestPlugin = require('webpack-manifest-plugin');
+var syncRequest = require('sync-request');
+const Md5Hash = require('webpack-md5-hash');
 
 var target = process.env.BUILD_TARGET || 'editor'
 
 var entries = {
-  editor: './js/Apps/Editor/Main.js',
-  embed: './js/Apps/Embed/Main.js'
+  editor: ['es6-promise', path.join(__dirname, 'src/js/Shared/Polyfills'), path.join(__dirname, 'src/js/Apps/Editor/Main.js')],
+  embed: ['es6-promise', path.join(__dirname, 'src/js/Shared/Polyfills'), path.join(__dirname, 'src/js/Apps/Embed/Main.js')],
 }
 
 module.exports = {
-  context: path.join(__dirname, 'src'),
+  cache: true,
+  target: 'web',
+
+  externals: {
+    'fs': '__fileSystem'
+  },
 
   entry: {
-    app: [ entries[target] ]
+    app: entries[target]
   },
 
   output: {
@@ -29,21 +34,48 @@ module.exports = {
   },
 
   module: {
-    // noParse: /Stylesheets\.elm$/,
-    loaders: [
+    rules: [
+      {
+        test: /\.js$/,
+        exclude: /(node_modules|bower_components)/,
+        use: {
+          loader: 'babel-loader',
+          options: {
+            presets: [
+              ['es2015', { modules: false }],
+              'flow',
+              ['env', { 'targets': { 'uglify': true } }]
+            ],
+            plugins: ['syntax-dynamic-import']
+          }
+        }
+      },
       {
         test: /\.css$/,
-        loader: 'style!css',
+        loader: ExtractTextPlugin.extract({
+          fallback: 'style-loader',
+          use: 'css-loader!postcss-loader'
+        })
+      },
+      { test: /\.json$/,
+        loader: 'json-loader'
       },
       {
         test: /Stylesheets\.elm$/,
-        loader: ExtractTextPlugin.extract('css-loader?minimize!postcss-loader!elm-css-webpack-loader?cache=false'),
+        loader: ExtractTextPlugin.extract({
+          fallback: 'style-loader',
+          use: 'css-loader!postcss-loader!elm-css-webpack-loader'
+        }),
         exclude: /node_modules/,
       },
       {
-        test: /ServiceWorker\.js$/,
+        test:    /\.html$/,
         exclude: /node_modules/,
-        loader: 'serviceworker',
+        loader:  'file-loader?name=[name].[ext]',
+      },
+      {
+        test: /\.worker\.js$/,
+        loader: 'worker-loader?inline'
       },
       {
         test:    /Main\.elm$/,
@@ -51,11 +83,9 @@ module.exports = {
         loaders:  [
           StringReplacePlugin.replace({
             replacements: [
-              { pattern: /\%API_ORIGIN\%/g, replacement: () => process.env.API_ORIGIN },
-              { pattern: /\%API_VERSION\%/g, replacement: () => process.env.API_VERSION },
+              { pattern: /\%API_PATH\%/g, replacement: () => 'api' },
               { pattern: /\%CDN_BASE\%/g, replacement: () => process.env.CDN_BASE },
-              { pattern: /\%EMBED_BASE\%/g, replacement: () => process.env.EMBED_BASE },
-              { pattern: /\%EDITOR_BASE\%/g, replacement: () => process.env.EDITOR_BASE },
+              { pattern: /\%SERVER_ORIGIN\%/g, replacement: () => process.env.SERVER_HOSTNAME },
               { pattern: /\%CARBON_ZONE_ID\%/g, replacement: () => process.env.CARBON_ZONE_ID },
               { pattern: /\%CARBON_SERVE\%/g, replacement: () => process.env.CARBON_SERVE },
               { pattern: /\%CARBON_PLACEMENT\%/g, replacement: () => process.env.CARBON_PLACEMENT },
@@ -65,24 +95,31 @@ module.exports = {
           'elm-webpack-loader?yes',
         ]
       },
-      {
-        test: /\.woff(2)?(\?v=[0-9]\.[0-9]\.[0-9])?$/,
-        loader: 'url-loader?limit=10000&mimetype=application/font-woff',
-      },
-      {
-        test: /\.(ttf|eot|svg)(\?v=[0-9]\.[0-9]\.[0-9])?$/,
-        loader: 'file-loader',
-      },
     ]
   },
 
   plugins: [
+    new Md5Hash(),
+    new webpack.LoaderOptionsPlugin({
+      options: {
+        worker: {
+          plugins: [
+            new webpack.DllReferencePlugin({
+              scope: 'Dll',
+              manifest: JSON.parse(syncRequest('GET', process.env.CDN_BASE + '/elm-compilers/0.18.0-manifest.json').body),
+              context: path.join(__dirname, 'dll')
+            })
+          ]
+        }
+      }
+    }),
     new webpack.DefinePlugin({
-      API_ORIGIN: JSON.stringify(process.env.API_ORIGIN),
-      'process.env.NODE_ENV': JSON.stringify('production')
+      SERVER_ORIGIN: JSON.stringify(process.env.SERVER_ORIGIN),
+      CDN_BASE: JSON.stringify(process.env.CDN_BASE),
+      'process.env.NODE_ENV': JSON.stringify('production'),
+      'process.version': '"v0.8"'
     }),
     new webpack.optimize.OccurrenceOrderPlugin(),
-    new webpack.optimize.DedupePlugin(),
     new webpack.optimize.UglifyJsPlugin({
       compress: {
         screw_ie8: true,
@@ -100,26 +137,6 @@ module.exports = {
     }),
     new ManifestPlugin(),
     new StringReplacePlugin(),
-    new ExtractTextPlugin('main.[chunkhash:8].css'),
-    new HtmlWebpackPlugin({
-      inject: true,
-      template: path.join(__dirname, 'src/index.ejs'),
-      data: {
-        production: target === 'editor',
-        gtmId: process.env.GTM_ID
-      },
-      minify: {
-        removeComments: true,
-        collapseWhitespace: true,
-        removeRedundantAttributes: true,
-        useShortDoctype: true,
-        removeEmptyAttributes: true,
-        removeStyleLinkTypeAttributes: true,
-        keepClosingSlash: true,
-        minifyJS: true,
-        minifyCSS: true,
-        minifyURLs: true
-      }
-    })
+    new ExtractTextPlugin('app.[chunkhash:8].css'),
   ]
 };

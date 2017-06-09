@@ -18,10 +18,7 @@ isProduction =
 
 apiBase : String
 apiBase =
-    if isProduction then
-        "%SERVER_ORIGIN%/v%API_VERSION%"
-    else
-        "%SERVER_ORIGIN%/%API_PATH%"
+    "%SERVER_ORIGIN%/%API_PATH%"
 
 
 editorBase : String

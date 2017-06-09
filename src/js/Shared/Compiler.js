@@ -8,7 +8,7 @@ export const init = listener => {
   const compilerPromise =
     Compiler
       .init(
-        'https://s3.us-east-2.amazonaws.com/cdn2.ellie-app.com/elm-compilers/0.18.0.js',
+        CDN_BASE + '/elm-compilers/0.18.0.js',
         percentage => worker.ports.msgsIn.send({ type: 'LoadedMoreCode', args: [percentage] })
       )
       .then(ElmCompiler => self.ElmCompiler = ElmCompiler)

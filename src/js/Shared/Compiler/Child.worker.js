@@ -4,7 +4,7 @@ self.addEventListener('message', event => {
   if (event.data.type === 'load') {
     const [scriptUrl] = event.data.args
     importScripts(scriptUrl)
-    compiler = require('Dll/ElmCompiler')()
+    compiler = require('Dll/ElmCompiler0180')()
     self.postMessage({ type: 'load' })
   } else if (event.data.type === 'ready') {
     self.postMessage({ type: 'ready' })

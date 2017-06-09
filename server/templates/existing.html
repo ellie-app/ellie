@@ -5,7 +5,7 @@
     <base href="/" />
     <link rel="icon" href="{{ constants.CDN_BASE }}/images/favicon.ico" />
     <title>Ellie - {{ data.title }}</title>
-    <link rel="alternate" type="application/json+oembed" href="{{ constants.API_BASE }}/oembed?url={{ data.url }}&format=json" title="Ellie - {{ data.title }}" />
+    <link rel="alternate" type="application/json+oembed" href="{{ constants.SERVER_HOSTNAME }}/oembed?url={{ data.url }}&format=json" title="Ellie - {{ data.title }}" />
     <meta property="og:image" content="{{ constants.PROFILE_PIC }}" itemprop="thumbnailUrl" />
     <meta property="og:title" content="Ellie - {{ data.title }}" />
     <meta property="og:url" content="{{ data.url }}" />
@@ -18,7 +18,9 @@
     <meta name="twitter:image" content="{{ constants.PROFILE_PIC }}" />
     <meta name="twitter:site" content="@ellie_editor" />`
     <link href="https://fonts.googleapis.com/css?family=Leckerli+One|Quicksand" rel="stylesheet" />
-    <link href="{{ constants.APP_CSS }}" rel="stylesheet" />
+    {% if constants.ENV == "production" %}
+      <link href="{{ constants.APP_CSS }}" rel="stylesheet" />
+    {% endif %}
     <script src="{{ constants.APP_JS }}" async></script>
     {% if constants.ENV == "production" %}
       <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src='https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);})(window,document,'script','dataLayer','{{ constants.GTM_ID }}');</script>

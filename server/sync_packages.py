@@ -11,10 +11,13 @@ import multiprocessing
 import boto3
 import sys
 from datetime import datetime
-from classes import Version, Constraint,
+from classes import Version, Constraint, PackageInfo
+import os
+
+BUCKET_NAME = os.environ['AWS_S3_BUCKET']
 
 s3 = boto3.resource('s3')
-bucket = s3.Bucket('cdn.ellie-app.com')
+bucket = s3.Bucket(BUCKET_NAME)
 
 def glob_all(paths):
     output = []
@@ -78,7 +81,7 @@ def get_existing_keys():
     return set(map(lambda x: x.key, bucket.objects.filter(Prefix='package-artifacts/package-')))
 
 def get_last_updated():
-    body = s3.Object('cdn.ellie-app.com', 'package-artifacts/last-updated').get()['Body']
+    body = s3.Object(BUCKET_NAME, 'package-artifacts/last-updated').get()['Body']
     data = body.read()
     time = json.loads(data)
     body.close()
@@ -100,13 +103,13 @@ def process_package(package):
             Key = package.s3_package_key(),
             ACL = 'public-read',
             Body = json.dumps(package_json).encode('utf-8'),
-            ContentType = 'application/json',
+            ContentType = 'application/json'
         )
         bucket.put_object(
             Key = package.s3_source_key(),
             ACL = 'public-read',
             Body = json.dumps(source_files).encode('utf-8'),
-            ContentType = 'application/json',
+            ContentType = 'application/json'
         )
         shutil.rmtree(base_dir)
         package.set_elm_constraint(Constraint.from_string(package_json['elm-version']))
@@ -121,17 +124,17 @@ def upload_searchable_packages(packages):
         Key = 'package-artifacts/searchable.json',
         ACL = 'public-read',
         Body = json.dumps([x.to_json() for x in packages]).encode('utf-8'),
-        ContentType = 'application/json',
+        ContentType = 'application/json'
     )
 
 def download_searchable_packages():
-    body = s3.Object('cdn.ellie-app.com', 'package-artifacts/searchable.json').get()['Body']
+    body = s3.Object(BUCKET_NAME, 'package-artifacts/searchable.json').get()['Body']
     data = body.read()
     packages = [PackageInfo.from_json(x) for x in json.loads(data)]
     body.close()
     return packages
 
-def main():
+def run():
     data = download_packages()
     num_cores = multiprocessing.cpu_count()
     packages = organize_packages(data)
@@ -157,4 +160,4 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    run()

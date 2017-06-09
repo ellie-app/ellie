@@ -1,0 +1,6 @@
+Werkzeug==0.12.2
+Flask==0.12.2
+boto3==1.4.4
+botocore==1.5.64
+joblib==0.11
+APScheduler==3.3.1

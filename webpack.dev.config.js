@@ -11,15 +11,6 @@ var entries = {
   embed: ['es6-promise', path.join(__dirname, 'src/js/Shared/Polyfills'), 'webpack-dev-server/client?http://localhost:8001/', path.join(__dirname, 'src/js/Apps/Embed/Main.js')]
 }
 
-const loggingPoxy = obj => new Proxy(obj, {
-  get(target, prop) {
-    console.log('get', prop)
-    return typeof target[prop] === 'object' ?
-      loggingPoxy(target[prop]) :
-      target[prop]
-  }
-})
-
 module.exports = {
   cache: true,
   target: 'web',
