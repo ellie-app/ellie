@@ -37,7 +37,7 @@ def organize_packages(data):
         username = entry['name'].split('/')[0]
         package = entry['name'].split('/')[1]
         for version in entry['versions']:
-            output.append(PackageInfo(username, package, version))
+            output.append(PackageInfo(username, package, Version.from_string(version)))
     return output
 
 def make_temp_directory():
@@ -143,7 +143,7 @@ def run():
     packages = organize_packages(data)
     searchable = download_searchable_packages()
     filtered_packages = filter(lambda x: x not in searchable, packages)
-    package_groups = [filtered_packages[x : x + num_cores] for x in xrange(0, len(filtered_packages), num_cores)]
+    package_groups = [filtered_packages[x : x + num_cores] for x in xrange(0, len(filtered_packages), num_cores)][0:1]
     counter = 0.0
     total = float(len(filtered_packages))
     to_upload = []
@@ -159,12 +159,7 @@ def run():
 
         print str(counter / total * 100) + '%'
 
-    try:
-        upload_searchable_packages(searchable)
-    except:
-        print 'failed'
-    else:
-        print 'uploaded'
+    upload_searchable_packages(searchable)
 
 
 if __name__ == "__main__":

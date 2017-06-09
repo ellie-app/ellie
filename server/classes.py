@@ -170,7 +170,7 @@ class PackageInfo(object):
         self.elm_constraint = None
 
     def __str__(self):
-        return self.username + '/' + self.package + '@' + self.version
+        return self.username + '/' + self.package + '@' + str(self.version)
 
     def __repr__(self):
         return '<PackageInfo ' + self.__str__() + '>'
