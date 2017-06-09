@@ -63,22 +63,16 @@ def get_revision(project_id, revision_number):
 
         body.close()
         return output
-    except botocore.exceptions.ClientError as e:
-        if e.response['Error']['Code'] == "404":
-            return None
-        else:
-            raise
+    except:
+        return None
 
 def revision_exists(project_id, revision_number):
     try:
         key = 'revisions/' + str(project_id) + '/' + str(revision_number) + '.json'
         client.head_object(Bucket = BUCKET_NAME, Key = key)
         return True
-    except botocore.exceptions.ClientError as e:
-        if e.response['Error']['Code'] == "404":
-            return False
-        else:
-            raise
+    except:
+        return False
 
 
 def get_revision_upload_signature(project_id, revision_number):
