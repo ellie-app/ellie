@@ -8,6 +8,9 @@ import base64
 import re
 import urllib
 from classes import ProjectId
+import os
+
+BUCKET_NAME = os.environ['AWS_S3_BUCKET']
 
 cookie_key = "asf00982h3)(FEAH90)(qy39rALHFA*YTP(WQ#T*(Tyqgifubfa)(Y#9  12-)))"
 def _sign_cookie(value):
@@ -24,7 +27,7 @@ def _unsign_cookie(value):
 
 s3 = boto3.resource('s3')
 client = boto3.client('s3')
-bucket = s3.Bucket('cdn.ellie-app.com')
+bucket = s3.Bucket(BUCKET_NAME)
 
 def _get_owned_project_ids():
     raw = request.cookies.get('ownedProjects')
@@ -53,7 +56,7 @@ def add_project_id_ownership(project_id, response):
 def get_revision(project_id, revision_number):
     try:
         key = 'revisions/' + str(project_id) + '/' + str(revision_number) + '.json'
-        data = client.get_object(Bucket = 'cdn.ellie-app.com', Key = key)
+        data = client.get_object(Bucket = BUCKET_NAME, Key = key)
         body = data['Body']
         output = json.loads(body.read())
         output['owned'] = project_id_is_owned(project_id)
@@ -69,7 +72,7 @@ def get_revision(project_id, revision_number):
 def revision_exists(project_id, revision_number):
     try:
         key = 'revisions/' + str(project_id) + '/' + str(revision_number) + '.json'
-        client.head_object(Bucket = 'cdn.ellie-app.com', Key = key)
+        client.head_object(Bucket = BUCKET_NAME, Key = key)
         return True
     except botocore.exceptions.ClientError as e:
         if e.response['Error']['Code'] == "404":
@@ -80,7 +83,7 @@ def revision_exists(project_id, revision_number):
 
 def get_revision_upload_signature(project_id, revision_number):
     data = client.generate_presigned_post(
-        Bucket = 'cdn.ellie-app.com',
+        Bucket = BUCKET_NAME,
         Key = 'revisions/' + str(project_id) + '/' + str(revision_number) + '.json',
         Fields = {
             'acl': 'public-read',
@@ -98,7 +101,7 @@ def get_revision_upload_signature(project_id, revision_number):
 
 def get_result_upload_signature(project_id, revision_number):
     data = client.generate_presigned_post(
-        Bucket = 'cdn.ellie-app.com',
+        Bucket = BUCKET_NAME,
         Key = 'revisions/' + str(project_id) + '/' + str(revision_number) + '.html',
         Fields = {
             'acl': 'public-read',

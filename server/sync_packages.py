@@ -128,18 +128,21 @@ def upload_searchable_packages(packages):
     )
 
 def download_searchable_packages():
-    body = s3.Object(BUCKET_NAME, 'package-artifacts/searchable.json').get()['Body']
-    data = body.read()
-    packages = [PackageInfo.from_json(x) for x in json.loads(data)]
-    body.close()
-    return packages
+    try:
+        body = s3.Object(BUCKET_NAME, 'package-artifacts/searchable.json').get()['Body']
+        data = body.read()
+        packages = [PackageInfo.from_json(x) for x in json.loads(data)]
+        body.close()
+        return packages
+    except:
+        return []
 
 def run():
     data = download_packages()
     num_cores = multiprocessing.cpu_count()
     packages = organize_packages(data)
-    existing_keys = get_existing_keys()
-    filtered_packages = packages #filter(lambda x: x.s3_package_key() not in existing_keys, packages)
+    existing_packages = download_searchable_packages()
+    filtered_packages = filter(lambda x: x not in existing_packages, packages)
     package_groups = [filtered_packages[x : x + num_cores] for x in xrange(0, len(filtered_packages), num_cores)]
     counter = 0.0
     total = float(len(filtered_packages))
