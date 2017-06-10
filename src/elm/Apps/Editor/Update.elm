@@ -12,6 +12,7 @@ import Window exposing (Size)
 import Mouse exposing (Position)
 import RemoteData exposing (RemoteData(..))
 import Navigation
+import Data.Ellie.KeyCombo as KeyCombo exposing (KeyCombo)
 import Data.Ellie.ApiError as ApiError exposing (ApiError)
 import Data.Ellie.Revision as Revision exposing (Revision)
 import Data.Elm.Compiler.Error as CompilerError
@@ -108,6 +109,7 @@ type Msg
     | ReloadIframe
     | CreateGist
     | CreateGistComplete (Result ApiError String)
+    | KeyComboMsg KeyCombo.Msg
     | NoOp
 
 
@@ -160,6 +162,11 @@ onlineNotification isOnline =
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
+        KeyComboMsg keyComboMsg ->
+            ( { model | keyCombo = KeyCombo.update keyComboMsg model.keyCombo }
+            , Cmd.none
+            )
+
         OpenDebugger ->
             ( model
             , Cmds.openDebugger

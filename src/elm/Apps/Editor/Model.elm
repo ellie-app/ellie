@@ -19,16 +19,18 @@ module Apps.Editor.Model
         , htmlIsHidden
         , elmIsHidden
         , compileErrors
+        , canCompile
         )
 
 import Window exposing (Size)
 import RemoteData exposing (RemoteData(..))
+import Data.Ellie.KeyCombo as KeyCombo exposing (KeyCombo)
 import Data.Ellie.ApiError as ApiError exposing (ApiError)
 import Data.Ellie.Revision as Revision exposing (Revision)
 import Data.Ellie.Notification as Notification exposing (Notification)
 import Data.Elm.Compiler.Error as CompilerError
 import Data.Elm.Package as Package exposing (Package)
-import Data.Ellie.CompileStage as CompileStage exposing (CompileStage)
+import Data.Ellie.CompileStage as CompileStage exposing (CompileStage(..))
 import Apps.Editor.Routing as Routing exposing (Route(..))
 
 
@@ -79,6 +81,7 @@ type alias Model =
     , editorsCollapse : EditorCollapseState
     , resultsCollapse : Bool
     , creatingGist : Bool
+    , keyCombo : KeyCombo
     }
 
 
@@ -110,7 +113,31 @@ model flags =
     , editorsCollapse = BothOpen
     , resultsCollapse = False
     , creatingGist = False
+    , keyCombo = KeyCombo.empty
     }
+
+
+canCompile : Model -> Bool
+canCompile model =
+    let
+        stagePasses =
+            case model.compileStage of
+                Initial ->
+                    True
+
+                CompileStage.Success _ ->
+                    True
+
+                FinishedWithErrors _ ->
+                    True
+
+                Failed _ ->
+                    True
+
+                _ ->
+                    False
+    in
+        stagePasses && model.saveState /= Loading
 
 
 resetToNew : Model -> Model
@@ -194,7 +221,7 @@ elmCodeForCompile model =
 hasUnsavedWork : Model -> Bool
 hasUnsavedWork model =
     case model.serverRevision of
-        Success revision ->
+        RemoteData.Success revision ->
             (model.stagedElmCode /= revision.elmCode)
                 || (model.stagedHtmlCode /= revision.htmlCode)
                 || (model.clientRevision /= revision)
