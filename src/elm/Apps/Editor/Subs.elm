@@ -179,4 +179,5 @@ subscriptions model =
         , jsError IframeJsError
         , compilerMessages
         , compileForSave
+        , keyCombos model
         ]
