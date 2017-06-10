@@ -6,6 +6,7 @@ import Keyboard
 import Json.Decode as Decode exposing (Decoder, Value)
 import Json.Decode.Pipeline as Decode
 import Data.Ellie.CompileStage as CompileStage exposing (CompileStage(..))
+import Data.Ellie.KeyCombo as KeyCombo exposing (KeyCombo)
 import Shared.MessageBus as MessageBus
 import Apps.Editor.Model as Model exposing (Model, PopoutState(..))
 import Apps.Editor.Update as Update exposing (Msg(..))
@@ -27,6 +28,20 @@ port compilerMessagesIn : (Value -> msg) -> Sub msg
 
 
 port compileForSaveIn : (Value -> msg) -> Sub msg
+
+
+keyCombos : Model -> Sub Msg
+keyCombos model =
+    Sub.batch
+        [ Keyboard.presses
+            (\code ->
+                if Model.canSave model && KeyCombo.controlShift model.keyCombo && code == 13 then
+                    CompileRequested
+                else
+                    NoOp
+            )
+        , Sub.map KeyComboMsg <| KeyCombo.subscriptions
+        ]
 
 
 compilerMessages : Sub Msg
