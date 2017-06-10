@@ -61,7 +61,7 @@ getConstraints name version =
                             |> Task.andThen Task.fromResult
                     else
                         Http.get
-                            ("https://cdn.ellie-app.com/package-artifacts/" ++ cdnKey)
+                            (Constants.cdnBase ++ "/package-artifacts/" ++ cdnKey)
                             (Description.decoder)
                             |> Http.toTask
                             |> Task.mapError (\_ -> "Couldn't download package description for " ++ Name.toString name)
