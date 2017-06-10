@@ -18,6 +18,7 @@ import Data.Elm.Make.Solution as Solution exposing (Solution)
 import Data.Elm.Make.Constraint as Constraint exposing (Constraint)
 import Data.Elm.Make.Error as BM
 import Data.Elm.Package.Paths as Path
+import Shared.Constants as Constants
 
 
 downloadPackage : Package -> Task BM.Error ( List ( FilePath, String ), Description )
@@ -32,10 +33,10 @@ downloadPackage ( name, version ) =
                 ++ ".json"
 
         sourceUrl =
-            "https://cdn.ellie-app.com/package-artifacts/source-" ++ cdnKey
+            Constants.cdnBase ++ "/package-artifacts/source-" ++ cdnKey
 
         descUrl =
-            "https://cdn.ellie-app.com/package-artifacts/package-" ++ cdnKey
+            Constants.cdnBase ++ "/package-artifacts/package-" ++ cdnKey
 
         getSource =
             Http.get sourceUrl (Decode.keyValuePairs Decode.string)
