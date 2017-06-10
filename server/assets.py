@@ -29,10 +29,10 @@ def _prod_asset_path(relative):
 def _dev_asset_path(relative):
     if relative.startswith('embed/'):
         key = relative.replace('embed/', '')
-        return 'http://localhost:8000/' + key
+        return 'http://localhost:8001/' + key
     if relative.startswith('editor/'):
         key = relative.replace('editor/', '')
-        return 'http://localhost:8001/' + key
+        return 'http://localhost:8000/' + key
 
 def asset_path(relative):
     if _PRODUCTION:

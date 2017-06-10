@@ -33,9 +33,9 @@ port compileForSaveIn : (Value -> msg) -> Sub msg
 keyCombos : Model -> Sub Msg
 keyCombos model =
     Sub.batch
-        [ Keyboard.presses
+        [ Keyboard.downs
             (\code ->
-                if Model.canSave model && KeyCombo.controlShift model.keyCombo && code == 13 then
+                if Model.canCompile model && KeyCombo.controlShift model.keyCombo && code == 13 then
                     CompileRequested
                 else
                     NoOp

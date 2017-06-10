@@ -3,6 +3,7 @@ var webpack = require('webpack');
 var StringReplacePlugin = require('string-replace-webpack-plugin');
 var HtmlWebpackPlugin = require('html-webpack-plugin');
 var CopyPlugin = require('copy-webpack-plugin');
+var syncRequest = require('sync-request');
 
 var target = process.env.BUILD_TARGET || 'editor'
 
@@ -104,7 +105,7 @@ module.exports = {
           plugins: [
             new webpack.DllReferencePlugin({
               scope: 'Dll',
-              manifest: require("./build/dll/ElmCompiler-manifest.json"),
+              manifest: JSON.parse(syncRequest('GET', process.env.CDN_BASE + '/elm-compilers/0.18.0-manifest.json').body),
               context: path.join(__dirname, 'dll')
             })
           ]
@@ -112,31 +113,12 @@ module.exports = {
       }
     }),
     new webpack.DefinePlugin({
+      CDN_BASE: JSON.stringify(process.env.CDN_BASE),
       SERVER_ORIGIN: JSON.stringify(process.env.SERVER_ORIGIN || 'http://localhost:5000'),
       'process.env.NODE_ENV': JSON.stringify(process.env.NODE_ENV),
       'process.version': '"v0.8"'
     }),
     new StringReplacePlugin(),
-    new HtmlWebpackPlugin({
-      inject: true,
-      template: path.join(__dirname, 'src/index.ejs'),
-      data: {
-        production: false,
-        gtmId: '',
-      },
-      minify: {
-        removeComments: true,
-        collapseWhitespace: true,
-        removeRedundantAttributes: true,
-        useShortDoctype: true,
-        removeEmptyAttributes: true,
-        removeStyleLinkTypeAttributes: true,
-        keepClosingSlash: true,
-        minifyJS: true,
-        minifyCSS: true,
-        minifyURLs: true
-      }
-    }),
     new CopyPlugin([
       { from: path.join(__dirname, 'build/dll/*.js'), flatten: true }
     ])
