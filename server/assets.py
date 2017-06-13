@@ -12,7 +12,7 @@ with open('./build/embed/manifest.json') as embed_data:
     _embed_manifest = json.load(embed_data)
 
 
-def _prod_asset_path(relative):
+def _prod_asset_path(relative: str) -> str:
     if relative.startswith('embed/'):
         key = relative.replace('embed/', '')
         if key in _embed_manifest:
@@ -25,16 +25,18 @@ def _prod_asset_path(relative):
             return _CDN_BASE + '/assets/editor/' + _editor_manifest[key]
         else:
             return ''
+    return ''
 
-def _dev_asset_path(relative):
+def _dev_asset_path(relative: str) -> str:
     if relative.startswith('embed/'):
         key = relative.replace('embed/', '')
         return 'http://localhost:8001/' + key
     if relative.startswith('editor/'):
         key = relative.replace('editor/', '')
         return 'http://localhost:8000/' + key
+    return ''
 
-def asset_path(relative):
+def asset_path(relative: str) -> str:
     if _PRODUCTION:
         return _prod_asset_path(relative)
     else:

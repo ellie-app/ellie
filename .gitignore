@@ -5,3 +5,4 @@ elm-stuff/
 .env
 build/
 *.pyc
+__pycache__/
