@@ -10,7 +10,7 @@ with open('./build/embed/manifest.json') as embed_data:
 
 client = boto3.client('s3')
 
-for key, value in editor_manifest.iteritems():
+for key, value in editor_manifest.items():
     print ('deploying editor/' + key)
     client.upload_file(
         './build/editor/' + value,
@@ -22,7 +22,7 @@ for key, value in editor_manifest.iteritems():
         }
     )
 
-for key, value in embed_manifest.iteritems():
+for key, value in embed_manifest.items():
     print ('deploying embed/' + key)
     client.upload_file(
         './build/embed/' + value,
@@ -34,4 +34,4 @@ for key, value in embed_manifest.iteritems():
         }
     )
 
-print 'asset deploy complete'
+print('asset deploy complete')
