@@ -1,6 +1,5 @@
 from typing import List, Optional, Any, Tuple, Set, SupportsInt, Optional, Dict, Any, NamedTuple, List, TypeVar, Iterator
-from urllib.request import urlopen
-from urllib.error import URLError, HTTPError
+import requests
 import json
 import tempfile
 import os
@@ -37,8 +36,8 @@ def glob_all(paths: List[str]) -> List[str]:
     return output
 
 def download_packages() -> Any:
-    body = urlopen("http://package.elm-lang.org/all-packages")
-    data = json.loads(body.read())
+    body = requests.get("http://package.elm-lang.org/all-packages")
+    data = body.json()
     body.close()
     return data
 
@@ -57,16 +56,16 @@ def make_temp_directory() -> str:
     return tempfile.mkdtemp(prefix='ellie-package-temp-')
 
 def download_package_zip(base_dir: str, package: PackageInfo) -> None:
-    url = 'https://github.com/' + package.username + '/' + package.package + '/archive/' + str(package.version) + '.zip'
+    url = 'http://github.com/' + package.username + '/' + package.package + '/archive/' + str(package.version) + '.zip'
     zip_path = os.path.join(base_dir, 'temp.zip')
     try:
-        request = urlopen(url)
-        with open(zip_path, "w+") as local_file:
-            local_file.write(request.read())
-    except HTTPError as e:
-        print("HTTP Error:", e.code, url)
-    except URLError as e:
-        print("URL Error:", e.reason, url)
+        r = requests.get(url)
+        with open(zip_path, "wb") as local_file:
+            for chunk in r.iter_content(chunk_size=128):
+                local_file.write(chunk)
+    except Exception as e:
+        print("HTTP Error:", e)
+
 
 def unzip_and_delete(base_dir: str) -> None:
     zip_path = os.path.join(base_dir, 'temp.zip')
