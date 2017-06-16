@@ -37,72 +37,11 @@ def handle_error(error: ApiError) -> Any:
     response.status_code = error.status_code
     return response
 
-s3 = boto3.resource('s3')
-client = boto3.client('s3')
-bucket = s3.Bucket('cdn.ellie-app.com')
-
-all_versions = [
-    Version(0, 18, 0),
-    Version(0, 17, 1),
-    Version(0, 17, 0),
-    Version(0, 16, 0),
-    Version(0, 15, 0)
-]
-
-class SearchablePackages(NamedTuple):
-    latest_by_elm_version: Dict[Version, Package]
-    versions: List[Version]
-
-class PackagesCache(NamedTuple):
-    last_updated: datetime
-    data: Dict[PackageName, SearchablePackages]
-
-def organize_packages(packages: List[PackageInfo]) -> Dict[PackageName, SearchablePackages]:
-    data: Dict[PackageName, SearchablePackages] = {}
-    for package in packages:
-        key = PackageName(package.username, package.package)
-        if key not in data:
-            data[key] = SearchablePackages({}, [])
-
-        data[key].versions.append(package.version)
-
-        for version in all_versions:
-            if package.elm_constraint is not None and package.elm_constraint.is_satisfied(version):
-                if version not in data[key].latest_by_elm_version:
-                    data[key].latest_by_elm_version[version] = package.to_package()
-                if data[key].latest_by_elm_version[version].version < package.version:
-                    data[key].latest_by_elm_version[version] = package.to_package()
-    return data
-
-def get_searchable_packages() -> Dict[PackageName, SearchablePackages]:
-    body = s3.Object('cdn.ellie-app.com', 'package-artifacts/searchable.json').get()['Body']
-    data = body.read()
-    packages = list(cat_optionals(PackageInfo.from_json(x) for x in json.loads(data)))
-    body.close()
-    return organize_packages(packages)
-
 def parse_int(string: str) -> Optional[int]:
     try:
         return int(string)
     except:
         return None
-
-cache_diff: timedelta = timedelta(minutes=15)
-
-packages_cache: PackagesCache = PackagesCache(
-    datetime.utcnow(),
-    get_searchable_packages()
-)
-
-def refresh_packages_cache() -> None:
-    global packages_cache
-    now = datetime.utcnow()
-    if now - packages_cache.last_updated > cache_diff:
-        packages_cache = PackagesCache(
-            now,
-            get_searchable_packages()
-        )
-
 
 def package_entry_score(key: PackageName, entries: Dict[Version, Package], elm_version: Version, query: str) -> Tuple[Optional[Package], float]:
     if elm_version not in entries:
@@ -127,20 +66,21 @@ def package_entry_score(key: PackageName, entries: Dict[Version, Package], elm_v
     return (entries[elm_version], score)
 
 def do_search(elm_version: Version, query: str) -> List[Any]:
-    score_gen = (package_entry_score(key, info.latest_by_elm_version, elm_version, query) for key, info in packages_cache.data.items())
+    cache_data = storage.get_searchable_packages()
+    score_gen = (package_entry_score(key, info.latest_by_elm_version, elm_version, query) for key, info in cache_data.items())
     filtered = filter(lambda t: t[1] > 0, score_gen)
     sorted_gen = sorted(list(filtered), key = lambda t: -t[1])
     return [p.to_json() for p, s in sorted_gen if p is not None][0:5]
 
 @app.route('/api/packages/<string:user>/<string:project>/versions')
 def tags(user: str, project: str) -> Any:
-    refresh_packages_cache()
+    cache_data = storage.get_searchable_packages()
     key = PackageName(user, project)
 
-    if key not in packages_cache.data:
+    if key not in cache_data:
         raise ApiError(404)
 
-    return jsonify([v.to_json() for v in packages_cache.data[key].versions])
+    return jsonify([v.to_json() for v in cache_data[key].versions])
 
 @app.route('/api/search')
 def search() -> Any:
@@ -156,8 +96,6 @@ def search() -> Any:
     parsed_elm_version = Version.from_string(elm_version)
     if parsed_elm_version is None:
         raise ApiError(400)
-
-    refresh_packages_cache()
 
     packages = do_search(parsed_elm_version, query)
 
@@ -202,9 +140,9 @@ def get_upload_urls() -> Any:
 
 @app.route('/api/revisions/default')
 def get_default_revision() -> Any:
-    refresh_packages_cache()
-    default_html = packages_cache.data[PackageName('elm-lang', 'html')].latest_by_elm_version[Version(0, 18, 0)]
-    default_core = packages_cache.data[PackageName('elm-lang', 'core')].latest_by_elm_version[Version(0, 18, 0)]
+    cache_data = storage.get_searchable_packages()
+    default_html = cache_data[PackageName('elm-lang', 'html')].latest_by_elm_version[Version(0, 18, 0)]
+    default_core = cache_data[PackageName('elm-lang', 'core')].latest_by_elm_version[Version(0, 18, 0)]
 
     return jsonify({
         'packages': [default_core.to_json(), default_html.to_json()],

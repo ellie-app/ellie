@@ -2,6 +2,7 @@ import logging
 from apscheduler.schedulers.blocking import BlockingScheduler
 import sync_packages
 import os
+import subprocess
 
 logging.basicConfig()
 
@@ -10,6 +11,7 @@ SYNC_INTERVAL = int(os.environ['PACKAGE_SYNC_INTERVAL_MINUTES'])
 
 @sched.scheduled_job('interval', minutes=SYNC_INTERVAL)
 def run_sync_packages() -> None:
-    sync_packages.run()
+    subprocess.check_call(["python", "./server/sync_packages.py"])
 
-sched.start()
+def start_clock() -> None:
+    sched.start()
