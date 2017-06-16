@@ -14,6 +14,7 @@ import sys
 from datetime import datetime
 from classes import Version, Constraint, PackageInfo
 import os
+from . import storage
 
 BUCKET_NAME = os.environ['AWS_S3_BUCKET']
 

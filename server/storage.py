@@ -1,4 +1,4 @@
-from typing import Pattern, Optional, Set, Any, TypeVar, Iterator, List
+from typing import Pattern, Optional, Set, Any, TypeVar, Iterator, List, NamedTuple, Dict
 import boto3
 import botocore
 import json
@@ -8,8 +8,9 @@ from hashlib import sha256
 import base64
 import re
 from urllib.parse import quote, unquote
+from datetime import datetime, timedelta
 import os
-from .classes import ProjectId, Revision
+from .classes import ProjectId, Revision, Version, Package, PackageName, PackageInfo
 
 BUCKET_NAME = os.environ['AWS_S3_BUCKET']
 
@@ -119,3 +120,70 @@ def get_result_upload_signature(project_id: ProjectId, revision_number: int) -> 
     data['projectId'] = str(project_id)
     data['revisionNumber'] = revision_number
     return data
+
+
+all_versions = [
+    Version(0, 18, 0),
+    Version(0, 17, 1),
+    Version(0, 17, 0),
+    Version(0, 16, 0),
+    Version(0, 15, 0)
+]
+
+class SearchablePackages(NamedTuple):
+    latest_by_elm_version: Dict[Version, Package]
+    versions: List[Version]
+
+class PackagesCache(NamedTuple):
+    last_updated: datetime
+    data: Dict[PackageName, SearchablePackages]
+
+def organize_packages(packages: List[PackageInfo]) -> Dict[PackageName, SearchablePackages]:
+    data: Dict[PackageName, SearchablePackages] = {}
+    for package in packages:
+        key = PackageName(package.username, package.package)
+        if key not in data:
+            data[key] = SearchablePackages({}, [])
+
+        data[key].versions.append(package.version)
+
+        for version in all_versions:
+            if package.elm_constraint is not None and package.elm_constraint.is_satisfied(version):
+                if version not in data[key].latest_by_elm_version:
+                    data[key].latest_by_elm_version[version] = package.to_package()
+                if data[key].latest_by_elm_version[version].version < package.version:
+                    data[key].latest_by_elm_version[version] = package.to_package()
+    return data
+
+def download_searchable_packages() -> Dict[PackageName, SearchablePackages]:
+    body = s3.Object('cdn.ellie-app.com', 'package-artifacts/searchable.json').get()['Body']
+    data = body.read()
+    packages = list(cat_optionals(PackageInfo.from_json(x) for x in json.loads(data)))
+    body.close()
+    return organize_packages(packages)
+
+def parse_int(string: str) -> Optional[int]:
+    try:
+        return int(string)
+    except:
+        return None
+
+cache_diff: timedelta = timedelta(minutes=15)
+
+packages_cache: PackagesCache = PackagesCache(
+    datetime.utcnow(),
+    download_searchable_packages()
+)
+
+def refresh_packages_cache() -> None:
+    global packages_cache
+    now = datetime.utcnow()
+    if now - packages_cache.last_updated > cache_diff:
+        packages_cache = PackagesCache(
+            now,
+            download_searchable_packages()
+        )
+
+def get_searchable_packages() -> Dict[PackageName, SearchablePackages]:
+    refresh_packages_cache()
+    return packages_cache.data
