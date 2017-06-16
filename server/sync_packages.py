@@ -1,6 +1,5 @@
 from typing import List, Optional, Any, Tuple, Set
-import urllib2
-from urllib2 import URLError, HTTPError
+from urllib.request import URLError, HTTPError, urlopen
 import json
 import tempfile
 import os
@@ -28,7 +27,7 @@ def glob_all(paths: List[str]) -> List[str]:
     return output
 
 def download_packages() -> Any:
-    body = urllib2.urlopen("http://package.elm-lang.org/all-packages")
+    body = urlopen("http://package.elm-lang.org/all-packages")
     data = json.loads(body.read())
     body.close()
     return data
@@ -49,7 +48,7 @@ def download_package_zip(base_dir: str, package: PackageInfo) -> None:
     url = 'https://github.com/' + package.username + '/' + package.package + '/archive/' + str(package.version) + '.zip'
     zip_path = os.path.join(base_dir, 'temp.zip')
     try:
-        request = urllib2.urlopen(url)
+        request = urlopen(url)
         with open(zip_path, "w+") as local_file:
             local_file.write(request.read())
     except HTTPError as e:
