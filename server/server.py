@@ -12,6 +12,10 @@ import os
 from . import storage
 from . import assets
 from .classes import Version, Constraint, PackageInfo, PackageName, ProjectId, ApiError, Package
+from .clock import start_clock
+
+if os.environ['ENV'] == 'production':
+    start_clock()
 
 T = TypeVar('T')
 
@@ -285,3 +289,6 @@ def oembed() -> Any:
         'provider_url': 'https://ellie-app.com',
         'html': '<iframe src="' + EDITOR_CONSTANTS['SERVER_HOSTNAME'] + '/embed/' + str(project_id) + '/' + str(revision_number) + '" width=' + str(width) + ' height=' + str(height) + ' frameBorder="0" allowtransparency="true"></iframe>'
     })
+
+if os.environ['ENV'] == 'production':
+    start_clock()
