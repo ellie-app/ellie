@@ -1,6 +1,6 @@
 import logging
 from apscheduler.schedulers.blocking import BlockingScheduler
-import sync_packages
+from . import sync_packages
 import os
 import subprocess
 
