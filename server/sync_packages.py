@@ -1,5 +1,6 @@
-from typing import List, Optional, Any, Tuple, Set
-from urllib.request import URLError, HTTPError, urlopen
+from typing import List, Optional, Any, Tuple, Set, SupportsInt, Optional, Dict, Any, NamedTuple, List, TypeVar, Iterator
+from urllib.request import urlopen
+from urllib.error import URLError, HTTPError
 import json
 import tempfile
 import os
@@ -11,7 +12,7 @@ import multiprocessing
 import boto3
 import sys
 from datetime import datetime
-from classes import Version, Constraint, PackageInfo
+from .classes import Version, Constraint, PackageInfo
 import os
 from . import storage
 
@@ -19,6 +20,15 @@ BUCKET_NAME = os.environ['AWS_S3_BUCKET']
 
 s3 = boto3.resource('s3')
 bucket = s3.Bucket(BUCKET_NAME)
+
+T = TypeVar('T')
+
+def cat_optionals(data: Iterator[Optional[T]]) -> List[T]:
+    out = []
+    for x in data:
+        if x is not None:
+            out.append(x)
+    return out
 
 def glob_all(paths: List[str]) -> List[str]:
     output: List[str] = []
@@ -38,7 +48,9 @@ def organize_packages(data: Any) -> List[PackageInfo]:
         username = entry['name'].split('/')[0]
         package = entry['name'].split('/')[1]
         for version in entry['versions']:
-            output.append(PackageInfo(username, package, Version.from_string(version)))
+            v = Version.from_string(version)
+            if v is not None:
+                output.append(PackageInfo(username, package, v))
     return output
 
 def make_temp_directory() -> str:
@@ -128,7 +140,7 @@ def download_searchable_packages() -> Set[PackageInfo]:
     try:
         body = s3.Object(BUCKET_NAME, 'package-artifacts/searchable.json').get()['Body']
         data = body.read()
-        packages = set(PackageInfo.from_json(x) for x in json.loads(data))
+        packages = set(cat_optionals(PackageInfo.from_json(x) for x in json.loads(data)))
         body.close()
         return packages
     except:
