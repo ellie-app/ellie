@@ -146,7 +146,7 @@ formatPayload source =
 
 formatExpect : Expect String
 formatExpect =
-    Decode.field "source" Decode.string
+    Decode.field "result" Decode.string
         |> Http.expectJson
 
 
