@@ -9,6 +9,8 @@
   "dependencies": {
     "autoprefixer": "6.6.0",
     "aws-sdk": "^2.63.0",
+    "babel-core": "^6.24.1",
+    "babel-loader": "^7.0.0",
     "babel-plugin-syntax-dynamic-import": "^6.18.0",
     "babel-preset-env": "^1.5.2",
     "babel-preset-es2015": "^6.24.1",
@@ -20,6 +22,7 @@
     "css-loader": "0.27.0",
     "elm": "^0.18.0",
     "elm-css-webpack-loader": "3.1.0",
+    "elm-format": "^0.7.0-exp",
     "elm-webpack-loader": "4.3.0",
     "es6-promise": "^4.1.0",
     "extract-text-webpack-plugin": "2.1.0",
@@ -41,9 +44,7 @@
     "webpack-manifest-plugin": "1.1.0",
     "webpack-md5-hash": "^0.0.5",
     "whatwg-fetch": "^2.0.3",
-    "worker-loader": "^0.8.0",
-    "babel-core": "^6.24.1",
-    "babel-loader": "^7.0.0"
+    "worker-loader": "^0.8.0"
   },
   "scripts": {
     "watch": "webpack-dev-server --watch --config ./webpack.dev.config.js",
