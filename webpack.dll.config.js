@@ -1,6 +1,5 @@
 var path = require("path");
 var webpack = require("webpack");
-var ClosureCompilerPlugin = require('webpack-closure-compiler')
 
 module.exports = {
     entry: {

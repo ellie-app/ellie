@@ -4,6 +4,7 @@ import time
 
 T = TypeVar('T')
 
+
 def cat_optionals(data: Iterator[Optional[T]]) -> List[T]:
     out = []
     for x in data:
@@ -11,9 +12,11 @@ def cat_optionals(data: Iterator[Optional[T]]) -> List[T]:
             out.append(x)
     return out
 
+
 class ApiError(Exception):
-    def __init__(self, status_code: int) -> None:
+    def __init__(self, status_code: int, message: str) -> None:
         self.status_code = status_code
+        self.message = message
 
 
 class Version(SupportsInt):
@@ -60,11 +63,8 @@ class Version(SupportsInt):
 
     @staticmethod
     def from_int(value: int) -> 'Version':
-        return Version(
-            value >> 20,
-            (value >> 10) & 0b1111111111,
-            value & 0b1111111111
-        )
+        return Version(value >> 20, (value >> 10) & 0b1111111111,
+                       value & 0b1111111111)
 
     @staticmethod
     def from_string(input: str) -> Optional['Version']:
@@ -82,15 +82,22 @@ class Version(SupportsInt):
     def from_json(data: Any) -> Optional['Version']:
         return Version.from_string(data)
 
+
 class Constraint(object):
-    def __init__(self, lower: Version, lower_op: str, upper_op: str, upper: Version) -> None:
+    def __init__(self,
+                 lower: Version,
+                 lower_op: str,
+                 upper_op: str,
+                 upper: Version) -> None:
         self.lower = lower
         self.lower_op = lower_op
         self.upper_op = upper_op
         self.upper = upper
 
     def __str__(self) -> str:
-        return str(self.lower) + ' ' + self.lower_op + ' v ' + self.upper_op + ' ' + str(self.upper)
+        return str(self.lower
+                   ) + ' ' + self.lower_op + ' v ' + self.upper_op + ' ' + str(
+                       self.upper)
 
     def __repr__(self) -> str:
         return '<Constraint ' + self.__str__() + '>'
@@ -98,7 +105,8 @@ class Constraint(object):
     def __eq__(self, other: object) -> bool:
         if not isinstance(other, Constraint):
             return False
-        return self.min_version() == other.min_version() and self.max_version() == other.max_version()
+        return self.min_version() == other.min_version() and self.max_version(
+        ) == other.max_version()
 
     def is_satisfied(self, version: Version) -> bool:
         return self.min_version() <= version < self.max_version()
@@ -116,11 +124,7 @@ class Constraint(object):
     @staticmethod
     def from_ints(left: int, right: int) -> 'Constraint':
         return Constraint(
-            Version.from_int(left),
-            '<=',
-            '<',
-            Version.from_int(right)
-        )
+            Version.from_int(left), '<=', '<', Version.from_int(right))
 
     @staticmethod
     def from_string(input: str) -> Optional['Constraint']:
@@ -150,6 +154,7 @@ class Constraint(object):
 
     def to_json(self) -> object:
         return self.__str__()
+
 
 class PackageName(object):
     def __init__(self, user: str, project: str) -> None:
@@ -181,6 +186,7 @@ class PackageName(object):
 
         return PackageName(split[0], split[1])
 
+
 class Package(object):
     def __init__(self, name: 'PackageName', version: Version) -> None:
         self.name = name
@@ -207,7 +213,7 @@ class PackageInfo(object):
         self.username = username
         self.package = package
         self.version = version
-        self.elm_constraint : Optional[Constraint] = None
+        self.elm_constraint: Optional[Constraint] = None
 
     def __str__(self) -> str:
         return self.username + '/' + self.package + '@' + str(self.version)
@@ -230,27 +236,31 @@ class PackageInfo(object):
         return hash(self.__str__())
 
     def s3_package_key(self) -> str:
-        return 'package-artifacts/package-' + self.username + '-' + self.package + '-' + str(self.version) + '.json'
+        return 'package-artifacts/package-' + self.username + '-' + self.package + '-' + str(
+            self.version) + '.json'
 
     def s3_source_key(self) -> str:
-        return 'package-artifacts/source-' + self.username + '-' + self.package + '-' + str(self.version) + '.json'
+        return 'package-artifacts/source-' + self.username + '-' + self.package + '-' + str(
+            self.version) + '.json'
 
     def set_elm_constraint(self, constraint: Optional[Constraint]) -> None:
         self.elm_constraint = constraint
 
     def to_json(self) -> object:
         return {
-            'username': self.username,
-            'package': self.package,
-            'version': self.version.to_json(),
-            'elmVersion': self.elm_constraint.to_json() if self.elm_constraint is not None else None
+            'username':
+            self.username,
+            'package':
+            self.package,
+            'version':
+            self.version.to_json(),
+            'elmVersion':
+            self.elm_constraint.to_json()
+            if self.elm_constraint is not None else None
         }
 
     def to_package(self) -> Package:
-        return Package(
-            PackageName(self.username, self.package),
-            self.version
-        )
+        return Package(PackageName(self.username, self.package), self.version)
 
     @staticmethod
     def from_json(data: Dict[str, Any]) -> Optional['PackageInfo']:
@@ -260,9 +270,12 @@ class PackageInfo(object):
 
         package = PackageInfo(data['username'], data['package'], version)
         if 'minElmVersion' in data and 'maxElmVersion' in data:
-            package.set_elm_constraint(Constraint.from_ints(data['minElmVersion'], data['maxElmVersion']))
+            package.set_elm_constraint(
+                Constraint.from_ints(data['minElmVersion'], data[
+                    'maxElmVersion']))
         elif 'elmVersion' in data:
-            package.set_elm_constraint(Constraint.from_json(data['elmVersion']))
+            package.set_elm_constraint(
+                Constraint.from_json(data['elmVersion']))
         return package
 
 
@@ -272,8 +285,10 @@ OUR_EPOCH = 1483578344834
 SHARD_ID = 1
 SEQ_ID = 0
 
+
 def timestamp() -> int:
     return int(time.time() * 1000)
+
 
 class ProjectId(SupportsInt):
     def __init__(self, number_value: int, version: int) -> None:
@@ -377,6 +392,7 @@ class ProjectId(SupportsInt):
             return ProjectId.from_string(input)
         return None
 
+
 class RevisionId(object):
     def __init__(self, project_id: ProjectId, revision_number: int) -> None:
         self.project_id = project_id
@@ -395,6 +411,7 @@ class RevisionId(object):
             return None
         return RevisionId(project_id, data['revisionNumber'])
 
+
 class RevisionBase(NamedTuple):
     title: str
     description: str
@@ -404,6 +421,7 @@ class RevisionBase(NamedTuple):
     id: Optional[RevisionId]
     owned: bool
     snapshot: Any
+
 
 class Revision(RevisionBase):
     def to_json(self) -> Any:
@@ -425,8 +443,8 @@ class Revision(RevisionBase):
             description=data['description'],
             elm_code=data['elmCode'],
             html_code=data['htmlCode'],
-            packages=cat_optionals(Package.from_json(x) for x in data['packages']),
+            packages=cat_optionals(
+                Package.from_json(x) for x in data['packages']),
             id=RevisionId.from_json(data['id']),
             owned=data['owned'] if 'owned' in data else False,
-            snapshot=data['snapshot']
-        )
+            snapshot=data['snapshot'])

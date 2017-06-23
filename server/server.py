@@ -1,7 +1,7 @@
 from typing import Optional, Any, Optional, Iterator, TypeVar, List, NamedTuple, Dict, Tuple
 import json
 from flask import Flask, jsonify, request, render_template, url_for, redirect
-from werkzeug.routing import BaseConverter, ValidationError
+from werkzeug.routing import BaseConverter, ValidationError, HTTPException
 from datetime import datetime, timedelta
 import boto3
 import botocore
@@ -13,6 +13,7 @@ from . import storage
 from . import assets
 from .classes import Version, Constraint, PackageInfo, PackageName, ProjectId, ApiError, Package
 import subprocess
+import re
 
 T = TypeVar('T')
 
@@ -39,9 +40,26 @@ app.url_map.converters['project_id'] = ProjectIdConverter
 
 @app.errorhandler(ApiError)
 def handle_error(error: ApiError) -> Any:
-    response = jsonify(None)
+    response = jsonify({'status': error.status_code, 'message': error.message})
+
     response.status_code = error.status_code
     return response
+
+
+DEFAULT_ERROR_MESSAGE = "There was a problem with the server"
+
+
+@app.errorhandler(Exception)
+def handle_default_error(error: Exception) -> Any:
+    if request.path.startswith('/api'):
+        code = getattr(error, "code", 500)
+        description = DEFAULT_ERROR_MESSAGE
+        if code != 500:
+            description = getattr(error, "description", DEFAULT_ERROR_MESSAGE)
+        response = jsonify({'status': code, 'message': description})
+        response.status_code = code
+        return response
+    raise error
 
 
 def parse_int(string: str) -> Optional[int]:
@@ -94,7 +112,7 @@ def tags(user: str, project: str) -> Any:
     key = PackageName(user, project)
 
     if key not in cache_data:
-        raise ApiError(404)
+        raise ApiError(404, 'Package not found')
 
     return jsonify([v.to_json() for v in cache_data[key].versions])
 
@@ -103,16 +121,16 @@ def tags(user: str, project: str) -> Any:
 def search() -> Any:
     query = request.args.get('query')
     if not isinstance(query, str):
-        raise (ApiError(400))
+        raise (ApiError(400, 'query field must be a string'))
     if len(query) <= 3:
         return jsonify([])
 
     elm_version = request.args.get('elmVersion')
     if not isinstance(elm_version, str):
-        raise ApiError(400)
+        raise ApiError(400, 'elm version must be a semver string like 0.18.0')
     parsed_elm_version = Version.from_string(elm_version)
     if parsed_elm_version is None:
-        raise ApiError(400)
+        raise ApiError(400, 'elm version must be a semver string like 0.18.0')
 
     packages = do_search(parsed_elm_version, query)
 
@@ -126,29 +144,30 @@ def get_upload_urls() -> Any:
     project_id = ProjectId.from_string(project_id_string) if (
         project_id_string is not None) else ProjectId.generate()
     if project_id is None:
-        raise ApiError(400)
+        raise ApiError(400, 'projectId must be a string')
 
     if project_id_string is not None and not storage.revision_exists(
             project_id, 0):
-        raise ApiError(404)
+        raise ApiError(404, 'revision not found')
 
     if project_id_string is not None and not storage.project_id_is_owned(
             project_id):
-        raise ApiError(403)
+        raise ApiError(403, 'you don\'t own this revision')
 
     revision_string = request.args.get('revisionNumber')
     if project_id_string is not None and revision_string is None:
-        raise ApiError(400)
+        raise ApiError(
+            400, 'revision number must be provided along with project id')
 
     revision_number = parse_int(revision_string) if (revision_string is
                                                      not None) else 0
     if revision_number is None:
-        raise ApiError(400)
+        raise ApiError(400, 'revision number must be an integer')
     if revision_number < 0:
-        raise ApiError(400)
+        raise ApiError(400, 'revision number must be 0 or greater')
 
     if storage.revision_exists(project_id, revision_number):
-        raise ApiError(400)
+        raise ApiError(400, 'the revision you wanted to create already exists')
 
     response = jsonify({
         'revision':
@@ -218,8 +237,12 @@ main =
 def get_revision(project_id: ProjectId, revision_number: int) -> Any:
     revision = storage.get_revision(project_id, revision_number)
     if revision is None:
-        raise ApiError(404)
+        raise ApiError(404, 'revision not found')
     return jsonify(revision)
+
+
+def remove_ansi_colors(input: str) -> str:
+    return re.sub(r'(\x9B|\x1B\[)[0-?]*[ -\/]*[@-~]', '', input)
 
 
 @app.route('/api/format', methods=['POST'])
@@ -228,7 +251,8 @@ def format() -> Any:
     maybe_source: Optional[str] = data['source']
 
     if maybe_source is None:
-        raise ApiError(400)
+        raise ApiError(400,
+                       'source attribute is missing, source must be a string')
 
     elm_format_path = os.path.realpath(
         os.path.dirname(os.path.realpath(__file__)) +
@@ -240,7 +264,10 @@ def format() -> Any:
         input=maybe_source.encode('utf-8'))
 
     if process_output.returncode != 0:
-        raise ApiError(400)  # TODO add message to errors later
+        stderr_as_str = process_output.stderr.decode('utf-8')
+        cleaned_error = remove_ansi_colors(
+            '\n'.join(stderr_as_str.split('\n')[1:]))
+        raise ApiError(400, cleaned_error)
 
     return jsonify({'result': process_output.stdout.decode('utf-8')})
 
@@ -325,25 +352,25 @@ def oembed() -> Any:
 
     parsed_url = urlparse(url)
     if not parsed_url.hostname or 'ellie-app.com' not in parsed_url.hostname or not parsed_url.path:
-        raise ApiError(404)
+        raise ApiError(404, 'revision not found')
 
     split = parsed_url.path.split('/')
     if len(split) != 3:
-        raise ApiError(404)
+        raise ApiError(404, 'revision not found')
 
     [_, project_id_str, revision_number_str] = split
 
     project_id = ProjectId.from_string(project_id_str)
     if project_id is None:
-        raise ApiError(404)
+        raise ApiError(404, 'revision not found')
 
     revision_number = parse_int(revision_number_str)
     if revision_number is None:
-        raise ApiError(404)
+        raise ApiError(404, 'revision not found')
 
     revision = storage.get_revision(project_id, revision_number)
     if revision is None:
-        raise ApiError(404)
+        raise ApiError(404, 'revision not found')
 
     return jsonify({
         'width':
