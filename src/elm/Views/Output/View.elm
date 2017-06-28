@@ -1,30 +1,33 @@
 module Views.Output.View
     exposing
-        ( success
-        , initial
-        , compiling
+        ( compiling
         , errors
         , failure
-        , installing
         , generating
-        , planning
+        , initial
+        , installing
         , loadingCompiler
+        , planning
+        , success
         )
 
-import Html exposing (Html, div, iframe, text)
-import Html.Attributes exposing (src, id)
 import Data.Elm.Compiler.Error as CompilerError
-import Views.Output.Classes exposing (Classes(..), class)
+import Html exposing (Html, div, iframe, p, text)
+import Html.Attributes exposing (id, src)
 import Shared.Utils as Utils
+import Views.Output.Classes exposing (Classes(..), class)
+import Views.ProgressBar.View as ProgressBar
 
 
-overlayDisplay : String -> String -> Html msg
-overlayDisplay title subtitle =
+overlayDisplay : String -> List (Html msg) -> Html msg
+overlayDisplay title subtitleContent =
     div [ class [ Overlay ] ]
-        [ div [ class [ OverlayTitle ] ]
-            [ text title ]
-        , div [ class [ OverlaySubtitle ] ]
-            [ text subtitle ]
+        [ div [ class [ OverlayContent ] ]
+            [ div [ class [ OverlayTitle ] ]
+                [ text title ]
+            , div [ class [ OverlaySubtitle ] ]
+                subtitleContent
+            ]
         ]
 
 
@@ -68,44 +71,66 @@ success iframeUrl =
 
 failure : Html msg
 failure =
-    overlayDisplay "Oh no!" "Something went wrong when compiling."
+    overlayDisplay "Oh no!" [ text "Something went wrong when compiling." ]
 
 
 installing : Html msg
 installing =
     overlayDisplay
         "Installing Packages"
-        ""
+        []
 
 
 generating : Html msg
 generating =
     overlayDisplay
         "Finishing Up"
-        "Combining your Elm and HTML into a runnable script"
+        [ text "Combining your Elm and HTML into a runnable script" ]
 
 
 planning : Html msg
 planning =
     overlayDisplay
         "Setting Up"
-        "Figuring out how to build your code"
+        [ text "Figuring out how to build your code" ]
 
 
 compiling : Int -> Int -> Html msg
 compiling total complete =
+    let
+        progressBar =
+            ProgressBar.view
+                { total = total
+                , complete = complete
+                }
+
+        subtitleContent =
+            case total >= 5 of
+                True ->
+                    [ progressBar
+                    , p [ class [ ManyModulesWarning ] ]
+                        [ text "We're compiling some modules for the first time. It may take a while but it'll be fast next time!" ]
+                    ]
+
+                False ->
+                    [ progressBar ]
+    in
     overlayDisplay
         "Compiling..."
-        ("Compiled " ++ toString complete ++ " of " ++ toString total ++ " modules")
+        subtitleContent
 
 
 loadingCompiler : Float -> Html msg
 loadingCompiler percentage =
     overlayDisplay
         "Loading Compiler..."
-        (toString (round (percentage * 100)) ++ "% loaded")
+        [ ProgressBar.view
+            { total = 100
+            , complete = round (percentage * 100)
+            }
+        ]
 
 
 initial : Html msg
 initial =
-    overlayDisplay "Ready!" "Run the compiler to see your program."
+    overlayDisplay "Ready!" [ text "Run the compiler to see your program." ]

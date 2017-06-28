@@ -1,11 +1,10 @@
 module Views.Output.Styles exposing (..)
 
 import Css exposing (..)
-import Css.Namespace exposing (..)
 import Css.Elements exposing (..)
-import Views.Output.Classes as Classes exposing (Classes(..))
-import Shared.Constants as Constants
+import Css.Namespace exposing (..)
 import Shared.Colors as Colors
+import Views.Output.Classes as Classes exposing (Classes(..))
 
 
 shimmerGradient : String
@@ -26,12 +25,16 @@ styles =
             , height (pct 100)
             , position relative
             , backgroundColor (hex Colors.mediumGray)
+            , color (hex Colors.white)
+            , padding (px 16)
+            ]
+        , (.) OverlayContent
+            [ top (pct 30)
+            , position relative
+            , width (pct 100)
             , displayFlex
             , property "align-items" "center"
             , flexDirection column
-            , color (hex Colors.white)
-            , padding (px 16)
-            , paddingTop (px 300)
             ]
         , (.) OverlayTitle
             [ property "font-family" "Leckerli One"
@@ -41,6 +44,11 @@ styles =
         , (.) OverlaySubtitle
             [ fontSize (px 24)
             , textAlign center
+            , width (pct 100)
+            , position relative
+            , displayFlex
+            , flexDirection column
+            , property "align-items" "center"
             ]
         , (.) ErrorsContainer
             [ padding (px 16)
@@ -95,5 +103,9 @@ styles =
         , (.) ErrorItemDetails
             [ fontSize (px 14)
             , lineHeight (px 14)
+            ]
+        , (.) ManyModulesWarning
+            [ fontSize (px 18)
+            , maxWidth (px 450)
             ]
         ]
