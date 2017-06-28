@@ -9,6 +9,7 @@ type Classes
     | Overlay
     | OverlayTitle
     | OverlaySubtitle
+    | OverlayContent
     | ErrorsContainer
     | ErrorItem
     | ErrorItemName
@@ -16,6 +17,7 @@ type Classes
     | ErrorItemDetails
     | ErrorItemLocation
     | ErrorItemHeader
+    | ManyModulesWarning
 
 
 helpers : Html.CssHelpers.Namespace String class id msg

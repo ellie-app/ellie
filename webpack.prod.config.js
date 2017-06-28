@@ -106,6 +106,7 @@ module.exports = {
           plugins: [
             new webpack.DllReferencePlugin({
               scope: 'Dll',
+              // TODO CACHE THIS IN DEV
               manifest: JSON.parse(syncRequest('GET', process.env.CDN_BASE + '/elm-compilers/0.18.0-manifest.json').body),
               context: path.join(__dirname, 'dll')
             })
