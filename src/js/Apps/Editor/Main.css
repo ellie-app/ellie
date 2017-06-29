@@ -9,29 +9,39 @@
 }
 
 @keyframes pulse {
-  0% { color: #e9eded; }
-  33%, 100% { color: inherit; }
+  0% {
+    opacity: 0;
+    transform: scale(0);
+  }
+
+  25%, 50% {
+    opacity: 1;
+    transform: scale(1.2);
+  }
+
+  75%, 100% {
+    transform: scale(0.5);
+    opacity: 0;
+  }
 }
 
-.components_sidebar_LoadingAnimContainer svg circle,
-.components_sidebar_PackagesItemRemoveIcon svg circle {
+.LoadingIcon-circle {
+  transform-origin: center;
   fill: currentColor;
   animation-name: pulse;
-  animation-duration: 1.5s;
-  animation-timing-function: step-end;
+  animation-duration: 1s;
+  animation-timing-function: ease-in;
   animation-play-state: running;
   animation-fill-mode: forwards;
   animation-iteration-count: infinite;
 }
 
-.components_sidebar_LoadingAnimContainer svg circle:nth-child(1),
-.components_sidebar_PackagesItemRemoveIcon svg circle:nth-child(1) {
-  animation-delay: 0.5s;
+.LoadingIcon-circle:nth-child(2) {
+  animation-delay: 0.2s;
 }
 
-.components_sidebar_LoadingAnimContainer svg circle:nth-child(2),
-.components_sidebar_PackagesItemRemoveIcon svg circle:nth-child(2) {
-  animation-delay: 1s;
+.LoadingIcon-circle:nth-child(3) {
+  animation-delay: 0.4s;
 }
 
 .components_search_SearchBarInput::placeholder {

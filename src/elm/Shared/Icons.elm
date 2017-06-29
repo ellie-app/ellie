@@ -1,34 +1,35 @@
 module Shared.Icons
     exposing
-        ( playOutline
-        , cloudOutline
-        , forkRepo
-        , plusEmpty
-        , minusEmpty
-        , close
+        ( bell
         , checkmark
-        , elmLogo
-        , format
-        , bell
-        , information
-        , warning
-        , search
-        , link
-        , plus
-        , lightning
+        , close
+        , cloudOutline
         , code
-        , eye
-        , edit
-        , share
         , collapse
+        , edit
+        , elmLogo
         , expand
+        , eye
+        , forkRepo
+        , format
         , gitHub
+        , information
+        , lightning
+        , link
+        , loading
+        , minusEmpty
+        , playOutline
+        , plus
+        , plusEmpty
+        , search
+        , share
+        , warning
         )
 
 import Html exposing (Html)
 import Html.Attributes exposing (style)
-import Svg exposing (svg, path, g, polygon, rect)
-import Svg.Attributes exposing (transform, width, height, x, y, viewBox, points, d, fillRule, stroke, fill, strokeWidth)
+import Svg exposing (circle, g, path, polygon, rect, svg)
+import Svg.Attributes exposing (class, cx, cy, d, fill, fillRule, height, points, r, stroke, strokeWidth, transform, viewBox, width, x, y)
 
 
 iconStyle : Html.Attribute msg
@@ -377,4 +378,14 @@ gitHub =
         [ path
             [ d "M224,0 C100.3,0 0,102.9 0,229.7 C0,331.2 64.2,417.2 153.2,447.6 C154.6,447.9 155.8,448 157,448 C165.3,448 168.5,441.9 168.5,436.6 C168.5,431.1 168.3,416.7 168.2,397.5 C159.8,399.4 152.3,400.2 145.6,400.2 C102.5,400.2 92.7,366.7 92.7,366.7 C82.5,340.2 67.8,333.1 67.8,333.1 C48.3,319.4 67.7,319 69.2,319 L69.3,319 C91.8,321 103.6,342.8 103.6,342.8 C114.8,362.4 129.8,367.9 143.2,367.9 C153.7,367.9 163.2,364.5 168.8,361.9 C170.8,347.1 176.6,337 183,331.2 C133.3,325.4 81,305.7 81,217.7 C81,192.6 89.7,172.1 104,156.1 C101.7,150.3 94,126.9 106.2,95.3 C106.2,95.3 107.8,94.8 111.2,94.8 C119.3,94.8 137.6,97.9 167.8,118.9 C185.7,113.8 204.8,111.3 223.9,111.2 C242.9,111.3 262.1,113.8 280,118.9 C310.2,97.9 328.5,94.8 336.6,94.8 C340,94.8 341.6,95.3 341.6,95.3 C353.8,126.9 346.1,150.3 343.8,156.1 C358.1,172.2 366.8,192.7 366.8,217.7 C366.8,305.9 314.4,325.3 264.5,331 C272.5,338.1 279.7,352.1 279.7,373.5 C279.7,404.2 279.4,429 279.4,436.5 C279.4,441.9 282.5,448 290.8,448 C292,448 293.4,447.9 294.8,447.6 C383.9,417.2 448,331.1 448,229.7 C448,102.9 347.7,0 224,0 L224,0 Z" ]
             []
+        ]
+
+
+loading : Html msg
+loading =
+    svg
+        [ viewBox "0 0 210 50", iconStyle ]
+        [ circle [ class "LoadingIcon-circle", cx "35", cy "25", r "20", fillRule "evenodd" ] []
+        , circle [ class "LoadingIcon-circle", cx "105", cy "25", r "20", fillRule "evenodd" ] []
+        , circle [ class "LoadingIcon-circle", cx "175", cy "25", r "20", fillRule "evenodd" ] []
         ]

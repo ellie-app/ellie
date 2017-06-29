@@ -1,25 +1,25 @@
 module Apps.Editor.View exposing (view)
 
-import Html exposing (Html, div, button, text, iframe, main_, header, span)
-import Html.Attributes exposing (style)
-import Html.Events exposing (onMouseDown, onClick)
-import RemoteData exposing (RemoteData(..))
-import Data.Ellie.RevisionId as RevisionId exposing (RevisionId)
-import Data.Ellie.CompileStage as CompileStage exposing (CompileStage)
-import Apps.Editor.Update as Update exposing (Msg(..))
-import Apps.Editor.Model as Model exposing (Model, PopoutState(..))
 import Apps.Editor.Classes exposing (..)
+import Apps.Editor.Model as Model exposing (Model, PopoutState(..))
 import Apps.Editor.Routing as Routing exposing (..)
-import Views.Sidebar.View as Sidebar
+import Apps.Editor.Update as Update exposing (Msg(..))
+import Data.Ellie.CompileStage as CompileStage exposing (CompileStage)
+import Data.Ellie.RevisionId as RevisionId exposing (RevisionId)
+import Html exposing (Html, button, div, header, iframe, main_, span, text)
+import Html.Attributes exposing (style)
+import Html.Events exposing (onClick, onMouseDown)
+import RemoteData exposing (RemoteData(..))
+import Shared.Icons as Icons
+import Shared.Utils as Utils
+import Views.About.View as About
+import Views.Editor.EmbedLink.View as EmbedLink
 import Views.Editors.View as Editors
 import Views.Header.View as Header
-import Views.Output.View as Output
 import Views.Notifications.View as Notifications
-import Views.About.View as About
+import Views.Output.View as Output
 import Views.Search.View as Search
-import Views.Editor.EmbedLink.View as EmbedLink
-import Shared.Utils as Utils
-import Shared.Icons as Icons
+import Views.Sidebar.View as Sidebar
 
 
 renderIf : Bool -> (() -> Html msg) -> Html msg
@@ -223,7 +223,9 @@ editorsView model =
 
 headerSaveOption : Model -> Header.SaveOption
 headerSaveOption model =
-    if Model.isOwnedProject model && Model.isSavedProject model then
+    if RemoteData.isLoading model.saveState then
+        Header.Saving
+    else if Model.isOwnedProject model && Model.isSavedProject model then
         Header.Update
     else if Model.isOwnedProject model && not (Model.isSavedProject model) then
         Header.Save
