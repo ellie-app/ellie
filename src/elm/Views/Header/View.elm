@@ -1,16 +1,16 @@
 module Views.Header.View
     exposing
-        ( view
+        ( SaveOption(..)
         , ViewModel
-        , SaveOption(..)
+        , view
         )
 
-import Html exposing (Html, header, h1, button, div, text, span)
-import Html.Events exposing (onClick)
+import Html exposing (Html, button, div, h1, header, span, text)
 import Html.Attributes exposing (disabled)
-import Views.Header.Classes exposing (..)
+import Html.Events exposing (onClick)
 import Shared.Icons as Icons
 import Shared.Utils as Utils exposing (renderIf)
+import Views.Header.Classes exposing (..)
 
 
 type SaveOption
@@ -63,7 +63,7 @@ viewButton clickMsg isDisabled icon label =
 
 viewSaveButton : ViewModel msg -> Html msg
 viewSaveButton viewModel =
-    case viewModel.saveButtonOption of
+    case Debug.log "sbo" viewModel.saveButtonOption of
         Fork ->
             viewButton
                 viewModel.onSave
@@ -89,7 +89,7 @@ viewSaveButton viewModel =
             viewButton
                 viewModel.onSave
                 True
-                Icons.cloudOutline
+                Icons.loading
                 "Saving..."
 
 
