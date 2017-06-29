@@ -11,16 +11,23 @@ styles : Stylesheet
 styles =
     (stylesheet << namespace View.namespace)
         [ (.) Container
+            [ width (pct 100)
+            , padding2 (px 8) zero
+            , position relative
+            ]
+        , (.) BarContainer
             [ displayFlex
             , position relative
-            , width (pct 100)
-            , padding2 (px 8) zero
             , property "align-items" "center"
             , property "justify-content" "center"
+            , width (pct 100)
+            ]
+        , (.) Label
+            [ paddingBottom (px 12)
             ]
         , (.) BarOuter
             [ maxWidth (px 400)
-            , width (pct 100)
+            , width (pct 80)
             , position relative
             , border3 (px 1) solid (hex Colors.white)
             , height (px 32)

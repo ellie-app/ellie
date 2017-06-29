@@ -102,6 +102,7 @@ compiling total complete =
             ProgressBar.view
                 { total = total
                 , complete = complete
+                , label = Just "Modules Remaining"
                 }
 
         subtitleContent =
@@ -127,6 +128,7 @@ loadingCompiler percentage =
         [ ProgressBar.view
             { total = 100
             , complete = round (percentage * 100)
+            , label = Nothing
             }
         ]
 

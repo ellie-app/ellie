@@ -13,6 +13,7 @@ namespace =
 type alias ViewModel =
     { total : Int
     , complete : Int
+    , label : Maybe String
     }
 
 
@@ -26,24 +27,36 @@ viewIf thunk predicate =
             text ""
 
 
+viewMaybe : (a -> Html msg) -> Maybe a -> Html msg
+viewMaybe innerView maybeValue =
+    maybeValue
+        |> Maybe.map innerView
+        |> Maybe.withDefault (text "")
+
+
 view : ViewModel -> Html msg
-view { total, complete } =
+view { total, complete, label } =
     let
         widthPercentage =
             toString (round (toFloat complete / toFloat total * 100)) ++ "%"
     in
     div [ class [ Container ] ]
-        [ div [ class [ BarOuter ] ]
-            [ div
-                [ class [ BarInner ]
-                , style [ ( "width", widthPercentage ) ]
+        [ viewMaybe
+            (\labelText -> div [ class [ Label ] ] [ text labelText ])
+            label
+        , div [ class [ BarContainer ] ]
+            [ div [ class [ BarOuter ] ]
+                [ div
+                    [ class [ BarInner ]
+                    , style [ ( "width", widthPercentage ) ]
+                    ]
+                    []
                 ]
-                []
-            ]
-        , div [ class [ Count ] ]
-            [ strong [] [ text <| toString complete ]
-            , text " / "
-            , strong [] [ text <| toString total ]
+            , div [ class [ Count ] ]
+                [ strong [] [ text <| toString complete ]
+                , text " / "
+                , strong [] [ text <| toString total ]
+                ]
             ]
         ]
 
@@ -54,6 +67,8 @@ view { total, complete } =
 
 type CssClasses
     = Container
+    | BarContainer
     | BarOuter
     | BarInner
     | Count
+    | Label
