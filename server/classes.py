@@ -320,8 +320,9 @@ class ProjectId(SupportsInt):
         tracker = int(number_value)
         output = ''
         while tracker > 0:
-            output = ALPHABET[tracker % BASE_LENGTH] + output
-            tracker = int(floor(float(tracker) / BASE_LENGTH))
+            index = tracker % BASE_LENGTH
+            output = ALPHABET[index] + output
+            tracker = tracker // BASE_LENGTH
         return output + 'a1'
 
     def _to_string_v0(self, number_value: int) -> str:
@@ -331,7 +332,7 @@ class ProjectId(SupportsInt):
             index = (tracker % len(ALPHABET)) - 1
             if index >= 0:
                 output = ALPHABET[index] + output
-            tracker = int(floor(float(tracker) / BASE_LENGTH))
+            tracker = tracker // BASE_LENGTH
         return output
 
     def to_json(self) -> object:
