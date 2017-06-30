@@ -14,6 +14,8 @@ from . import assets
 from .classes import Version, Constraint, PackageInfo, PackageName, ProjectId, ApiError, Package
 import subprocess
 import re
+import sys
+import traceback
 
 T = TypeVar('T')
 
