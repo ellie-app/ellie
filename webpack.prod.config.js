@@ -10,8 +10,8 @@ const Md5Hash = require('webpack-md5-hash');
 var target = process.env.BUILD_TARGET || 'editor'
 
 var entries = {
-  editor: ['es6-promise', path.join(__dirname, 'src/js/Apps/Editor/Main.js')],
-  embed: ['es6-promise', path.join(__dirname, 'src/js/Apps/Embed/Main.js')],
+  editor: ['es6-promise', path.join(__dirname, 'client/Pages/Editor/index.js')],
+  embed: ['es6-promise', path.join(__dirname, 'client/Pages/Embed/index.js')],
 }
 
 module.exports = {
@@ -118,6 +118,7 @@ module.exports = {
         screw_ie8: true,
         warnings: false,
         dead_code: true,
+        pure_func: ['A2', 'A3', 'A4', 'A5', 'A6', 'A7', 'A8', 'A9', '_elm_lang$core$Native_Utils.update', 'F2', 'F3', 'F4', 'F5', 'F6', 'F7', 'F8', 'F9']
         passes: 2
       },
       mangle: {
