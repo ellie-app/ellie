@@ -7,3 +7,4 @@ build/
 *.pyc
 __pycache__/
 npm-debug.log
+env/

@@ -8,8 +8,8 @@ var syncRequest = require('sync-request');
 var target = process.env.BUILD_TARGET || 'editor'
 
 var entries = {
-  editor: ['es6-promise', path.join(__dirname, 'src/js/Shared/Polyfills'), 'webpack-dev-server/client?http://localhost:8000/', path.join(__dirname, 'src/js/Apps/Editor/Main.js')],
-  embed: ['es6-promise', path.join(__dirname, 'src/js/Shared/Polyfills'), 'webpack-dev-server/client?http://localhost:8001/', path.join(__dirname, 'src/js/Apps/Embed/Main.js')]
+  editor: ['es6-promise', 'webpack-dev-server/client?http://localhost:8000/', path.join(__dirname, 'client/Pages/Editor/index.js')],
+  embed: ['es6-promise', 'webpack-dev-server/client?http://localhost:8001/', path.join(__dirname, 'client/Pages/Embed/Main.js')]
 }
 
 module.exports = {
@@ -28,6 +28,12 @@ module.exports = {
     path: path.resolve(__dirname + '/dist', target),
     publicPath: target === 'editor' ? 'http://localhost:8000/' : 'http://localhost:8001/',
     filename: '[name].js',
+  },
+
+  resolve: {
+    alias: {
+      'Make/0.18.0$': path.resolve(__dirname, 'make/0.18.0/build/Make0180.js')
+    }
   },
 
   module: {
@@ -99,19 +105,6 @@ module.exports = {
   },
 
   plugins: [
-    new webpack.LoaderOptionsPlugin({
-      options: {
-        worker: {
-          plugins: [
-            new webpack.DllReferencePlugin({
-              scope: 'Dll',
-              manifest: JSON.parse(syncRequest('GET', process.env.CDN_BASE + '/elm-compilers/0.18.0-manifest.json').body),
-              context: path.join(__dirname, 'dll')
-            })
-          ]
-        }
-      }
-    }),
     new webpack.DefinePlugin({
       CDN_BASE: JSON.stringify(process.env.CDN_BASE),
       SERVER_ORIGIN: JSON.stringify(process.env.SERVER_ORIGIN || 'http://localhost:5000'),
