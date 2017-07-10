@@ -53,6 +53,8 @@ DEFAULT_ERROR_MESSAGE = "There was a problem with the server"
 
 @app.errorhandler(Exception)
 def handle_default_error(error: Exception) -> Any:
+    traceback.print_exc()
+
     if request.path.startswith('/api'):
         code = getattr(error, "code", 500)
         description = DEFAULT_ERROR_MESSAGE
@@ -240,7 +242,7 @@ def get_revision(project_id: ProjectId, revision_number: int) -> Any:
     revision = storage.get_revision(project_id, revision_number)
     if revision is None:
         raise ApiError(404, 'revision not found')
-    return jsonify(revision)
+    return jsonify(revision.to_json())
 
 
 def remove_ansi_colors(input: str) -> str:

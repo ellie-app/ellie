@@ -10,8 +10,8 @@ const Md5Hash = require('webpack-md5-hash');
 var target = process.env.BUILD_TARGET || 'editor'
 
 var entries = {
-  editor: ['es6-promise', path.join(__dirname, 'src/js/Shared/Polyfills'), path.join(__dirname, 'src/js/Apps/Editor/Main.js')],
-  embed: ['es6-promise', path.join(__dirname, 'src/js/Shared/Polyfills'), path.join(__dirname, 'src/js/Apps/Embed/Main.js')],
+  editor: ['es6-promise', path.join(__dirname, 'src/js/Apps/Editor/Main.js')],
+  embed: ['es6-promise', path.join(__dirname, 'src/js/Apps/Embed/Main.js')],
 }
 
 module.exports = {
@@ -31,6 +31,12 @@ module.exports = {
     filename: '[name].[chunkhash:8].js',
     chunkFilename: 'chunk.[name].[chunkhash:8].js',
     publicPath: process.env.CDN_BASE + '/assets/' + target + '/'
+  },
+
+  resolve: {
+    alias: {
+      'Make/0.18.0$': path.resolve(__dirname, 'make/0.18.0/build/Make0180.js')
+    }
   },
 
   module: {
@@ -100,20 +106,6 @@ module.exports = {
 
   plugins: [
     new Md5Hash(),
-    new webpack.LoaderOptionsPlugin({
-      options: {
-        worker: {
-          plugins: [
-            new webpack.DllReferencePlugin({
-              scope: 'Dll',
-              // TODO CACHE THIS IN DEV
-              manifest: JSON.parse(syncRequest('GET', process.env.CDN_BASE + '/elm-compilers/0.18.0-manifest.json').body),
-              context: path.join(__dirname, 'dll')
-            })
-          ]
-        }
-      }
-    }),
     new webpack.DefinePlugin({
       SERVER_ORIGIN: JSON.stringify(process.env.SERVER_HOSTNAME),
       CDN_BASE: JSON.stringify(process.env.CDN_BASE),
