@@ -1,16 +1,6 @@
-var path = require("path");
+var path = require('path');
 var webpack = require('webpack');
 var StringReplacePlugin = require('string-replace-webpack-plugin');
-var HtmlWebpackPlugin = require('html-webpack-plugin');
-var CopyPlugin = require('copy-webpack-plugin');
-var syncRequest = require('sync-request');
-
-var target = process.env.BUILD_TARGET || 'editor'
-
-var entries = {
-  editor: ['es6-promise', 'webpack-dev-server/client?http://localhost:8000/', path.join(__dirname, 'client/Pages/Editor/index.js')],
-  embed: ['es6-promise', 'webpack-dev-server/client?http://localhost:8001/', path.join(__dirname, 'client/Pages/Embed/Main.js')]
-}
 
 module.exports = {
   cache: true,
@@ -21,12 +11,13 @@ module.exports = {
   },
 
   entry: {
-    app: entries[target]
+    editor: ['es6-promise', 'webpack-dev-server/client?http://localhost:8000/', path.join(__dirname, 'client/src/Pages/Editor/index.js')],
+    embed: ['es6-promise', 'webpack-dev-server/client?http://localhost:8000/', path.join(__dirname, 'client/src/Pages/Embed/index.js')]
   },
 
   output: {
-    path: path.resolve(__dirname + '/dist', target),
-    publicPath: target === 'editor' ? 'http://localhost:8000/' : 'http://localhost:8001/',
+    path: path.resolve(__dirname + '/dist'),
+    publicPath: 'http://localhost:8000/',
     filename: '[name].js',
   },
 
@@ -40,7 +31,7 @@ module.exports = {
     rules: [
       {
         test: /\.js$/,
-        exclude: /(node_modules|bower_components)/,
+        exclude: /node_modules/,
         use: {
           loader: 'babel-loader',
           options: {
@@ -57,9 +48,30 @@ module.exports = {
         loader: 'json-loader'
       },
       {
-        test: /Stylesheets\.elm$/,
-        loader: 'style-loader!css-loader!elm-css-webpack-loader',
-        exclude: /node_modules/
+        test: /Editor\/Stylesheets\.elm$/,
+        use: [
+          'style-loader',
+          'css-loader',
+          {
+            loader: 'elm-css-webpack-loader',
+            options: {
+              module: 'Pages.Editor.Stylesheets'
+            }
+          }
+        ]
+      },
+      {
+        test: /Embed\/Stylesheets\.elm$/,
+        use: [
+          'style-loader',
+          'css-loader',
+          {
+            loader: 'elm-css-webpack-loader',
+            options: {
+              module: 'Pages.Embed.Stylesheets'
+            }
+          }
+        ]
       },
       {
         test:    /\.html$/,
@@ -81,8 +93,7 @@ module.exports = {
         loaders:  [
           StringReplacePlugin.replace({
             replacements: [
-              { pattern: /\%API_PATH\%/g, replacement: () => 'api' },
-              { pattern: /\%CDN_BASE\%/g, replacement: () => 'https://s3.us-east-2.amazonaws.com/cdn.ellie-app.com' },
+              { pattern: /\%CDN_BASE\%/g, replacement: () => 'https://s3.us-east-2.amazonaws.com/development-cdn.ellie-app.com' },
               { pattern: /\%SERVER_ORIGIN\%/g, replacement: () => 'http://localhost:5000' },
               { pattern: /\%CARBON_ZONE_ID\%/g, replacement: () => 'test' },
               { pattern: /\%CARBON_SERVE\%/g, replacement: () => 'test' },
@@ -106,22 +117,18 @@ module.exports = {
 
   plugins: [
     new webpack.DefinePlugin({
-      CDN_BASE: JSON.stringify(process.env.CDN_BASE),
-      SERVER_ORIGIN: JSON.stringify(process.env.SERVER_ORIGIN || 'http://localhost:5000'),
-      'process.env.NODE_ENV': JSON.stringify(process.env.NODE_ENV),
-      'process.version': '"v0.8"'
+      CDN_BASE: JSON.stringify('https://s3.us-east-2.amazonaws.com/development-cdn.ellie-app.com'),
+      SERVER_ORIGIN: JSON.stringify('http://localhost:5000'),
+      'process.env.NODE_ENV': JSON.stringify('development')
     }),
-    new StringReplacePlugin(),
-    new CopyPlugin([
-      { from: path.join(__dirname, 'build/dll/*.js'), flatten: true }
-    ])
+    new StringReplacePlugin()
   ],
 
   devServer: {
     inline: true,
     stats: { colors: true },
     historyApiFallback: true,
-    port: target === 'editor' ? '8000' : '8001',
+    port: '8000',
     watchOptions: {
       aggregateTimeout: 300,
       poll: 1000

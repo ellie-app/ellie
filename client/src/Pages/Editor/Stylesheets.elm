@@ -1,7 +1,7 @@
-port module Stylesheets exposing (..)
+port module Pages.Editor.Stylesheets exposing (..)
 
-import Pages.Editor.Styles as App
 import Css.File exposing (..)
+import Pages.Editor.Styles as Editor
 import Views.About.Styles as About
 import Views.Editor.EmbedLink.Styles as EmbedLink
 import Views.Editors.Styles as Editors
@@ -21,7 +21,7 @@ fileStructure =
     Css.File.toFileStructure
         [ ( "index.css"
           , Css.File.compile
-                [ App.styles
+                [ Editor.styles
                 , Sidebar.styles
                 , Output.styles
                 , Editors.styles

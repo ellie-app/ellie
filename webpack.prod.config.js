@@ -2,17 +2,9 @@ var path = require("path");
 var webpack = require('webpack');
 var StringReplacePlugin = require('string-replace-webpack-plugin');
 var ExtractTextPlugin = require('extract-text-webpack-plugin');
-var HtmlWebpackPlugin = require('html-webpack-plugin');
 var ManifestPlugin = require('webpack-manifest-plugin');
-var syncRequest = require('sync-request');
 const Md5Hash = require('webpack-md5-hash');
 
-var target = process.env.BUILD_TARGET || 'editor'
-
-var entries = {
-  editor: ['es6-promise', path.join(__dirname, 'client/Pages/Editor/index.js')],
-  embed: ['es6-promise', path.join(__dirname, 'client/Pages/Embed/index.js')],
-}
 
 module.exports = {
   cache: true,
@@ -23,14 +15,15 @@ module.exports = {
   },
 
   entry: {
-    app: entries[target]
+    editor: ['es6-promise', path.join(__dirname, 'client/src/Pages/Editor/index.js')],
+    embed: ['es6-promise', path.join(__dirname, 'client/src/Pages/Embed/index.js')],
   },
 
   output: {
-    path: path.resolve(__dirname + '/build', target),
+    path: path.resolve(__dirname + '/build'),
     filename: '[name].[chunkhash:8].js',
     chunkFilename: 'chunk.[name].[chunkhash:8].js',
-    publicPath: process.env.CDN_BASE + '/assets/' + target + '/'
+    publicPath: process.env.CDN_BASE + '/assets/'
   },
 
   resolve: {
@@ -89,7 +82,6 @@ module.exports = {
         loaders:  [
           StringReplacePlugin.replace({
             replacements: [
-              { pattern: /\%API_PATH\%/g, replacement: () => 'api' },
               { pattern: /\%CDN_BASE\%/g, replacement: () => process.env.CDN_BASE },
               { pattern: /\%SERVER_ORIGIN\%/g, replacement: () => process.env.SERVER_HOSTNAME },
               { pattern: /\%CARBON_ZONE_ID\%/g, replacement: () => process.env.CARBON_ZONE_ID },
@@ -110,7 +102,6 @@ module.exports = {
       SERVER_ORIGIN: JSON.stringify(process.env.SERVER_HOSTNAME),
       CDN_BASE: JSON.stringify(process.env.CDN_BASE),
       'process.env.NODE_ENV': JSON.stringify('production'),
-      'process.version': '"v0.8"'
     }),
     new webpack.optimize.OccurrenceOrderPlugin(),
     new webpack.optimize.UglifyJsPlugin({
@@ -131,6 +122,6 @@ module.exports = {
     }),
     new ManifestPlugin(),
     new StringReplacePlugin(),
-    new ExtractTextPlugin('app.[chunkhash:8].css'),
+    new ExtractTextPlugin('[name].[chunkhash:8].css'),
   ]
 };
