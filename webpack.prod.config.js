@@ -36,7 +36,7 @@ module.exports = {
     rules: [
       {
         test: /\.js$/,
-        exclude: /(node_modules|bower_components)/,
+        exclude: /node_modules/,
         use: {
           loader: 'babel-loader',
           options: {
@@ -60,21 +60,36 @@ module.exports = {
         loader: 'json-loader'
       },
       {
-        test: /Stylesheets\.elm$/,
+        test: /Editor\/Stylesheets\.elm$/,
         loader: ExtractTextPlugin.extract({
           fallback: 'style-loader',
-          use: 'css-loader!postcss-loader!elm-css-webpack-loader'
+          use: [
+            'css-loader'
+            'postcss-loader'
+            {
+              loader: 'elm-css-webpack-loader',
+              options: {
+                module: 'Pages.Editor.Stylesheets'
+              }
+            }
+          ]
         }),
-        exclude: /node_modules/,
       },
       {
-        test:    /\.html$/,
-        exclude: /node_modules/,
-        loader:  'file-loader?name=[name].[ext]',
-      },
-      {
-        test: /\.worker\.js$/,
-        loader: 'worker-loader?inline'
+        test: /Embed\/Stylesheets\.elm$/,
+        loader: ExtractTextPlugin.extract({
+          fallback: 'style-loader',
+          use: [
+            'css-loader'
+            'postcss-loader'
+            {
+              loader: 'elm-css-webpack-loader',
+              options: {
+                module: 'Pages.Embed.Stylesheets'
+              }
+            }
+          ]
+        }),
       },
       {
         test:    /Main\.elm$/,
