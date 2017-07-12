@@ -64,8 +64,8 @@ module.exports = {
         loader: ExtractTextPlugin.extract({
           fallback: 'style-loader',
           use: [
-            'css-loader'
-            'postcss-loader'
+            'css-loader',
+            'postcss-loader',
             {
               loader: 'elm-css-webpack-loader',
               options: {
@@ -80,8 +80,8 @@ module.exports = {
         loader: ExtractTextPlugin.extract({
           fallback: 'style-loader',
           use: [
-            'css-loader'
-            'postcss-loader'
+            'css-loader',
+            'postcss-loader',
             {
               loader: 'elm-css-webpack-loader',
               options: {
