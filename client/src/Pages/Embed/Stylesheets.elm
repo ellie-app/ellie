@@ -1,4 +1,4 @@
-port module Stylesheets exposing (..)
+port module Pages.Embed.Stylesheets exposing (..)
 
 import Css.File exposing (..)
 import Pages.Embed.Styles as App

@@ -278,8 +278,8 @@ def format() -> Any:
 
 EDITOR_CONSTANTS = {
     'ENV': os.environ['ENV'],
-    'APP_JS': assets.asset_path('editor/app.js'),
-    'APP_CSS': assets.asset_path('editor/app.css'),
+    'APP_JS': assets.asset_path('editor.js'),
+    'APP_CSS': assets.asset_path('editor.css'),
     'GTM_ID': os.environ['GTM_ID'],
     'PROFILE_PIC': 'idk.jpg',
     'CDN_BASE': os.environ['CDN_BASE'],
@@ -319,8 +319,8 @@ def existing(project_id: ProjectId, revision_number: int) -> Any:
 
 EMBED_CONSTANTS = {
     'ENV': os.environ['ENV'],
-    'APP_JS': assets.asset_path('embed/app.js'),
-    'APP_CSS': assets.asset_path('embed/app.css'),
+    'APP_JS': assets.asset_path('embed.js'),
+    'APP_CSS': assets.asset_path('embed.css'),
     'GTM_ID': os.environ['GTM_ID'],
     'PROFILE_PIC': 'idk.jpg',
     'CDN_BASE': os.environ['CDN_BASE'],

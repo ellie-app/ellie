@@ -18,7 +18,7 @@ isProduction =
 
 apiBase : String
 apiBase =
-    "%SERVER_ORIGIN%/%API_PATH%"
+    "/api"
 
 
 editorBase : String

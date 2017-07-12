@@ -21,7 +21,7 @@
     "copy-webpack-plugin": "^4.0.1",
     "css-loader": "0.27.0",
     "elm": "^0.18.0",
-    "elm-css-webpack-loader": "3.1.0",
+    "elm-css-webpack-loader": "https://github.com/OzTK/elm-css-webpack-loader.git#6194f2be3f99e0a9d521c3cabf87b2898cb4fa6b",
     "elm-format": "^0.7.0-exp",
     "elm-webpack-loader": "4.3.0",
     "es6-promise": "^4.1.0",
@@ -53,9 +53,7 @@
     "clean:elm": "rimraf ./elm-stuff/build-artifacts/0.18.0/user",
     "build:make:0.18.0": "NODE_ENV=production cd ./make/0.18.0 && npm install && npm run build",
     "build:make": "npm run build:make:0.18.0",
-    "build:editor:production": "npm run clean:elm && BUILD_TARGET=editor webpack --config ./webpack.prod.config.js",
-    "build:embed:production": "npm run clean:elm && BUILD_TARGET=embed webpack --config ./webpack.prod.config.js",
-    "build:production": "npm run install:elm && npm run clean && npm run build:editor:production && npm run build:embed:production",
+    "build:production": "NODE_ENV=production npm run install:elm && npm run clean && webpack --config ./webpack.prod.config.js",
     "deploy": "python ./scripts/deploy_assets.py",
     "heroku-postbuild": "npm run build:make && npm run build:production && npm run deploy"
   }

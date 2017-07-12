@@ -63,7 +63,7 @@ viewButton clickMsg isDisabled icon label =
 
 viewSaveButton : ViewModel msg -> Html msg
 viewSaveButton viewModel =
-    case Debug.log "sbo" viewModel.saveButtonOption of
+    case viewModel.saveButtonOption of
         Fork ->
             viewButton
                 viewModel.onSave
