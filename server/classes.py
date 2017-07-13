@@ -227,8 +227,7 @@ class PackageInfo(object):
             return False
         return self.username == other.username and \
             self.package == other.package and \
-            self.version == other.version and \
-            self.elm_constraint == other.elm_constraint
+            self.version == other.version
 
     def __neq__(self, other: object) -> bool:
         return not self.__eq__(other)
