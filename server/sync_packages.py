@@ -126,7 +126,7 @@ def get_current_time() -> int:
     return int((dt - epoch).total_seconds() * 1000.0)
 
 
-min_required_version = Version(0, 18 0)
+min_required_version = Version(0, 18, 0)
 
 
 def process_package(package: PackageInfo) -> Tuple[bool, PackageInfo]:
