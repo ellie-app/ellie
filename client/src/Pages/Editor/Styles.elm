@@ -26,27 +26,27 @@ styles =
             [ focus [ outline zero ] ]
         , input
             [ focus [ outline zero ] ]
-        , (.) AppContainer
+        , Css.class AppContainer
             [ width (pct 100)
             , height (pct 100)
             , displayFlex
             , position relative
             , backgroundColor (hex Colors.mediumGray)
             ]
-        , (.) WorkArea
+        , Css.class WorkArea
             [ property "width" <| "calc(100% - " ++ toString Constants.sidebarWidth ++ "px)"
             , height (pct 100)
             , displayFlex
             , position relative
             ]
-        , (.) MainContainer
+        , Css.class MainContainer
             [ width (pct 100)
             , property "height" <| "calc(100% - " ++ (toString Constants.headerHeight) ++ "px)"
             , displayFlex
             , position relative
             , property "z-index" "1"
             ]
-        , (.) AppContainerInner
+        , Css.class AppContainerInner
             [ position relative
             , width (pct 100)
             , height (pct 100)
@@ -55,7 +55,7 @@ styles =
                 [ property "filter" "blur(30px)"
                 ]
             ]
-        , (.) EditorsContainer
+        , Css.class EditorsContainer
             [ displayFlex
             , position relative
             , property "z-index" "0"
@@ -65,7 +65,7 @@ styles =
             , borderRight3 (px 2) solid (hex Colors.mediumGray)
             , overflow hidden
             ]
-        , (.) EditorContainer
+        , Css.class EditorContainer
             [ height (pct 50)
             , position relative
             , backgroundColor (hex Colors.darkGray)
@@ -82,7 +82,7 @@ styles =
                 [ property "height" "calc(100% - 40px)"
                 ]
             ]
-        , (.) OutputContainer
+        , Css.class OutputContainer
             [ width (pct 50)
             , height (pct 100)
             , position relative
@@ -91,19 +91,19 @@ styles =
             , overflow hidden
             , hover
                 [ descendants
-                    [ (.) ReloadButton
+                    [ Css.class ReloadButton
                         [ display unset ]
-                    , (.) DebugButton
+                    , Css.class DebugButton
                         [ display unset ]
                     ]
                 ]
             ]
-        , (.) NotificationsContainer
+        , Css.class NotificationsContainer
             [ position absolute
             , right (px 16)
             , top (px 16)
             ]
-        , (.) OutputResizeHandle
+        , Css.class OutputResizeHandle
             [ position absolute
             , width (px 6)
             , height (pct 100)
@@ -111,7 +111,7 @@ styles =
             , cursor ewResize
             , property "z-index" "6"
             ]
-        , (.) EditorResizeHandle
+        , Css.class EditorResizeHandle
             [ position absolute
             , height (px 6)
             , width (pct 100)
@@ -119,22 +119,22 @@ styles =
             , cursor nsResize
             , property "z-index" "6"
             ]
-        , (.) ResizeNs
+        , Css.class ResizeNs
             [ descendants [ everything [ cursor nsResize |> important ] ]
             , cursor nsResize
             ]
-        , (.) ResizeEw
+        , Css.class ResizeEw
             [ descendants [ everything [ cursor ewResize |> important ] ]
             , cursor ewResize
             ]
-        , (.) EmbedLinkContainer
+        , Css.class EmbedLinkContainer
             [ position absolute
             , property "z-index" "2"
             , width (px 320)
             , left (px 448)
             , top (px 16)
             ]
-        , (.) OverlayButton
+        , Css.class OverlayButton
             [ position absolute
             , property "background" "none"
             , border zero
@@ -163,23 +163,23 @@ styles =
                 , left (px 6)
                 ]
             ]
-        , (.) ReloadButton
+        , Css.class ReloadButton
             [ display none
             ]
-        , (.) DebugButton
+        , Css.class DebugButton
             [ display none
             ]
-        , (.) OverlayButtonText
+        , Css.class OverlayButtonText
             [ fontSize (px 16)
             , textTransform uppercase
             , lineHeight (px 16)
             , adjacentSiblings
-                [ (.) OverlayButtonIcon
+                [ Css.class OverlayButtonIcon
                     [ marginLeft (px 6)
                     ]
                 ]
             ]
-        , (.) OverlayButtonIcon
+        , Css.class OverlayButtonIcon
             [ display block
             , width (px 16)
             , height (px 16)

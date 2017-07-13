@@ -10,7 +10,7 @@ import Shared.Colors as Colors
 styles : Stylesheet
 styles =
     (stylesheet << namespace "components_sidebar_")
-        [ (.) Sidebar
+        [ Css.class Sidebar
             [ height (pct 100)
             , width (px Constants.sidebarWidth)
             , backgroundColor (hex Colors.mediumGray)
@@ -23,28 +23,28 @@ styles =
             , property "justify-content" "space-between"
             , overflow hidden
             ]
-        , (.) TopStuff
+        , Css.class TopStuff
             [ displayFlex
             , flexDirection column
             , property "flex-shrink" "1"
             , overflow hidden
             ]
-        , (.) BottomStuff
+        , Css.class BottomStuff
             [ displayFlex
             , property "flex-shrink" "0"
             ]
-        , (.) ProjectInfo
+        , Css.class ProjectInfo
             [ padding2 (px 8) zero
             , property "flex-shrink" "0"
             ]
-        , (.) ProjectInfoTitle
+        , Css.class ProjectInfoTitle
             [ color (hex Colors.lightGray)
             , textTransform uppercase
             , fontSize (px 14)
             , paddingBottom (px 4)
             , lineHeight (px 14)
             ]
-        , (.) ProjectInfoInputContainer
+        , Css.class ProjectInfoInputContainer
             [ position relative
             , overflow hidden
             , marginBottom (px 2)
@@ -58,7 +58,7 @@ styles =
                 , marginBottom zero
                 ]
             ]
-        , (.) ProjectInfoInput
+        , Css.class ProjectInfoInput
             [ backgroundColor (hex Colors.darkGray)
             , color (hex Colors.white)
             , display block
@@ -71,7 +71,7 @@ styles =
             , fontFamilies [ Constants.sansFont ]
             , fontWeight (int 500)
             ]
-        , (.) ProjectInfoTextarea
+        , Css.class ProjectInfoTextarea
             [ backgroundColor (hex Colors.darkGray)
             , color (hex Colors.white)
             , display block
@@ -86,7 +86,7 @@ styles =
             , fontFamilies [ Constants.sansFont ]
             , fontWeight (int 500)
             ]
-        , (.) ProjectInfoLabel
+        , Css.class ProjectInfoLabel
             [ position absolute
             , top (px 8)
             , left (px 8)
@@ -95,24 +95,24 @@ styles =
             , textTransform uppercase
             , color (hex Colors.lightGray)
             ]
-        , (.) Packages
+        , Css.class Packages
             [ padding2 (px 8) zero
             , property "flex-shrink" "1"
             , displayFlex
             , flexDirection column
             , overflow hidden
             ]
-        , (.) PackagesTitle
+        , Css.class PackagesTitle
             [ color (hex Colors.lightGray)
             , textTransform uppercase
             , fontSize (px 14)
             , lineHeight (px 14)
             , paddingBottom (px 4)
             ]
-        , (.) PackagesList
+        , Css.class PackagesList
             [ overflowY auto
             ]
-        , (.) PackagesItem
+        , Css.class PackagesItem
             [ backgroundColor (hex Colors.darkGray)
             , color (hex Colors.white)
             , width (pct 100)
@@ -133,13 +133,13 @@ styles =
                 ]
             , hover
                 [ descendants
-                    [ (.) PackagesItemActions
+                    [ Css.class PackagesItemActions
                         [ displayFlex
                         ]
                     ]
                 ]
             ]
-        , (.) PackagesItemName
+        , Css.class PackagesItemName
             [ fontSize (px 16)
             , padding2 zero (px 12)
             , color (hex Colors.white)
@@ -148,17 +148,17 @@ styles =
             , overflowX hidden
             , overflowY visible
             ]
-        , (.) PackagesItemActions
+        , Css.class PackagesItemActions
             [ display none
             , property "align-items" "center"
             , height (pct 100)
             ]
-        , (.) PackagesItemVersion
+        , Css.class PackagesItemVersion
             [ fontSize (px 12)
             , color (hex Colors.lightGray)
             , paddingRight (px 4)
             ]
-        , (.) PackagesItemButton
+        , Css.class PackagesItemButton
             [ property "background" "none"
             , border zero
             , width (px 48)
@@ -171,22 +171,22 @@ styles =
             , borderLeft3 (px 2) solid (hex Colors.mediumGray)
             , textDecoration none
             ]
-        , (.) PackagesItemButtonInner
+        , Css.class PackagesItemButtonInner
             [ displayFlex
             , flexDirection column
             , property "justify-content" "space-between"
             , alignItems center
             , height (pct 100)
             ]
-        , (.) PackagesItemButtonIcon
+        , Css.class PackagesItemButtonIcon
             [ width (px 20)
             , height (px 20)
             ]
-        , (.) PackagesItemButtonText
+        , Css.class PackagesItemButtonText
             [ fontSize (px 8)
             , textTransform uppercase
             ]
-        , (.) AddPackage
+        , Css.class AddPackage
             [ display block
             , backgroundColor (hex Colors.darkGray)
             , color (hex Colors.lightGray)

@@ -15,7 +15,7 @@ shimmerGradient =
 styles : Stylesheet
 styles =
     (stylesheet << namespace "components_editors_")
-        [ (.) Loading
+        [ Css.class Loading
             [ width (pct 100)
             , height (pct 100)
             , displayFlex
@@ -24,7 +24,7 @@ styles =
             , position relative
             , overflow hidden
             ]
-        , (.) LoadingGutter
+        , Css.class LoadingGutter
             [ width (px 29)
             , height (pct 100)
             , backgroundColor (hex "e5e1e5")
@@ -32,7 +32,7 @@ styles =
             , flexDirection column
             , borderRight3 (px 1) solid (hex "bdb7bd")
             ]
-        , (.) LoadingLineNumber
+        , Css.class LoadingLineNumber
             [ fontSize (px 12)
             , property "font-family" "monospace"
             , width (pct 100)
@@ -41,7 +41,7 @@ styles =
             , color (hex "bdb7bd")
             , property "user-select" "none"
             ]
-        , (.) LoadingLines
+        , Css.class LoadingLines
             [ minWidth (px 421)
             , width (pct 100)
             , height (pct 100)
@@ -49,13 +49,13 @@ styles =
             , flexDirection column
             , padding2 (px 0) (px 8)
             ]
-        , (.) LoadingLine
+        , Css.class LoadingLine
             [ height (px 12)
             , margin2 (px 9) (px 0)
             , backgroundColor (hex "e5e1e5")
             , borderRadius (px 12)
             ]
-        , (.) LoadingShimmer
+        , Css.class LoadingShimmer
             [ height (pct 120)
             , width (pct 100)
             , position absolute

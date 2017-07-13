@@ -1,21 +1,24 @@
-from typing import Optional, Any, Optional, Iterator, TypeVar, List, NamedTuple, Dict, Tuple
 import json
-from flask import Flask, jsonify, request, render_template, url_for, redirect
-from werkzeug.routing import BaseConverter, ValidationError, HTTPException
-from datetime import datetime, timedelta
-import boto3
-import botocore
-from itertools import *
-from operator import *
-from urllib.parse import urlparse
 import os
-from . import storage
-from . import assets
-from .classes import Version, Constraint, PackageInfo, PackageName, ProjectId, ApiError, Package
-import subprocess
 import re
+import subprocess
 import sys
 import traceback
+from datetime import datetime, timedelta
+from itertools import *
+from operator import *
+from typing import (Any, Dict, Iterator, List, NamedTuple, Optional, Tuple,
+                    TypeVar)
+from urllib.parse import urlparse
+
+import boto3
+import botocore
+from flask import Flask, jsonify, redirect, render_template, request, url_for
+from werkzeug.routing import BaseConverter, HTTPException, ValidationError
+
+from . import assets, storage
+from .classes import (ApiError, Constraint, Package, PackageInfo, PackageName,
+                      ProjectId, Version)
 
 T = TypeVar('T')
 
@@ -43,7 +46,6 @@ app.url_map.converters['project_id'] = ProjectIdConverter
 @app.errorhandler(ApiError)
 def handle_error(error: ApiError) -> Any:
     response = jsonify({'status': error.status_code, 'message': error.message})
-
     response.status_code = error.status_code
     return response
 
@@ -102,8 +104,7 @@ def package_entry_score(key: PackageName,
 
 def do_search(elm_version: Version, query: str) -> List[Any]:
     cache_data = storage.get_searchable_packages()
-    score_gen = (package_entry_score(key, info.latest_by_elm_version,
-                                     elm_version, query)
+    score_gen = (package_entry_score(key, info.latest_by_elm_version, elm_version, query)
                  for key, info in cache_data.items())
     filtered = filter(lambda t: t[1] > 0, score_gen)
     sorted_gen = sorted(list(filtered), key=lambda t: -t[1])
@@ -150,12 +151,10 @@ def get_upload_urls() -> Any:
     if project_id is None:
         raise ApiError(400, 'projectId must be a string')
 
-    if project_id_string is not None and not storage.revision_exists(
-            project_id, 0):
+    if project_id_string is not None and not storage.revision_exists(project_id, 0):
         raise ApiError(404, 'revision not found')
 
-    if project_id_string is not None and not storage.project_id_is_owned(
-            project_id):
+    if project_id_string is not None and not storage.project_id_is_owned(project_id):
         raise ApiError(403, 'you don\'t own this revision')
 
     revision_string = request.args.get('revisionNumber')
@@ -174,10 +173,8 @@ def get_upload_urls() -> Any:
         raise ApiError(400, 'the revision you wanted to create already exists')
 
     response = jsonify({
-        'revision':
-        storage.get_revision_upload_signature(project_id, revision_number),
-        'result':
-        storage.get_result_upload_signature(project_id, revision_number)
+        'revision': storage.get_revision_upload_signature(project_id, revision_number),
+        'result': storage.get_result_upload_signature(project_id, revision_number)
     })
 
     storage.add_project_id_ownership(project_id, response)
@@ -194,20 +191,13 @@ def get_default_revision() -> Any:
         'elm-lang', 'core')].latest_by_elm_version[Version(0, 18, 0)]
 
     return jsonify({
-        'packages': [default_core.to_json(),
-                     default_html.to_json()],
-        'projectId':
-        None,
-        'revisionNumber':
-        None,
-        'title':
-        'Untitled',
-        'id':
-        None,
-        'description':
-        'Tell the world about your project!',
-        'elmCode':
-        '''module Main exposing (main)
+        'packages': [default_core.to_json(), default_html.to_json()],
+        'projectId': None,
+        'revisionNumber': None,
+        'title': 'Untitled',
+        'id': None,
+        'description': 'Tell the world about your project!',
+        'elmCode': '''module Main exposing (main)
 
 import Html exposing (Html, text)
 
@@ -216,8 +206,7 @@ main : Html msg
 main =
     text "Hello, World!"
 ''',
-        'htmlCode':
-        '''<html>
+        'htmlCode': '''<html>
 <head>
   <style>
     html {
@@ -236,8 +225,7 @@ main =
     })
 
 
-@app.route(
-    '/api/revisions/<project_id:project_id>/<int(min=0):revision_number>')
+@app.route('/api/revisions/<project_id:project_id>/<int(min=0):revision_number>')
 def get_revision(project_id: ProjectId, revision_number: int) -> Any:
     revision = storage.get_revision(project_id, revision_number)
     if revision is None:
@@ -255,8 +243,8 @@ def format() -> Any:
     maybe_source: Optional[str] = data['source']
 
     if maybe_source is None:
-        raise ApiError(400,
-                       'source attribute is missing, source must be a string')
+        raise ApiError(
+            400, 'source attribute is missing, source must be a string')
 
     elm_format_path = os.path.realpath(
         os.path.dirname(os.path.realpath(__file__)) +
@@ -304,17 +292,12 @@ def existing(project_id: ProjectId, revision_number: int) -> Any:
         return redirect('new', code=303)
 
     data = {
-        'title':
-        revision.title,
-        'description':
-        revision.description,
-        'url':
-        EDITOR_CONSTANTS['SERVER_HOSTNAME'] + '/' + str(project_id) + '/' +
-        str(revision_number)
+        'title': revision.title,
+        'description': revision.description,
+        'url': EDITOR_CONSTANTS['SERVER_HOSTNAME'] + '/' + str(project_id) + '/' + str(revision_number)
     }
 
-    return render_template(
-        'existing.html', constants=EDITOR_CONSTANTS, data=data)
+    return render_template('existing.html', constants=EDITOR_CONSTANTS, data=data)
 
 
 EMBED_CONSTANTS = {
@@ -339,8 +322,8 @@ def embed(project_id: ProjectId, revision_number: int) -> Any:
     if revision is not None:
         data['title'] = revision.title
         data['description'] = revision.description
-        data['url'] = EMBED_CONSTANTS['SERVER_HOSTNAME'] + '/embed/' + str(
-            project_id) + '/' + str(revision_number)
+        data['url'] = EMBED_CONSTANTS['SERVER_HOSTNAME'] + \
+            '/embed/' + str(project_id) + '/' + str(revision_number)
 
     return render_template('embed.html', constants=EMBED_CONSTANTS, data=data)
 
@@ -377,23 +360,12 @@ def oembed() -> Any:
         raise ApiError(404, 'revision not found')
 
     return jsonify({
-        'width':
-        'width',
-        'height':
-        'height',
-        'type':
-        'rich',
-        'version':
-        '1.0',
-        'title':
-        revision.title,
-        'provider_name':
-        'ellie-app.com',
-        'provider_url':
-        'https://ellie-app.com',
-        'html':
-        '<iframe src="' + EDITOR_CONSTANTS['SERVER_HOSTNAME'] + '/embed/' +
-        str(project_id) + '/' + str(revision_number) + '" width=' + str(width)
-        + ' height=' + str(height) +
-        ' frameBorder="0" allowtransparency="true"></iframe>'
+        'width': 'width',
+        'height': 'height',
+        'type': 'rich',
+        'version': '1.0',
+        'title': revision.title,
+        'provider_name': 'ellie-app.com',
+        'provider_url': 'https://ellie-app.com',
+        'html': '<iframe src="' + EDITOR_CONSTANTS['SERVER_HOSTNAME'] + '/embed/' + str(project_id) + '/' + str(revision_number) + '" width=' + str(width) + ' height=' + str(height) + ' frameBorder="0" allowtransparency="true"></iframe>'
     })

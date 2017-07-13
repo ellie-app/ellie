@@ -1,6 +1,7 @@
-var path = require('path');
-var webpack = require('webpack');
-var StringReplacePlugin = require('string-replace-webpack-plugin');
+const path = require('path')
+const webpack = require('webpack')
+const StringReplacePlugin = require('string-replace-webpack-plugin')
+const CopyPlugin = require('copy-webpack-plugin')
 
 module.exports = {
   cache: true,
@@ -121,7 +122,12 @@ module.exports = {
       SERVER_ORIGIN: JSON.stringify('http://localhost:5000'),
       'process.env.NODE_ENV': JSON.stringify('development')
     }),
-    new StringReplacePlugin()
+    new StringReplacePlugin(),
+    new CopyPlugin([
+      { from: path.join(__dirname, 'images'), to: 'images', toType: 'dir' }
+    ], {
+      copyUnmodified: true
+    })
   ],
 
   devServer: {
@@ -134,4 +140,4 @@ module.exports = {
       poll: 1000
     },
   },
-};
+}

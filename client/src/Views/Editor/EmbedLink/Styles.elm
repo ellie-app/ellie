@@ -14,7 +14,7 @@ import Shared.Colors as Colors
 styles : Stylesheet
 styles =
     (stylesheet << namespace "components_editor_embedLink_")
-        [ (.) Container
+        [ Css.class Container
             [ position relative
             , backgroundColor (hex Colors.mediumGray)
             , width (pct 100)
@@ -28,8 +28,8 @@ styles =
             , fontSize (px 14)
             , overflowY auto
             ]
-        , (.) Links []
-        , (.) Link
+        , Css.class Links []
+        , Css.class Link
             [ backgroundColor (hex Colors.darkGray)
             , marginBottom (px 2)
             , padding3 (px 8) (px 8) (px 16)
@@ -43,13 +43,13 @@ styles =
                 , marginBottom (px 2)
                 ]
             ]
-        , (.) LinkTitle
+        , Css.class LinkTitle
             [ fontSize (px 12)
             , lineHeight (px 12)
             , textTransform uppercase
             , color (hex Colors.lightGray)
             ]
-        , (.) LinkContent
+        , Css.class LinkContent
             [ paddingTop (px 8)
             , whiteSpace noWrap
             , overflowX hidden
@@ -62,10 +62,10 @@ styles =
             , fontSize (px 14)
             , color (hex Colors.white)
             ]
-        , (.) Buttons
+        , Css.class Buttons
             [ paddingTop (px 16)
             ]
-        , (.) Button
+        , Css.class Button
             [ display block
             , backgroundColor (hex Colors.darkGray)
             , color (hex Colors.lightGray)
@@ -82,16 +82,16 @@ styles =
                 [ opacity (num 0.5)
                 ]
             ]
-        , (.) ButtonInner
+        , Css.class ButtonInner
             [ displayFlex
             , property "justify-content" "center"
             , alignItems center
             ]
-        , (.) ButtonIcon
+        , Css.class ButtonIcon
             [ width (px 20)
             , height (px 20)
             , adjacentSiblings
-                [ (.) ButtonText
+                [ Css.class ButtonText
                     [ marginLeft (px 12)
                     ]
                 ]

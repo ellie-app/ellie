@@ -15,12 +15,12 @@ shimmerGradient =
 styles : Stylesheet
 styles =
     (stylesheet << namespace "components_output_")
-        [ (.) Iframe
+        [ Css.class Iframe
             [ width (pct 100)
             , height (pct 100)
             , border zero
             ]
-        , (.) Overlay
+        , Css.class Overlay
             [ width (pct 100)
             , height (pct 100)
             , position relative
@@ -28,7 +28,7 @@ styles =
             , color (hex Colors.white)
             , padding (px 16)
             ]
-        , (.) OverlayContent
+        , Css.class OverlayContent
             [ top (pct 30)
             , position relative
             , width (pct 100)
@@ -36,12 +36,12 @@ styles =
             , property "align-items" "center"
             , flexDirection column
             ]
-        , (.) OverlayTitle
+        , Css.class OverlayTitle
             [ property "font-family" "Leckerli One"
             , fontSize (px 48)
             , marginBottom (px 16)
             ]
-        , (.) OverlaySubtitle
+        , Css.class OverlaySubtitle
             [ fontSize (px 24)
             , textAlign center
             , width (pct 100)
@@ -50,14 +50,14 @@ styles =
             , flexDirection column
             , property "align-items" "center"
             ]
-        , (.) ErrorsContainer
+        , Css.class ErrorsContainer
             [ padding (px 16)
             , width (pct 100)
             , backgroundColor (hex Colors.mediumGray)
             , height (pct 100)
             , overflowY auto
             ]
-        , (.) ErrorItem
+        , Css.class ErrorItem
             [ padding (px 16)
             , backgroundColor (hex Colors.darkGray)
             , color (hex Colors.white)
@@ -81,7 +81,7 @@ styles =
                     ]
                 ]
             ]
-        , (.) ErrorItemHeader
+        , Css.class ErrorItemHeader
             [ displayFlex
             , property "justify-content" "space-between"
             , fontSize (px 10)
@@ -90,21 +90,21 @@ styles =
             , textTransform uppercase
             , paddingBottom (px 16)
             ]
-        , (.) ErrorItemName
+        , Css.class ErrorItemName
             []
-        , (.) ErrorItemLocation
+        , Css.class ErrorItemLocation
             []
-        , (.) ErrorItemOverview
+        , Css.class ErrorItemOverview
             [ fontSize (px 16)
             , fontWeight (int 700)
             , paddingBottom (px 16)
             , lineHeight (px 16)
             ]
-        , (.) ErrorItemDetails
+        , Css.class ErrorItemDetails
             [ fontSize (px 14)
             , lineHeight (px 14)
             ]
-        , (.) ManyModulesWarning
+        , Css.class ManyModulesWarning
             [ fontSize (px 18)
             , maxWidth (px 450)
             ]

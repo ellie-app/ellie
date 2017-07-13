@@ -1,7 +1,7 @@
 port module Pages.Embed.Stylesheets exposing (..)
 
 import Css.File exposing (..)
-import Pages.Embed.Styles as App
+import Pages.Embed.Styles as Embed
 import Views.Output.Styles as Output
 
 
@@ -13,7 +13,7 @@ fileStructure =
     Css.File.toFileStructure
         [ ( "index.css"
           , Css.File.compile
-                [ App.styles
+                [ Embed.styles
                 , Output.styles
                 ]
           )
