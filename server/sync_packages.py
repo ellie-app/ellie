@@ -136,9 +136,13 @@ def process_package(package: PackageInfo) -> Tuple[bool, PackageInfo]:
         unzip_and_delete(base_dir)
         package_json = read_package_json(base_dir, package)
         constraint = Constraint.from_string(package_json['elm-version'])
-        package.set_elm_constraint(constraint)
+        if constraint is None:
+            return (False, package)
+
         if not constraint.is_satisfied(min_required_version):
-            return (True, package)
+            return (False, package)
+
+        package.set_elm_constraint(constraint)
 
         source_files = read_source_files(base_dir, package, package_json)
         bucket.put_object(
@@ -167,10 +171,31 @@ def upload_searchable_packages(packages: List[PackageInfo]) -> None:
         ContentType='application/json')
 
 
+def upload_failed_packages(packages: List[PackageInfo]) -> None:
+    bucket.put_object(
+        Key='package-artifacts/known_failures.json',
+        ACL='public-read',
+        Body=json.dumps([x.to_json for x in packages]).encode('utf-8'),
+        ContentType='application/json')
+
+
 def download_searchable_packages() -> Set[PackageInfo]:
     try:
         body = s3.Object(BUCKET_NAME,
                          'package-artifacts/searchable.json').get()['Body']
+        data = body.read()
+        packages = set(
+            cat_optionals(PackageInfo.from_json(x) for x in json.loads(data)))
+        body.close()
+        return packages
+    except:
+        return set()
+
+
+def download_known_failures() -> Set[PackageInfo]:
+    try:
+        body = s3.Object(BUCKET_NAME,
+                         'package-artifacts/known_failures.json').get()['Body']
         data = body.read()
         packages = set(
             cat_optionals(PackageInfo.from_json(x) for x in json.loads(data)))
@@ -185,13 +210,15 @@ def run() -> None:
     num_cores = multiprocessing.cpu_count()
     packages = organize_packages(data)
     searchable = download_searchable_packages()
-    filtered_packages = [p for p in packages if p not in searchable]
+    known_failures = download_known_failures()
+    filtered_packages = [
+        p for p in packages if p not in searchable and p not in known_failures]
     package_groups = [
         filtered_packages[x:x + num_cores]
         for x in range(0, len(filtered_packages), num_cores)
     ]
-    counter = 0.0
-    total = float(len(filtered_packages))
+    counter = 0
+    total = len(filtered_packages)
     failed = []
     for package_group in package_groups:
         results = Parallel(n_jobs=num_cores)(delayed(process_package)(i)
@@ -203,9 +230,10 @@ def run() -> None:
             else:
                 failed.append(package)
 
-        print(str(counter / total * 100) + '%')
+        print(str((counter * 100) // (total * 100)) + '%')
 
     upload_searchable_packages(list(searchable))
+    upload_failed_packages(failed + list(known_failures))
 
 
 if __name__ == "__main__":

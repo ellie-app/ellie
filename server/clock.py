@@ -1,21 +1,26 @@
 import logging
-from apscheduler.schedulers.blocking import BlockingScheduler
-from . import sync_packages
-import threading
 import os
+import threading
+
+from apscheduler.schedulers.blocking import BlockingScheduler
+
+from . import sync_packages
 
 logging.basicConfig()
 
-def my_threaded_func() -> None:
-    SYNC_INTERVAL = int(os.environ['PACKAGE_SYNC_INTERVAL_MINUTES'])
-    sched = BlockingScheduler()
+SYNC_INTERVAL = int(os.environ['PACKAGE_SYNC_INTERVAL_MINUTES'])
+sched = BlockingScheduler()
 
-    @sched.scheduled_job('interval', minutes=SYNC_INTERVAL)
-    def run_sync_packages() -> None:
-        sync_packages.run()
 
-    sched.start()
+def run_in_thread() -> None:
+    sync_packages.run()
+
+
+@sched.scheduled_job('interval', minutes=SYNC_INTERVAL)
+def run_sync_packages() -> None:
+    thread = threading.Thread(target=run_in_thread)
+    thread.start()
+
 
 def start() -> None:
-    thread = threading.Thread(target=my_threaded_func)
-    thread.start()
+    sched.start()
