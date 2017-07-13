@@ -1,19 +1,21 @@
-from typing import List, Optional, Any, Tuple, Set, SupportsInt, Optional, Dict, Any, NamedTuple, List, TypeVar, Iterator
-import requests
 import json
-import tempfile
-import os
-import zipfile
-import shutil
-import glob2
-from joblib import Parallel, delayed
 import multiprocessing
-import boto3
-import sys
-from datetime import datetime
-from .classes import Version, Constraint, PackageInfo
 import os
+import shutil
+import sys
+import tempfile
+import zipfile
+from datetime import datetime
+from typing import (Any, Dict, Iterator, List, NamedTuple, Optional, Set,
+                    SupportsInt, Tuple, TypeVar)
+
+import boto3
+import glob2
+import requests
+from joblib import Parallel, delayed
+
 from . import storage
+from .classes import Constraint, PackageInfo, Version
 
 BUCKET_NAME = os.environ['AWS_S3_BUCKET']
 
@@ -124,12 +126,20 @@ def get_current_time() -> int:
     return int((dt - epoch).total_seconds() * 1000.0)
 
 
+min_required_version = Version(0, 18 0)
+
+
 def process_package(package: PackageInfo) -> Tuple[bool, PackageInfo]:
     try:
         base_dir = make_temp_directory()
         download_package_zip(base_dir, package)
         unzip_and_delete(base_dir)
         package_json = read_package_json(base_dir, package)
+        constraint = Constraint.from_string(package_json['elm-version'])
+        package.set_elm_constraint(constraint)
+        if not constraint.is_satisfied(min_required_version):
+            return (True, package)
+
         source_files = read_source_files(base_dir, package, package_json)
         bucket.put_object(
             Key=package.s3_package_key(),
@@ -142,8 +152,6 @@ def process_package(package: PackageInfo) -> Tuple[bool, PackageInfo]:
             Body=json.dumps(source_files).encode('utf-8'),
             ContentType='application/json')
         shutil.rmtree(base_dir)
-        package.set_elm_constraint(
-            Constraint.from_string(package_json['elm-version']))
         return (True, package)
     except:
         print(package)
