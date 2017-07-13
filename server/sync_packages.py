@@ -138,9 +138,11 @@ def process_package(package: PackageInfo) -> Tuple[bool, PackageInfo]:
         package_json = read_package_json(base_dir, package)
         constraint = Constraint.from_string(package_json['elm-version'])
         if constraint is None:
+            shutil.rmtree(base_dir)
             return (False, package)
 
         if not constraint.is_satisfied(min_required_version):
+            shutil.rmtree(base_dir)
             return (False, package)
 
         package.set_elm_constraint(constraint)
@@ -156,9 +158,11 @@ def process_package(package: PackageInfo) -> Tuple[bool, PackageInfo]:
             ACL='public-read',
             Body=json.dumps(source_files).encode('utf-8'),
             ContentType='application/json')
+
         shutil.rmtree(base_dir)
         return (True, package)
     except:
+        shutil.rmtree(base_dir)
         print(package)
         print(sys.exc_info())
         return (False, package)
@@ -209,6 +213,9 @@ def download_known_failures() -> Set[PackageInfo]:
 def run() -> None:
     data = download_packages()
     num_cores = multiprocessing.cpu_count()
+
+    print('sync_packages: downloading package data')
+
     packages = organize_packages(data)
     searchable = download_searchable_packages()
     known_failures = download_known_failures()
@@ -231,11 +238,11 @@ def run() -> None:
             else:
                 failed.append(package)
 
-        print(str((counter * 100) // total) + '%')
+        print('sync_packages: ' + str((counter * 100) // total) + '%')
 
     upload_searchable_packages(list(searchable))
     upload_failed_packages(failed + list(known_failures))
-    print('syncing packages finished')
+    print('sync_packages: finished')
 
 
 if __name__ == "__main__":
