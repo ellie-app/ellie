@@ -4,6 +4,7 @@ import os
 import shutil
 import sys
 import tempfile
+import traceback
 import zipfile
 from datetime import datetime
 from typing import (Any, Dict, Iterator, List, NamedTuple, Optional, Set,
@@ -175,7 +176,7 @@ def upload_failed_packages(packages: List[PackageInfo]) -> None:
     bucket.put_object(
         Key='package-artifacts/known_failures.json',
         ACL='public-read',
-        Body=json.dumps([x.to_json for x in packages]).encode('utf-8'),
+        Body=json.dumps([x.to_json() for x in packages]).encode('utf-8'),
         ContentType='application/json')
 
 
@@ -230,10 +231,11 @@ def run() -> None:
             else:
                 failed.append(package)
 
-        print(str((counter * 100) // (total * 100)) + '%')
+        print(str((counter * 100) // total) + '%')
 
     upload_searchable_packages(list(searchable))
     upload_failed_packages(failed + list(known_failures))
+    print('syncing packages finished')
 
 
 if __name__ == "__main__":
