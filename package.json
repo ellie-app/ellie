@@ -23,6 +23,7 @@
     "elm": "0.18.0",
     "elm-css-webpack-loader": "https://github.com/OzTK/elm-css-webpack-loader.git#6194f2be3f99e0a9d521c3cabf87b2898cb4fa6b",
     "elm-format": "0.7.0-exp",
+    "elm-test": "^0.18.7",
     "elm-webpack-loader": "4.3.0",
     "es6-promise": "4.1.0",
     "extract-text-webpack-plugin": "2.1.0",
@@ -55,6 +56,9 @@
     "build:make": "npm run build:make:0.18.0",
     "build:production": "NODE_ENV=production npm run install:elm && npm run clean && webpack --config ./webpack.prod.config.js",
     "deploy": "python ./scripts/deploy_assets.py",
-    "heroku-postbuild": "npm run build:make && npm run build:production && npm run deploy"
+    "heroku-postbuild": "npm run build:make && npm run build:production && npm run deploy",
+    "test:make:0.18.0": "cd ./make/0.18.0 && npm install && npm test",
+    "test:make": "npm run test:make:0.18.0",
+    "test": "npm run test:make"
   }
 }

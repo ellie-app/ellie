@@ -1,14 +1,14 @@
-module Data.Extra.ListTests exposing (tests)
+module Extra.ListTests exposing (tests)
 
-import Test exposing (..)
 import Expect
-import Fuzz exposing (list, int, tuple, string)
-import Data.Extra.List as List
+import Extra.List as List
+import Fuzz exposing (int, list, string, tuple)
+import Test exposing (..)
 
 
 tests : Test
 tests =
-    describe "Data.Extra.List"
+    describe "Extra.List"
         [ fuzz (list int) "mapAccumR" <|
             \inputInts ->
                 List.mapAccumR
