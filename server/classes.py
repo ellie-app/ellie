@@ -423,6 +423,7 @@ class RevisionBase(NamedTuple):
     id: Optional[RevisionId]
     owned: bool
     snapshot: Any
+    elm_version: Version
 
 
 class Revision(RevisionBase):
@@ -435,11 +436,18 @@ class Revision(RevisionBase):
             'packages': [p.to_json() for p in self.packages],
             'id': self.id.to_json() if self.id is not None else None,
             'owned': self.owned,
-            'snapshot': self.snapshot
+            'snapshot': self.snapshot,
+            'elmVersion': self.elm_version.to_json()
         }
 
     @staticmethod
     def from_json(data: Any) -> Optional['Revision']:
+        elm_version = Version(0, 18, 0)
+        if 'elmVersion' in data:
+            parsed = Version.from_json(data['elmVersion'])
+            if parsed is not None:
+                elm_version = parsed
+
         return Revision(
             title=data['title'],
             description=data['description'],
@@ -449,4 +457,5 @@ class Revision(RevisionBase):
                 Package.from_json(x) for x in data['packages']),
             id=RevisionId.from_json(data['id']),
             owned=data['owned'] if 'owned' in data else False,
-            snapshot=data['snapshot'])
+            snapshot=data['snapshot'],
+            elm_version=elm_version)
