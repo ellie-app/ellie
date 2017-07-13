@@ -192,8 +192,7 @@ def get_default_revision() -> Any:
 
     return jsonify({
         'packages': [default_core.to_json(), default_html.to_json()],
-        'projectId': None,
-        'revisionNumber': None,
+        'elmVersion': '0.18.0',
         'title': 'Untitled',
         'id': None,
         'description': 'Tell the world about your project!',
