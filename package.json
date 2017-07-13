@@ -56,7 +56,7 @@
     "build:make": "npm run build:make:0.18.0",
     "build:production": "NODE_ENV=production npm run install:elm && npm run clean && webpack --config ./webpack.prod.config.js",
     "deploy": "python ./scripts/deploy_assets.py",
-    "heroku-postbuild": "npm run build:make && npm run build:production && npm run deploy",
+    "heroku-postbuild": "npm test && npm run build:make && npm run build:production && npm run deploy",
     "test:make:0.18.0": "cd ./make/0.18.0 && npm install && npm test",
     "test:make": "npm run test:make:0.18.0",
     "test": "npm run test:make"
