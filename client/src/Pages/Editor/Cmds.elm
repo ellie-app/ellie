@@ -5,6 +5,7 @@ port module Pages.Editor.Cmds
         , openDebugger
         , openNewWindow
         , pathChanged
+        , prepCompiler
         , reloadIframe
         , withAdditionalCmd
         , withCmd
@@ -14,6 +15,7 @@ port module Pages.Editor.Cmds
 import Data.Ellie.Revision as Revision exposing (Revision)
 import Data.Elm.Package.Constraint as Constraint exposing (Constraint)
 import Data.Elm.Package.Name as Name exposing (Name)
+import Data.Elm.Package.Version as Version exposing (Version)
 import Json.Encode as Encode exposing (Value)
 import Pages.Editor.Model as Model exposing (Model)
 
@@ -59,6 +61,9 @@ port openDebuggerOut : () -> Cmd msg
 port compileOnClientOut : ( String, String, Value, Bool ) -> Cmd msg
 
 
+port prepCompilerOut : String -> Cmd msg
+
+
 openDebugger : Cmd msg
 openDebugger =
     openDebuggerOut ()
@@ -86,3 +91,8 @@ compile model forSave =
             |> Encode.object
         , forSave
         )
+
+
+prepCompiler : Version -> Cmd msg
+prepCompiler version =
+    prepCompilerOut (Version.toString version)
