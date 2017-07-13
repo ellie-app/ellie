@@ -10,7 +10,7 @@ import Shared.Colors as Colors
 styles : Stylesheet
 styles =
     (stylesheet << namespace "components_search_")
-        [ (.) Container
+        [ Css.class Container
             [ position absolute
             , width (pct 100)
             , height (pct 100)
@@ -22,7 +22,7 @@ styles =
             , alignItems center
             , paddingTop (px 300)
             ]
-        , (.) SearchBar
+        , Css.class SearchBar
             [ backgroundColor (hex Colors.darkGray)
             , width (pct 50)
             , borderRadius (px 3)
@@ -31,7 +31,7 @@ styles =
             , boxShadow5 zero (px 2) (px 4) zero (rgba 0 0 0 0.5)
             , property "z-index" "2"
             ]
-        , (.) SearchBarIcon
+        , Css.class SearchBarIcon
             [ width (px 26)
             , height (px 26)
             , color (hex Colors.lightGray)
@@ -40,7 +40,7 @@ styles =
             , top (pct 50)
             , marginTop (px -13)
             ]
-        , (.) SearchBarInput
+        , Css.class SearchBarInput
             [ property "background" "none"
             , width (pct 100)
             , display block
@@ -51,7 +51,7 @@ styles =
             , padding4 (px 12) (px 16) (px 12) (px 58)
             , color (hex Colors.white)
             ]
-        , (.) Results
+        , Css.class Results
             [ marginTop (px 16)
             , backgroundColor (hex Colors.mediumGray)
             , padding (px 16)
@@ -60,7 +60,7 @@ styles =
             , boxShadow5 zero (px 2) (px 4) zero (rgba 0 0 0 0.5)
             , property "z-index" "2"
             ]
-        , (.) ResultsItem
+        , Css.class ResultsItem
             [ backgroundColor (hex Colors.darkGray)
             , marginBottom (px 2)
             , property "justify-content" "space-between"
@@ -76,13 +76,13 @@ styles =
                 , marginBottom zero
                 ]
             ]
-        , (.) ResultsItemInfo
+        , Css.class ResultsItemInfo
             [ padding2 zero (px 16)
             , displayFlex
             , alignItems center
             , property "width" "calc(100% - 96px)"
             ]
-        , (.) ResultsItemName
+        , Css.class ResultsItemName
             [ fontSize (px 24)
             , lineHeight (px 30)
             , color (hex Colors.white)
@@ -91,16 +91,16 @@ styles =
             , whiteSpace noWrap
             , textOverflow ellipsis
             ]
-        , (.) ResultsItemVersion
+        , Css.class ResultsItemVersion
             [ color (hex Colors.lightGray)
             , fontSize (px 20)
             , lineHeight (px 26)
             ]
-        , (.) ResultsItemButtonGroup
+        , Css.class ResultsItemButtonGroup
             [ displayFlex
             , height (pct 100)
             ]
-        , (.) ResultsItemButton
+        , Css.class ResultsItemButton
             [ property "background" "none"
             , border zero
             , height (pct 100)
@@ -110,24 +110,24 @@ styles =
             , cursor pointer
             , textDecoration none
             ]
-        , (.) ResultsItemButtonInner
+        , Css.class ResultsItemButtonInner
             [ displayFlex
             , flexDirection column
             , alignItems center
             , property "justify-content" "center"
             ]
-        , (.) ResultsItemButtonIcon
+        , Css.class ResultsItemButtonIcon
             [ width (px 16)
             , height (px 16)
             , display block
             ]
-        , (.) ResultsItemButtonText
+        , Css.class ResultsItemButtonText
             [ fontSize (px 8)
             , textTransform uppercase
             , lineHeight (px 10)
             , paddingTop (px 2)
             ]
-        , (.) Backdrop
+        , Css.class Backdrop
             [ position absolute
             , width (pct 100)
             , height (pct 100)

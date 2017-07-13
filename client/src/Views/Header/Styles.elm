@@ -10,7 +10,7 @@ import Shared.Colors as Colors
 styles : Stylesheet
 styles =
     (stylesheet << namespace "components_header_")
-        [ (.) Header
+        [ Css.class Header
             [ width (pct 100)
             , height (px Constants.headerHeight)
             , backgroundColor (hex Colors.darkGray)
@@ -26,17 +26,17 @@ styles =
             , borderBottomWidth (px 2)
             , borderBottomStyle solid
             ]
-        , (.) HeaderGroup
+        , Css.class HeaderGroup
             [ displayFlex
             , alignItems center
             ]
-        , (.) Logo
+        , Css.class Logo
             [ fontFamilies [ Constants.scriptFont ]
             , fontSize (px 32)
             , color (hex Colors.white)
             , paddingRight (px 24)
             ]
-        , (.) Button
+        , Css.class Button
             [ backgroundColor <|
                 rgba
                     (.r Colors.mediumGrayRgb)
@@ -82,15 +82,15 @@ styles =
                         0.5
                 ]
             ]
-        , (.) ButtonIcon
+        , Css.class ButtonIcon
             [ height (px 16)
             , width (px 16)
             , display block
             ]
-        , (.) ButtonText
+        , Css.class ButtonText
             [ marginLeft (px 8)
             ]
-        , (.) ButtonInner
+        , Css.class ButtonInner
             [ displayFlex
             , property "justify-content" "center"
             , alignItems center

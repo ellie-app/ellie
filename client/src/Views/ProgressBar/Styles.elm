@@ -10,22 +10,22 @@ import Views.ProgressBar.View as View exposing (CssClasses(..))
 styles : Stylesheet
 styles =
     (stylesheet << namespace View.namespace)
-        [ (.) Container
+        [ Css.class Container
             [ width (pct 100)
             , padding2 (px 8) zero
             , position relative
             ]
-        , (.) BarContainer
+        , Css.class BarContainer
             [ displayFlex
             , position relative
             , property "align-items" "center"
             , property "justify-content" "center"
             , width (pct 100)
             ]
-        , (.) Label
+        , Css.class Label
             [ paddingBottom (px 12)
             ]
-        , (.) BarOuter
+        , Css.class BarOuter
             [ maxWidth (px 400)
             , width (pct 80)
             , position relative
@@ -34,13 +34,13 @@ styles =
             , borderRadius (px 5)
             , overflow hidden
             ]
-        , (.) BarInner
+        , Css.class BarInner
             [ position relative
             , height (pct 100)
             , backgroundColor (hex Colors.white)
             , property "transition" "width 0.2s linear"
             ]
-        , (.) Count
+        , Css.class Count
             [ paddingLeft (px 16)
             , whiteSpace noWrap
             , fontSize (px 14)

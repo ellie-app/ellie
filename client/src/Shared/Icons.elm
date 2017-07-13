@@ -308,7 +308,7 @@ eye =
 edit : Html msg
 edit =
     svg
-        [ viewBox "12 4 18 17"
+        [ viewBox "12 6 18 17"
         , iconStyle
         ]
         [ g

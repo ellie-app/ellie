@@ -10,7 +10,7 @@ import Shared.Colors as Colors
 styles : Stylesheet
 styles =
     (stylesheet << namespace "components_about_")
-        [ (.) Popout
+        [ Css.class Popout
             [ position relative
             , backgroundColor (hex Colors.mediumGray)
             , width (px 400)
@@ -22,48 +22,48 @@ styles =
             , border3 (px 2) solid (hex Colors.lightGray)
             , color (hex Colors.white)
             ]
-        , (.) Title
+        , Css.class Title
             [ fontSize (px 18)
             , fontWeight (int 700)
             ]
-        , (.) Paragraph
+        , Css.class Paragraph
             [ fontSize (px 16)
             ]
-        , (.) Link
+        , Css.class Link
             [ color inherit
             , textDecoration none
             , fontWeight (int 700)
             ]
-        , (.) Creators
+        , Css.class Creators
             [ paddingTop (px 12)
             , borderTop3 (px 2) solid (hex Colors.white)
             ]
-        , (.) CreatorLine
+        , Css.class CreatorLine
             [ textAlign center
             ]
-        , (.) Logo
+        , Css.class Logo
             [ fontFamilies [ Constants.scriptFont ]
             , fontSize (px 20)
             ]
-        , (.) ImagesAndHsLogo
+        , Css.class ImagesAndHsLogo
             [ displayFlex
             , property "justify-content" "space-between"
             , alignItems center
             , paddingTop (px 12)
             ]
-        , (.) PartnerImageContainer
+        , Css.class PartnerImageContainer
             [ displayFlex
             , flexDirection column
             , alignItems center
             , textDecoration none
             , color inherit
             ]
-        , (.) PartnerImage
+        , Css.class PartnerImage
             [ width (px 48)
             , height (px 48)
             , borderRadius (pct 50)
             ]
-        , (.) HsLogoImage
+        , Css.class HsLogoImage
             [ width (px 170)
             , height (px 45)
             , backgroundImage (url <| Constants.asset "images/humblespark_logo.png")

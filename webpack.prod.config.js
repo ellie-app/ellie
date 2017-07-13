@@ -1,10 +1,10 @@
-var path = require("path");
-var webpack = require('webpack');
-var StringReplacePlugin = require('string-replace-webpack-plugin');
-var ExtractTextPlugin = require('extract-text-webpack-plugin');
-var ManifestPlugin = require('webpack-manifest-plugin');
-const Md5Hash = require('webpack-md5-hash');
-
+const path = require("path")
+const webpack = require('webpack')
+const StringReplacePlugin = require('string-replace-webpack-plugin')
+const ExtractTextPlugin = require('extract-text-webpack-plugin')
+const ManifestPlugin = require('webpack-manifest-plugin')
+const Md5Hash = require('webpack-md5-hash')
+const CopyPlugin = require('copy-webpack-plugin')
 
 module.exports = {
   cache: true,
@@ -138,5 +138,8 @@ module.exports = {
     new ManifestPlugin(),
     new StringReplacePlugin(),
     new ExtractTextPlugin('[name].[chunkhash:8].css'),
+    new CopyPlugin([
+      { from: path.join(__dirname, 'images'), to: 'images', toType: 'dir' }
+    ])
   ]
-};
+}

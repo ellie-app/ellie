@@ -4,8 +4,8 @@ import Css exposing (..)
 import Css.Elements exposing (..)
 import Css.Namespace exposing (..)
 import Pages.Embed.Classes exposing (Classes(..))
-import Shared.Constants as Constants
 import Shared.Colors as Colors
+import Shared.Constants as Constants
 
 
 styles : Stylesheet
@@ -13,6 +13,7 @@ styles =
     (stylesheet << namespace "app_")
         [ html
             [ height (pct 100)
+            , backgroundColor (hex Colors.darkGray)
             ]
         , body
             [ height (pct 100)
@@ -22,7 +23,7 @@ styles =
             ]
         , everything
             [ boxSizing borderBox ]
-        , (.) Container
+        , Css.class Container
             [ width (pct 100)
             , height (pct 100)
             , position relative
@@ -30,7 +31,7 @@ styles =
             , overflow hidden
             , borderRadius (px 3)
             ]
-        , (.) LoadingContainer
+        , Css.class LoadingContainer
             [ width (pct 100)
             , height (pct 100)
             , displayFlex
@@ -40,18 +41,18 @@ styles =
             , paddingTop (px 100)
             , property "background-image" Colors.pinkPurpleGradient
             ]
-        , (.) LoadingTitle
+        , Css.class LoadingTitle
             [ fontFamilies [ Constants.scriptFont ]
             , color (hex Colors.white)
             , fontSize (px 48)
             , lineHeight (px 48)
             , padding (px 24)
             ]
-        , (.) LoadingMessage
+        , Css.class LoadingMessage
             [ fontSize (px 24)
             , color (hex Colors.white)
             ]
-        , (.) FailureContainer
+        , Css.class FailureContainer
             [ width (pct 100)
             , height (pct 100)
             , displayFlex
@@ -61,14 +62,14 @@ styles =
             , paddingTop (px 100)
             , backgroundColor (hex Colors.mediumGray)
             ]
-        , (.) FailureTitle
+        , Css.class FailureTitle
             [ fontFamilies [ Constants.scriptFont ]
             , color (hex Colors.white)
             , fontSize (px 48)
             , lineHeight (px 48)
             , paddingBottom (px 24)
             ]
-        , (.) FailureMessage
+        , Css.class FailureMessage
             [ fontSize (px 24)
             , color (hex Colors.white)
             , padding2 zero (px 16)
@@ -76,7 +77,7 @@ styles =
             , textAlign center
             , paddingBottom (px 24)
             ]
-        , (.) FailureDetails
+        , Css.class FailureDetails
             [ maxWidth (px 600)
             , backgroundColor (hex Colors.darkGray)
             , color (hex Colors.white)
@@ -84,9 +85,10 @@ styles =
             , padding (px 12)
             , fontSize (px 16)
             ]
-        , (.) Header
-            [ backgroundColor (hex Colors.pink)
-            , padding2 (px 6) (px 8)
+        , Css.class Header
+            [ backgroundColor (hex Colors.darkGray)
+            , borderBottom3 (px 1) solid (hex Colors.pink)
+            , property "border-image" <| Colors.pinkPurpleGradient ++ " 1"
             , displayFlex
             , height (px 40)
             , property "justify-content" "space-between"
@@ -94,19 +96,21 @@ styles =
             , property "z-index" "1"
             , position relative
             ]
-        , (.) HeaderLeft
+        , Css.class HeaderLeft
             [ displayFlex ]
-        , (.) HeaderButton
-            [ padding2 (px 6) (px 12)
+        , Css.class HeaderRight
+            [ padding (px 6) ]
+        , Css.class HeaderTab
+            [ padding2 zero (px 12)
+            , paddingTop (px 2)
+            , height (pct 100)
             , color (hex Colors.white)
             , fontSize (px 16)
             , lineHeight (px 16)
             , textTransform uppercase
             , border zero
-            , borderRadius (px 3)
             , cursor pointer
             , margin zero
-            , marginRight (px 8)
             , textDecoration none
             , outline zero
             , fontFamily inherit
@@ -114,12 +118,7 @@ styles =
             , lastChild
                 [ marginRight zero
                 ]
-            , backgroundColor <|
-                rgba
-                    (.r Colors.darkGrayRgb)
-                    (.g Colors.darkGrayRgb)
-                    (.b Colors.darkGrayRgb)
-                    0.24
+            , backgroundColor transparent
             , disabled
                 [ opacity (num 0.5)
                 , cursor notAllowed
@@ -127,50 +126,102 @@ styles =
             , hover
                 [ backgroundColor <|
                     rgba
-                        (.r Colors.darkGrayRgb)
-                        (.g Colors.darkGrayRgb)
-                        (.b Colors.darkGrayRgb)
-                        0.33
+                        (.r Colors.mediumGrayRgb)
+                        (.g Colors.mediumGrayRgb)
+                        (.b Colors.mediumGrayRgb)
+                        0.2
                 ]
             , active
                 [ backgroundColor <|
                     rgba
-                        (.r Colors.darkGrayRgb)
-                        (.g Colors.darkGrayRgb)
-                        (.b Colors.darkGrayRgb)
+                        (.r Colors.mediumGrayRgb)
+                        (.g Colors.mediumGrayRgb)
+                        (.b Colors.mediumGrayRgb)
+                        0.35
+                ]
+            , withClass HeaderTabActive
+                [ borderTop3 (px 2) solid (hex Colors.pink)
+                , property "border-image" <| Colors.pinkPurpleGradient ++ " 1"
+                , paddingTop zero
+                , color (hex Colors.white)
+                , backgroundColor <|
+                    rgba
+                        (.r Colors.mediumGrayRgb)
+                        (.g Colors.mediumGrayRgb)
+                        (.b Colors.mediumGrayRgb)
                         0.5
                 ]
-            , withClass HeaderButtonActive
-                [ backgroundColor (hex Colors.white)
-                , color (hex Colors.pink)
-                , hover [ backgroundColor (hex Colors.white) ]
-                , active [ backgroundColor (hex Colors.white) ]
+            ]
+        , Css.class HeaderLink
+            [ padding2 (px 6) (px 12)
+            , borderRadius (px 3)
+            , color (hex Colors.white)
+            , fontSize (px 16)
+            , lineHeight (px 16)
+            , textTransform uppercase
+            , border zero
+            , cursor pointer
+            , margin zero
+            , textDecoration none
+            , outline zero
+            , fontFamily inherit
+            , property "-webkit-appearance" "none"
+            , backgroundColor <|
+                rgba
+                    (.r Colors.mediumGrayRgb)
+                    (.g Colors.mediumGrayRgb)
+                    (.b Colors.mediumGrayRgb)
+                    0.3
+            , hover
+                [ backgroundColor <|
+                    rgba
+                        (.r Colors.mediumGrayRgb)
+                        (.g Colors.mediumGrayRgb)
+                        (.b Colors.mediumGrayRgb)
+                        0.5
+                ]
+            , active
+                [ backgroundColor <|
+                    rgba
+                        (.r Colors.mediumGrayRgb)
+                        (.g Colors.mediumGrayRgb)
+                        (.b Colors.mediumGrayRgb)
+                        0.7
                 ]
             ]
-        , (.) HeaderButtonInner
+        , Css.class HeaderTabInner
             [ alignItems center
             , displayFlex
             ]
-        , (.) HeaderButtonIcon
+        , Css.class HeaderLinkInner
+            [ alignItems center
+            , displayFlex
+            ]
+        , Css.class HeaderTabIcon
             [ width (px 16)
             , height (px 16)
             , marginRight (px 8)
             ]
-        , (.) HeaderLinkLogo
+        , Css.class HeaderLinkIcon
+            [ width (px 16)
+            , height (px 16)
+            , marginRight (px 8)
+            ]
+        , Css.class HeaderLinkLogo
             [ fontFamilies [ Constants.scriptFont ]
             , property "text-transform" "none"
             , marginLeft (px 6)
             ]
-        , (.) LoadedContainer
+        , Css.class LoadedContainer
             [ width (pct 100)
             , height (pct 100)
             , position relative
             ]
-        , (.) WorkArea
+        , Css.class WorkArea
             [ property "height" "calc(100% - 40px)"
             , position relative
             ]
-        , (.) WorkAreaTab
+        , Css.class WorkAreaTab
             [ position absolute
             , height (pct 100)
             , top zero
@@ -178,10 +229,10 @@ styles =
             , width (pct 100)
             , overflow hidden
             ]
-        , (.) WorkAreaTabHidden
+        , Css.class WorkAreaTabHidden
             [ property "visibility" "collapse"
             ]
-        , (.) Iframe
+        , Css.class Iframe
             [ border zero
             , position relative
             , width (pct 100)

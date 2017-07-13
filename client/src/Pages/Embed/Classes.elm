@@ -29,12 +29,15 @@ type Classes
     | FailureMessage
     | FailureDetails
     | Header
+    | HeaderLink
+    | HeaderLinkInner
+    | HeaderLinkIcon
     | HeaderLeft
     | HeaderRight
-    | HeaderButton
-    | HeaderButtonInner
-    | HeaderButtonActive
-    | HeaderButtonIcon
+    | HeaderTab
+    | HeaderTabInner
+    | HeaderTabActive
+    | HeaderTabIcon
     | HeaderLinkLogo
     | WorkArea
     | LoadedContainer

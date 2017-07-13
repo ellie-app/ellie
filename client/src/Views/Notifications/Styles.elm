@@ -10,7 +10,7 @@ import Shared.Colors as Colors
 styles : Stylesheet
 styles =
     (stylesheet << namespace "components_notifications_")
-        [ (.) Popout
+        [ Css.class Popout
             [ position relative
             , backgroundColor (hex Colors.mediumGray)
             , width (px 400)
@@ -22,7 +22,7 @@ styles =
             , maxHeight (px 400)
             , border3 (px 2) solid (hex Colors.lightGray)
             ]
-        , (.) Item
+        , Css.class Item
             [ backgroundColor (hex Colors.darkGray)
             , marginBottom (px 2)
             , padding (px 12)
@@ -36,20 +36,20 @@ styles =
                 , marginBottom zero
                 ]
             ]
-        , (.) ItemDetails
+        , Css.class ItemDetails
             [ displayFlex
             , property "align-items" "center"
             , color (hex Colors.white)
             , property "white-space" "pre-wrap"
             ]
-        , (.) ItemMessage
+        , Css.class ItemMessage
             [ property "width" "calc(100% - 24px)"
             , paddingRight (px 16)
             ]
-        , (.) ItemIcon
+        , Css.class ItemIcon
             [ width (px 24)
             ]
-        , (.) ItemTitle
+        , Css.class ItemTitle
             [ fontSize (px 12)
             , textTransform uppercase
             , paddingBottom (px 4)
@@ -57,6 +57,6 @@ styles =
             , color (hex Colors.lightGray)
             , property "justify-content" "space-between"
             ]
-        , (.) ItemTimestamp
+        , Css.class ItemTimestamp
             []
         ]

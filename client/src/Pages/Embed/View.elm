@@ -1,20 +1,20 @@
 module Pages.Embed.View exposing (view)
 
-import RemoteData exposing (RemoteData(..))
-import Html exposing (Html, header, iframe, div, span, button, text, a)
-import Html.Attributes exposing (src, style, href, target)
+import Data.Ellie.Revision as Revision exposing (Revision, Snapshot(..))
+import Data.Ellie.RevisionId as RevisionId exposing (RevisionId)
+import Data.Elm.Compiler.Error as CompilerError
+import Html exposing (Html, a, button, div, header, iframe, span, text)
+import Html.Attributes exposing (href, src, style, target)
 import Html.Events exposing (onClick)
+import Pages.Embed.Classes exposing (..)
+import Pages.Embed.Model as Model exposing (Model, Tab(..))
 import Pages.Embed.Routing exposing (Route(..))
 import Pages.Embed.Update as Update exposing (Msg(..))
-import Pages.Embed.Model as Model exposing (Model, Tab(..))
-import Pages.Embed.Classes exposing (..)
+import RemoteData exposing (RemoteData(..))
+import Shared.Constants as Constants
+import Shared.Icons as Icons
 import Views.Editors.View as Editors
 import Views.Output.View as Output
-import Data.Ellie.Revision as Revision exposing (Revision, Snapshot(..))
-import Data.Elm.Compiler.Error as CompilerError
-import Data.Ellie.RevisionId as RevisionId exposing (RevisionId)
-import Shared.Icons as Icons
-import Shared.Constants as Constants
 
 
 viewLoading : Html Msg
@@ -54,12 +54,12 @@ viewHeaderButton activeTab myTab icon label =
     button
         [ onClick <| SwitchTab myTab
         , classList
-            [ ( HeaderButton, True )
-            , ( HeaderButtonActive, activeTab == myTab )
+            [ ( HeaderTab, True )
+            , ( HeaderTabActive, activeTab == myTab )
             ]
         ]
-        [ div [ class [ HeaderButtonInner ] ]
-            [ span [ class [ HeaderButtonIcon ] ]
+        [ div [ class [ HeaderTabInner ] ]
+            [ span [ class [ HeaderTabIcon ] ]
                 [ icon ]
             , text label
             ]
@@ -76,11 +76,11 @@ viewHeader activeTab { projectId, revisionNumber } =
             ]
         , div [ class [ HeaderRight ] ]
             [ a
-                [ class [ HeaderButton, HeaderButtonInner ]
+                [ class [ HeaderLink, HeaderLinkInner ]
                 , href <| Constants.editorBase ++ "/" ++ projectId ++ "/" ++ toString revisionNumber
                 , target "_blank"
                 ]
-                [ span [ class [ HeaderButtonIcon ] ]
+                [ span [ class [ HeaderLinkIcon ] ]
                     [ Icons.edit ]
                 , span [] [ text "Edit on " ]
                 , span [ class [ HeaderLinkLogo ] ] [ text " Ellie" ]
@@ -101,7 +101,7 @@ viewElm code errors =
 
 iframeSrc : RevisionId -> String
 iframeSrc { projectId, revisionNumber } =
-    Constants.cdnBase ++ "/revisions/" ++ projectId ++ "/" ++ (toString revisionNumber) ++ ".html"
+    Constants.cdnBase ++ "/revisions/" ++ projectId ++ "/" ++ toString revisionNumber ++ ".html"
 
 
 viewResultsUploaded : RevisionId -> Html Msg
@@ -149,7 +149,7 @@ viewLoaded model revision =
                     ]
                 ]
                 [ viewElm
-                    (revision.elmCode)
+                    revision.elmCode
                     (case revision.snapshot of
                         Errored errors ->
                             errors

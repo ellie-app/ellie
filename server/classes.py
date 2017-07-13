@@ -1,6 +1,7 @@
-from typing import SupportsInt, Optional, Dict, Any, NamedTuple, List, TypeVar, Iterator
-from math import floor
 import time
+from math import floor
+from typing import (Any, Dict, Iterator, List, NamedTuple, Optional,
+                    SupportsInt, TypeVar)
 
 T = TypeVar('T')
 
@@ -197,12 +198,12 @@ class Package(object):
 
     @staticmethod
     def from_json(data: Any) -> Optional['Package']:
-        version = Version.from_json(data[0])
-        if version is None:
+        name = PackageName.from_json(data[0])
+        if name is None:
             return None
 
-        name = PackageName.from_json(data[1])
-        if name is None:
+        version = Version.from_json(data[1])
+        if version is None:
             return None
 
         return Package(name, version)
