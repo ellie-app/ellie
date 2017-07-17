@@ -1,3 +1,4 @@
+import random
 import time
 from math import floor
 from typing import (Any, Dict, Iterator, List, NamedTuple, Optional,
@@ -281,13 +282,6 @@ class PackageInfo(object):
 
 ALPHABET = '23456789bcdfghjkmnpqrstvwxyzBCDFGHJKLMNPQRSTVWXYZ'
 BASE_LENGTH = len(ALPHABET)
-OUR_EPOCH = 1483578344834
-SHARD_ID = 2
-SEQ_ID = 0
-
-
-def timestamp() -> int:
-    return int(time.time() * 1000)
 
 
 class ProjectId(SupportsInt):
@@ -340,14 +334,8 @@ class ProjectId(SupportsInt):
 
     @staticmethod
     def generate() -> 'ProjectId':
-        global SEQ_ID
-        my_seq_id = (SEQ_ID + 1) % 1024
-        SEQ_ID += 1
-        now_millis = timestamp()
-        result = (now_millis - OUR_EPOCH) << 23
-        result = result | (SHARD_ID << 10)
-        result = result | my_seq_id
-        return ProjectId(result, 1)
+        random_int = random.randint(0, 9223372036854775807)
+        return ProjectId(random_int, 1)
 
     @staticmethod
     def _from_string_v0(input: str) -> 'ProjectId':
