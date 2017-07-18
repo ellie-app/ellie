@@ -1,8 +1,8 @@
 module Data.Elm.Package.Paths exposing (..)
 
-import Data.FilePath exposing (FilePath, (</>))
 import Data.Elm.Package.Name as Name exposing (Name)
 import Data.Elm.Package.Version as Version exposing (Version)
+import Data.FilePath exposing ((</>), FilePath)
 
 
 stuffDirectory : FilePath

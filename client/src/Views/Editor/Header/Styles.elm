@@ -2,9 +2,9 @@ module Views.Editor.Header.Styles exposing (..)
 
 import Css exposing (..)
 import Css.Namespace exposing (..)
-import Views.Editor.Header.Classes exposing (Classes(..))
-import Shared.Constants as Constants
 import Shared.Colors as Colors
+import Shared.Constants as Constants
+import Views.Editor.Header.Classes exposing (Classes(..))
 
 
 styles : Stylesheet

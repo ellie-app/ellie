@@ -1,13 +1,13 @@
 port module Pages.Editor.Subs exposing (subscriptions)
 
-import Pages.Editor.Model as Model exposing (Model, PopoutState(..))
-import Pages.Editor.Update as Update exposing (Msg(..))
 import Data.Ellie.CompileStage as CompileStage exposing (CompileStage(..))
 import Data.Ellie.KeyCombo as KeyCombo exposing (KeyCombo)
 import Json.Decode as Decode exposing (Decoder, Value)
 import Json.Decode.Pipeline as Decode
 import Keyboard
 import Mouse
+import Pages.Editor.Model as Model exposing (Model, PopoutState(..))
+import Pages.Editor.Update as Update exposing (Msg(..))
 import Shared.MessageBus as MessageBus
 import Window
 

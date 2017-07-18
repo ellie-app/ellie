@@ -3,8 +3,8 @@ module Views.Editor.About.View
         ( view
         )
 
-import Html exposing (Html, a, p, div, text, button, span, img)
-import Html.Attributes exposing (style, src, href, id, target)
+import Html exposing (Html, a, button, div, img, p, span, text)
+import Html.Attributes exposing (href, id, src, style, target)
 import Shared.Constants as Constants
 import Views.Editor.About.Classes exposing (..)
 

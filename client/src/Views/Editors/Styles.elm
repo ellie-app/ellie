@@ -1,10 +1,10 @@
 module Views.Editors.Styles exposing (..)
 
 import Css exposing (..)
-import Css.Namespace exposing (..)
 import Css.Elements exposing (..)
-import Views.Editors.Classes exposing (Classes(..))
+import Css.Namespace exposing (..)
 import Shared.Constants as Constants
+import Views.Editors.Classes exposing (Classes(..))
 
 
 shimmerGradient : String

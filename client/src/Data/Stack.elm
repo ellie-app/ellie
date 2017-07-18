@@ -1,4 +1,4 @@
-module Data.Stack exposing (Stack, empty, push, pop, toList)
+module Data.Stack exposing (Stack, empty, pop, push, toList)
 
 
 type Stack a

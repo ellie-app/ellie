@@ -1,19 +1,19 @@
 module Pages.Embed.Update
     exposing
-        ( update
+        ( Msg(..)
         , initialize
         , onRouteChange
-        , Msg(..)
+        , update
         )
 
-import Navigation
-import RemoteData exposing (RemoteData(..))
-import Pages.Embed.Model as Model exposing (Model, Tab(..))
-import Pages.Embed.Routing as Routing exposing (Route(..))
-import Shared.Api as Api
 import Data.Ellie.ApiError as ApiError exposing (ApiError)
 import Data.Ellie.Revision as Revision exposing (Revision)
 import Data.Ellie.RevisionId as RevisionId exposing (RevisionId)
+import Navigation
+import Pages.Embed.Model as Model exposing (Model, Tab(..))
+import Pages.Embed.Routing as Routing exposing (Route(..))
+import RemoteData exposing (RemoteData(..))
+import Shared.Api as Api
 
 
 resultOnError : (x -> Result y a) -> Result x a -> Result y a
@@ -74,11 +74,11 @@ initialize location =
         initialModel =
             Model.model
     in
-        location
-            |> Routing.parse
-            |> (\route -> { initialModel | currentRoute = route })
-            |> (\model -> ( model, Cmd.none ))
-            |> (\( model, cmd ) -> handleRouteChanged model.currentRoute ( model, cmd ))
+    location
+        |> Routing.parse
+        |> (\route -> { initialModel | currentRoute = route })
+        |> (\model -> ( model, Cmd.none ))
+        |> (\( model, cmd ) -> handleRouteChanged model.currentRoute ( model, cmd ))
 
 
 

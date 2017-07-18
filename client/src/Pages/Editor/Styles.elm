@@ -4,8 +4,8 @@ import Css exposing (..)
 import Css.Elements exposing (..)
 import Css.Namespace exposing (..)
 import Pages.Editor.Classes exposing (Classes(..))
-import Shared.Constants as Constants
 import Shared.Colors as Colors
+import Shared.Constants as Constants
 
 
 styles : Stylesheet
@@ -41,7 +41,7 @@ styles =
             ]
         , Css.class MainContainer
             [ width (pct 100)
-            , property "height" <| "calc(100% - " ++ (toString Constants.headerHeight) ++ "px)"
+            , property "height" <| "calc(100% - " ++ toString Constants.headerHeight ++ "px)"
             , displayFlex
             , position relative
             , property "z-index" "1"

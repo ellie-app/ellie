@@ -1,4 +1,4 @@
-module Data.FilePath exposing (FilePath, (</>), (<.>), resolve)
+module Data.FilePath exposing ((<.>), (</>), FilePath, resolve)
 
 import Data.Stack as Stack exposing (Stack)
 
@@ -22,7 +22,7 @@ type alias FilePath =
             else
                 right
     in
-        realLeft ++ "/" ++ realRight
+    realLeft ++ "/" ++ realRight
 
 
 (<.>) : FilePath -> String -> FilePath

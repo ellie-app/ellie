@@ -1,9 +1,9 @@
 module Data.Elm.Package exposing (..)
 
-import Json.Decode as Decode exposing (Decoder)
-import Json.Encode as Encode exposing (Value)
 import Data.Elm.Package.Name as Name exposing (Name)
 import Data.Elm.Package.Version as Version exposing (Version)
+import Json.Decode as Decode exposing (Decoder)
+import Json.Encode as Encode exposing (Value)
 
 
 type alias Package =
@@ -21,10 +21,10 @@ compare ( ln, lv ) ( rn, rv ) =
         nameCmp =
             Name.compare ln rn
     in
-        if nameCmp == EQ then
-            Version.compare lv rv
-        else
-            nameCmp
+    if nameCmp == EQ then
+        Version.compare lv rv
+    else
+        nameCmp
 
 
 decoder : Decoder Package

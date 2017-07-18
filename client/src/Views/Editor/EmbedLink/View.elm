@@ -4,12 +4,12 @@ module Views.Editor.EmbedLink.View
         , view
         )
 
-import Html exposing (Html, span, div, text, input, button)
-import Html.Attributes exposing (id, type_, value, readonly, disabled)
-import Html.Events exposing (onFocus, onClick)
-import Views.Editor.EmbedLink.Classes exposing (..)
+import Html exposing (Html, button, div, input, span, text)
+import Html.Attributes exposing (disabled, id, readonly, type_, value)
+import Html.Events exposing (onClick, onFocus)
 import Shared.Constants as Constants
 import Shared.Icons as Icons
+import Views.Editor.EmbedLink.Classes exposing (..)
 
 
 autoselect : Html.Attribute msg

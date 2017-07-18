@@ -1,7 +1,7 @@
-module Data.File exposing (File, name, lastModified, fromStringParts, toBody, toPart, decoder, encoder, toObjectUrl, expect)
+module Data.File exposing (File, decoder, encoder, expect, fromStringParts, lastModified, name, toBody, toObjectUrl, toPart)
 
+import Http exposing (Body, Expect, Part)
 import Json.Decode as Decode exposing (Decoder, Value)
-import Http exposing (Body, Part, Expect)
 import Native.File
 import Time exposing (Time)
 
