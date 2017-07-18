@@ -1,4 +1,4 @@
-module Views.Header.View
+module Views.Editor.Header.View
     exposing
         ( SaveOption(..)
         , ViewModel
@@ -10,7 +10,7 @@ import Html.Attributes exposing (disabled)
 import Html.Events exposing (onClick)
 import Shared.Icons as Icons
 import Shared.Utils as Utils exposing (renderIf)
-import Views.Header.Classes exposing (..)
+import Views.Editor.Header.Classes exposing (..)
 
 
 type SaveOption

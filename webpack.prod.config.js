@@ -41,11 +41,10 @@ module.exports = {
           loader: 'babel-loader',
           options: {
             presets: [
-              ['es2015', { modules: false }],
-              'flow',
+              ['es2017'],
               ['env', { 'targets': { 'uglify': true } }]
             ],
-            plugins: ['syntax-dynamic-import']
+            plugins: ['dynamic-import-webpack']
           }
         }
       },

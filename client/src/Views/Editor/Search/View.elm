@@ -1,12 +1,12 @@
-module Views.Search.View exposing (view, ViewModel)
+module Views.Editor.Search.View exposing (ViewModel, view)
 
-import Html exposing (Html, div, text, input, button, span, select, option, a)
-import Html.Attributes as Attr exposing (type_, value, selected, placeholder, href, id, target)
-import Html.Events exposing (onInput, onClick, on)
-import Views.Search.Classes exposing (..)
-import Shared.Icons as Icons
 import Data.Elm.Package as Package exposing (Package)
 import Data.Elm.Package.Version as Version exposing (Version)
+import Html exposing (Html, a, button, div, input, option, select, span, text)
+import Html.Attributes as Attr exposing (href, id, placeholder, selected, target, type_, value)
+import Html.Events exposing (on, onClick, onInput)
+import Shared.Icons as Icons
+import Views.Editor.Search.Classes exposing (..)
 
 
 type alias ViewModel msg =

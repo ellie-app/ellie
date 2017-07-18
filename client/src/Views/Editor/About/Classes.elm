@@ -1,4 +1,4 @@
-module Views.About.Classes exposing (..)
+module Views.Editor.About.Classes exposing (..)
 
 import Html exposing (Attribute)
 import Html.CssHelpers

@@ -21,9 +21,9 @@ wrapUpdate update additionalCmdCreators =
             additionalCmds =
                 List.map ((|>) nextModel) additionalCmdCreators
         in
-        ( nextModel
-        , Cmd.batch <| nextCmd :: additionalCmds
-        )
+            ( nextModel
+            , Cmd.batch <| nextCmd :: additionalCmds
+            )
 
 
 main : Program Flags Model Msg

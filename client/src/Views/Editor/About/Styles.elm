@@ -1,8 +1,8 @@
-module Views.About.Styles exposing (..)
+module Views.Editor.About.Styles exposing (..)
 
 import Css exposing (..)
 import Css.Namespace exposing (..)
-import Views.About.Classes exposing (Classes(..))
+import Views.Editor.About.Classes exposing (Classes(..))
 import Shared.Constants as Constants
 import Shared.Colors as Colors
 

@@ -1,4 +1,4 @@
-module Data.Extra.Json.Encode exposing (..)
+module Extra.Json.Encode exposing (..)
 
 import Json.Encode as Encode exposing (Value)
 

@@ -1,10 +1,10 @@
-module Views.Sidebar.Styles exposing (..)
+module Views.Editor.Sidebar.Styles exposing (..)
 
 import Css exposing (..)
 import Css.Namespace exposing (..)
-import Views.Sidebar.Classes exposing (..)
-import Shared.Constants as Constants
 import Shared.Colors as Colors
+import Shared.Constants as Constants
+import Views.Editor.Sidebar.Classes exposing (..)
 
 
 styles : Stylesheet
