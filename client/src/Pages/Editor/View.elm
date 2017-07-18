@@ -1,25 +1,25 @@
 module Pages.Editor.View exposing (view)
 
-import Pages.Editor.Classes exposing (..)
-import Pages.Editor.Model as Model exposing (Model, PopoutState(..))
-import Pages.Editor.Routing as Routing exposing (..)
-import Pages.Editor.Update as Update exposing (Msg(..))
 import Data.Ellie.CompileStage as CompileStage exposing (CompileStage)
 import Data.Ellie.RevisionId as RevisionId exposing (RevisionId)
 import Html exposing (Html, button, div, header, iframe, main_, span, text)
 import Html.Attributes exposing (style)
 import Html.Events exposing (onClick, onMouseDown)
+import Pages.Editor.Classes exposing (..)
+import Pages.Editor.Model as Model exposing (Model, PopoutState(..))
+import Pages.Editor.Routing as Routing exposing (..)
+import Pages.Editor.Update as Update exposing (Msg(..))
 import RemoteData exposing (RemoteData(..))
 import Shared.Icons as Icons
 import Shared.Utils as Utils
-import Views.About.View as About
+import Views.Editor.About.View as About
 import Views.Editor.EmbedLink.View as EmbedLink
+import Views.Editor.Header.View as Header
+import Views.Editor.Notifications.View as Notifications
+import Views.Editor.Search.View as Search
+import Views.Editor.Sidebar.View as Sidebar
 import Views.Editors.View as Editors
-import Views.Header.View as Header
-import Views.Notifications.View as Notifications
 import Views.Output.View as Output
-import Views.Search.View as Search
-import Views.Sidebar.View as Sidebar
 
 
 renderIf : Bool -> (() -> Html msg) -> Html msg

@@ -1,4 +1,4 @@
-module Data.Extra.String exposing (..)
+module Extra.String exposing (..)
 
 import Regex exposing (Regex)
 

@@ -2,15 +2,15 @@ port module Pages.Editor.Stylesheets exposing (..)
 
 import Css.File exposing (..)
 import Pages.Editor.Styles as Editor
-import Views.About.Styles as About
+import Views.Editor.About.Styles as About
 import Views.Editor.EmbedLink.Styles as EmbedLink
+import Views.Editor.Header.Styles as Header
+import Views.Editor.Notifications.Styles as Notifications
+import Views.Editor.Search.Styles as Search
+import Views.Editor.Sidebar.Styles as Sidebar
 import Views.Editors.Styles as Editors
-import Views.Header.Styles as Header
-import Views.Notifications.Styles as Notifications
 import Views.Output.Styles as Output
 import Views.ProgressBar.Styles as ProgressBar
-import Views.Search.Styles as Search
-import Views.Sidebar.Styles as Sidebar
 
 
 port files : CssFileStructure -> Cmd msg

@@ -1,4 +1,4 @@
-module Views.Sidebar.Classes exposing (..)
+module Views.Editor.Sidebar.Classes exposing (..)
 
 import Html exposing (Attribute)
 import Html.CssHelpers

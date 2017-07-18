@@ -1,10 +1,10 @@
-module Views.Notifications.Styles exposing (..)
+module Views.Editor.Notifications.Styles exposing (..)
 
 import Css exposing (..)
 import Css.Namespace exposing (..)
-import Views.Notifications.Classes exposing (Classes(..))
-import Shared.Constants as Constants
 import Shared.Colors as Colors
+import Shared.Constants as Constants
+import Views.Editor.Notifications.Classes exposing (Classes(..))
 
 
 styles : Stylesheet

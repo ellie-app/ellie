@@ -1,15 +1,15 @@
-module Views.Notifications.View
+module Views.Editor.Notifications.View
     exposing
         ( view
         )
 
-import Date exposing (Date)
-import Html exposing (Html, div, text, button, span)
-import Html.Attributes exposing (style, id)
 import Data.Ellie.Notification as Notification exposing (Notification)
-import Shared.Icons as Icons
+import Date exposing (Date)
+import Html exposing (Html, button, div, span, text)
+import Html.Attributes exposing (id, style)
 import Shared.Colors as Colors
-import Views.Notifications.Classes exposing (..)
+import Shared.Icons as Icons
+import Views.Editor.Notifications.Classes exposing (..)
 
 
 icon : Notification.Level -> Html msg

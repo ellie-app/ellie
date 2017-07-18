@@ -1,10 +1,10 @@
-module Views.Search.Styles exposing (styles)
+module Views.Editor.Search.Styles exposing (styles)
 
 import Css exposing (..)
 import Css.Namespace exposing (..)
-import Views.Search.Classes exposing (..)
-import Shared.Constants as Constants
 import Shared.Colors as Colors
+import Shared.Constants as Constants
+import Views.Editor.Search.Classes exposing (..)
 
 
 styles : Stylesheet

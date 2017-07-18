@@ -1,4 +1,4 @@
-module Views.Search.Classes
+module Views.Editor.Search.Classes
     exposing
         ( Classes(..)
         , class

@@ -1,4 +1,4 @@
-module Views.Notifications.Classes exposing (..)
+module Views.Editor.Notifications.Classes exposing (..)
 
 import Html exposing (Attribute)
 import Html.CssHelpers

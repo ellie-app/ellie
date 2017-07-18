@@ -1,4 +1,4 @@
-module Views.About.View
+module Views.Editor.About.View
     exposing
         ( view
         )
@@ -6,7 +6,7 @@ module Views.About.View
 import Html exposing (Html, a, p, div, text, button, span, img)
 import Html.Attributes exposing (style, src, href, id, target)
 import Shared.Constants as Constants
-import Views.About.Classes exposing (..)
+import Views.Editor.About.Classes exposing (..)
 
 
 view : Html msg

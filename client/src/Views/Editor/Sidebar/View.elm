@@ -1,18 +1,18 @@
-module Views.Sidebar.View
+module Views.Editor.Sidebar.View
     exposing
-        ( view
-        , ViewModel
+        ( ViewModel
+        , view
         )
 
-import Html exposing (Html, a, label, textarea, h3, button, aside, div, text, span, input, hr, option, select, node, Attribute)
-import Html.Attributes exposing (href, target, type_, value, disabled, id, attribute)
-import Html.Events exposing (onInput, onClick)
-import Shared.Icons as Icons
-import Shared.Constants as Constants
-import Views.Sidebar.Classes exposing (..)
 import Data.Elm.Package as Package exposing (Package)
 import Data.Elm.Package.Version as Version exposing (Version)
+import Html exposing (Attribute, Html, a, aside, button, div, h3, hr, input, label, node, option, select, span, text, textarea)
+import Html.Attributes exposing (attribute, disabled, href, id, target, type_, value)
+import Html.Events exposing (onClick, onInput)
 import Native.CarbonAds
+import Shared.Constants as Constants
+import Shared.Icons as Icons
+import Views.Editor.Sidebar.Classes exposing (..)
 
 
 type alias ViewModel msg =

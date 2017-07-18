@@ -1,8 +1,8 @@
-module Views.Header.Styles exposing (..)
+module Views.Editor.Header.Styles exposing (..)
 
 import Css exposing (..)
 import Css.Namespace exposing (..)
-import Views.Header.Classes exposing (Classes(..))
+import Views.Editor.Header.Classes exposing (Classes(..))
 import Shared.Constants as Constants
 import Shared.Colors as Colors
 

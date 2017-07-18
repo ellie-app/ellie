@@ -6,7 +6,7 @@ module Data.Ellie.CompileStage
         )
 
 import Data.Elm.Compiler.Error as Error exposing (Error)
-import Data.Extra.Json.Encode as Encode
+import Extra.Json.Encode as Encode
 import Json.Decode as Decode exposing (Decoder)
 import Json.Encode as Encode exposing (Value)
 
