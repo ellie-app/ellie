@@ -36,8 +36,10 @@ module.exports = {
         use: {
           loader: 'babel-loader',
           options: {
-            presets: ['es2017', 'flow'],
-            plugins: ['dynamic-import-webpack']
+            presets: ['es2017'],
+            plugins: [
+              'babel-plugin-dynamic-import-webpack'
+            ]
           }
         }
       },
