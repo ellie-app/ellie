@@ -19,11 +19,12 @@ import Navigation
 import Pages.Editor.Cmds as Cmds
 import Pages.Editor.Model as Model exposing (EditorCollapseState(..), Flags, Model, PopoutState(..))
 import Pages.Editor.Routing as Routing exposing (Route(..))
+import Process
 import RemoteData exposing (RemoteData(..))
 import Shared.Api as Api
 import Shared.Constants as Constants
-import Shared.MessageBus as MessageBus
 import Task
+import Time exposing (Time)
 import Window exposing (Size)
 
 
@@ -87,7 +88,9 @@ type Msg
     | FormattingCompleted (Result ApiError String)
     | RemovePackageRequested Package
     | NotificationReceived Notification
-    | ToggleNotifications
+    | ClearStaleNotifications Time
+    | ClearAllNotifications
+    | ClearNotification Notification
     | ToggleAbout
     | ResultDragStarted
     | ResultDragged Position
@@ -116,15 +119,17 @@ type Msg
 onlineNotification : Bool -> Cmd Msg
 onlineNotification isOnline =
     if isOnline then
-        MessageBus.notify
-            Notification.Success
-            "You're Online!"
-            "Ellie has detected that your internet connection is online."
+        Cmds.notify NotificationReceived
+            { level = Notification.Success
+            , title = "You're Online!"
+            , message = "Ellie has detected that your internet connection is online."
+            }
     else
-        MessageBus.notify
-            Notification.Error
-            "You're Offline!"
-            "Ellie can't connect to the server right now, so we've disabled most features."
+        Cmds.notify NotificationReceived
+            { level = Notification.Error
+            , title = "You're Offline!"
+            , message = "Ellie can't connect to the server right now, so we've disabled most features."
+            }
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -160,10 +165,11 @@ update msg model =
                     Cmds.openNewWindow gistUrl
 
                 Err apiError ->
-                    MessageBus.notify
-                        Notification.Error
-                        "Creating Gist Failed"
-                        ("We couldn't create a Gist for your project. Here's what GitHub said:\n\n" ++ apiError.explanation)
+                    Cmds.notify NotificationReceived
+                        { level = Notification.Error
+                        , title = "Creating Gist Failed"
+                        , message = "We couldn't create a Gist for your project. Here's what GitHub said:\n" ++ apiError.explanation
+                        }
             )
 
         ReloadIframe ->
@@ -199,10 +205,11 @@ update msg model =
 
         IframeJsError message ->
             ( model
-            , MessageBus.notify
-                Notification.Error
-                "JavaScript Error"
-                ("A JavaScript Error was thrown by your program:\n\n" ++ message)
+            , Cmds.notify NotificationReceived
+                { level = Notification.Error
+                , title = "JavaScript Error"
+                , message = "A JavaScript Error was thrown by your program:\n" ++ message
+                }
             )
 
         ToggleEmbedLink ->
@@ -309,18 +316,6 @@ update msg model =
             , Cmd.none
             )
 
-        ToggleNotifications ->
-            ( { model
-                | popoutState =
-                    if model.popoutState == NotificationsOpen then
-                        AllClosed
-                    else
-                        NotificationsOpen
-                , unseenNotificationsCount = 0
-              }
-            , Cmd.none
-            )
-
         ToggleAbout ->
             ( { model
                 | popoutState =
@@ -337,18 +332,32 @@ update msg model =
         NotificationReceived notification ->
             ( { model
                 | notifications = notification :: model.notifications
-                , unseenNotificationsCount =
-                    if model.popoutState /= NotificationsOpen then
-                        model.unseenNotificationsCount + 1
-                    else if notification.level == Notification.Error then
-                        0
-                    else
-                        model.unseenNotificationsCount
-                , popoutState =
-                    if notification.level == Notification.Error then
-                        NotificationsOpen
-                    else
-                        model.popoutState
+              }
+            , Process.sleep (15 * Time.second)
+                |> Task.andThen (\_ -> Time.now)
+                |> Task.perform ClearStaleNotifications
+            )
+
+        ClearStaleNotifications now ->
+            ( { model
+                | notifications =
+                    List.filter
+                        (\n ->
+                            ((now - n.timestamp) < (15 * Time.second))
+                                || (n.level == Notification.Error)
+                        )
+                        model.notifications
+              }
+            , Cmd.none
+            )
+
+        ClearAllNotifications ->
+            ( { model | notifications = [] }, Cmd.none )
+
+        ClearNotification notification ->
+            ( { model
+                | notifications =
+                    List.filter ((/=) notification) model.notifications
               }
             , Cmd.none
             )
@@ -361,19 +370,21 @@ update msg model =
                 |> Model.resetStagedCode
             , case revisionResult of
                 Ok _ ->
-                    MessageBus.notify
-                        Notification.Success
-                        "Your Project Is Loaded!"
-                        "Ellie found the project and revision you asked for. It's loaded up and ready to be run."
+                    Cmds.notify NotificationReceived
+                        { level = Notification.Success
+                        , title = "Your Project Is Loaded!"
+                        , message = "Ellie found the project and revision you asked for. It's loaded up and ready to be run."
+                        }
 
                 Err apiError ->
                     if apiError.statusCode == 404 then
                         Navigation.modifyUrl <| Routing.construct NewProject
                     else
-                        MessageBus.notify
-                            Notification.Error
-                            "Failed To Load Project"
-                            ("Ellie couldn't load the project you asked for. Here's what the server said:\n\n" ++ apiError.explanation)
+                        Cmds.notify NotificationReceived
+                            { level = Notification.Error
+                            , title = "Failed To Load Project"
+                            , message = "Ellie couldn't load the project you asked for. Here's what the server said:\n" ++ apiError.explanation
+                            }
             )
 
         RouteChanged route ->
@@ -392,10 +403,11 @@ update msg model =
         CompileForSaveStarted totalModules ->
             ( model
             , if totalModules >= 5 then
-                MessageBus.notify
-                    Notification.Error
-                    "Saving may take a while"
-                    "It looks like there are a lot of modules to compile. Please wait a moment while I build everything and save it!"
+                Cmds.notify NotificationReceived
+                    { level = Notification.Info
+                    , title = "Saving may take a while"
+                    , message = "It looks like there are a lot of modules to compile. Please wait a moment while I build everything and save it!"
+                    }
               else
                 Cmd.none
             )
@@ -454,16 +466,18 @@ update msg model =
                     |> Maybe.withDefault Cmd.none
                 , case saveResult of
                     Ok _ ->
-                        MessageBus.notify
-                            Notification.Success
-                            "Your Project Was Saved"
-                            "Ellie saved your project! Your revision number has been updated in the URL."
+                        Cmds.notify NotificationReceived
+                            { level = Notification.Success
+                            , title = "Your Project Was Saved"
+                            , message = "Ellie saved your project! Your revision number has been updated in the URL."
+                            }
 
                     Err apiError ->
-                        MessageBus.notify
-                            Notification.Error
-                            "Failed To Save Project"
-                            ("Ellie couldn't save your project. Here's what the server said:\n\n" ++ apiError.explanation)
+                        Cmds.notify NotificationReceived
+                            { level = Notification.Error
+                            , title = "Failed To Save Project"
+                            , message = "Ellie couldn't save your project. Here's what the server said:\n" ++ apiError.explanation
+                            }
                 ]
             )
 
@@ -477,10 +491,6 @@ update msg model =
             , Cmd.batch
                 [ Api.format model.stagedElmCode
                     |> Api.send FormattingCompleted
-                , MessageBus.notify
-                    Notification.Info
-                    "Formatting Your Code"
-                    "Ellie has asked the server to format your code with elm-format."
                 ]
             )
 
@@ -496,16 +506,14 @@ update msg model =
               }
             , case result of
                 Ok _ ->
-                    MessageBus.notify
-                        Notification.Success
-                        "Formatting Succeeded!"
-                        "Your code looks so good!"
+                    Cmd.none
 
                 Err apiError ->
-                    MessageBus.notify
-                        Notification.Error
-                        "Formatting Your Code Failed"
-                        ("Ellie couldn't format your code. Here's what the server said:\n\n" ++ apiError.explanation)
+                    Cmds.notify NotificationReceived
+                        { level = Notification.Error
+                        , title = "Formatting Your Code Failed"
+                        , message = "Ellie couldn't format your code. Here's what the server said:\n" ++ apiError.explanation
+                        }
             )
 
         RemovePackageRequested package ->

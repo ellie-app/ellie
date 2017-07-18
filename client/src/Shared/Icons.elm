@@ -3,6 +3,7 @@ module Shared.Icons
         ( bell
         , checkmark
         , close
+        , closeEmpty
         , cloudOutline
         , code
         , collapse
@@ -388,4 +389,14 @@ loading =
         [ circle [ class "LoadingIcon-circle", cx "35", cy "25", r "20", fillRule "evenodd" ] []
         , circle [ class "LoadingIcon-circle", cx "105", cy "25", r "20", fillRule "evenodd" ] []
         , circle [ class "LoadingIcon-circle", cx "175", cy "25", r "20", fillRule "evenodd" ] []
+        ]
+
+
+closeEmpty : Html msg
+closeEmpty =
+    svg
+        [ viewBox "0 0 192 192", iconStyle ]
+        [ polygon
+            [ points "180.2 0 95.8 84.3 11.8 0.4 0 12.2 84 96 0 179.9 11.8 191.6 95.8 107.8 180.2 192 192 180.3 107.6 96 192 11.8" ]
+            []
         ]

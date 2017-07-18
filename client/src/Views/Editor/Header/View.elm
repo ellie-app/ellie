@@ -31,8 +31,6 @@ type alias ViewModel msg =
     , onFormat : msg
     , onAbout : msg
     , onEmbedLink : msg
-    , onNotifications : msg
-    , notificationCount : Int
     }
 
 
@@ -120,19 +118,6 @@ viewAboutButton viewModel =
         "About"
 
 
-viewNotificationsButton : ViewModel msg -> Html msg
-viewNotificationsButton viewModel =
-    viewButton
-        viewModel.onNotifications
-        False
-        Icons.bell
-        (if viewModel.notificationCount == 0 then
-            ""
-         else
-            toString viewModel.notificationCount
-        )
-
-
 viewEmbedLinkButton : ViewModel msg -> Html msg
 viewEmbedLinkButton viewModel =
     viewButton
@@ -154,6 +139,5 @@ view viewModel =
             ]
         , div [ class [ HeaderGroup ] ]
             [ viewAboutButton viewModel
-            , viewNotificationsButton viewModel
             ]
         ]

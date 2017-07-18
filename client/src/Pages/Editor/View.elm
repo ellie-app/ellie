@@ -57,11 +57,6 @@ expandButtonIcon isHidden =
 popoutView : Model -> Html Msg
 popoutView model =
     case model.popoutState of
-        NotificationsOpen ->
-            renderIf
-                (not <| List.isEmpty model.notifications)
-                (\_ -> Notifications.view model.notifications)
-
         AboutOpen ->
             About.view
 
@@ -240,8 +235,6 @@ headerContext model =
     , onFormat = FormattingRequested
     , onAbout = ToggleAbout
     , onEmbedLink = ToggleEmbedLink
-    , onNotifications = ToggleNotifications
-    , notificationCount = model.unseenNotificationsCount
     , embedLinkButtonEnabled =
         Routing.isSpecificRevision model.currentRoute
     , saveButtonEnabled =
@@ -249,7 +242,7 @@ headerContext model =
     , saveButtonOption =
         headerSaveOption model
     , compileButtonEnabled =
-        True
+        Model.canCompile model
     , buttonsVisible =
         RemoteData.isSuccess model.serverRevision
             && model.isOnline
@@ -319,6 +312,10 @@ view model =
                 , div [ class [ NotificationsContainer ] ]
                     [ popoutView model ]
                 , embedLink model
+                , Notifications.view
+                    { notifications = model.notifications
+                    , onClose = ClearNotification
+                    }
                 ]
             , renderIf
                 model.searchOpen

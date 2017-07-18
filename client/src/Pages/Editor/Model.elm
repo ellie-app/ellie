@@ -44,7 +44,6 @@ type alias Flags =
 type PopoutState
     = AllClosed
     | AboutOpen
-    | NotificationsOpen
     | EmbedLinkOpen
 
 
@@ -66,7 +65,6 @@ type alias Model =
     , saveState : RemoteData ApiError ()
     , isOnline : Bool
     , notifications : List Notification
-    , unseenNotificationsCount : Int
     , popoutState : PopoutState
     , resultSplit : Float
     , resultDragging : Bool
@@ -98,7 +96,6 @@ model flags =
     , saveState = NotAsked
     , isOnline = flags.online
     , notifications = []
-    , unseenNotificationsCount = 0
     , popoutState = AllClosed
     , resultSplit = 0.5
     , resultDragging = False
