@@ -7,9 +7,16 @@ import Data.Ellie.Notification as Notification exposing (Notification)
 import Date exposing (Date)
 import Html exposing (Html, button, div, span, text)
 import Html.Attributes exposing (id, style)
+import Html.Events exposing (onClick)
 import Shared.Colors as Colors
 import Shared.Icons as Icons
 import Views.Editor.Notifications.Classes exposing (..)
+
+
+type alias ViewModel msg =
+    { onClose : Notification -> msg
+    , notifications : List Notification
+    }
 
 
 icon : Notification.Level -> Html msg
@@ -28,8 +35,8 @@ icon level =
             Icons.information
 
 
-iconColor : Notification.Level -> String
-iconColor level =
+color : Notification.Level -> String
+color level =
     case level of
         Notification.Warning ->
             Colors.yellow
@@ -71,29 +78,28 @@ formatDate date =
         ++ amPm date
 
 
-item : Notification -> Html msg
-item notification =
-    div [ class [ Item ] ]
-        [ div [ class [ ItemTitle ] ]
-            [ span [] [ text notification.title ]
-            , span [ class [ ItemTimestamp ] ] [ text <| formatDate notification.timestamp ]
+item : (Notification -> msg) -> Notification -> Html msg
+item onClose notification =
+    div
+        [ class [ Item ]
+        , style [ ( "background-color", color notification.level ) ]
+        ]
+        [ div [ class [ ItemTitle ] ] [ text notification.title ]
+        , div [ class [ ItemTimestamp ] ] [ text <| formatDate (Date.fromTime notification.timestamp) ]
+        , div [ class [ ItemMessage ] ] [ text <| String.trim notification.message ]
+        , button
+            [ class [ CloseButton ]
+            , onClick (onClose notification)
             ]
-        , div [ class [ ItemDetails ] ]
-            [ div [ class [ ItemMessage ] ] [ text notification.message ]
-            , div
-                [ class [ ItemIcon ]
-                , style [ ( "color", iconColor notification.level ) ]
-                ]
-                [ icon notification.level
-                ]
+            [ Icons.closeEmpty
             ]
         ]
 
 
-view : List Notification -> Html msg
-view notifications =
+view : ViewModel msg -> Html msg
+view { onClose, notifications } =
     div
-        [ class [ Popout ]
+        [ class [ Notifications ]
         , id "notifications"
         ]
-        (List.map item notifications)
+        (List.map (item onClose) notifications)

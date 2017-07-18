@@ -28,7 +28,7 @@ yellow =
 
 green : String
 green =
-    "#80cbae"
+    "#689f8e"
 
 
 blue : String
@@ -38,7 +38,7 @@ blue =
 
 red : String
 red =
-    "#ff5370"
+    "#ec5f67"
 
 
 darkGray : String

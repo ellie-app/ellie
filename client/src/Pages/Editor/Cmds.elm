@@ -2,6 +2,7 @@ port module Pages.Editor.Cmds
     exposing
         ( compile
         , hasUnsavedWork
+        , notify
         , openDebugger
         , openNewWindow
         , pathChanged
@@ -12,12 +13,15 @@ port module Pages.Editor.Cmds
         , withCmdWhen
         )
 
+import Data.Ellie.Notification as Notification exposing (Notification)
 import Data.Ellie.Revision as Revision exposing (Revision)
 import Data.Elm.Package.Constraint as Constraint exposing (Constraint)
 import Data.Elm.Package.Name as Name exposing (Name)
 import Data.Elm.Package.Version as Version exposing (Version)
 import Json.Encode as Encode exposing (Value)
 import Pages.Editor.Model as Model exposing (Model)
+import Task
+import Time
 
 
 withCmd : (Model -> Cmd msg) -> Model -> ( Model, Cmd msg )
@@ -96,3 +100,10 @@ compile model forSave =
 prepCompiler : Version -> Cmd msg
 prepCompiler version =
     prepCompilerOut (Version.toString version)
+
+
+notify : (Notification -> msg) -> { title : String, level : Notification.Level, message : String } -> Cmd msg
+notify tagger { title, level, message } =
+    Time.now
+        |> Task.map (Notification level message title)
+        |> Task.perform tagger

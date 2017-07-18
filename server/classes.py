@@ -1,3 +1,4 @@
+import os
 import random
 import time
 from math import floor
@@ -273,8 +274,15 @@ class PackageInfo(object):
         return package
 
 
+def timestamp() -> int:
+    return int(time.time() * 1000)
+
+
 ALPHABET = '23456789bcdfghjkmnpqrstvwxyzBCDFGHJKLMNPQRSTVWXYZ'
 BASE_LENGTH = len(ALPHABET)
+SEQ_ID = 0
+RELEASE_ID = int(os.environ['HEROKU_RELEASE_VERSION'].lstrip('v'))
+OUR_EPOCH = timestamp()
 
 
 class ProjectId(SupportsInt):
@@ -327,8 +335,14 @@ class ProjectId(SupportsInt):
 
     @staticmethod
     def generate() -> 'ProjectId':
-        random_int = random.randint(0, 9223372036854775807)
-        return ProjectId(random_int, 1)
+        global SEQ_ID
+        my_seq_id = (SEQ_ID + 1) % 1024
+        SEQ_ID += 1
+        now_millis = timestamp()
+        result = (now_millis - OUR_EPOCH) << 23
+        result |= RELEASE_ID << 10
+        result |= my_seq_id
+        return ProjectId(result, 1)
 
     @staticmethod
     def _from_string_v0(input: str) -> 'ProjectId':

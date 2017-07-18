@@ -6,9 +6,6 @@ import Html.CssHelpers
 
 type Classes
     = Notifications
-    | Button
-    | Popout
-    | PopoutHidden
     | Item
     | ItemIcon
     | ItemDetails
@@ -16,11 +13,7 @@ type Classes
     | ItemTitle
     | ItemTimestamp
     | ItemMessage
-    | Latest
-    | LatestTitle
-    | LatestIcon
-    | ItemHighlighted
-    | ButtonIcon
+    | CloseButton
 
 
 helpers : Html.CssHelpers.Namespace String class id msg

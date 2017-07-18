@@ -8,7 +8,6 @@ import Keyboard
 import Mouse
 import Pages.Editor.Model as Model exposing (Model, PopoutState(..))
 import Pages.Editor.Update as Update exposing (Msg(..))
-import Shared.MessageBus as MessageBus
 import Window
 
 
@@ -125,7 +124,7 @@ windowMessageDecoder model =
 
 windowMessage : Model -> Sub Msg
 windowMessage model =
-    if model.resultDragging || model.editorDragging || model.popoutState == NotificationsOpen then
+    if model.resultDragging || model.editorDragging then
         windowMessageIn (Decode.decodeValue (windowMessageDecoder model) >> Result.withDefault NoOp)
     else
         Sub.none
@@ -172,11 +171,24 @@ closeSearch model =
         Sub.none
 
 
+clearNotifications : Model -> Sub Msg
+clearNotifications model =
+    if not (List.isEmpty model.notifications) then
+        Keyboard.ups
+            (\keyCode ->
+                if keyCode == 27 then
+                    ClearAllNotifications
+                else
+                    NoOp
+            )
+    else
+        Sub.none
+
+
 subscriptions : Model -> Sub Msg
 subscriptions model =
     Sub.batch
         [ online OnlineChanged
-        , MessageBus.notifications NotificationReceived
         , windowSize model
         , resultDrags model
         , editorDrags model
@@ -186,4 +198,5 @@ subscriptions model =
         , compilerMessages
         , compileForSave
         , keyCombos model
+        , clearNotifications model
         ]

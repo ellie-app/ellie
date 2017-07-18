@@ -7,11 +7,11 @@ module Data.Ellie.Notification
         , hash
         )
 
-import Date exposing (Date)
 import Json.Decode as Decode exposing (Decoder)
 import Json.Decode.Pipeline as Decode
 import Json.Encode as Encode exposing (Value)
 import Shared.Utils as Utils
+import Time exposing (Time)
 
 
 type Level
@@ -25,7 +25,7 @@ type alias Notification =
     { level : Level
     , message : String
     , title : String
-    , timestamp : Date
+    , timestamp : Time
     }
 
 
@@ -51,7 +51,7 @@ encoder notification =
         [ ( "level", encodeLevel notification.level )
         , ( "message", Encode.string notification.message )
         , ( "title", Encode.string notification.title )
-        , ( "timestamp", Encode.float (Date.toTime notification.timestamp) )
+        , ( "timestamp", Encode.float notification.timestamp )
         ]
 
 
@@ -71,7 +71,7 @@ decoder =
         |> Decode.required "level" decodeLevel
         |> Decode.required "message" Decode.string
         |> Decode.required "title" Decode.string
-        |> Decode.required "timestamp" (Decode.map Date.fromTime Decode.float)
+        |> Decode.required "timestamp" Decode.float
 
 
 hash : Notification -> String
