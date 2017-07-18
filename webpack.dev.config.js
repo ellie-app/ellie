@@ -37,9 +37,7 @@ module.exports = {
           loader: 'babel-loader',
           options: {
             presets: ['es2017'],
-            plugins: [
-              'babel-plugin-dynamic-import-webpack'
-            ]
+            plugins: ['syntax-dynamic-import']
           }
         }
       },
