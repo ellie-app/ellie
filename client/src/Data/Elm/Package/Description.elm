@@ -4,8 +4,8 @@ import Data.Elm.Compiler.Module as Module
 import Data.Elm.Package.Constraint as Constraint exposing (Constraint)
 import Data.Elm.Package.Name as Name exposing (Name)
 import Data.Elm.Package.Version as Version exposing (Version)
-import Extra.String as String
 import Data.FilePath as FilePath exposing ((</>), FilePath)
+import Extra.String as String
 import Json.Decode as Decode exposing (Decoder)
 import Json.Encode as Encode exposing (Value)
 

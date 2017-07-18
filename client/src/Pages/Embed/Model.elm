@@ -5,10 +5,10 @@ module Pages.Embed.Model
         , model
         )
 
-import RemoteData exposing (RemoteData(..))
-import Pages.Embed.Routing as Routing exposing (Route(..))
 import Data.Ellie.ApiError as ApiError exposing (ApiError)
 import Data.Ellie.Revision as Revision exposing (Revision)
+import Pages.Embed.Routing as Routing exposing (Route(..))
+import RemoteData exposing (RemoteData(..))
 
 
 type Tab

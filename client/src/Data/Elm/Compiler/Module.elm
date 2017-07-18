@@ -1,8 +1,8 @@
 module Data.Elm.Compiler.Module exposing (..)
 
+import Data.FilePath as FilePath exposing ((</>), FilePath)
 import Json.Decode as Decode exposing (Decoder)
 import Json.Encode as Encode exposing (Value)
-import Data.FilePath as FilePath exposing (FilePath, (</>))
 
 
 type alias Raw =

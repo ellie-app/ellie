@@ -1,16 +1,16 @@
 module Data.Ellie.Notification
     exposing
-        ( Notification
-        , Level(..)
-        , encoder
+        ( Level(..)
+        , Notification
         , decoder
+        , encoder
         , hash
         )
 
 import Date exposing (Date)
-import Json.Encode as Encode exposing (Value)
 import Json.Decode as Decode exposing (Decoder)
 import Json.Decode.Pipeline as Decode
+import Json.Encode as Encode exposing (Value)
 import Shared.Utils as Utils
 
 

@@ -5,10 +5,10 @@ effect module Shared.MessageBus
         , notify
         )
 
-import Date
-import Time
-import Task exposing (Task)
 import Data.Ellie.Notification as Notification exposing (Notification)
+import Date
+import Task exposing (Task)
+import Time
 
 
 notifications : (Notification -> msg) -> Sub msg

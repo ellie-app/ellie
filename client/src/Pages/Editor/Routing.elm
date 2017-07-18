@@ -1,14 +1,14 @@
 module Pages.Editor.Routing
     exposing
         ( Route(..)
-        , parse
         , construct
         , isSpecificRevision
+        , parse
         )
 
+import Data.Ellie.RevisionId exposing (RevisionId)
 import Navigation
 import UrlParser exposing ((</>))
-import Data.Ellie.RevisionId exposing (RevisionId)
 
 
 type Route
@@ -26,8 +26,8 @@ parse =
                 , UrlParser.map SpecificRevision <| UrlParser.map RevisionId (UrlParser.string </> UrlParser.int)
                 ]
     in
-        UrlParser.parsePath parser
-            >> Maybe.withDefault NotFound
+    UrlParser.parsePath parser
+        >> Maybe.withDefault NotFound
 
 
 construct : Route -> String

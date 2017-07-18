@@ -1,8 +1,8 @@
 module Data.Elm.Compiler.Error
     exposing
-        ( Location
+        ( Error
+        , Location
         , Region
-        , Error
         , decoder
         , encoder
         )

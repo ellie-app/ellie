@@ -1,13 +1,13 @@
 module Pages.Embed.Routing
     exposing
         ( Route(..)
-        , parse
         , construct
+        , parse
         )
 
+import Data.Ellie.RevisionId as RevisionId exposing (RevisionId)
 import Navigation
 import UrlParser exposing ((</>))
-import Data.Ellie.RevisionId as RevisionId exposing (RevisionId)
 
 
 type Route
@@ -23,8 +23,8 @@ parse =
                 [ UrlParser.map SpecificRevision <| UrlParser.map RevisionId <| UrlParser.s "embed" </> UrlParser.string </> UrlParser.int
                 ]
     in
-        UrlParser.parsePath parser
-            >> Maybe.withDefault NotFound
+    UrlParser.parsePath parser
+        >> Maybe.withDefault NotFound
 
 
 construct : Route -> String

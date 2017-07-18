@@ -1,26 +1,26 @@
 module Views.Editors.CodeMirror
     exposing
-        ( Position
-        , LinterMessage
+        ( LinterMessage
+        , Position
         , Severity(..)
-        , position
-        , linterMessage
-        , mode
-        , readOnly
-        , value
-        , theme
-        , onUpdate
-        , linterMessages
-        , vimMode
         , editor
         , indentWidth
+        , linterMessage
+        , linterMessages
+        , mode
+        , onUpdate
+        , position
+        , readOnly
+        , theme
+        , value
+        , vimMode
         )
 
-import Json.Encode as Encode exposing (Value)
-import Json.Decode as Decode
-import Html exposing (Html, Attribute)
+import Html exposing (Attribute, Html)
 import Html.Attributes exposing (property)
 import Html.Events exposing (on, targetValue)
+import Json.Decode as Decode
+import Json.Encode as Encode exposing (Value)
 import Native.CodeMirror
 
 

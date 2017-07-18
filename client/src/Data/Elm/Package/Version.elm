@@ -1,4 +1,4 @@
-module Data.Elm.Package.Version exposing (Version, fromString, compare, toString, decoder, encoder)
+module Data.Elm.Package.Version exposing (Version, compare, decoder, encoder, fromString, toString)
 
 import Json.Decode as Decode exposing (Decoder)
 import Json.Encode as Encode exposing (Value)
@@ -57,7 +57,7 @@ decoder =
                 Nothing ->
                     Decode.fail "a version like \"2.0.3\" or \"4.2.1\""
     in
-        Decode.andThen check Decode.string
+    Decode.andThen check Decode.string
 
 
 encoder : Version -> Value

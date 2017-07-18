@@ -4,11 +4,11 @@ module Views.Editor.EmbedLink.Styles
         )
 
 import Css exposing (..)
-import Css.Namespace exposing (..)
 import Css.Elements exposing (..)
-import Views.Editor.EmbedLink.Classes exposing (Classes(..))
-import Shared.Constants as Constants
+import Css.Namespace exposing (..)
 import Shared.Colors as Colors
+import Shared.Constants as Constants
+import Views.Editor.EmbedLink.Classes exposing (Classes(..))
 
 
 styles : Stylesheet

@@ -1,37 +1,37 @@
 module Pages.Editor.Model
     exposing
-        ( Model
-        , PopoutState(..)
-        , EditorCollapseState(..)
+        ( EditorCollapseState(..)
         , Flags
-        , model
-        , resetToNew
-        , updateClientRevision
-        , isOwnedProject
-        , isSavedProject
-        , isRevisionChanged
-        , commitStagedCode
-        , resetStagedCode
+        , Model
+        , PopoutState(..)
+        , canCompile
         , canSave
         , closeSearch
+        , commitStagedCode
+        , compileErrors
         , elmCodeForCompile
+        , elmIsHidden
         , hasUnsavedWork
         , htmlIsHidden
-        , elmIsHidden
-        , compileErrors
-        , canCompile
+        , isOwnedProject
+        , isRevisionChanged
+        , isSavedProject
+        , model
+        , resetStagedCode
+        , resetToNew
+        , updateClientRevision
         )
 
-import Window exposing (Size)
-import RemoteData exposing (RemoteData(..))
-import Data.Ellie.KeyCombo as KeyCombo exposing (KeyCombo)
 import Data.Ellie.ApiError as ApiError exposing (ApiError)
-import Data.Ellie.Revision as Revision exposing (Revision)
+import Data.Ellie.CompileStage as CompileStage exposing (CompileStage(..))
+import Data.Ellie.KeyCombo as KeyCombo exposing (KeyCombo)
 import Data.Ellie.Notification as Notification exposing (Notification)
+import Data.Ellie.Revision as Revision exposing (Revision)
 import Data.Elm.Compiler.Error as CompilerError
 import Data.Elm.Package as Package exposing (Package)
-import Data.Ellie.CompileStage as CompileStage exposing (CompileStage(..))
 import Pages.Editor.Routing as Routing exposing (Route(..))
+import RemoteData exposing (RemoteData(..))
+import Window exposing (Size)
 
 
 type alias Flags =
@@ -137,7 +137,7 @@ canCompile model =
                 _ ->
                     False
     in
-        stagePasses && model.saveState /= Loading
+    stagePasses && model.saveState /= Loading
 
 
 resetToNew : Model -> Model
@@ -161,9 +161,9 @@ canSave model =
             (model.stagedElmCode /= model.clientRevision.elmCode)
                 || (model.stagedHtmlCode /= model.clientRevision.htmlCode)
     in
-        (stagedCodeChanged || isRevisionChanged model || not (isSavedProject model))
-            && not (RemoteData.isLoading model.saveState)
-            && model.isOnline
+    (stagedCodeChanged || isRevisionChanged model || not (isSavedProject model))
+        && not (RemoteData.isLoading model.saveState)
+        && model.isOnline
 
 
 isRevisionChanged : Model -> Bool

@@ -1,12 +1,12 @@
 module Shared.Utils exposing (..)
 
-import Set exposing (Set)
 import Dict exposing (Dict)
-import Regex exposing (Regex)
-import Json.Decode as Decode exposing (Decoder)
-import Json.Encode as Encode exposing (Value)
 import Html exposing (Html)
 import Html.Attributes
+import Json.Decode as Decode exposing (Decoder)
+import Json.Encode as Encode exposing (Value)
+import Regex exposing (Regex)
+import Set exposing (Set)
 
 
 filterMaybe : (a -> Bool) -> a -> Maybe a
@@ -73,7 +73,7 @@ hashFilter hashEx hashM excluded values =
                 |> List.map hashEx
                 |> Set.fromList
     in
-        List.filter (\a -> not (Set.member (hashM a) set)) values
+    List.filter (\a -> not (Set.member (hashM a) set)) values
 
 
 decodeUnion : String -> List ( String, Decoder a ) -> Decoder a
@@ -84,17 +84,17 @@ decodeUnion topTag list =
                 |> List.map (\( l, r ) -> ( topTag ++ "." ++ l, r ))
                 |> Dict.fromList
     in
-        Decode.field "tag" Decode.string
-            |> Decode.andThen
-                (\tag ->
-                    Dict.get tag decoderDict
-                        |> Maybe.withDefault (Decode.fail <| "Could not decode value with tag " ++ tag ++ " for type " ++ topTag)
-                )
+    Decode.field "tag" Decode.string
+        |> Decode.andThen
+            (\tag ->
+                Dict.get tag decoderDict
+                    |> Maybe.withDefault (Decode.fail <| "Could not decode value with tag " ++ tag ++ " for type " ++ topTag)
+            )
 
 
 numberToPercent : number -> String
 numberToPercent number =
-    (toString (number * 100)) ++ "%"
+    toString (number * 100) ++ "%"
 
 
 resultIsSuccess : Result x a -> Bool

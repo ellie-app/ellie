@@ -5,12 +5,12 @@ module Views.Editors.View
         , loading
         )
 
+import Data.Elm.Compiler.Error as CompilerError
 import Html exposing (Html, div, span, text)
 import Html.Attributes exposing (style, value)
-import Data.Elm.Compiler.Error as CompilerError
-import Views.Editors.CodeMirror as CodeMirror
-import Views.Editors.Classes exposing (Classes(..), class)
 import Shared.Utils as Utils
+import Views.Editors.Classes exposing (Classes(..), class)
+import Views.Editors.CodeMirror as CodeMirror
 
 
 singleton : a -> List a
@@ -22,7 +22,7 @@ loadingLine : Float -> Html msg
 loadingLine width =
     div
         [ class [ LoadingLine ]
-        , style [ ( "width", (toString (width * 100)) ++ "%" ) ]
+        , style [ ( "width", toString (width * 100) ++ "%" ) ]
         ]
         []
 
@@ -92,11 +92,11 @@ elm vimMode onUpdate content compileErrors =
                 region =
                     actualRegion compileError
             in
-                CodeMirror.linterMessage
-                    (compileErrorLevelToSeverity compileError.level)
-                    (Utils.replaceAll <| compileError.overview ++ "\n\n" ++ compileError.details)
-                    (CodeMirror.position (region.start.line - 1) (compileError.region.start.column - 1))
-                    (CodeMirror.position (region.end.line - 1) (compileError.region.end.column))
+            CodeMirror.linterMessage
+                (compileErrorLevelToSeverity compileError.level)
+                (Utils.replaceAll <| compileError.overview ++ "\n\n" ++ compileError.details)
+                (CodeMirror.position (region.start.line - 1) (compileError.region.start.column - 1))
+                (CodeMirror.position (region.end.line - 1) compileError.region.end.column)
 
         linterMessages =
             List.map compileErrorToLinterMessage compileErrors
@@ -119,7 +119,7 @@ elm vimMode onUpdate content compileErrors =
                 |> Maybe.map (\u -> [ CodeMirror.onUpdate u, CodeMirror.readOnly False ])
                 |> Maybe.withDefault [ CodeMirror.readOnly True ]
     in
-        CodeMirror.editor (baseAttrs ++ updateAttrs)
+    CodeMirror.editor (baseAttrs ++ updateAttrs)
 
 
 html : Bool -> Maybe (String -> msg) -> String -> Html msg
@@ -142,4 +142,4 @@ html vimMode onUpdate content =
                 |> Maybe.map (\u -> [ CodeMirror.onUpdate u, CodeMirror.readOnly False ])
                 |> Maybe.withDefault [ CodeMirror.readOnly True ]
     in
-        CodeMirror.editor (baseAttrs ++ updateAttrs)
+    CodeMirror.editor (baseAttrs ++ updateAttrs)
