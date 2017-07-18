@@ -8,7 +8,6 @@ import Views.Editor.Header.Styles as Header
 import Views.Editor.Notifications.Styles as Notifications
 import Views.Editor.Search.Styles as Search
 import Views.Editor.Sidebar.Styles as Sidebar
-import Views.Editors.Styles as Editors
 import Views.Output.Styles as Output
 import Views.ProgressBar.Styles as ProgressBar
 
@@ -24,7 +23,6 @@ fileStructure =
                 [ Editor.styles
                 , Sidebar.styles
                 , Output.styles
-                , Editors.styles
                 , Header.styles
                 , Search.styles
                 , Notifications.styles
