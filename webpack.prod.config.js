@@ -44,7 +44,7 @@ module.exports = {
               ['es2017'],
               ['env', { 'targets': { 'uglify': true } }]
             ],
-            plugins: ['dynamic-import-webpack']
+            plugins: ['syntax-dynamic-import']
           }
         }
       },
