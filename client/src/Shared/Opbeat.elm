@@ -10,9 +10,9 @@ type alias Exception =
     }
 
 
-port captureOut : Exception -> Cmd msg
+port opbeatCaptureOut : Exception -> Cmd msg
 
 
 capture : Exception -> Cmd msg
 capture exception =
-    captureOut exception
+    opbeatCaptureOut exception
