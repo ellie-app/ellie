@@ -23,6 +23,7 @@ import Process
 import RemoteData exposing (RemoteData(..))
 import Shared.Api as Api
 import Shared.Constants as Constants
+import Shared.Opbeat as Opbeat
 import Task
 import Time exposing (Time)
 import Window exposing (Size)
@@ -509,11 +510,23 @@ update msg model =
                     Cmd.none
 
                 Err apiError ->
-                    Cmds.notify NotificationReceived
-                        { level = Notification.Error
-                        , title = "Formatting Your Code Failed"
-                        , message = "Ellie couldn't format your code. Here's what the server said:\n" ++ apiError.explanation
-                        }
+                    Cmd.batch
+                        [ Cmds.notify NotificationReceived
+                            { level = Notification.Error
+                            , title = "Formatting Your Code Failed"
+                            , message = "Ellie couldn't format your code. Here's what the server said:\n" ++ apiError.explanation
+                            }
+                        , if apiError.statusCode == 500 then
+                            Opbeat.capture
+                                { tag = "FORMAT_ERROR"
+                                , message = apiError.explanation
+                                , moduleName = "Pages.Editor.Update"
+                                , line = 498
+                                , extraData = [ ( "input", model.stagedElmCode ) ]
+                                }
+                          else
+                            Cmd.none
+                        ]
             )
 
         RemovePackageRequested package ->
