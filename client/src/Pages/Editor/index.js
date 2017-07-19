@@ -1,8 +1,16 @@
+import 'opbeat-js'
 import 'es6-promise/auto'
 import './Main.css'
 import './Stylesheets.elm'
 import initCodeMirror from '../../Views/Editors/CodeMirror'
 import fixHtml from './fixHtml'
+
+if (process.env.NODE_ENV === 'production') {
+  window._opbeat('config', {
+    orgId: OPBEAT_ORGANIZATION_ID,
+    appId: OPBEAT_APP_ID
+  })
+}
 
 const vimMode = window.location.search.indexOf('vim=true') !== -1
 initCodeMirror(vimMode)
