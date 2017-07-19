@@ -115,7 +115,7 @@ module.exports = {
     new webpack.DefinePlugin({
       SERVER_ORIGIN: JSON.stringify(process.env.SERVER_HOSTNAME),
       CDN_BASE: JSON.stringify(process.env.CDN_BASE),
-      OPBEAT_APP_ID: JSON.stringify(process.env.OPBEAT_APP_ID),
+      OPBEAT_APP_ID: JSON.stringify(process.env.OPBEAT_FRONTEND_APP_ID),
       OPBEAT_ORGANIZATION_ID: JSON.stringify(process.env.OPBEAT_ORGANIZATION_ID),
       'process.env.NODE_ENV': JSON.stringify('production'),
     }),
