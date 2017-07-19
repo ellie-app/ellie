@@ -14,6 +14,7 @@ from urllib.parse import urlparse
 import boto3
 import botocore
 from flask import Flask, jsonify, redirect, render_template, request, url_for
+from opbeat.contrib.flask import Opbeat
 from werkzeug.routing import BaseConverter, HTTPException, ValidationError
 
 from . import assets, storage
@@ -30,6 +31,14 @@ def cat_optionals(data: Iterator[Optional[T]]) -> Iterator[T]:
 
 
 app = Flask(__name__)
+
+if os.environ['ENV'] == 'production':
+    opbeat = Opbeat(
+        app,
+        organization_id=os.environ['OPBEAT_ORGANIZATION_ID'],
+        app_id=os.environ['OPBEAT_APP_ID'],
+        secret_token=os.environ['OPBEAT_SECRET_TOKEN']
+    )
 
 
 class ProjectIdConverter(BaseConverter):
