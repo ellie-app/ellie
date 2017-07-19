@@ -120,6 +120,8 @@ module.exports = {
     new webpack.DefinePlugin({
       CDN_BASE: JSON.stringify('https://s3.us-east-2.amazonaws.com/development-cdn.ellie-app.com'),
       SERVER_ORIGIN: JSON.stringify('http://localhost:5000'),
+      OPBEAT_APP_ID: JSON.stringify(process.env.OPBEAT_FRONTEND_APP_ID),
+      OPBEAT_ORGANIZATION_ID: JSON.stringify(process.env.OPBEAT_ORGANIZATION_ID),
       'process.env.NODE_ENV': JSON.stringify('development')
     }),
     new StringReplacePlugin(),

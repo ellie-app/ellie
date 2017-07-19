@@ -1,16 +1,9 @@
-import 'opbeat-js'
 import 'es6-promise/auto'
 import './Main.css'
 import './Stylesheets.elm'
 import initCodeMirror from '../../Views/Editors/CodeMirror'
 import fixHtml from './fixHtml'
-
-if (process.env.NODE_ENV === 'production') {
-  window._opbeat('config', {
-    orgId: OPBEAT_ORGANIZATION_ID,
-    appId: OPBEAT_APP_ID
-  })
-}
+import captureOpbeat from '../../Shared/Opbeat'
 
 const vimMode = window.location.search.indexOf('vim=true') !== -1
 initCodeMirror(vimMode)
@@ -36,6 +29,8 @@ initCodeMirror(vimMode)
       vimMode: vimMode,
       online: process.env.NODE_ENV === 'production' ? window.navigator.onLine : true
     })
+
+    app.ports.opbeatCaptureOut.subscribe(captureOpbeat)
 
     app.ports.pathChangedOut.subscribe(() => {
       previousLocation = window.location.pathname
