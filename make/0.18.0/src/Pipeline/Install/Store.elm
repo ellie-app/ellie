@@ -48,7 +48,11 @@ getConstraints : Name -> Version -> Task String ( Constraint, List ( Name, Const
 getConstraints name version =
     let
         cdnKey =
-            "package-" ++ name.user ++ "-" ++ name.project ++ "-" ++ Version.toString version ++ ".json"
+            "/package-artifacts"
+                </> name.user
+                </> name.project
+                </> Version.toString version
+                </> "elm-package.json"
 
         path =
             Path.package name version </> Path.description
@@ -62,7 +66,7 @@ getConstraints name version =
                         |> Task.andThen Task.fromResult
                 else
                     Http.get
-                        (Constants.cdnBase ++ "/package-artifacts/" ++ cdnKey)
+                        (Constants.cdnBase ++ cdnKey)
                         Description.decoder
                         |> Http.toTask
                         |> Task.mapError (\_ -> "Couldn't download package description for " ++ Name.toString name)

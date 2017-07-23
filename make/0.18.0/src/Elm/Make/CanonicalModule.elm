@@ -13,6 +13,11 @@ type alias CanonicalModule =
     }
 
 
+isElmLang : CanonicalModule -> Bool
+isElmLang { package, name } =
+    .user (Tuple.first package) == "elm-lang"
+
+
 hash : CanonicalModule -> Int
 hash { package, name } =
     String.hash <| Package.toString package ++ "_" ++ Module.nameToString name

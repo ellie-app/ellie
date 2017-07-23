@@ -8,7 +8,8 @@ import Data.Elm.Package as Package exposing (Package)
 import Data.Elm.Package.Version as Version exposing (Version)
 import Html exposing (Attribute, Html, a, aside, button, div, h3, hr, input, label, node, option, select, span, text, textarea)
 import Html.Attributes exposing (attribute, disabled, href, id, target, type_, value)
-import Html.Events exposing (onClick, onInput)
+import Html.Events exposing (onClick, onInput, onWithOptions)
+import Json.Decode as Decode
 import Native.CarbonAds
 import Shared.Constants as Constants
 import Shared.Icons as Icons
@@ -80,29 +81,16 @@ viewRemoveButton : msg -> Html msg
 viewRemoveButton onRemove =
     button
         [ class [ PackagesItemButton ]
-        , onClick onRemove
+        , onWithOptions
+            "click"
+            { preventDefault = True, stopPropagation = True }
+            (Decode.succeed onRemove)
         ]
         [ div [ class [ PackagesItemButtonInner ] ]
             [ span [ class [ PackagesItemButtonIcon ] ]
                 [ Icons.close ]
             , span [ class [ PackagesItemButtonText ] ]
                 [ text "Remove" ]
-            ]
-        ]
-
-
-viewDocsLink : Package -> Html msg
-viewDocsLink package =
-    a
-        [ class [ PackagesItemButton ]
-        , href <| Package.docsLink package
-        , target "_blank"
-        ]
-        [ div [ class [ PackagesItemButtonInner ] ]
-            [ span [ class [ PackagesItemButtonIcon ] ]
-                [ Icons.link ]
-            , span [ class [ PackagesItemButtonText ] ]
-                [ text "Docs" ]
             ]
         ]
 
@@ -118,14 +106,17 @@ viewPackageItemActions : Package -> ViewModel msg -> Html msg
 viewPackageItemActions package viewModel =
     div [ class [ PackagesItemActions ] ]
         [ viewPackageItemVersion package
-        , viewDocsLink package
         , viewRemoveButton (viewModel.onRemove package)
         ]
 
 
 viewPackageItem : ViewModel msg -> Package -> Html msg
 viewPackageItem viewModel (( name, version ) as package) =
-    div [ class [ PackagesItem ] ]
+    a
+        [ class [ PackagesItem ]
+        , href <| Package.docsLink package
+        , target "_blank"
+        ]
         [ div [ class [ PackagesItemName ] ]
             [ text <| name.user ++ " / " ++ name.project ]
         , viewPackageItemActions package viewModel

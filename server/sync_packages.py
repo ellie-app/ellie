@@ -1,7 +1,9 @@
+import base64
 import json
 import multiprocessing
 import os
 import shutil
+import subprocess
 import sys
 import tempfile
 import traceback
@@ -89,7 +91,10 @@ def read_package_json(base_dir: str, package: PackageInfo) -> Any:
     package_json_path = os.path.join(
         base_dir, package.package + '-' + str(package.version),
         'elm-package.json')
-    return json.loads(open(package_json_path, 'r').read())
+    json_data = None
+    with open(package_json_path, 'r') as file_data:
+        json_data = json.loads(file_data.read())
+    return json_data
 
 
 def read_source_files(base_dir: str, package: PackageInfo,
@@ -104,11 +109,37 @@ def read_source_files(base_dir: str, package: PackageInfo,
         os.path.join(package_dir, a, '**/*.js')
         for a in package_json['source-directories']
     ]
+
     filenames = glob_all(nested_elm + nested_js)
     output = {}
     for filename in filenames:
-        output[filename.replace(package_dir + '/', '')] = open(filename,
-                                                               'r').read()
+        with open(filename, 'r') as file_data:
+            output[filename.replace(package_dir + '/', '')] = file_data.read()
+    return output
+
+
+def read_artifacts(base_dir: str, package: PackageInfo) -> Any:
+    artifacts_base = os.path.join(base_dir,
+                                  package.package + '-' + str(package.version),
+                                  'elm-stuff/build-artifacts/0.18.0/elm-lang/',
+                                  package.package,
+                                  str(package.version))
+    artifacts = [
+        os.path.join(artifacts_base, '*.elmo'),
+        os.path.join(artifacts_base, '*.elmi')
+    ]
+
+    filenames = glob_all(artifacts)
+    output = {}
+    for filename in filenames:
+        key = filename.replace(artifacts_base + '/', '')
+        with open(filename, 'rb') as file_data:
+            if filename.endswith('elmi'):
+                output[key] = base64.b64encode(
+                    file_data.read()).decode('utf-8')
+            else:
+                output[key] = file_data.read().decode('utf-8')
+
     return output
 
 
@@ -146,6 +177,31 @@ def process_package(package: PackageInfo) -> Tuple[bool, PackageInfo]:
             return (False, package)
 
         package.set_elm_constraint(constraint)
+
+        if package.username == 'elm-lang':
+            elm_path = os.path.realpath(
+                os.path.dirname(os.path.realpath(__file__)) +
+                '/../node_modules/elm/Elm-Platform/0.18.0/.cabal-sandbox/bin/elm-make')
+
+            package_dir = os.path.join(
+                base_dir, package.package + '-' + str(package.version))
+
+            process_output = subprocess.run(
+                [elm_path, '--yes'],
+                cwd=package_dir,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE)
+
+            if process_output.returncode != 0:
+                stderr_as_str = process_output.stderr.decode('utf-8')
+                raise Exception(stderr_as_str)
+
+            artifacts = read_artifacts(base_dir, package)
+            bucket.put_object(
+                Key=package.s3_artifacts_key(Version(0, 18, 0)),
+                ACL='public-read',
+                Body=json.dumps(artifacts).encode('utf-8'),
+                ContentType='application/json')
 
         source_files = read_source_files(base_dir, package, package_json)
         bucket.put_object(
@@ -220,7 +276,7 @@ def run() -> None:
     searchable = download_searchable_packages()
     known_failures = download_known_failures()
     filtered_packages = [
-        p for p in packages if p not in searchable and p not in known_failures]
+        p for p in packages if p.username == 'elm-lang' or (p not in searchable and p not in known_failures)]
     package_groups = [
         filtered_packages[x:x + num_cores]
         for x in range(0, len(filtered_packages), num_cores)

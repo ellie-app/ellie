@@ -3,33 +3,15 @@ module Views.Editor.Search.Styles exposing (styles)
 import Css exposing (..)
 import Css.Namespace exposing (..)
 import Shared.Colors as Colors
-import Shared.Constants as Constants
 import Views.Editor.Search.Classes exposing (..)
 
 
 styles : Stylesheet
 styles =
     (stylesheet << namespace "components_search_")
-        [ Css.class Container
-            [ position absolute
-            , width (pct 100)
-            , height (pct 100)
-            , top zero
-            , left zero
-            , property "z-index" "5"
-            , displayFlex
-            , flexDirection column
-            , alignItems center
-            , paddingTop (px 300)
-            ]
-        , Css.class SearchBar
-            [ backgroundColor (hex Colors.darkGray)
-            , width (pct 50)
-            , borderRadius (px 3)
-            , position relative
+        [ Css.class SearchBar
+            [ position relative
             , overflow hidden
-            , boxShadow5 zero (px 2) (px 4) zero (rgba 0 0 0 0.5)
-            , property "z-index" "2"
             ]
         , Css.class SearchBarIcon
             [ width (px 26)
@@ -52,13 +34,8 @@ styles =
             , color (hex Colors.white)
             ]
         , Css.class Results
-            [ marginTop (px 16)
-            , backgroundColor (hex Colors.mediumGray)
+            [ backgroundColor (hex Colors.mediumGray)
             , padding (px 16)
-            , borderRadius (px 3)
-            , width (pct 50)
-            , boxShadow5 zero (px 2) (px 4) zero (rgba 0 0 0 0.5)
-            , property "z-index" "2"
             ]
         , Css.class ResultsItem
             [ backgroundColor (hex Colors.darkGray)
@@ -126,21 +103,5 @@ styles =
             , textTransform uppercase
             , lineHeight (px 10)
             , paddingTop (px 2)
-            ]
-        , Css.class Backdrop
-            [ position absolute
-            , width (pct 100)
-            , height (pct 100)
-            , top zero
-            , left zero
-            , property "z-index" "1"
-            , property "backdrop-filter" "blur(10px)"
-            , property "-webkit-backdrop-filter" "blur(10px)"
-            , backgroundColor <|
-                rgba
-                    (.r Colors.lightGrayRgb)
-                    (.g Colors.lightGrayRgb)
-                    (.b Colors.lightGrayRgb)
-                    0.75
             ]
         ]

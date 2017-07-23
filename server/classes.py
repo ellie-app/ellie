@@ -238,10 +238,13 @@ class PackageInfo(object):
         return hash(self.__str__())
 
     def s3_package_key(self) -> str:
-        return 'package-artifacts/package-' + self.username + '-' + self.package + '-' + str(self.version) + '.json'
+        return 'package-artifacts/' + self.username + '/' + self.package + '/' + str(self.version) + '/elm-package.json'
 
     def s3_source_key(self) -> str:
-        return 'package-artifacts/source-' + self.username + '-' + self.package + '-' + str(self.version) + '.json'
+        return 'package-artifacts/' + self.username + '/' + self.package + '/' + str(self.version) + '/source.json'
+
+    def s3_artifacts_key(self, version: Version) -> str:
+        return 'package-artifacts/' + self.username + '/' + self.package + '/' + str(self.version) + '/artifacts/' + str(version) + '.json'
 
     def set_elm_constraint(self, constraint: Optional[Constraint]) -> None:
         self.elm_constraint = constraint
