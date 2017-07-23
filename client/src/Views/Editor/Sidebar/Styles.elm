@@ -122,6 +122,7 @@ styles =
             , height (px 48)
             , property "justify-content" "space-between"
             , property "align-items" "center"
+            , textDecoration none
             , firstChild
                 [ borderTopLeftRadius (px 3)
                 , borderTopRightRadius (px 3)

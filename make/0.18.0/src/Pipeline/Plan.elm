@@ -90,7 +90,7 @@ getFreshInterfaceInfo sourcePath interfacePath =
                             (\( maybeSourceTime, maybeInterfaceTime ) ->
                                 case ( maybeSourceTime, maybeInterfaceTime ) of
                                     ( Just sourceTime, Just interfaceTime ) ->
-                                        if sourceTime <= interfaceTime then
+                                        if Debug.log "diff" (sourceTime <= interfaceTime) then
                                             Just ( interfacePath, interfaceTime )
                                         else
                                             Nothing
@@ -151,12 +151,15 @@ isCacheValid time enhancedGraph possiblyNativeName =
             True
 
         Just name ->
-            case .projectLocation (HashDict.getUnsafe name enhancedGraph) of
-                ( _, Just ( _, depTime ) ) ->
-                    depTime <= time
+            if CanonicalModule.isElmLang name then
+                True
+            else
+                case .projectLocation (HashDict.getUnsafe name enhancedGraph) of
+                    ( _, Just ( _, depTime ) ) ->
+                        depTime <= time
 
-                _ ->
-                    False
+                    _ ->
+                        False
 
 
 toBuildGraph : InterfacedGraph -> BuildGraph

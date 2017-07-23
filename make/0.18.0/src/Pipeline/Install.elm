@@ -3,6 +3,7 @@ module Pipeline.Install exposing (..)
 import Constants as Constants
 import Data.FilePath as FilePath exposing ((</>), FilePath)
 import Data.HashDict as HashDict exposing (HashDict)
+import Elm.Compiler as Compiler
 import Elm.Make.Constraint as Constraint exposing (Constraint)
 import Elm.Make.Error as BM
 import Elm.Make.Solution as Solution exposing (Solution)
@@ -20,22 +21,26 @@ import Pipeline.Install.Solver as Solver
 import Task exposing (Task)
 
 
-downloadPackage : Package -> Task BM.Error ( List ( FilePath, String ), Description )
+downloadPackage : Package -> Task BM.Error ( List ( FilePath, String ), List ( FilePath, String ), Description )
 downloadPackage ( name, version ) =
     let
         cdnKey =
-            name.user
-                ++ "-"
+            Constants.cdnBase
+                ++ "/package-artifacts/"
+                ++ name.user
+                ++ "/"
                 ++ name.project
-                ++ "-"
+                ++ "/"
                 ++ Version.toString version
-                ++ ".json"
 
         sourceUrl =
-            Constants.cdnBase ++ "/package-artifacts/source-" ++ cdnKey
+            cdnKey ++ "/source.json"
 
         descUrl =
-            Constants.cdnBase ++ "/package-artifacts/package-" ++ cdnKey
+            cdnKey ++ "/elm-package.json"
+
+        artifactsKey =
+            cdnKey ++ "/artifacts/0.18.0.json"
 
         getSource =
             Http.get sourceUrl (Decode.keyValuePairs Decode.string)
@@ -44,29 +49,55 @@ downloadPackage ( name, version ) =
         getDesc =
             Http.get descUrl Description.decoder
                 |> Http.toTask
+
+        getArtifacts =
+            if name.user == "elm-lang" then
+                Http.get artifactsKey (Decode.keyValuePairs Decode.string)
+                    |> Http.toTask
+            else
+                Task.succeed []
     in
-    Task.map2 (,) getSource getDesc
-        |> Task.mapError (Debug.log "e")
+    Task.map3 (,,) getArtifacts getSource getDesc
         |> Task.mapError (\_ -> BM.PackageProblem <| "Failed to download " ++ Name.toString name)
 
 
-saveFilesToStorage : Package -> ( List ( FilePath, String ), Description ) -> Task BM.Error ()
-saveFilesToStorage ( name, version ) ( files, description ) =
+saveFilesToStorage : Package -> ( List ( FilePath, String ), List ( FilePath, String ), Description ) -> Task BM.Error ()
+saveFilesToStorage ( name, version ) ( artifacts, files, description ) =
     let
+        artifactsBase =
+            "elm-stuff/build-artifacts"
+                </> Version.toString Compiler.version
+                </> name.user
+                </> name.project
+                </> Version.toString version
+
         root =
             Path.package name version
+
+        writeFiles =
+            files
+                |> List.map
+                    (\( path, contents ) ->
+                        FileStorage.write
+                            (root </> path)
+                            (Encode.string contents)
+                    )
+                |> Task.sequence
+
+        writeArtifacts =
+            artifacts
+                |> List.map
+                    (\( path, contents ) ->
+                        FileStorage.write
+                            (artifactsBase </> path)
+                            (Encode.string contents)
+                    )
+                |> Task.sequence
     in
-    files
-        |> List.map
-            (\( path, contents ) ->
-                FileStorage.write
-                    (root </> path)
-                    (Encode.string contents)
-            )
-        |> Task.sequence
+    Task.map2 (,) writeFiles writeArtifacts
         |> Task.andThen
             (\_ ->
-                Task.map2 (\_ _ -> ())
+                Task.map2 (,)
                     (FileStorage.write
                         (root </> Path.description)
                         (Description.encoder description)
@@ -76,6 +107,7 @@ saveFilesToStorage ( name, version ) ( files, description ) =
                         (Encode.bool True)
                     )
             )
+        |> Task.map (\_ -> ())
         |> Task.mapError BM.PackageProblem
 
 

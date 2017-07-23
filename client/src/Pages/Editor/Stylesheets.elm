@@ -8,6 +8,7 @@ import Views.Editor.Header.Styles as Header
 import Views.Editor.Notifications.Styles as Notifications
 import Views.Editor.Search.Styles as Search
 import Views.Editor.Sidebar.Styles as Sidebar
+import Views.Modal.Styles as Modal
 import Views.Output.Styles as Output
 import Views.ProgressBar.Styles as ProgressBar
 
@@ -29,6 +30,7 @@ fileStructure =
                 , About.styles
                 , EmbedLink.styles
                 , ProgressBar.styles
+                , Modal.styles
                 ]
           )
         ]

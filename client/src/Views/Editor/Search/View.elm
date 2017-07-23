@@ -7,6 +7,7 @@ import Html.Attributes as Attr exposing (href, id, placeholder, selected, target
 import Html.Events exposing (on, onClick, onInput)
 import Shared.Icons as Icons
 import Views.Editor.Search.Classes exposing (..)
+import Views.Modal.View as Modal
 
 
 type alias ViewModel msg =
@@ -92,12 +93,10 @@ viewResults viewModel =
 
 view : ViewModel msg -> Html msg
 view viewModel =
-    div [ class [ Container ] ]
-        [ div
-            [ class [ Backdrop ]
-            , onClick viewModel.onClose
+    Modal.view
+        { onClose = viewModel.onClose
+        , content =
+            [ viewSearchBar viewModel
+            , viewResults viewModel
             ]
-            []
-        , viewSearchBar viewModel
-        , viewResults viewModel
-        ]
+        }

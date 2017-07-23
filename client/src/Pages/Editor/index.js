@@ -81,7 +81,7 @@ initCodeMirror(vimMode)
     })
 
 
-    import('Make/0.18.0')
+    import(/* webpackChunkName: "make-0.18.0" */'Make/0.18.0')
       .then(Compiler => {
         let workQueue = []
         let runForSave, htmlCode
