@@ -276,7 +276,7 @@ def run() -> None:
     searchable = download_searchable_packages()
     known_failures = download_known_failures()
     filtered_packages = [
-        p for p in packages if p.username == 'elm-lang' or (p not in searchable and p not in known_failures)]
+        p for p in packages if p not in searchable and p not in known_failures]
     package_groups = [
         filtered_packages[x:x + num_cores]
         for x in range(0, len(filtered_packages), num_cores)
