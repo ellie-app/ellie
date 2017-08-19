@@ -98,3 +98,7 @@
   display: inline-block;
   font-size: 12px;
 }
+
+.elm-overlay {
+  z-index: 20;
+}

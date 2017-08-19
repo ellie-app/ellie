@@ -1,7 +1,6 @@
 module Pages.Editor.Model
     exposing
         ( EditorCollapseState(..)
-        , Flags
         , Model
         , PopoutState(..)
         , canCompile
@@ -17,6 +16,7 @@ module Pages.Editor.Model
         , isRevisionChanged
         , isSavedProject
         , model
+        , mustAcceptTerms
         , resetStagedCode
         , resetToNew
         , updateClientRevision
@@ -27,23 +27,19 @@ import Data.Ellie.CompileStage as CompileStage exposing (CompileStage(..))
 import Data.Ellie.KeyCombo as KeyCombo exposing (KeyCombo)
 import Data.Ellie.Notification as Notification exposing (Notification)
 import Data.Ellie.Revision as Revision exposing (Revision)
+import Data.Ellie.TermsVersion as TermsVersion exposing (TermsVersion)
 import Data.Elm.Compiler.Error as CompilerError
 import Data.Elm.Package as Package exposing (Package)
+import Pages.Editor.Flags as Flags exposing (Flags)
 import Pages.Editor.Routing as Routing exposing (Route(..))
 import RemoteData exposing (RemoteData(..))
 import Window exposing (Size)
 
 
-type alias Flags =
-    { windowSize : Window.Size
-    , online : Bool
-    , vimMode : Bool
-    }
-
-
 type PopoutState
     = AllClosed
     | AboutOpen
+    | TermsOpen
     | EmbedLinkOpen
 
 
@@ -80,6 +76,8 @@ type alias Model =
     , resultsCollapse : Bool
     , creatingGist : Bool
     , keyCombo : KeyCombo
+    , latestTermsVersion : TermsVersion
+    , acceptedTermsVersion : Maybe TermsVersion
     }
 
 
@@ -111,7 +109,19 @@ model flags =
     , resultsCollapse = False
     , creatingGist = False
     , keyCombo = KeyCombo.empty
+    , latestTermsVersion = flags.latestTermsVersion
+    , acceptedTermsVersion = flags.acceptedTermsVersion
     }
+
+
+mustAcceptTerms :
+    { a
+        | latestTermsVersion : TermsVersion
+        , acceptedTermsVersion : Maybe TermsVersion
+    }
+    -> Bool
+mustAcceptTerms { latestTermsVersion, acceptedTermsVersion } =
+    acceptedTermsVersion /= Just latestTermsVersion
 
 
 canCompile : Model -> Bool
@@ -138,8 +148,19 @@ canCompile model =
 
 
 resetToNew : Model -> Model
-resetToNew m =
-    model { windowSize = m.windowSize, online = m.isOnline, vimMode = m.vimMode }
+resetToNew model =
+    { model
+        | serverRevision = NotAsked
+        , clientRevision = Revision.empty
+        , stagedElmCode = .elmCode Revision.empty
+        , previousElmCode = .elmCode Revision.empty
+        , stagedHtmlCode = .htmlCode Revision.empty
+        , previousHtmlCode = .htmlCode Revision.empty
+        , compileStage = CompileStage.Initial
+        , saveState = NotAsked
+        , vimMode = model.vimMode
+        , packagesChanged = False
+    }
 
 
 closeSearch : Model -> Model

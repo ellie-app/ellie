@@ -1,17 +1,17 @@
 module Views.Editor.About.Styles exposing (..)
 
 import Css exposing (..)
-import Css.Namespace exposing (..)
+import Css.Namespace
 import Shared.Colors as Colors
 import Shared.Constants as Constants
-import Views.Editor.About.Classes exposing (Classes(..))
+import Views.Editor.About.View exposing (CssClasses(..), namespace)
 
 
 styles : Stylesheet
 styles =
-    (stylesheet << namespace "components_about_")
+    (stylesheet << Css.Namespace.namespace namespace)
         [ Css.class Popout
-            [ position relative
+            [ position absolute
             , backgroundColor (hex Colors.mediumGray)
             , width (px 400)
             , boxShadow5 (px -6) (px 6) (px 15) (px -4) (rgba 0 0 0 0.5)
@@ -21,6 +21,8 @@ styles =
             , overflowY auto
             , border3 (px 2) solid (hex Colors.lightGray)
             , color (hex Colors.white)
+            , right (px 16)
+            , top (px 16)
             ]
         , Css.class Title
             [ fontSize (px 18)

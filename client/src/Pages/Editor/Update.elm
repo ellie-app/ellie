@@ -11,13 +11,16 @@ import Data.Ellie.CompileStage as CompileStage exposing (CompileStage)
 import Data.Ellie.KeyCombo as KeyCombo exposing (KeyCombo)
 import Data.Ellie.Notification as Notification exposing (Notification)
 import Data.Ellie.Revision as Revision exposing (Revision)
+import Data.Ellie.TermsVersion as TermsVersion exposing (TermsVersion)
 import Data.Elm.Compiler.Error as CompilerError
 import Data.Elm.Package as Package exposing (Package)
 import Dom
+import Http.Extra as Http
 import Mouse exposing (Position)
 import Navigation
 import Pages.Editor.Cmds as Cmds
-import Pages.Editor.Model as Model exposing (EditorCollapseState(..), Flags, Model, PopoutState(..))
+import Pages.Editor.Flags as Flags exposing (Flags)
+import Pages.Editor.Model as Model exposing (EditorCollapseState(..), Model, PopoutState(..))
 import Pages.Editor.Routing as Routing exposing (Route(..))
 import Process
 import RemoteData exposing (RemoteData(..))
@@ -114,6 +117,8 @@ type Msg
     | CreateGist
     | CreateGistComplete (Result ApiError String)
     | KeyComboMsg KeyCombo.Msg
+    | TermsAcceptanceStart TermsVersion
+    | TermsAcceptanceComplete (Result ApiError Http.NoContent)
     | NoOp
 
 
@@ -426,16 +431,52 @@ update msg model =
             )
 
         SaveRequested ->
-            model
-                |> (\m -> { m | saveState = Loading })
-                |> Model.commitStagedCode
-                |> (\m -> ( m, Cmds.compile model True ))
+            if model.acceptedTermsVersion == Just model.latestTermsVersion then
+                model
+                    |> (\m -> { m | saveState = Loading })
+                    |> Model.commitStagedCode
+                    |> (\m -> ( m, Cmds.compile model True ))
+            else
+                ( { model | popoutState = Model.TermsOpen }
+                , Cmd.none
+                )
+
+        TermsAcceptanceStart termsVersion ->
+            ( model
+            , Api.acceptTerms termsVersion
+                |> Api.send TermsAcceptanceComplete
+            )
+
+        TermsAcceptanceComplete result ->
+            case result of
+                Ok _ ->
+                    { model
+                        | acceptedTermsVersion = Just model.latestTermsVersion
+                        , saveState = Loading
+                        , popoutState = AllClosed
+                    }
+                        |> Model.commitStagedCode
+                        |> (\m -> ( m, Cmds.compile model True ))
+
+                Err apiError ->
+                    ( model
+                    , Cmds.notify NotificationReceived
+                        { level = Notification.Error
+                        , title = "Accepting Terms Failed"
+                        , message = "Something went wrong while accepting our terms. This isn't supposed to happen, and we're working on fixing it! You can also try again."
+                        }
+                    )
 
         SaveCompileSucceeded result ->
-            ( model
-            , Api.uploadRevision result model.clientRevision
-                |> Task.attempt SaveUploadCompleted
-            )
+            case model.acceptedTermsVersion of
+                Just termsVersion ->
+                    ( model
+                    , Api.uploadRevision result model.clientRevision termsVersion
+                        |> Task.attempt SaveUploadCompleted
+                    )
+
+                Nothing ->
+                    ( model, Cmd.none )
 
         SaveCompileFailed message ->
             let

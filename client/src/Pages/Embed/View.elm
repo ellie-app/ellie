@@ -17,16 +17,6 @@ import Views.Editors.View as Editors
 import Views.Output.View as Output
 
 
-viewLoading : Html Msg
-viewLoading =
-    div [ class [ LoadingContainer ] ]
-        [ div [ class [ LoadingTitle ] ]
-            [ text "Loading..." ]
-        , div [ class [ LoadingMessage ] ]
-            [ text "This should only take a second." ]
-        ]
-
-
 viewNotFound : Html Msg
 viewNotFound =
     div [ class [ FailureContainer ] ]
@@ -134,7 +124,12 @@ viewResults revision =
 
 viewLoaded : Model -> Revision -> Html Msg
 viewLoaded model revision =
-    div [ class [ LoadedContainer ] ]
+    div
+        [ classList
+            [ ( LoadedContainer, True )
+            , ( LoadingContainer, not (RemoteData.isSuccess model.revision) )
+            ]
+        ]
         [ case model.currentRoute of
             SpecificRevision revisionId ->
                 viewHeader model.tab revisionId
@@ -194,5 +189,7 @@ view model =
                         viewFailure error.explanation
 
                     _ ->
-                        viewLoading
+                        viewLoaded
+                            model
+                            Revision.empty
         ]

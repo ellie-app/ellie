@@ -10,11 +10,13 @@ module Data.Ellie.Revision
         )
 
 import Data.Ellie.RevisionId as RevisionId exposing (RevisionId)
+import Data.Ellie.TermsVersion as TermsVersion exposing (TermsVersion)
 import Data.Elm.Compiler.Error as CompilerError
 import Data.Elm.Package as Package exposing (Package)
 import Data.Elm.Package.Constraint as Constraint exposing (Constraint)
 import Data.Elm.Package.Description as Description exposing (Description)
 import Data.Elm.Package.Version as Version exposing (Version)
+import Extra.Json.Encode as Encode
 import Json.Decode as Decode exposing (Decoder)
 import Json.Decode.Pipeline as Decode
 import Json.Encode as Encode exposing (Value)
@@ -47,6 +49,7 @@ type alias Revision =
     , description : String
     , snapshot : Snapshot
     , elmVersion : Version
+    , acceptedTerms : Maybe TermsVersion
     }
 
 
@@ -61,6 +64,7 @@ empty =
     , description = ""
     , snapshot = NotSaved
     , elmVersion = Version 0 0 0
+    , acceptedTerms = Nothing
     }
 
 
@@ -76,6 +80,7 @@ encoder revision =
         , ( "description", Encode.string revision.description )
         , ( "snapshot", encodeSnapshot revision.snapshot )
         , ( "elmVersion", Version.encoder revision.elmVersion )
+        , ( "acceptedTerms", Encode.maybeNull TermsVersion.encoder revision.acceptedTerms )
         ]
 
 
@@ -128,6 +133,7 @@ decoder =
         |> Decode.required "description" Decode.string
         |> Decode.optional "snapshot" decodeSnapshot NotSaved
         |> Decode.optional "elmVersion" Version.decoder (Version 0 18 0)
+        |> Decode.optional "acceptedTerms" (Decode.nullable TermsVersion.decoder) Nothing
 
 
 toDescription : Revision -> Description

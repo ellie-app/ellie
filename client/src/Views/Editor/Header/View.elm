@@ -1,15 +1,15 @@
 module Views.Editor.Header.View
     exposing
-        ( SaveOption(..)
-        , ViewModel
+        ( Config
+        , SaveOption(..)
         , view
         )
 
+import Extra.Html as Html
 import Html exposing (Html, button, div, h1, header, span, text)
 import Html.Attributes exposing (disabled)
 import Html.Events exposing (onClick)
 import Shared.Icons as Icons
-import Shared.Utils as Utils exposing (renderIf)
 import Views.Editor.Header.Classes exposing (..)
 
 
@@ -20,7 +20,7 @@ type SaveOption
     | Saving
 
 
-type alias ViewModel msg =
+type alias Config msg =
     { compileButtonEnabled : Bool
     , embedLinkButtonEnabled : Bool
     , saveButtonEnabled : Bool
@@ -50,94 +50,91 @@ viewButton clickMsg isDisabled icon label =
         [ div [ class [ ButtonInner ] ]
             [ span [ class [ ButtonIcon ] ]
                 [ icon ]
-            , if String.length label == 0 then
-                text ""
-              else
-                span [ class [ ButtonText ] ]
-                    [ text label ]
+            , span [ class [ ButtonText ] ]
+                [ text label ]
             ]
         ]
 
 
-viewSaveButton : ViewModel msg -> Html msg
-viewSaveButton viewModel =
-    case viewModel.saveButtonOption of
+viewSaveButton : Config msg -> Html msg
+viewSaveButton config =
+    case config.saveButtonOption of
         Fork ->
             viewButton
-                viewModel.onSave
-                (not viewModel.saveButtonEnabled)
+                config.onSave
+                (not config.saveButtonEnabled)
                 Icons.forkRepo
                 "Fork"
 
         Update ->
             viewButton
-                viewModel.onSave
-                (not viewModel.saveButtonEnabled)
+                config.onSave
+                (not config.saveButtonEnabled)
                 Icons.cloudOutline
                 "Update"
 
         Save ->
             viewButton
-                viewModel.onSave
-                (not viewModel.saveButtonEnabled)
+                config.onSave
+                (not config.saveButtonEnabled)
                 Icons.cloudOutline
                 "Save"
 
         Saving ->
             viewButton
-                viewModel.onSave
+                config.onSave
                 True
                 Icons.loading
                 "Saving..."
 
 
-viewCompileButton : ViewModel msg -> Html msg
-viewCompileButton viewModel =
+viewCompileButton : Config msg -> Html msg
+viewCompileButton config =
     viewButton
-        viewModel.onCompile
-        (not viewModel.compileButtonEnabled)
+        config.onCompile
+        (not config.compileButtonEnabled)
         Icons.playOutline
         "Compile"
 
 
-viewFormatButton : ViewModel msg -> Html msg
-viewFormatButton viewModel =
+viewFormatButton : Config msg -> Html msg
+viewFormatButton config =
     viewButton
-        viewModel.onFormat
+        config.onFormat
         False
         Icons.format
         "Format"
 
 
-viewAboutButton : ViewModel msg -> Html msg
-viewAboutButton viewModel =
+viewAboutButton : Config msg -> Html msg
+viewAboutButton config =
     viewButton
-        viewModel.onAbout
+        config.onAbout
         False
         Icons.lightning
         "About"
 
 
-viewEmbedLinkButton : ViewModel msg -> Html msg
-viewEmbedLinkButton viewModel =
+viewEmbedLinkButton : Config msg -> Html msg
+viewEmbedLinkButton config =
     viewButton
-        viewModel.onEmbedLink
-        (not viewModel.embedLinkButtonEnabled)
+        config.onEmbedLink
+        (not config.embedLinkButtonEnabled)
         Icons.share
         "Share"
 
 
-view : ViewModel msg -> Html msg
-view viewModel =
+view : Config msg -> Html msg
+view config =
     header [ class [ Header ] ]
         [ div [ class [ HeaderGroup ] ]
             [ viewLogo
-            , renderIf viewModel.buttonsVisible (\_ -> viewCompileButton viewModel)
-            , renderIf viewModel.buttonsVisible (\_ -> viewSaveButton viewModel)
-            , renderIf viewModel.buttonsVisible (\_ -> viewFormatButton viewModel)
-            , renderIf viewModel.buttonsVisible (\_ -> viewEmbedLinkButton viewModel)
+            , Html.viewIfLazy config.buttonsVisible (\() -> viewCompileButton config)
+            , Html.viewIfLazy config.buttonsVisible (\() -> viewSaveButton config)
+            , Html.viewIfLazy config.buttonsVisible (\() -> viewFormatButton config)
+            , Html.viewIfLazy config.buttonsVisible (\() -> viewEmbedLinkButton config)
             ]
         , div [ class [ HeaderGroup ] ]
-            [ viewAboutButton viewModel
+            [ viewAboutButton config
             ]
         ]

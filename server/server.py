@@ -13,11 +13,12 @@ from urllib.parse import urlparse
 
 import boto3
 import botocore
-from flask import Flask, jsonify, redirect, render_template, request, url_for
+from flask import (Flask, jsonify, redirect, render_template, request, session,
+                   url_for)
 from opbeat.contrib.flask import Opbeat
 from werkzeug.routing import BaseConverter, HTTPException, ValidationError
 
-from . import assets, storage
+from . import assets, constants, storage
 from .classes import (ApiError, Constraint, Package, PackageInfo, PackageName,
                       ProjectId, Version)
 
@@ -31,8 +32,13 @@ def cat_optionals(data: Iterator[Optional[T]]) -> Iterator[T]:
 
 
 app = Flask(__name__)
+app.secret_key = os.environ['COOKIE_SECRET'].encode('utf-8')
+app.config.update(
+    SESSION_COOKIE_SECURE=constants.PRODUCTION,
+    PERMANENT_SESSION_LIFETIME=60 * 60 * 24 * 365 * 20
+)
 
-if os.environ['ENV'] == 'production':
+if constants.PRODUCTION:
     opbeat = Opbeat(
         app,
         organization_id=os.environ['OPBEAT_ORGANIZATION_ID'],
@@ -118,6 +124,16 @@ def do_search(elm_version: Version, query: str) -> List[Any]:
     filtered = filter(lambda t: t[1] > 0, score_gen)
     sorted_gen = sorted(list(filtered), key=lambda t: -t[1])
     return [p.to_json() for p, s in sorted_gen if p is not None][0:5]
+
+
+@app.route('/api/terms/<int(min=0):terms_version>/accept', methods=['POST'])
+def accept_terms(terms_version: int) -> Any:
+    session.permanent = True
+    if 'v1' not in session:
+        session['v1'] = {}
+
+    session['v1']['accepted_terms_version'] = terms_version
+    return jsonify({})
 
 
 @app.route('/api/packages/<string:user>/<string:project>/versions')
@@ -279,14 +295,19 @@ EDITOR_CONSTANTS = {
     'GTM_ID': os.environ['GTM_ID'],
     'PROFILE_PIC': 'idk.jpg',
     'CDN_BASE': os.environ['CDN_BASE'],
-    'SERVER_HOSTNAME': os.environ['SERVER_HOSTNAME']
+    'SERVER_HOSTNAME': os.environ['SERVER_HOSTNAME'],
+    'LATEST_TERMS_VERSION': constants.LATEST_TERMS_VERSION
 }
 
 
 @app.route('/')
 @app.route('/new')
 def new() -> Any:
-    return render_template('new.html', constants=EDITOR_CONSTANTS)
+    data = {
+        'accepted_terms_version': session.get('v1', {}).get('accepted_terms_version')
+    }
+
+    return render_template('new.html', constants=EDITOR_CONSTANTS, data=data)
 
 
 @app.route('/<project_id:project_id>/<int(min=0):revision_number>')
@@ -300,6 +321,7 @@ def existing(project_id: ProjectId, revision_number: int) -> Any:
         return redirect('new', code=303)
 
     data = {
+        'accepted_terms_version': session.get('v1', {}).get('accepted_terms_version'),
         'title': revision.title,
         'description': revision.description,
         'url': EDITOR_CONSTANTS['SERVER_HOSTNAME'] + '/' + str(project_id) + '/' + str(revision_number)
@@ -315,8 +337,14 @@ EMBED_CONSTANTS = {
     'GTM_ID': os.environ['GTM_ID'],
     'PROFILE_PIC': 'idk.jpg',
     'CDN_BASE': os.environ['CDN_BASE'],
-    'SERVER_HOSTNAME': os.environ['SERVER_HOSTNAME']
+    'SERVER_HOSTNAME': os.environ['SERVER_HOSTNAME'],
+    'LATEST_TERMS_VERSION': constants.LATEST_TERMS_VERSION
 }
+
+
+@app.route('/a/terms/<int(min=1):terms_version>')
+def terms(terms_version: int) -> Any:
+    return render_template('terms/' + str(terms_version) + '.html')
 
 
 @app.route('/embed/<project_id:project_id>/<int(min=0):revision_number>')

@@ -1,11 +1,13 @@
 module Shared.Api
     exposing
-        ( createGist
+        ( acceptTerms
+        , createGist
         , defaultRevision
         , exactRevision
         , format
         , searchPackages
         , send
+        , termsContent
         , toTask
         , uploadRevision
         )
@@ -14,12 +16,14 @@ import Data.Aws.UploadSignature as UploadSignature exposing (UploadSignature)
 import Data.Ellie.ApiError as ApiError exposing (ApiError)
 import Data.Ellie.Revision as Revision exposing (Revision, Snapshot(..))
 import Data.Ellie.RevisionId as RevisionId exposing (RevisionId)
+import Data.Ellie.TermsVersion as TermsVersion exposing (TermsVersion)
 import Data.Elm.Compiler.Error as CompilerError
 import Data.Elm.Package as Package exposing (Package)
 import Data.Elm.Package.Description as Description exposing (Description)
 import Data.Elm.Package.Version as Version exposing (Version)
 import Data.File as File exposing (File)
 import Http exposing (Error(..), Expect, Request)
+import Http.Extra as Http
 import HttpBuilder exposing (..)
 import Json.Decode as Decode exposing (Decoder)
 import Json.Encode as Encode exposing (Value)
@@ -28,11 +32,6 @@ import Task exposing (Task)
 
 
 -- TOP LEVEL
-
-
-listOf : a -> List a
-listOf a =
-    [ a ]
 
 
 send : (Result ApiError a -> msg) -> RequestBuilder a -> Cmd msg
@@ -59,11 +58,6 @@ withApiHeaders builder =
     builder
         |> withCredentials
         |> withHeader "Accept" "application/json"
-
-
-expectValue : a -> Expect a
-expectValue value =
-    Http.expectStringResponse (\_ -> Ok value)
 
 
 
@@ -215,6 +209,23 @@ createGist revision =
 
 
 
+-- TERMS
+
+
+termsContent : TermsVersion -> RequestBuilder String
+termsContent version =
+    get (Constants.cdnBase ++ "/terms-of-service/" ++ TermsVersion.toString version ++ ".md")
+        |> withExpect Http.expectString
+
+
+acceptTerms : TermsVersion -> RequestBuilder Http.NoContent
+acceptTerms termsVersion =
+    post (fullUrl <| "/terms/" ++ TermsVersion.toString termsVersion ++ "/accept")
+        |> withApiHeaders
+        |> withExpect Http.expectNoContent
+
+
+
 -- UPLOAD
 
 
@@ -256,8 +267,8 @@ uploadSignatures revision =
         |> toTask
 
 
-uploadRevision : Result (List CompilerError.Error) String -> Revision -> Task ApiError Revision
-uploadRevision compileResult revision =
+uploadRevision : Result (List CompilerError.Error) String -> Revision -> TermsVersion -> Task ApiError Revision
+uploadRevision compileResult revision acceptedTerms =
     case compileResult of
         Ok resultUrl ->
             get resultUrl
@@ -273,17 +284,18 @@ uploadRevision compileResult revision =
                                             { revision
                                                 | snapshot = Uploaded
                                                 , id = Just <| RevisionId revSig.projectId revSig.revisionNumber
+                                                , acceptedTerms = Just acceptedTerms
                                             }
                                     in
                                     post resultSig.url
                                         |> withBody (postBody resultSig.fields result)
-                                        |> withExpect (expectValue ())
+                                        |> withExpect Http.expectNoContent
                                         |> toTask
                                         |> Task.andThen
                                             (\_ ->
                                                 post revSig.url
                                                     |> withBody (postBody revSig.fields (revisionFile updatedRevision))
-                                                    |> withExpect (expectValue ())
+                                                    |> withExpect Http.expectNoContent
                                                     |> toTask
                                             )
                                         |> Task.map (\_ -> updatedRevision)
@@ -303,7 +315,7 @@ uploadRevision compileResult revision =
                         in
                         post revSig.url
                             |> withBody (postBody revSig.fields (revisionFile updatedRevision))
-                            |> withExpect (expectValue ())
+                            |> withExpect Http.expectNoContent
                             |> toTask
                             |> Task.map (\_ -> updatedRevision)
                     )

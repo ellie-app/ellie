@@ -1,4 +1,4 @@
-module Extra.Css exposing (backdropFilter, blur)
+module Extra.Css exposing (backdropFilter, blur, filter)
 
 import Css exposing (..)
 
@@ -12,12 +12,22 @@ blur =
     Blur
 
 
+filterToString : Filter units -> String
+filterToString filterValue =
+    case filterValue of
+        Blur length ->
+            "blur(" ++ length.value ++ ")"
+
+
 backdropFilter : Filter units -> Style
-backdropFilter filter =
-    let
-        filterValue =
-            case filter of
-                Blur length ->
-                    "blur(" ++ length.value ++ ")"
-    in
-    property "backdrop-filter" filterValue
+backdropFilter filterValue =
+    filterValue
+        |> filterToString
+        |> property "backdrop-filter"
+
+
+filter : Filter units -> Style
+filter filterValue =
+    filterValue
+        |> filterToString
+        |> property "filter"
