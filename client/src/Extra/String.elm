@@ -10,3 +10,13 @@ replace pattern replacement input =
         (Regex.regex pattern)
         (\_ -> replacement)
         input
+
+
+fromInt : Int -> String
+fromInt int =
+    toString int
+
+
+fromFloat : Float -> String
+fromFloat float =
+    toString float

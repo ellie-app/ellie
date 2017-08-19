@@ -84,15 +84,23 @@ installing =
 generating : Html msg
 generating =
     overlayDisplay
-        "Finishing Up"
-        [ text "Combining your Elm and HTML into a runnable script" ]
+        "Compiling..."
+        [ ProgressBar.view
+            { percentage = 1
+            , label = Just "Generating output"
+            }
+        ]
 
 
 planning : Html msg
 planning =
     overlayDisplay
-        "Setting Up"
-        [ text "Figuring out how to build your code" ]
+        "Compiling..."
+        [ ProgressBar.view
+            { percentage = 0.05
+            , label = Just "Planning your build"
+            }
+        ]
 
 
 compiling : Int -> Int -> Html msg
@@ -100,9 +108,8 @@ compiling total complete =
     let
         progressBar =
             ProgressBar.view
-                { total = total
-                , complete = complete
-                , label = Just "Modules Remaining"
+                { percentage = 0.05 + (toFloat complete / toFloat total) * 0.9
+                , label = Just <| toString complete ++ " / " ++ toString total ++ " Modules Compiled"
                 }
 
         subtitleContent =
@@ -126,8 +133,7 @@ loadingCompiler percentage =
     overlayDisplay
         "Loading Compiler..."
         [ ProgressBar.view
-            { total = 100
-            , complete = round (percentage * 100)
+            { percentage = percentage
             , label = Nothing
             }
         ]

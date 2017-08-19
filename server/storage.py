@@ -1,16 +1,20 @@
-from typing import Pattern, Optional, Set, Any, TypeVar, Iterator, List, NamedTuple, Dict
+import base64
+import json
+import os
+import re
+from datetime import datetime, timedelta
+from hashlib import sha256
+from hmac import new as hmac
+from typing import (Any, Dict, Iterator, List, NamedTuple, Optional, Pattern,
+                    Set, TypeVar)
+from urllib.parse import quote, unquote
+
 import boto3
 import botocore
-import json
 from flask import request
-from hmac import new as hmac
-from hashlib import sha256
-import base64
-import re
-from urllib.parse import quote, unquote
-from datetime import datetime, timedelta
-import os
-from .classes import ProjectId, Revision, Version, Package, PackageName, PackageInfo
+
+from .classes import (Package, PackageInfo, PackageName, ProjectId, Revision,
+                      Version)
 
 BUCKET_NAME = os.environ['AWS_S3_BUCKET']
 
@@ -23,8 +27,7 @@ def cat_optionals(data: Iterator[Optional[T]]) -> Iterator[T]:
             yield x
 
 
-cookie_key = "asf00982h3)(FEAH90)(qy39rALHFA*YTP(WQ#T*(Tyqgifubfa)(Y#9  12-)))".encode(
-    'utf-8')
+cookie_key = os.environ['COOKIE_SECRET'].encode('utf-8')
 replace_re: Pattern = re.compile('\=+$')
 
 

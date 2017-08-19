@@ -11,8 +11,7 @@ namespace =
 
 
 type alias ViewModel =
-    { total : Int
-    , complete : Int
+    { percentage : Float
     , label : Maybe String
     }
 
@@ -35,10 +34,10 @@ viewMaybe innerView maybeValue =
 
 
 view : ViewModel -> Html msg
-view { total, complete, label } =
+view { percentage, label } =
     let
         widthPercentage =
-            toString (round (toFloat complete / toFloat total * 100)) ++ "%"
+            toString (round (percentage * 100)) ++ "%"
     in
     div [ class [ Container ] ]
         [ viewMaybe
@@ -53,9 +52,7 @@ view { total, complete, label } =
                     []
                 ]
             , div [ class [ Count ] ]
-                [ strong [] [ text <| toString complete ]
-                , text " / "
-                , strong [] [ text <| toString total ]
+                [ strong [] [ text <| widthPercentage ]
                 ]
             ]
         ]

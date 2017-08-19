@@ -94,7 +94,7 @@ viewResults viewModel =
 view : ViewModel msg -> Html msg
 view viewModel =
     Modal.view
-        { onClose = viewModel.onClose
+        { onClose = Just viewModel.onClose
         , content =
             [ viewSearchBar viewModel
             , viewResults viewModel

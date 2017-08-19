@@ -22,8 +22,6 @@ classList =
 type Classes
     = Container
     | LoadingContainer
-    | LoadingTitle
-    | LoadingMessage
     | FailureContainer
     | FailureTitle
     | FailureMessage

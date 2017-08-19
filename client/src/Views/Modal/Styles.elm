@@ -20,7 +20,7 @@ styles =
             , displayFlex
             , flexDirection column
             , alignItems center
-            , paddingTop (px 300)
+            , justifyContent center
             ]
         , class Backdrop
             [ position absolute

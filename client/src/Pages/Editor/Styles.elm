@@ -3,6 +3,7 @@ module Pages.Editor.Styles exposing (styles)
 import Css exposing (..)
 import Css.Elements exposing (..)
 import Css.Namespace exposing (..)
+import Extra.Css as Css exposing (..)
 import Pages.Editor.Classes exposing (Classes(..))
 import Shared.Colors as Colors
 import Shared.Constants as Constants
@@ -13,6 +14,7 @@ styles =
     (stylesheet << namespace "app_")
         [ html
             [ height (pct 100)
+            , backgroundColor (hex Colors.darkGray)
             ]
         , body
             [ height (pct 100)
@@ -34,17 +36,17 @@ styles =
             , backgroundColor (hex Colors.mediumGray)
             ]
         , Css.class WorkArea
-            [ property "width" <| "calc(100% - " ++ toString Constants.sidebarWidth ++ "px)"
+            [ width <| calc (pct 100) minus (px Constants.sidebarWidth)
             , height (pct 100)
             , displayFlex
             , position relative
             ]
         , Css.class MainContainer
             [ width (pct 100)
-            , property "height" <| "calc(100% - " ++ toString Constants.headerHeight ++ "px)"
+            , height <| calc (pct 100) minus (px Constants.headerHeight)
             , displayFlex
             , position relative
-            , property "z-index" "1"
+            , zIndex (int 1)
             ]
         , Css.class AppContainerInner
             [ position relative
@@ -52,13 +54,13 @@ styles =
             , height (pct 100)
             , property "transition" "filter 0.3s 0.2s"
             , withClass LoadingRevision
-                [ property "filter" "blur(30px)"
+                [ filter <| blur (px 30)
                 ]
             ]
         , Css.class EditorsContainer
             [ displayFlex
             , position relative
-            , property "z-index" "0"
+            , zIndex (int 0)
             , flexDirection column
             , height (pct 100)
             , width (pct 50)
@@ -79,14 +81,14 @@ styles =
                 [ height (px 40)
                 ]
             , withClass EditorContainerFull
-                [ property "height" "calc(100% - 40px)"
+                [ height <| calc (pct 100) minus (px 40)
                 ]
             ]
         , Css.class OutputContainer
             [ width (pct 50)
             , height (pct 100)
             , position relative
-            , property "z-index" "1"
+            , zIndex (int 1)
             , boxShadow5 (px -2) zero (px 8) zero (rgba 0 0 0 0.5)
             , overflow hidden
             , hover
@@ -109,7 +111,7 @@ styles =
             , height (pct 100)
             , marginLeft (px -3)
             , cursor ewResize
-            , property "z-index" "6"
+            , zIndex (int 6)
             ]
         , Css.class EditorResizeHandle
             [ position absolute
@@ -117,7 +119,7 @@ styles =
             , width (pct 100)
             , marginTop (px -3)
             , cursor nsResize
-            , property "z-index" "6"
+            , zIndex (int 6)
             ]
         , Css.class ResizeNs
             [ descendants [ everything [ cursor nsResize |> important ] ]
@@ -129,7 +131,7 @@ styles =
             ]
         , Css.class EmbedLinkContainer
             [ position absolute
-            , property "z-index" "2"
+            , zIndex (int 2)
             , width (px 320)
             , left (px 448)
             , top (px 16)
@@ -140,7 +142,7 @@ styles =
             , border zero
             , color (hex Colors.white)
             , displayFlex
-            , property "z-index" "7"
+            , zIndex (int 7)
             , cursor pointer
             , borderRadius (px 3)
             , padding (px 6)

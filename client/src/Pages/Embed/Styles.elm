@@ -3,6 +3,7 @@ module Pages.Embed.Styles exposing (styles)
 import Css exposing (..)
 import Css.Elements exposing (..)
 import Css.Namespace exposing (..)
+import Extra.Css exposing (..)
 import Pages.Embed.Classes exposing (Classes(..))
 import Shared.Colors as Colors
 import Shared.Constants as Constants
@@ -13,7 +14,6 @@ styles =
     (stylesheet << namespace "app_")
         [ html
             [ height (pct 100)
-            , backgroundColor (hex Colors.darkGray)
             ]
         , body
             [ height (pct 100)
@@ -27,30 +27,9 @@ styles =
             [ width (pct 100)
             , height (pct 100)
             , position relative
-            , property "z-index" "1"
+            , zIndex (int 1)
             , overflow hidden
             , borderRadius (px 3)
-            ]
-        , Css.class LoadingContainer
-            [ width (pct 100)
-            , height (pct 100)
-            , displayFlex
-            , flexDirection column
-            , alignItems center
-            , padding (px 16)
-            , paddingTop (px 100)
-            , property "background-image" Colors.pinkPurpleGradient
-            ]
-        , Css.class LoadingTitle
-            [ fontFamilies [ Constants.scriptFont ]
-            , color (hex Colors.white)
-            , fontSize (px 48)
-            , lineHeight (px 48)
-            , padding (px 24)
-            ]
-        , Css.class LoadingMessage
-            [ fontSize (px 24)
-            , color (hex Colors.white)
             ]
         , Css.class FailureContainer
             [ width (pct 100)
@@ -216,6 +195,10 @@ styles =
             [ width (pct 100)
             , height (pct 100)
             , position relative
+            , property "transition" "filter 0.3s 0.2s"
+            , Css.withClass LoadingContainer
+                [ filter <| blur (px 30)
+                ]
             ]
         , Css.class WorkArea
             [ property "height" "calc(100% - 40px)"

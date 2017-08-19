@@ -1,12 +1,14 @@
 module Views.Editor.About.View
     exposing
-        ( view
+        ( CssClasses(..)
+        , namespace
+        , view
         )
 
 import Html exposing (Html, a, button, div, img, p, span, text)
 import Html.Attributes exposing (href, id, src, style, target)
+import Html.CssHelpers
 import Shared.Constants as Constants
-import Views.Editor.About.Classes exposing (..)
 
 
 view : Html msg
@@ -72,3 +74,26 @@ view =
                 ]
             ]
         ]
+
+
+namespace : String
+namespace =
+    "Views-Editor-About-"
+
+
+type CssClasses
+    = Popout
+    | Title
+    | Paragraph
+    | Link
+    | Creators
+    | CreatorLine
+    | Logo
+    | ImagesAndHsLogo
+    | PartnerImageContainer
+    | PartnerImage
+    | HsLogoImage
+
+
+{ class, classList } =
+    Html.CssHelpers.withNamespace namespace

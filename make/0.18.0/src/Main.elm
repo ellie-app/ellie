@@ -103,7 +103,7 @@ msgs =
 
 config : BM.Config
 config =
-    { artifactDirectory = "elm-stuff/build-artifacts/0.18.0"
+    { artifactDirectory = "/elm-stuff/build-artifacts/0.18.0"
     , file = "/src/Main.elm"
     , debug = False
     , outputFilePath = "/build/out.js"

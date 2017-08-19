@@ -421,6 +421,7 @@ class RevisionBase(NamedTuple):
     owned: bool
     snapshot: Any
     elm_version: Version
+    accepted_terms: Optional[int]
 
 
 class Revision(RevisionBase):
@@ -434,7 +435,8 @@ class Revision(RevisionBase):
             'id': self.id.to_json() if self.id is not None else None,
             'owned': self.owned,
             'snapshot': self.snapshot,
-            'elmVersion': self.elm_version.to_json()
+            'elmVersion': self.elm_version.to_json(),
+            'acceptedTerms': self.accepted_terms
         }
 
     @staticmethod
@@ -455,4 +457,5 @@ class Revision(RevisionBase):
             id=RevisionId.from_json(data['id']),
             owned=data['owned'] if 'owned' in data else False,
             snapshot=data['snapshot'],
-            elm_version=elm_version)
+            elm_version=elm_version,
+            accepted_terms=data.get('acceptedTerms'))

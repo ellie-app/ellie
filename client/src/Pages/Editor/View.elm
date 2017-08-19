@@ -1,7 +1,7 @@
 module Pages.Editor.View exposing (view)
 
 import Data.Ellie.CompileStage as CompileStage exposing (CompileStage)
-import Data.Ellie.RevisionId as RevisionId exposing (RevisionId)
+import Extra.Html as Html
 import Html exposing (Html, button, div, header, iframe, main_, span, text)
 import Html.Attributes exposing (style)
 import Html.Events exposing (onClick, onMouseDown)
@@ -18,16 +18,9 @@ import Views.Editor.Header.View as Header
 import Views.Editor.Notifications.View as Notifications
 import Views.Editor.Search.View as Search
 import Views.Editor.Sidebar.View as Sidebar
+import Views.Editor.Terms.View as Terms
 import Views.Editors.View as Editors
 import Views.Output.View as Output
-
-
-renderIf : Bool -> (() -> Html msg) -> Html msg
-renderIf predicate thunk =
-    if predicate then
-        thunk ()
-    else
-        text ""
 
 
 htmlHeightCss : Model -> String
@@ -54,14 +47,33 @@ expandButtonIcon isHidden =
         Icons.collapse
 
 
-popoutView : Model -> Html Msg
-popoutView model =
+viewPopout : Model -> Html Msg
+viewPopout model =
     case model.popoutState of
         AboutOpen ->
             About.view
 
-        _ ->
-            text ""
+        EmbedLinkOpen ->
+            case model.currentRoute of
+                SpecificRevision revisionId ->
+                    EmbedLink.view
+                        { projectId = revisionId.projectId
+                        , revisionNumber = revisionId.revisionNumber
+                        , onGist = CreateGist
+                        , gistButtonEnabled = not model.creatingGist
+                        }
+
+                _ ->
+                    Html.none
+
+        TermsOpen ->
+            Terms.view
+                { termsVersion = model.latestTermsVersion
+                , onAccept = TermsAcceptanceStart model.latestTermsVersion
+                }
+
+        AllClosed ->
+            Html.none
 
 
 sidebarContext : Model -> Sidebar.ViewModel Msg
@@ -76,72 +88,38 @@ sidebarContext model =
     }
 
 
-searchContext : Model -> Search.ViewModel Msg
-searchContext model =
-    { onClose = ToggleSearch
-    , searchValue = model.searchValue
-    , onSearchChange = SearchChanged
-    , results = model.searchResults
-    , onInstall = PackageSelected
-    , packages = model.clientRevision.packages
-    }
+viewSearch : Model -> Html Msg
+viewSearch model =
+    Html.viewIfLazy
+        model.searchOpen
+        (\_ ->
+            Search.view
+                { onClose = ToggleSearch
+                , searchValue = model.searchValue
+                , onSearchChange = SearchChanged
+                , results = model.searchResults
+                , onInstall = PackageSelected
+                , packages = model.clientRevision.packages
+                }
+        )
 
 
-embedLinkVm : RevisionId -> Model -> EmbedLink.ViewModel Msg
-embedLinkVm { projectId, revisionNumber } model =
-    { projectId = projectId
-    , revisionNumber = revisionNumber
-    , onGist = CreateGist
-    , gistButtonEnabled = not model.creatingGist
-    }
-
-
-embedLink : Model -> Html Msg
-embedLink model =
-    case ( model.popoutState, model.currentRoute ) of
-        ( EmbedLinkOpen, SpecificRevision revisionId ) ->
-            div
-                [ class [ EmbedLinkContainer ] ]
-                [ EmbedLink.view <| embedLinkVm revisionId model
-                ]
-
-        _ ->
-            text ""
-
-
-loadedView : Model -> Html Msg
-loadedView model =
-    div [ class [ LoadedContainer ] ]
-        [ Header.view <| headerContext model
-        , div [ class [ MainContainer ] ]
-            [ Sidebar.view <| sidebarContext model
-            , workAreaView model
-            , div [ class [ NotificationsContainer ] ]
-                [ popoutView model ]
-            , embedLink model
-            ]
-        , renderIf
-            model.searchOpen
-            (\_ -> Search.view <| searchContext model)
-        ]
-
-
-workAreaView : Model -> Html Msg
-workAreaView model =
+viewWorkArea : Model -> Html Msg
+viewWorkArea model =
     div [ class [ WorkArea ] ]
-        [ editorsView model
+        [ viewEditors model
         , div
             [ class [ OutputResizeHandle ]
             , style [ ( "left", Utils.numberToPercent model.resultSplit ) ]
             , onMouseDown ResultDragStarted
             ]
             []
-        , outputView model
+        , viewOutput model
         ]
 
 
-editorsView : Model -> Html Msg
-editorsView model =
+viewEditors : Model -> Html Msg
+viewEditors model =
     div
         [ class [ EditorsContainer ]
         , style [ ( "width", Utils.numberToPercent model.resultSplit ) ]
@@ -158,7 +136,7 @@ editorsView model =
                   )
                 ]
             ]
-            [ renderIf
+            [ Html.viewIfLazy
                 (not <| Model.elmIsHidden model)
                 (\_ ->
                     Editors.elm
@@ -175,15 +153,14 @@ editorsView model =
                 , span [ class [ OverlayButtonIcon ] ] [ expandButtonIcon <| Model.elmIsHidden model ]
                 ]
             ]
-        , renderIf
+        , Html.viewIf
             (not (Model.elmIsHidden model) && not (Model.htmlIsHidden model))
-            (\_ ->
-                div
-                    [ class [ EditorResizeHandle ]
-                    , style [ ( "top", elmHeightCss model ) ]
-                    , onMouseDown EditorDragStarted
-                    ]
-                    []
+            (div
+                [ class [ EditorResizeHandle ]
+                , style [ ( "top", elmHeightCss model ) ]
+                , onMouseDown EditorDragStarted
+                ]
+                []
             )
         , div
             [ classList
@@ -197,7 +174,7 @@ editorsView model =
                   )
                 ]
             ]
-            [ renderIf
+            [ Html.viewIfLazy
                 (not <| Model.htmlIsHidden model)
                 (\_ ->
                     Editors.html
@@ -216,41 +193,37 @@ editorsView model =
         ]
 
 
-headerSaveOption : Model -> Header.SaveOption
-headerSaveOption model =
-    if RemoteData.isLoading model.saveState then
-        Header.Saving
-    else if Model.isOwnedProject model && Model.isSavedProject model then
-        Header.Update
-    else if Model.isOwnedProject model && not (Model.isSavedProject model) then
-        Header.Save
-    else
-        Header.Fork
+viewHeader : Model -> Html Msg
+viewHeader model =
+    Header.view
+        { onSave = SaveRequested
+        , onCompile = CompileRequested
+        , onFormat = FormattingRequested
+        , onAbout = ToggleAbout
+        , onEmbedLink = ToggleEmbedLink
+        , embedLinkButtonEnabled =
+            Routing.isSpecificRevision model.currentRoute
+        , saveButtonEnabled =
+            Model.canSave model
+        , compileButtonEnabled =
+            Model.canCompile model
+        , buttonsVisible =
+            RemoteData.isSuccess model.serverRevision
+                && model.isOnline
+        , saveButtonOption =
+            if RemoteData.isLoading model.saveState then
+                Header.Saving
+            else if Model.isOwnedProject model && Model.isSavedProject model then
+                Header.Update
+            else if Model.isOwnedProject model && not (Model.isSavedProject model) then
+                Header.Save
+            else
+                Header.Fork
+        }
 
 
-headerContext : Model -> Header.ViewModel Msg
-headerContext model =
-    { onSave = SaveRequested
-    , onCompile = CompileRequested
-    , onFormat = FormattingRequested
-    , onAbout = ToggleAbout
-    , onEmbedLink = ToggleEmbedLink
-    , embedLinkButtonEnabled =
-        Routing.isSpecificRevision model.currentRoute
-    , saveButtonEnabled =
-        Model.canSave model
-    , saveButtonOption =
-        headerSaveOption model
-    , compileButtonEnabled =
-        Model.canCompile model
-    , buttonsVisible =
-        RemoteData.isSuccess model.serverRevision
-            && model.isOnline
-    }
-
-
-outputView : Model -> Html Msg
-outputView model =
+viewOutput : Model -> Html Msg
+viewOutput model =
     div
         [ class [ OutputContainer ]
         , style [ ( "width", Utils.numberToPercent (1 - model.resultSplit) ) ]
@@ -305,20 +278,16 @@ view model =
                   )
                 ]
             ]
-            [ Header.view <| headerContext model
+            [ viewHeader model
             , div [ class [ MainContainer ] ]
                 [ Sidebar.view <| sidebarContext model
-                , workAreaView model
-                , div [ class [ NotificationsContainer ] ]
-                    [ popoutView model ]
-                , embedLink model
+                , viewWorkArea model
+                , viewPopout model
                 , Notifications.view
                     { notifications = model.notifications
                     , onClose = ClearNotification
                     }
                 ]
-            , renderIf
-                model.searchOpen
-                (\_ -> Search.view <| searchContext model)
+            , viewSearch model
             ]
         ]

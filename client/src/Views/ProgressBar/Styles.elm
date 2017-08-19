@@ -41,8 +41,10 @@ styles =
             , property "transition" "width 0.2s linear"
             ]
         , Css.class Count
-            [ paddingLeft (px 16)
+            [ marginLeft (px 16)
             , whiteSpace noWrap
+            , width (px 32)
             , fontSize (px 14)
+            , display inlineBlock
             ]
         ]

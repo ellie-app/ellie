@@ -1,15 +1,17 @@
 module Views.Editor.EmbedLink.View
     exposing
-        ( ViewModel
+        ( Config
+        , CssClasses(..)
+        , namespace
         , view
         )
 
 import Html exposing (Html, button, div, input, span, text)
 import Html.Attributes exposing (disabled, id, readonly, type_, value)
+import Html.CssHelpers
 import Html.Events exposing (onClick, onFocus)
 import Shared.Constants as Constants
 import Shared.Icons as Icons
-import Views.Editor.EmbedLink.Classes exposing (..)
 
 
 autoselect : Html.Attribute msg
@@ -17,7 +19,7 @@ autoselect =
     Html.Attributes.attribute "onmouseup" "this.blur();this.select();"
 
 
-type alias ViewModel msg =
+type alias Config msg =
     { projectId : String
     , revisionNumber : Int
     , onGist : msg
@@ -25,7 +27,7 @@ type alias ViewModel msg =
     }
 
 
-directLink : ViewModel msg -> String
+directLink : Config msg -> String
 directLink { projectId, revisionNumber } =
     Constants.editorBase
         ++ "/"
@@ -34,16 +36,16 @@ directLink { projectId, revisionNumber } =
         ++ toString revisionNumber
 
 
-iframe : ViewModel msg -> String
-iframe viewModel =
+iframe : Config msg -> String
+iframe config =
     "<iframe src=\""
-        ++ embedLink viewModel
+        ++ embedLink config
         ++ "\" style=\"width:100%; height:400px; border:0; border-radius: 3px; overflow:hidden;\""
         ++ " sandbox=\"allow-modals allow-forms allow-popups allow-scripts allow-same-origin\""
         ++ "></iframe>"
 
 
-embedLink : ViewModel msg -> String
+embedLink : Config msg -> String
 embedLink { projectId, revisionNumber } =
     Constants.embedBase
         ++ "/"
@@ -52,8 +54,8 @@ embedLink { projectId, revisionNumber } =
         ++ toString revisionNumber
 
 
-view : ViewModel msg -> Html msg
-view viewModel =
+view : Config msg -> Html msg
+view config =
     div [ class [ Container ] ]
         [ div [ class [ Links ] ]
             [ div [ class [ Link ] ]
@@ -62,7 +64,7 @@ view viewModel =
                     [ text "Direct Link (Medium, embed.ly)" ]
                 , input
                     [ type_ "text"
-                    , value <| directLink viewModel
+                    , value <| directLink config
                     , readonly True
                     , id "embedly_link"
                     , class [ LinkContent ]
@@ -76,7 +78,7 @@ view viewModel =
                     [ text "Embed Link" ]
                 , input
                     [ type_ "text"
-                    , value <| embedLink viewModel
+                    , value <| embedLink config
                     , readonly True
                     , id "direct_link"
                     , class [ LinkContent ]
@@ -90,7 +92,7 @@ view viewModel =
                     [ text "IFrame" ]
                 , input
                     [ id "iframe_link"
-                    , value <| iframe viewModel
+                    , value <| iframe config
                     , type_ "text"
                     , class [ LinkContent ]
                     , autoselect
@@ -101,8 +103,8 @@ view viewModel =
         , div [ class [ Buttons ] ]
             [ button
                 [ class [ Button ]
-                , disabled (not viewModel.gistButtonEnabled)
-                , onClick viewModel.onGist
+                , disabled (not config.gistButtonEnabled)
+                , onClick config.onGist
                 ]
                 [ div [ class [ ButtonInner ] ]
                     [ span [ class [ ButtonIcon ] ] [ Icons.gitHub ]
@@ -111,3 +113,25 @@ view viewModel =
                 ]
             ]
         ]
+
+
+type CssClasses
+    = Container
+    | Links
+    | Link
+    | LinkTitle
+    | LinkContent
+    | Buttons
+    | Button
+    | ButtonInner
+    | ButtonText
+    | ButtonIcon
+
+
+namespace : String
+namespace =
+    "Views-Editor-EmbedLink-"
+
+
+{ class, classList } =
+    Html.CssHelpers.withNamespace namespace

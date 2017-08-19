@@ -21,13 +21,18 @@ initCodeMirror(vimMode)
       }
     })
 
+    const acceptedTermsVersion = JSON.parse(document.querySelector('meta[name=accepted_terms_version]').content)
+    const latestTermsVersion = JSON.parse(document.querySelector('meta[name=latest_terms_version]').content)
+
     const app = Elm.Pages.Editor.Main.fullscreen({
       windowSize: {
         width: window.innerWidth,
         height: window.innerHeight
       },
-      vimMode: vimMode,
-      online: process.env.NODE_ENV === 'production' ? window.navigator.onLine : true
+      online: process.env.NODE_ENV === 'production' ? window.navigator.onLine : true,
+      acceptedTermsVersion,
+      latestTermsVersion,
+      vimMode,
     })
 
     app.ports.opbeatCaptureOut.subscribe(captureOpbeat)
@@ -139,6 +144,7 @@ initCodeMirror(vimMode)
         const compile = Compiler.init(callback)
 
         app.ports.compileOnClientOut.subscribe(function ([html, elm, packages, forSave]) {
+          console.log('hi')
           runForSave = forSave
           htmlCode = html
           compile({ elm, packages })
