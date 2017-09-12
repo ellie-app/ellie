@@ -267,7 +267,11 @@ uploadSignatures revision =
         |> toTask
 
 
-uploadRevision : Result (List CompilerError.Error) String -> Revision -> TermsVersion -> Task ApiError Revision
+uploadRevision :
+    Result (List CompilerError.Error) String
+    -> Revision
+    -> TermsVersion
+    -> Task ApiError Revision
 uploadRevision compileResult revision acceptedTerms =
     case compileResult of
         Ok resultUrl ->
@@ -285,6 +289,7 @@ uploadRevision compileResult revision acceptedTerms =
                                                 | snapshot = Uploaded
                                                 , id = Just <| RevisionId revSig.projectId revSig.revisionNumber
                                                 , acceptedTerms = Just acceptedTerms
+                                                , owned = True
                                             }
                                     in
                                     post resultSig.url

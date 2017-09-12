@@ -1,7 +1,10 @@
 port module Main exposing (main)
 
 import Data.File as File exposing (File)
+import Data.FilePath as FilePath exposing ((<.>), (</>), FilePath)
 import Data.HashDict as HashDict exposing (HashDict)
+import Data.Source as Source exposing (Source)
+import Elm.Compiler.Module as Module
 import Elm.Compiler.Module.Interface as Interface exposing (Interface)
 import Elm.Make.BuildGraph as BuildGraph exposing (BuildGraph)
 import Elm.Make.CanonicalModule as CanonicalModule exposing (CanonicalModule)
@@ -11,7 +14,6 @@ import Elm.Make.Solution as Solution exposing (Solution)
 import Elm.Package.Description as Description exposing (Description)
 import FileStorage as FileStorage
 import Json.Decode as Decode exposing (Decoder, Value)
-import Json.Encode as Encode
 import Pipeline.Compile as Compile
 import Pipeline.Crawl as Crawl exposing (ProjectInfo)
 import Pipeline.Generate as Generate
@@ -33,18 +35,19 @@ type BuildStage
 type Model
     = Loading Float
     | Waiting
-    | Running Int Description String BuildStage
+    | Running Int Description Source BM.Config BuildStage
 
 
 type Msg
     = LoadedMoreCode Float
-    | StartCompile Int Description String
+    | StartCompile Int Description Source
     | BuildFailure BM.Error
     | InstallSuccess Solution
     | CrawlSuccess ProjectInfo
     | PlanSuccess BuildGraph
     | CompileUpdated ( CanonicalModule, Interface )
     | GenerateSuccess (Maybe File)
+    | ClearElmStuff
     | NoOp
 
 
@@ -63,11 +66,14 @@ msgDecoder =
                         Decode.succeed StartCompile
                             |> andMap (Decode.at [ "args", "0" ] Decode.int)
                             |> andMap (Decode.at [ "args", "1" ] Description.decoder)
-                            |> andMap (Decode.at [ "args", "2" ] Decode.string)
+                            |> andMap (Decode.at [ "args", "2" ] Source.decoder)
 
                     "LoadedMoreCode" ->
                         Decode.succeed LoadedMoreCode
                             |> andMap (Decode.at [ "args", "0" ] Decode.float)
+
+                    "ClearElmStuff" ->
+                        Decode.succeed ClearElmStuff
 
                     _ ->
                         Decode.fail ("Unknown message " ++ tipe)
@@ -101,13 +107,22 @@ msgs =
         )
 
 
-config : BM.Config
-config =
+makeConfig : Source -> BM.Config
+makeConfig source =
     { artifactDirectory = "/elm-stuff/build-artifacts/0.18.0"
-    , file = "/src/Main.elm"
+    , file = modulePath source
     , debug = False
     , outputFilePath = "/build/out.js"
     }
+
+
+modulePath : Source -> FilePath
+modulePath source =
+    source
+        |> Source.moduleName
+        |> Module.nameToPath
+        |> (</>) "/src"
+        |> flip (<.>) "elm"
 
 
 runOrFail : (a -> Msg) -> Result BM.Error a -> Msg
@@ -123,6 +138,25 @@ runOrFail onSuccess result =
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
+        ClearElmStuff ->
+            case model of
+                Loading _ ->
+                    ( model, Cmd.none )
+
+                _ ->
+                    ( Waiting
+                    , Cmd.batch
+                        [ Task.attempt
+                            (\error ->
+                                error
+                                    |> Debug.log "error"
+                                    |> (\_ -> NoOp)
+                            )
+                            (FileStorage.remove "/elm-stuff")
+                        , stageChanged Stage.Initial
+                        ]
+                    )
+
         LoadedMoreCode percentage ->
             if percentage == 1 then
                 ( Waiting, stageChanged Stage.Initial )
@@ -134,9 +168,15 @@ update msg model =
         StartCompile buildNumber description source ->
             case model of
                 Waiting ->
-                    ( Running buildNumber description source Installing
+                    let
+                        config =
+                            makeConfig source
+                    in
+                    ( Running buildNumber description source config Installing
                     , Cmd.batch
-                        [ FileStorage.write "/src/Main.elm" (Encode.string source)
+                        [ source
+                            |> Source.encoder
+                            |> FileStorage.write config.file
                             |> Task.mapError BM.PackageProblem
                             |> Task.andThen (\_ -> Install.getSolution description)
                             |> Task.attempt (runOrFail InstallSuccess)
@@ -149,10 +189,11 @@ update msg model =
 
         InstallSuccess solution ->
             case model of
-                Running buildNumber description source Installing ->
-                    ( Running buildNumber description source (Crawling solution)
+                Running buildNumber description source config Installing ->
+                    ( Running buildNumber description source config (Crawling solution)
                     , Cmd.batch
-                        [ Crawl.crawl config description solution
+                        [ solution
+                            |> Crawl.crawl config description
                             |> Task.attempt (runOrFail CrawlSuccess)
                         , stageChanged Stage.PlanningBuild
                         ]
@@ -163,8 +204,8 @@ update msg model =
 
         CrawlSuccess projectInfo ->
             case model of
-                Running buildNumber description source (Crawling solution) ->
-                    ( Running buildNumber description source (Planning projectInfo)
+                Running buildNumber description source config (Crawling solution) ->
+                    ( Running buildNumber description source config (Planning projectInfo)
                     , Plan.planBuild config projectInfo.graph
                         |> Task.attempt (runOrFail PlanSuccess)
                     )
@@ -174,7 +215,7 @@ update msg model =
 
         PlanSuccess buildGraph ->
             case model of
-                Running buildNumber description source (Planning projectInfo) ->
+                Running buildNumber description source config (Planning projectInfo) ->
                     let
                         dependencies =
                             HashDict.map (\k v -> v.projectDependencies) projectInfo.graph.projectData
@@ -193,7 +234,7 @@ update msg model =
                                 , runningList = List.map Tuple.first initialModel.readyList
                             }
                     in
-                    ( Running buildNumber description source (Compiling projectInfo buildGraph runningModel)
+                    ( Running buildNumber description source config (Compiling projectInfo buildGraph runningModel)
                     , Cmd.batch
                         [ initialModel.readyList
                             |> List.map
@@ -215,11 +256,8 @@ update msg model =
 
         CompileUpdated ( canonicalModule, interface ) ->
             case model of
-                Running buildNumber description source (Compiling projectInfo buildGraph model) ->
+                Running buildNumber description source config (Compiling projectInfo buildGraph model) ->
                     let
-                        _ =
-                            Debug.log "cm" canonicalModule
-
                         updatedModel =
                             Compile.registerSuccess canonicalModule interface model
 
@@ -230,7 +268,7 @@ update msg model =
                             }
                     in
                     if updatedModel.completedTasks == updatedModel.numTasks then
-                        ( Running buildNumber description source Generating
+                        ( Running buildNumber description source config Generating
                         , Cmd.batch
                             [ Generate.generate
                                 config
@@ -243,7 +281,7 @@ update msg model =
                             ]
                         )
                     else
-                        ( Running buildNumber description source (Compiling projectInfo buildGraph runningModel)
+                        ( Running buildNumber description source config (Compiling projectInfo buildGraph runningModel)
                         , Cmd.batch
                             [ updatedModel.readyList
                                 |> List.map
@@ -266,14 +304,18 @@ update msg model =
 
         GenerateSuccess result ->
             case model of
-                Running buildNumber _ _ Generating ->
+                Running buildNumber _ _ config Generating ->
                     ( Waiting
-                    , case result of
-                        Just file ->
-                            compileOut ( buildNumber, File.encoder file )
+                    , Cmd.batch
+                        [ case result of
+                            Just file ->
+                                compileOut ( buildNumber, File.encoder file )
 
-                        Nothing ->
-                            Cmd.none
+                            Nothing ->
+                                Cmd.none
+                        , FileStorage.remove config.file
+                            |> Task.attempt (\_ -> NoOp)
+                        ]
                     )
 
                 _ ->
@@ -281,14 +323,14 @@ update msg model =
 
         BuildFailure error ->
             case model of
-                Running _ _ _ _ ->
+                Running _ _ _ _ _ ->
                     ( Waiting
                     , case error of
                         BM.CompilerErrors _ _ compilerErrors ->
                             stageChanged <| Stage.FinishedWithErrors compilerErrors
 
                         _ ->
-                            stageChanged <| Stage.Failed (toString error)
+                            stageChanged <| Stage.Failed (BM.printError error)
                     )
 
                 _ ->

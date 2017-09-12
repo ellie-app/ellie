@@ -45,6 +45,20 @@ var _user$project$Native_Storage = (function () {
       })
     }
 
+    function deleteStartsWith(db, key) {
+      return new Promise(function (resolve, reject) {
+        var store = db.transaction(['Ellie:Store'], 'readwrite').objectStore('Ellie:Store')
+        var lower = key
+        var upper = key.substring(0, key.length - 1) + String.fromCharCode(key.charCodeAt(key.length - 1) + 1)
+        var range = IDBKeyRange.bound(lower, upper, false, true)
+        var req = store.delete(range)
+        req.onerror = reject
+        req.onsuccess = function(event) {
+          resolve()
+        }
+      })
+    }
+
     return {
       get: function(key) {
         if (!database) {
@@ -59,6 +73,13 @@ var _user$project$Native_Storage = (function () {
         }
 
         return set(database, key, value)
+      },
+      deleteStartsWith: function (key) {
+        if (!database) {
+          return openDb().then(function () { return this.deleteStartsWith(key) }.bind(this))
+        }
+
+        return deleteStartsWith(database, key)
       }
     }
   }())
@@ -73,6 +94,14 @@ var _user$project$Native_Storage = (function () {
       },
       set: function(key, value) {
         memory[key] = value
+        return Promise.resolve()
+      },
+      deleteStartsWith: function (key) {
+        for (var k in memory) {
+          if (k.indexOf(key) === 0) {
+            delete memory[k]
+          }
+        }
         return Promise.resolve()
       }
     }
@@ -108,7 +137,7 @@ var _user$project$Native_Storage = (function () {
         MemoryStore.set(key, value)
       ])
       .then(function () {
-        callback(_elm_lang$core$Native_Scheduler.succeed(value));
+        callback(_elm_lang$core$Native_Scheduler.succeed(value))
       })
       .catch(function (error) {
         callback(_elm_lang$core$Native_Scheduler.fail(error.message))
@@ -116,8 +145,24 @@ var _user$project$Native_Storage = (function () {
     })
   })
 
+  var deleteStartsWith = function (key) {
+    return _elm_lang$core$Native_Scheduler.nativeBinding(function (callback) {
+      Promise.all([
+        IndexedDbStore.deleteStartsWith(key),
+        MemoryStore.deleteStartsWith(key)
+      ])
+      .then(function () {
+        callback(_elm_lang$core$Native_Scheduler.succeed(_elm_lang$core$Native_Utils.Tuple0))
+      })
+      .catch(function (error) {
+        callback(_elm_lang$core$Native_Scheduler.fail(error.message))
+      })
+    })
+  }
+
   return {
     get: get,
-    set: set
+    set: set,
+    deleteStartsWith: deleteStartsWith
   }
 }())

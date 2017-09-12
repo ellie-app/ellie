@@ -1,21 +1,27 @@
 module Views.Editor.Notifications.View
     exposing
-        ( view
+        ( Config
+        , CssClasses(..)
+        , namespace
+        , view
         )
 
 import Data.Ellie.Notification as Notification exposing (Notification)
 import Date exposing (Date)
+import Extra.Html as Html
+import Extra.Html.Attributes exposing (style)
 import Html exposing (Html, button, div, span, text)
-import Html.Attributes exposing (id, style)
+import Html.Attributes exposing (id)
+import Html.CssHelpers
 import Html.Events exposing (onClick)
 import Shared.Colors as Colors
 import Shared.Icons as Icons
-import Views.Editor.Notifications.Classes exposing (..)
 
 
-type alias ViewModel msg =
+type alias Config msg =
     { onClose : Notification -> msg
     , notifications : List Notification
+    , onAction : Notification.Action -> msg
     }
 
 
@@ -78,15 +84,29 @@ formatDate date =
         ++ amPm date
 
 
-item : (Notification -> msg) -> Notification -> Html msg
-item onClose notification =
+viewItem : (Notification -> msg) -> (Notification.Action -> msg) -> Notification -> Html msg
+viewItem onClose onAction notification =
     div
         [ class [ Item ]
-        , style [ ( "background-color", color notification.level ) ]
+        , style "background-color" <| color notification.level
         ]
         [ div [ class [ ItemTitle ] ] [ text notification.title ]
         , div [ class [ ItemTimestamp ] ] [ text <| formatDate (Date.fromTime notification.timestamp) ]
         , div [ class [ ItemMessage ] ] [ text <| String.trim notification.message ]
+        , case notification.action of
+            Just action ->
+                div [ class [ ItemAction ] ]
+                    [ button
+                        [ class [ ItemActionButton ]
+                        , onClick <| onAction Notification.ClearElmStuff
+                        , style "color" <| color notification.level
+                        ]
+                        [ text <| actionLabel Notification.ClearElmStuff
+                        ]
+                    ]
+
+            Nothing ->
+                Html.none
         , button
             [ class [ CloseButton ]
             , onClick (onClose notification)
@@ -96,10 +116,40 @@ item onClose notification =
         ]
 
 
-view : ViewModel msg -> Html msg
-view { onClose, notifications } =
+actionLabel : Notification.Action -> String
+actionLabel action =
+    case action of
+        Notification.ClearElmStuff ->
+            "Clear Cached Data"
+
+
+view : Config msg -> Html msg
+view { onClose, notifications, onAction } =
     div
         [ class [ Notifications ]
         , id "notifications"
         ]
-        (List.map (item onClose) notifications)
+        (List.map (viewItem onClose onAction) notifications)
+
+
+type CssClasses
+    = Notifications
+    | Item
+    | ItemIcon
+    | ItemDetails
+    | Items
+    | ItemTitle
+    | ItemTimestamp
+    | ItemMessage
+    | ItemAction
+    | ItemActionButton
+    | CloseButton
+
+
+namespace : String
+namespace =
+    "Views-Editor-Notifications-"
+
+
+{ class } =
+    Html.CssHelpers.withNamespace namespace

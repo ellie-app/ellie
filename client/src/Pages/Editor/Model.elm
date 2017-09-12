@@ -27,6 +27,7 @@ import Data.Ellie.CompileStage as CompileStage exposing (CompileStage(..))
 import Data.Ellie.KeyCombo as KeyCombo exposing (KeyCombo)
 import Data.Ellie.Notification as Notification exposing (Notification)
 import Data.Ellie.Revision as Revision exposing (Revision)
+import Data.Ellie.SaveState as SaveState exposing (SaveState)
 import Data.Ellie.TermsVersion as TermsVersion exposing (TermsVersion)
 import Data.Elm.Compiler.Error as CompilerError
 import Data.Elm.Package as Package exposing (Package)
@@ -58,7 +59,7 @@ type alias Model =
     , previousElmCode : String
     , previousHtmlCode : String
     , compileStage : CompileStage
-    , saveState : RemoteData ApiError ()
+    , saveState : SaveState
     , isOnline : Bool
     , notifications : List Notification
     , popoutState : PopoutState
@@ -91,7 +92,7 @@ model flags =
     , previousHtmlCode = .htmlCode Revision.empty
     , compileStage = CompileStage.Initial
     , currentRoute = NotFound
-    , saveState = NotAsked
+    , saveState = SaveState.Ready
     , isOnline = flags.online
     , notifications = []
     , popoutState = AllClosed
@@ -144,7 +145,7 @@ canCompile model =
                 _ ->
                     False
     in
-    stagePasses && model.saveState /= Loading
+    stagePasses && SaveState.canSave model.saveState
 
 
 resetToNew : Model -> Model
@@ -157,7 +158,7 @@ resetToNew model =
         , stagedHtmlCode = .htmlCode Revision.empty
         , previousHtmlCode = .htmlCode Revision.empty
         , compileStage = CompileStage.Initial
-        , saveState = NotAsked
+        , saveState = SaveState.Ready
         , vimMode = model.vimMode
         , packagesChanged = False
     }
@@ -180,7 +181,7 @@ canSave model =
                 || (model.stagedHtmlCode /= model.clientRevision.htmlCode)
     in
     (stagedCodeChanged || isRevisionChanged model || not (isSavedProject model))
-        && not (RemoteData.isLoading model.saveState)
+        && SaveState.canSave model.saveState
         && model.isOnline
 
 

@@ -113,7 +113,6 @@ initCodeMirror(vimMode)
         }
 
         const sendToPort = data => {
-          console.log(data)
           runForSave ?
             app.ports.compileForSaveIn.send(data) :
             app.ports.compilerMessagesIn.send(data)
@@ -141,15 +140,16 @@ initCodeMirror(vimMode)
           })
         }
 
-        const compile = Compiler.init(callback)
+        const compiler = Compiler.init(callback)
+
+        app.ports.clearElmStuffOut.subscribe(() => {
+          compiler.clearElmStuff()
+        })
 
         app.ports.compileOnClientOut.subscribe(function ([html, elm, packages, forSave]) {
-          console.log('hi')
           runForSave = forSave
           htmlCode = html
-          compile({ elm, packages })
+          compiler.compile({ elm, packages })
         })
       })
-
-
   })

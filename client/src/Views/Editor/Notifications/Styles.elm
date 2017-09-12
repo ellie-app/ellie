@@ -1,17 +1,17 @@
 module Views.Editor.Notifications.Styles exposing (..)
 
 import Css exposing (..)
-import Css.Namespace exposing (..)
+import Css.Namespace
 import Shared.Colors as Colors
-import Views.Editor.Notifications.Classes exposing (Classes(..))
+import Views.Editor.Notifications.View exposing (CssClasses(..), namespace)
 
 
 styles : Stylesheet
 styles =
-    (stylesheet << namespace "components_notifications_")
+    (stylesheet << Css.Namespace.namespace namespace)
         [ Css.class Notifications
             [ position absolute
-            , top zero
+            , bottom zero
             , right zero
             , width (px 400)
             , zIndex (int 10)
@@ -44,6 +44,20 @@ styles =
         , Css.class ItemTimestamp
             [ fontSize (px 12)
             , paddingBottom (px 12)
+            ]
+        , Css.class ItemAction
+            [ paddingTop (px 12)
+            ]
+        , Css.class ItemActionButton
+            [ backgroundColor (hex Colors.white)
+            , fontFamily inherit
+            , fontSize (px 12)
+            , fontWeight bold
+            , textTransform uppercase
+            , padding (px 8)
+            , borderRadius (px 3)
+            , border zero
+            , cursor pointer
             ]
         , Css.class CloseButton
             [ position absolute

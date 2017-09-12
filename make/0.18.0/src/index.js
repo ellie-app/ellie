@@ -2,12 +2,13 @@ const Elm = require('./Main.elm')
 const Compiler = require('./Worker/ConcurrentCompiler')
 
 export const init = listener => {
-  const worker = Elm.Main.worker();
+  let requestId = 0
+  const worker = Elm.Main.worker()
 
   const compilerPromise =
     Compiler
       .init(
-        CDN_BASE + '/elm-compilers/0.18.0.js',
+        CDN_BASE + '/elm-compilers/0.18.0-dev.js',
         percentage => worker.ports.msgsIn.send({ type: 'LoadedMoreCode', args: [percentage] })
       )
       .then(ElmCompiler => self.ElmCompiler = ElmCompiler)
@@ -23,7 +24,13 @@ export const init = listener => {
     listener({ type: 'Success', url: scriptFile })
   });
 
-  return ({ packages, elm }) => {
+  const clearElmStuff = () => {
+    worker.ports.msgsIn.send({ type: 'ClearElmStuff' })
+  }
+
+  const compile = ({ packages, elm }) => {
+    requestId += 1
+
     const desc = {
       repository: 'http://github.com/user/project',
       version: '1.0.0',
@@ -39,8 +46,12 @@ export const init = listener => {
     waitForCompiler(() => {
       worker.ports.msgsIn.send({
         type: 'StartCompile',
-        args: [0, desc, elm]
+        args: [requestId, desc, elm]
       })
     })
+
+    return requestId
   }
+
+  return { clearElmStuff, compile }
 }
