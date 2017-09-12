@@ -8,7 +8,6 @@ module Views.Editor.About.View
 import Html exposing (Html, a, button, div, img, p, span, text)
 import Html.Attributes exposing (href, id, src, style, target)
 import Html.CssHelpers
-import Shared.Constants as Constants
 
 
 view : Html msg
@@ -26,53 +25,11 @@ view =
         , p [ class [ Paragraph ] ]
             [ text "All content created with Ellie is released in the public domain "
             , a [ class [ Link ], href "https://creativecommons.org/share-your-work/public-domain/cc0/" ] [ text "(CC0)" ]
-            , text ". HumbleSpark LLC reserves the right to remove or modify any content created with Ellie for any reason. Report abuse, ask questions, or direct comments to "
-            , a [ class [ Link ], href "mailto:ellie-app@humblespark.com" ] [ text "ellie-app@humblespark.com" ]
+            , text ". We reserve the right to remove or modify any content created with Ellie for any reason. Report abuse, ask questions, or direct comments to "
+            , a [ class [ Link ], href "mailto:ellie-app@lukewestby.com" ] [ text "ellie-app@lukewestby.com" ]
             ]
         , p [ class [ Paragraph ] ]
-            [ text "Copyright 2017 © HumbleSpark LLC" ]
-        , div [ class [ Creators ] ]
-            [ div [ class [ CreatorLine ] ]
-                [ span [ class [ Logo ] ]
-                    [ text "Ellie" ]
-                , span []
-                    [ text " was created for the Elm community by" ]
-                ]
-            , div [ class [ ImagesAndHsLogo ] ]
-                [ a
-                    [ class [ PartnerImageContainer ]
-                    , href "https://twitter.com/luke_dot_js"
-                    , target "_blank"
-                    ]
-                    [ img
-                        [ src <| Constants.asset "images/luke_profile.jpg"
-                        , class [ PartnerImage ]
-                        ]
-                        []
-                    , text "Luke"
-                    ]
-                , span [] [ text "&" ]
-                , a
-                    [ class [ PartnerImageContainer ]
-                    , href "https://twitter.com/nickdreckshage"
-                    , target "_blank"
-                    ]
-                    [ img
-                        [ src <| Constants.asset "images/nick_profile.jpg"
-                        , class [ PartnerImage ]
-                        ]
-                        []
-                    , text "Nick"
-                    ]
-                , span [] [ text "at" ]
-                , a
-                    [ class [ HsLogoImage ]
-                    , href "https://humblespark.com"
-                    , target "_blank"
-                    ]
-                    []
-                ]
-            ]
+            [ text "Copyright 2017 © Luke Westby" ]
         ]
 
 
@@ -86,13 +43,6 @@ type CssClasses
     | Title
     | Paragraph
     | Link
-    | Creators
-    | CreatorLine
-    | Logo
-    | ImagesAndHsLogo
-    | PartnerImageContainer
-    | PartnerImage
-    | HsLogoImage
 
 
 { class, classList } =
