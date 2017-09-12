@@ -23,7 +23,7 @@ getVersions name =
         path =
             Path.toVersionsList name
     in
-    FileStorage.isOlderThan (15 * Time.minute) path
+    FileStorage.isOlderThan (10 * Time.minute) path
         |> Task.andThen
             (\tooOld ->
                 if not tooOld then

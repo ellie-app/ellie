@@ -169,7 +169,23 @@ buildModule model ( modul, location ) =
         |> Task.andThen
             (\source ->
                 Compiler.compile packageName False source model.completedInterfaces
-                    |> Task.mapError (BM.CompilerErrors path source)
+                    |> Task.mapError
+                        (\crashMessage ->
+                            BM.CompilerCrash
+                                { name = modul.name
+                                , source = source
+                                , message = crashMessage
+                                }
+                        )
+                    |> Task.andThen
+                        (\result ->
+                            case result of
+                                Err compileErrors ->
+                                    Task.fail <| BM.CompilerErrors path source compileErrors
+
+                                Ok data ->
+                                    Task.succeed data
+                        )
             )
         |> Task.andThen
             (\( iface, elmo ) ->

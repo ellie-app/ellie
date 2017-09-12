@@ -8,6 +8,7 @@ import Keyboard
 import Mouse
 import Pages.Editor.Model as Model exposing (Model, PopoutState(..))
 import Pages.Editor.Update as Update exposing (Msg(..))
+import Pages.Editor.Update.Save as UpdateSave
 import Window
 
 
@@ -68,18 +69,18 @@ compileForSave =
                         case Debug.log "stage" stage of
                             Compiling { total, complete } ->
                                 if complete == 0 then
-                                    CompileForSaveStarted total
+                                    SaveMsg <| UpdateSave.CompileStarted total
                                 else
                                     NoOp
 
                             Success url ->
-                                SaveCompileSucceeded (Ok url)
+                                SaveMsg <| UpdateSave.CompileCompleted (Ok url)
 
                             FinishedWithErrors errors ->
-                                SaveCompileSucceeded (Err errors)
+                                SaveMsg <| UpdateSave.CompileCompleted (Err errors)
 
                             Failed message ->
-                                SaveCompileFailed message
+                                SaveMsg <| UpdateSave.CompileAborted message
 
                             _ ->
                                 NoOp

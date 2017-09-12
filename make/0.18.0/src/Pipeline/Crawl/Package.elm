@@ -149,12 +149,13 @@ dfsHelp env { parent, name } unvisited summary =
                         Task.fail <| BM.ModuleNotFound name parent
 
                     (_, maybePackages) ->
-                        Task.fail <| BM.ModuleDuplicates
-                            { name = name
-                            , parent = parent
-                            , local = List.map toFilePath filePaths
-                            , foreign = maybePackages |> Maybe.map (List.map Tuple.first) |> Maybe.withDefault []
-                            }
+                        Task.fail <|
+                            BM.ModuleDuplicates
+                                { name = name
+                                , parent = parent
+                                , local = List.map toFilePath filePaths
+                                , foreign = maybePackages |> Maybe.map (List.map Tuple.first) |> Maybe.withDefault []
+                                }
             )
 
 
@@ -246,7 +247,23 @@ readPackageData env maybeName filePath =
         |> Task.andThen
             (\sourceCode ->
                 Compiler.parseDependencies env.packageName sourceCode
-                    |> Task.mapError (BM.CompilerErrors filePath sourceCode)
+                    |> Task.mapError
+                        (\crashMessage ->
+                            BM.CompilerCrash
+                                { name = Maybe.withDefault [] maybeName
+                                , source = sourceCode
+                                , message = crashMessage
+                                }
+                        )
+                    |> Task.andThen
+                        (\result ->
+                            case result of
+                                Err compileErrors ->
+                                    Task.fail <| BM.CompilerErrors filePath sourceCode compileErrors
+
+                                Ok data ->
+                                    Task.succeed data
+                        )
             )
         |> Task.andThen
             (\(name, deps) ->

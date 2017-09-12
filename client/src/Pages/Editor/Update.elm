@@ -11,17 +11,16 @@ import Data.Ellie.CompileStage as CompileStage exposing (CompileStage)
 import Data.Ellie.KeyCombo as KeyCombo exposing (KeyCombo)
 import Data.Ellie.Notification as Notification exposing (Notification)
 import Data.Ellie.Revision as Revision exposing (Revision)
-import Data.Ellie.TermsVersion as TermsVersion exposing (TermsVersion)
 import Data.Elm.Compiler.Error as CompilerError
 import Data.Elm.Package as Package exposing (Package)
 import Dom
-import Http.Extra as Http
 import Mouse exposing (Position)
 import Navigation
 import Pages.Editor.Cmds as Cmds
 import Pages.Editor.Flags as Flags exposing (Flags)
 import Pages.Editor.Model as Model exposing (EditorCollapseState(..), Model, PopoutState(..))
 import Pages.Editor.Routing as Routing exposing (Route(..))
+import Pages.Editor.Update.Save as Save
 import Process
 import RemoteData exposing (RemoteData(..))
 import Shared.Api as Api
@@ -83,10 +82,6 @@ type Msg
     | CompileForSaveStarted Int
     | ElmCodeChanged String
     | HtmlCodeChanged String
-    | SaveRequested
-    | SaveCompileSucceeded (Result (List CompilerError.Error) String)
-    | SaveCompileFailed String
-    | SaveUploadCompleted (Result ApiError Revision)
     | OnlineChanged Bool
     | FormattingRequested
     | FormattingCompleted (Result ApiError String)
@@ -95,7 +90,6 @@ type Msg
     | ClearStaleNotifications Time
     | ClearAllNotifications
     | ClearNotification Notification
-    | ToggleAbout
     | ResultDragStarted
     | ResultDragged Position
     | ResultDragEnded
@@ -105,11 +99,10 @@ type Msg
     | WindowSizeChanged Size
     | TitleChanged String
     | DescriptionChanged String
-    | ToggleSearch
     | SearchChanged String
     | SearchResultsCompleted String (Result ApiError (List Package))
     | PackageSelected Package
-    | ToggleEmbedLink
+    | ToggleSearch
     | IframeJsError String
     | ToggleHtmlCollapse
     | ToggleElmCollapse
@@ -117,9 +110,10 @@ type Msg
     | CreateGist
     | CreateGistComplete (Result ApiError String)
     | KeyComboMsg KeyCombo.Msg
-    | TermsAcceptanceStart TermsVersion
-    | TermsAcceptanceComplete (Result ApiError Http.NoContent)
+    | SaveMsg Save.Msg
+    | ClearElmStuff
     | NoOp
+    | TogglePopouts Model.PopoutState
 
 
 onlineNotification : Bool -> Cmd Msg
@@ -129,18 +123,33 @@ onlineNotification isOnline =
             { level = Notification.Success
             , title = "You're Online!"
             , message = "Ellie has detected that your internet connection is online."
+            , action = Nothing
             }
     else
         Cmds.notify NotificationReceived
             { level = Notification.Error
             , title = "You're Offline!"
             , message = "Ellie can't connect to the server right now, so we've disabled most features."
+            , action = Nothing
             }
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
+        ClearElmStuff ->
+            ( model
+            , Cmd.batch
+                [ Cmds.clearElmStuff
+                , Cmds.notify NotificationReceived
+                    { level = Notification.Info
+                    , title = "Compiler Cache Cleared"
+                    , message = "All cached compiler artifacts have been removed. Your next build may take a while!"
+                    , action = Nothing
+                    }
+                ]
+            )
+
         KeyComboMsg keyComboMsg ->
             ( { model | keyCombo = KeyCombo.update keyComboMsg model.keyCombo }
             , Cmd.none
@@ -175,6 +184,7 @@ update msg model =
                         { level = Notification.Error
                         , title = "Creating Gist Failed"
                         , message = "We couldn't create a Gist for your project. Here's what GitHub said:\n" ++ apiError.explanation
+                        , action = Nothing
                         }
             )
 
@@ -215,18 +225,17 @@ update msg model =
                 { level = Notification.Error
                 , title = "JavaScript Error"
                 , message = "A JavaScript Error was thrown by your program:\n" ++ message
+                , action = Nothing
                 }
             )
 
-        ToggleEmbedLink ->
+        TogglePopouts popoutState ->
             ( { model
                 | popoutState =
-                    case model.popoutState of
-                        EmbedLinkOpen ->
-                            AllClosed
-
-                        _ ->
-                            EmbedLinkOpen
+                    if popoutState == model.popoutState then
+                        AllClosed
+                    else
+                        popoutState
               }
             , Cmd.none
             )
@@ -322,19 +331,6 @@ update msg model =
             , Cmd.none
             )
 
-        ToggleAbout ->
-            ( { model
-                | popoutState =
-                    case model.popoutState of
-                        AboutOpen ->
-                            AllClosed
-
-                        _ ->
-                            AboutOpen
-              }
-            , Cmd.none
-            )
-
         NotificationReceived notification ->
             ( { model
                 | notifications = notification :: model.notifications
@@ -380,6 +376,7 @@ update msg model =
                         { level = Notification.Success
                         , title = "Your Project Is Loaded!"
                         , message = "Ellie found the project and revision you asked for. It's loaded up and ready to be run."
+                        , action = Nothing
                         }
 
                 Err apiError ->
@@ -390,6 +387,7 @@ update msg model =
                             { level = Notification.Error
                             , title = "Failed To Load Project"
                             , message = "Ellie couldn't load the project you asked for. Here's what the server said:\n" ++ apiError.explanation
+                            , action = Nothing
                             }
             )
 
@@ -403,7 +401,17 @@ update msg model =
 
         CompileStageChanged stage ->
             ( { model | compileStage = stage }
-            , Cmd.none
+            , case stage of
+                CompileStage.Failed message ->
+                    Cmds.notify NotificationReceived
+                        { level = Notification.Error
+                        , title = "Compilation Failed!"
+                        , message = message ++ "\n\n" ++ "Sometimes it helps to clear the compiler cache and try again!"
+                        , action = Just Notification.ClearElmStuff
+                        }
+
+                _ ->
+                    Cmd.none
             )
 
         CompileForSaveStarted totalModules ->
@@ -413,6 +421,7 @@ update msg model =
                     { level = Notification.Info
                     , title = "Saving may take a while"
                     , message = "It looks like there are a lot of modules to compile. Please wait a moment while I build everything and save it!"
+                    , action = Nothing
                     }
               else
                 Cmd.none
@@ -428,99 +437,6 @@ update msg model =
             ( model
                 |> (\m -> { m | stagedHtmlCode = code })
             , Cmd.none
-            )
-
-        SaveRequested ->
-            if model.acceptedTermsVersion == Just model.latestTermsVersion then
-                model
-                    |> (\m -> { m | saveState = Loading })
-                    |> Model.commitStagedCode
-                    |> (\m -> ( m, Cmds.compile model True ))
-            else
-                ( { model | popoutState = Model.TermsOpen }
-                , Cmd.none
-                )
-
-        TermsAcceptanceStart termsVersion ->
-            ( model
-            , Api.acceptTerms termsVersion
-                |> Api.send TermsAcceptanceComplete
-            )
-
-        TermsAcceptanceComplete result ->
-            case result of
-                Ok _ ->
-                    { model
-                        | acceptedTermsVersion = Just model.latestTermsVersion
-                        , saveState = Loading
-                        , popoutState = AllClosed
-                    }
-                        |> Model.commitStagedCode
-                        |> (\m -> ( m, Cmds.compile model True ))
-
-                Err apiError ->
-                    ( model
-                    , Cmds.notify NotificationReceived
-                        { level = Notification.Error
-                        , title = "Accepting Terms Failed"
-                        , message = "Something went wrong while accepting our terms. This isn't supposed to happen, and we're working on fixing it! You can also try again."
-                        }
-                    )
-
-        SaveCompileSucceeded result ->
-            case model.acceptedTermsVersion of
-                Just termsVersion ->
-                    ( model
-                    , Api.uploadRevision result model.clientRevision termsVersion
-                        |> Task.attempt SaveUploadCompleted
-                    )
-
-                Nothing ->
-                    ( model, Cmd.none )
-
-        SaveCompileFailed message ->
-            let
-                _ =
-                    Debug.log "failed" message
-            in
-            ( model, Cmd.none )
-
-        SaveUploadCompleted saveResult ->
-            ( { model
-                | saveState =
-                    saveResult
-                        |> Result.map (\_ -> ())
-                        |> RemoteData.fromResult
-                , serverRevision =
-                    saveResult
-                        |> Result.map Success
-                        |> Result.withDefault model.serverRevision
-                , clientRevision =
-                    Result.withDefault model.clientRevision saveResult
-              }
-                |> Model.resetStagedCode
-            , Cmd.batch
-                [ saveResult
-                    |> Result.toMaybe
-                    |> Maybe.andThen .id
-                    |> Maybe.map SpecificRevision
-                    |> Maybe.map (Routing.construct >> Navigation.newUrl)
-                    |> Maybe.withDefault Cmd.none
-                , case saveResult of
-                    Ok _ ->
-                        Cmds.notify NotificationReceived
-                            { level = Notification.Success
-                            , title = "Your Project Was Saved"
-                            , message = "Ellie saved your project! Your revision number has been updated in the URL."
-                            }
-
-                    Err apiError ->
-                        Cmds.notify NotificationReceived
-                            { level = Notification.Error
-                            , title = "Failed To Save Project"
-                            , message = "Ellie couldn't save your project. Here's what the server said:\n" ++ apiError.explanation
-                            }
-                ]
             )
 
         OnlineChanged isOnline ->
@@ -556,6 +472,7 @@ update msg model =
                             { level = Notification.Error
                             , title = "Formatting Your Code Failed"
                             , message = "Ellie couldn't format your code. Here's what the server said:\n" ++ apiError.explanation
+                            , action = Nothing
                             }
                         , if apiError.statusCode == 500 then
                             Opbeat.capture
@@ -575,6 +492,20 @@ update msg model =
                 |> Model.updateClientRevision
                     (\r -> { r | packages = List.filter ((/=) package) r.packages })
             , Cmd.none
+            )
+
+        SaveMsg saveMsg ->
+            let
+                ( nextModel, notification, cmd ) =
+                    Save.update model saveMsg
+            in
+            ( nextModel
+            , Cmd.batch
+                [ notification
+                    |> Maybe.map (Cmds.notify NotificationReceived)
+                    |> Maybe.withDefault Cmd.none
+                , Cmd.map SaveMsg cmd
+                ]
             )
 
         NoOp ->

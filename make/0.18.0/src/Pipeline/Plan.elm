@@ -90,7 +90,7 @@ getFreshInterfaceInfo sourcePath interfacePath =
                             (\( maybeSourceTime, maybeInterfaceTime ) ->
                                 case ( maybeSourceTime, maybeInterfaceTime ) of
                                     ( Just sourceTime, Just interfaceTime ) ->
-                                        if Debug.log "diff" (sourceTime <= interfaceTime) then
+                                        if sourceTime <= interfaceTime then
                                             Just ( interfacePath, interfaceTime )
                                         else
                                             Nothing

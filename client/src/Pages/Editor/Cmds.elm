@@ -1,6 +1,7 @@
 port module Pages.Editor.Cmds
     exposing
-        ( compile
+        ( clearElmStuff
+        , compile
         , hasUnsavedWork
         , notify
         , openDebugger
@@ -68,6 +69,14 @@ port compileOnClientOut : ( String, String, Value, Bool ) -> Cmd msg
 port prepCompilerOut : String -> Cmd msg
 
 
+port clearElmStuffOut : () -> Cmd msg
+
+
+clearElmStuff : Cmd msg
+clearElmStuff =
+    clearElmStuffOut ()
+
+
 openDebugger : Cmd msg
 openDebugger =
     openDebuggerOut ()
@@ -97,13 +106,35 @@ compile model forSave =
         )
 
 
+compileForSave : Model -> Cmd msg
+compileForSave model =
+    compileOnClientOut
+        ( model.stagedHtmlCode
+        , model.stagedElmCode
+        , model.clientRevision
+            |> Revision.toDescription
+            |> .dependencies
+            |> List.map (\( l, r ) -> ( Name.toString l, Constraint.encoder r ))
+            |> Encode.object
+        , True
+        )
+
+
 prepCompiler : Version -> Cmd msg
 prepCompiler version =
     prepCompilerOut (Version.toString version)
 
 
-notify : (Notification -> msg) -> { title : String, level : Notification.Level, message : String } -> Cmd msg
-notify tagger { title, level, message } =
+type alias PartialNotification =
+    { title : String
+    , level : Notification.Level
+    , message : String
+    , action : Maybe Notification.Action
+    }
+
+
+notify : (Notification -> msg) -> PartialNotification -> Cmd msg
+notify tagger { title, level, message, action } =
     Time.now
-        |> Task.map (Notification level message title)
+        |> Task.map (Notification level message title action)
         |> Task.perform tagger

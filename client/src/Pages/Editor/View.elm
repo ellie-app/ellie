@@ -1,6 +1,8 @@
 module Pages.Editor.View exposing (view)
 
 import Data.Ellie.CompileStage as CompileStage exposing (CompileStage)
+import Data.Ellie.Notification as Notification
+import Data.Ellie.SaveState as SaveState
 import Extra.Html as Html
 import Html exposing (Html, button, div, header, iframe, main_, span, text)
 import Html.Attributes exposing (style)
@@ -9,6 +11,7 @@ import Pages.Editor.Classes exposing (..)
 import Pages.Editor.Model as Model exposing (Model, PopoutState(..))
 import Pages.Editor.Routing as Routing exposing (..)
 import Pages.Editor.Update as Update exposing (Msg(..))
+import Pages.Editor.Update.Save as UpdateSave
 import RemoteData exposing (RemoteData(..))
 import Shared.Icons as Icons
 import Shared.Utils as Utils
@@ -69,7 +72,7 @@ viewPopout model =
         TermsOpen ->
             Terms.view
                 { termsVersion = model.latestTermsVersion
-                , onAccept = TermsAcceptanceStart model.latestTermsVersion
+                , onAccept = SaveMsg <| UpdateSave.TermsAcceptanceStart model.latestTermsVersion
                 }
 
         AllClosed ->
@@ -196,11 +199,11 @@ viewEditors model =
 viewHeader : Model -> Html Msg
 viewHeader model =
     Header.view
-        { onSave = SaveRequested
+        { onSave = SaveMsg UpdateSave.Start
         , onCompile = CompileRequested
         , onFormat = FormattingRequested
-        , onAbout = ToggleAbout
-        , onEmbedLink = ToggleEmbedLink
+        , onAbout = TogglePopouts AboutOpen
+        , onEmbedLink = TogglePopouts EmbedLinkOpen
         , embedLinkButtonEnabled =
             Routing.isSpecificRevision model.currentRoute
         , saveButtonEnabled =
@@ -211,7 +214,7 @@ viewHeader model =
             RemoteData.isSuccess model.serverRevision
                 && model.isOnline
         , saveButtonOption =
-            if RemoteData.isLoading model.saveState then
+            if SaveState.isWorking model.saveState then
                 Header.Saving
             else if Model.isOwnedProject model && Model.isSavedProject model then
                 Header.Update
@@ -286,6 +289,11 @@ view model =
                 , Notifications.view
                     { notifications = model.notifications
                     , onClose = ClearNotification
+                    , onAction =
+                        \action ->
+                            case action of
+                                Notification.ClearElmStuff ->
+                                    ClearElmStuff
                     }
                 ]
             , viewSearch model

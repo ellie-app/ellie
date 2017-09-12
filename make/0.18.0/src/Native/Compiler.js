@@ -1,5 +1,31 @@
 var _user$project$Native_Compiler = (function () {
 
+  function ok(data) {
+    return { ctor: 'Ok', _0: data }
+  }
+
+  function err(data) {
+    return { ctor: 'Err', _0: data }
+  }
+
+  function parseErrors(errorsJson) {
+    try {
+      return errorsJson.map(function (e) {
+        return JSON.parse(e)
+      })
+    } catch (e) {
+      return [
+        {
+          tag: 'UNKNOWN',
+          overview: 'Compilation Failed',
+          details: errorsJson[0] || e.message,
+          region: { start: { line: 0, column: 0 }, end: { line: 0, column: 0 } },
+          type: 'error'
+        }
+      ]
+    }
+  }
+
   var parseDependencies = F2(function (p, source) {
     return _elm_lang$core$Native_Scheduler.nativeBinding(function (callback) {
       var packageArray = [p.user, p.project]
@@ -7,12 +33,30 @@ var _user$project$Native_Compiler = (function () {
       self.ElmCompiler
         .parse(packageArray, source)
         .then(function (result) {
+          // If the first value in the array isn't also an array we know the
+          // parser encountered compiler errors
+          if (!Array.isArray(result[0])) {
+            callback(
+              _elm_lang$core$Native_Scheduler.succeed(
+                err(parseErrors(result))
+              )
+            )
+            return
+          }
+
+          // otherwise we can assume things worked out!
           var moduleName = _elm_lang$core$Native_List.fromArray(result[0])
           var imports = _elm_lang$core$Native_List.fromArray(result[1].map(_elm_lang$core$Native_List.fromArray))
-          callback(_elm_lang$core$Native_Scheduler.succeed({ _0: moduleName, _1: imports }))
+          callback(
+            _elm_lang$core$Native_Scheduler.succeed(
+              ok({ _0: moduleName, _1: imports, ctor: '_Tuple2' })
+            )
+          )
         })
         .catch(function (error) {
-          callback(_elm_lang$core$Native_Scheduler.fail(_elm_lang$core$Native_List.fromArray([error.message])))
+          callback(
+            _elm_lang$core$Native_Scheduler.fail(error.message)
+          )
         })
     })
   })
@@ -42,33 +86,29 @@ var _user$project$Native_Compiler = (function () {
           var errorsOrInterface = result[1]
           var elmo = result[2]
           if (success) {
-            callback(_elm_lang$core$Native_Scheduler.succeed({
-              _0: { ctor: 'Interface', _0: errorsOrInterface },
-              _1: elmo
-            }))
+            callback(
+              _elm_lang$core$Native_Scheduler.succeed(
+                ok({
+                  _0: { ctor: 'Interface', _0: errorsOrInterface },
+                  _1: elmo,
+                  ctor: '_Tuple2'
+                })
+              )
+            )
           } else {
-            var parsedErrors
-            try {
-              parsedErrors = errorsOrInterface.map(function (e) {
-                return JSON.parse(e)
-              })
-            } catch (e) {
-              parsedErrors = [
-                {
-                  tag: 'UNKNOWN',
-                  overview: 'Compilation Failed',
-                  details: errorsOrInterface[0] || e.message,
-                  region: { start: { line: 0, column: 0 }, end: { line: 0, column: 0 } },
-                  type: 'error'
-                }
-              ]
-            }
-
-            callback(_elm_lang$core$Native_Scheduler.fail(parsedErrors))
+            callback(
+              _elm_lang$core$Native_Scheduler.succeed(
+                err(
+                  parseErrors(errorsOrInterface)
+                )
+              )
+            )
           }
         })
         .catch(function (error) {
-          callback(_elm_lang$core$Native_Scheduler.fail([error.message]))
+          callback(
+            _elm_lang$core$Native_Scheduler.fail(error.message)
+          )
         })
       })
   })

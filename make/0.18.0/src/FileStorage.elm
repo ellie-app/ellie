@@ -1,4 +1,4 @@
-module FileStorage exposing (exists, isOlderThan, modified, read, write)
+module FileStorage exposing (exists, isOlderThan, modified, read, remove, write)
 
 import Data.FilePath as FilePath exposing (FilePath)
 import Json.Decode as Decode exposing (Decoder, Value)
@@ -69,6 +69,13 @@ exists path =
                     |> Decode.decodeValue (Decode.null False)
                     |> Result.withDefault True
             )
+
+
+remove : FilePath -> Task String ()
+remove path =
+    path
+        |> FilePath.resolve
+        |> Native.Storage.deleteStartsWith
 
 
 negativeInfinity : Time
