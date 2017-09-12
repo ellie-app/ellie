@@ -54,7 +54,8 @@ module.exports = {
     },
     plugins: [
       new webpack.DefinePlugin({
-        'CDN_BASE': JSON.stringify(process.env.CDN_BASE)
+        'CDN_BASE': JSON.stringify(process.env.CDN_BASE),
+        'ENV': JSON.stringify(process.env.NODE_ENV),
       }),
       // new UglifyJsPlugin({
       //   compress: {
