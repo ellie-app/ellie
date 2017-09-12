@@ -63,7 +63,7 @@ const init = (sourceUrl, onProgress) => {
   return SourceLoader
     .load(sourceUrl, onProgress)
     .then(url => {
-      const numberOfWorkers = 1//navigator.hardwareConcurrency || 4
+      const numberOfWorkers = ENV === 'production' ? (navigator.hardwareConcurrency || 4) : 1
       return Promise.all(
         [...Array(numberOfWorkers).keys()].map(() => startChild(url))
       )

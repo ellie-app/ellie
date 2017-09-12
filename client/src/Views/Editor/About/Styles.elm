@@ -3,7 +3,6 @@ module Views.Editor.About.Styles exposing (..)
 import Css exposing (..)
 import Css.Namespace
 import Shared.Colors as Colors
-import Shared.Constants as Constants
 import Views.Editor.About.View exposing (CssClasses(..), namespace)
 
 
@@ -35,41 +34,5 @@ styles =
             [ color inherit
             , textDecoration none
             , fontWeight (int 700)
-            ]
-        , Css.class Creators
-            [ paddingTop (px 12)
-            , borderTop3 (px 2) solid (hex Colors.white)
-            ]
-        , Css.class CreatorLine
-            [ textAlign center
-            ]
-        , Css.class Logo
-            [ fontFamilies [ Constants.scriptFont ]
-            , fontSize (px 20)
-            ]
-        , Css.class ImagesAndHsLogo
-            [ displayFlex
-            , property "justify-content" "space-between"
-            , alignItems center
-            , paddingTop (px 12)
-            ]
-        , Css.class PartnerImageContainer
-            [ displayFlex
-            , flexDirection column
-            , alignItems center
-            , textDecoration none
-            , color inherit
-            ]
-        , Css.class PartnerImage
-            [ width (px 48)
-            , height (px 48)
-            , borderRadius (pct 50)
-            ]
-        , Css.class HsLogoImage
-            [ width (px 170)
-            , height (px 45)
-            , backgroundImage (url <| Constants.asset "images/humblespark_logo.png")
-            , backgroundSize (pct 102)
-            , marginTop (px -16)
             ]
         ]
