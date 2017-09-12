@@ -21,7 +21,7 @@
         "elm-lang/svg": "2.0.0 <= v <= 2.0.0",
         "elm-lang/window": "1.0.1 <= v <= 1.0.1",
         "evancz/url-parser": "2.0.1 <= v <= 2.0.1",
-        "krisajenkins/remotedata": "4.3.0 <= v <= 4.3.0",
+        "krisajenkins/remotedata": "4.3.1 <= v <= 4.3.1",
         "lukewestby/elm-http-builder": "5.1.0 <= v <= 5.1.0",
         "lukewestby/http-extra": "2.0.0 <= v < 3.0.0",
         "pablohirafuji/elm-markdown": "2.0.4 <= v < 3.0.0",
