@@ -5,10 +5,14 @@ export const init = listener => {
   let requestId = 0
   const worker = Elm.Main.worker()
 
+  const compilerVersion = '0.18.0'
+  const compilerTag = ENV === 'production' ? '' : '-dev'
+  const compilerPath = `${CDN_BASE}/elm-compilers/${compilerVersion}${compilerTag}.js`
+
   const compilerPromise =
     Compiler
       .init(
-        CDN_BASE + '/elm-compilers/0.18.0-dev.js',
+        compilerPath,
         percentage => worker.ports.msgsIn.send({ type: 'LoadedMoreCode', args: [percentage] })
       )
       .then(ElmCompiler => self.ElmCompiler = ElmCompiler)
