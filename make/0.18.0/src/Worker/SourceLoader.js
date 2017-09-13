@@ -1,5 +1,5 @@
 const hackCompilerSizes = {
-  '0.18.0': 747343
+  '0.18.0': 4730627
 }
 
 const withDb = (fn) => {
