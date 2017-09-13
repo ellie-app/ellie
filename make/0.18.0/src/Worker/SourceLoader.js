@@ -1,3 +1,7 @@
+const hackCompilerSizes = {
+  '0.18.0': 747343
+}
+
 const withDb = (fn) => {
   return new Promise((resolve, reject) => {
     var open = indexedDB.open('ElmCompiler:SourceLoader')
@@ -57,10 +61,11 @@ const fetchScript = (path, onProgress) => {
       if (request.status != 200) {
         reject({status: request.status, text: request.responseText})
       } else {
+        onProgress(1)
         resolve(new Blob([request.responseText]))
       }
     })
-    request.addEventListener('progress', event => onProgress(event.loaded/event.total))
+    request.addEventListener('progress', event => onProgress(event.loaded/hackCompilerSizes['0.18.0']))
     request.open('GET', path)
     request.setRequestHeader('Accept', 'application/javascript')
     request.send()
