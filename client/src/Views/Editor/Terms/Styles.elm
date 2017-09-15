@@ -1,24 +1,9 @@
-module Views.Editor.Terms.Styles exposing (keyFrames, styles)
+module Views.Editor.Terms.Styles exposing (styles)
 
 import Css exposing (..)
 import Css.Namespace as Namespace
-import Extra.Css.Animation as Animation exposing (KeyFrames, animation, ease, from, infinite, to)
 import Shared.Colors as Colors
 import Views.Editor.Terms.View exposing (..)
-
-
-flash : KeyFrames
-flash =
-    Animation.keyFrames
-        [ ( to, [ opacity (num 0.6) ] )
-        , ( from, [ opacity (num 0.2) ] )
-        ]
-
-
-keyFrames : List KeyFrames
-keyFrames =
-    [ flash
-    ]
 
 
 styles : Stylesheet

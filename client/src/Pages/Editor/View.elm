@@ -55,6 +55,8 @@ viewPopout model =
     case model.popoutState of
         AboutOpen ->
             About.view
+                { latestTermsVersion = model.latestTermsVersion
+                }
 
         EmbedLinkOpen ->
             case model.currentRoute of

@@ -41,7 +41,6 @@ keyFrames : String
 keyFrames =
     Animation.compile
         [ Button.keyFrames
-        , Terms.keyFrames
         ]
 
 
