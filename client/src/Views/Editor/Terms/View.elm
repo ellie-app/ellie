@@ -24,7 +24,7 @@ view config =
         [ div [ class [ Content ] ]
             [ text "Before saving, please accept our "
             , a
-                [ href <| "/a/terms/" ++ TermsVersion.toString config.termsVersion
+                [ href <| TermsVersion.link config.termsVersion
                 , target "_blank"
                 , class [ Link ]
                 ]

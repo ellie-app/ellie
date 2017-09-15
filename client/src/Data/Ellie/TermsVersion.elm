@@ -4,6 +4,7 @@ module Data.Ellie.TermsVersion
         , decoder
         , encoder
         , fromInt
+        , link
         , toString
         )
 
@@ -14,6 +15,11 @@ import Json.Encode as Encode exposing (Value)
 
 type TermsVersion
     = TermsVersion Int
+
+
+link : TermsVersion -> String
+link termsVersion =
+    "/a/terms/" ++ toString termsVersion
 
 
 decoder : Decoder TermsVersion

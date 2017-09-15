@@ -88,30 +88,27 @@ viewItem : (Notification -> msg) -> (Notification.Action -> msg) -> Notification
 viewItem onClose onAction notification =
     div
         [ class [ Item ]
-        , style "background-color" <| color notification.level
+        , style "border-color" <| color notification.level
         ]
         [ div [ class [ ItemTitle ] ] [ text notification.title ]
         , div [ class [ ItemTimestamp ] ] [ text <| formatDate (Date.fromTime notification.timestamp) ]
         , div [ class [ ItemMessage ] ] [ text <| String.trim notification.message ]
-        , case notification.action of
-            Just action ->
-                div [ class [ ItemAction ] ]
-                    [ button
+        , div [ class [ ItemActions ] ]
+            [ button
+                [ class [ ItemActionButton, CloseButton ]
+                , onClick (onClose notification)
+                ]
+                [ text "Dismiss" ]
+            , case notification.action of
+                Just action ->
+                    button
                         [ class [ ItemActionButton ]
-                        , onClick <| onAction Notification.ClearElmStuff
-                        , style "color" <| color notification.level
+                        , onClick <| onAction action
                         ]
-                        [ text <| actionLabel Notification.ClearElmStuff
-                        ]
-                    ]
+                        [ text <| actionLabel action ]
 
-            Nothing ->
-                Html.none
-        , button
-            [ class [ CloseButton ]
-            , onClick (onClose notification)
-            ]
-            [ Icons.closeEmpty
+                Nothing ->
+                    Html.none
             ]
         ]
 
@@ -141,7 +138,7 @@ type CssClasses
     | ItemTitle
     | ItemTimestamp
     | ItemMessage
-    | ItemAction
+    | ItemActions
     | ItemActionButton
     | CloseButton
 

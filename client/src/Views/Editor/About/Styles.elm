@@ -29,6 +29,8 @@ styles =
             ]
         , Css.class Paragraph
             [ fontSize (px 16)
+            , lastChild
+                [ marginBottom zero ]
             ]
         , Css.class Link
             [ color inherit
