@@ -109,7 +109,11 @@ compiling total complete =
         progressBar =
             ProgressBar.view
                 { percentage = 0.05 + (toFloat complete / toFloat total) * 0.9
-                , label = Just <| toString complete ++ " / " ++ toString total ++ " Modules Compiled"
+                , label =
+                    if total == 1 then
+                        Just "Compiling Elm code"
+                    else
+                        Just <| toString complete ++ " / " ++ toString total ++ " Modules Compiled"
                 }
 
         subtitleContent =
