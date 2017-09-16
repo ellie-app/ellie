@@ -184,7 +184,7 @@ def organize_packages(
 
 
 def download_searchable_packages() -> Dict[PackageName, SearchablePackages]:
-    body = s3.Object('cdn.ellie-app.com',
+    body = s3.Object(BUCKET_NAME,
                      'package-artifacts/searchable.json').get()['Body']
     data = body.read()
     packages = list(
