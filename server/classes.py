@@ -195,6 +195,10 @@ class Package(object):
         self.name = name
         self.version = version
 
+    def __repr__(self) -> str:
+        return '<Package ' + self.name.user + '/' + \
+            self.name.project + '@' + str(self.version) + '>'
+
     def to_json(self) -> object:
         return [self.name.to_json(), self.version.to_json()]
 
@@ -284,7 +288,7 @@ def timestamp() -> int:
 ALPHABET = '23456789bcdfghjkmnpqrstvwxyzBCDFGHJKLMNPQRSTVWXYZ'
 BASE_LENGTH = len(ALPHABET)
 SEQ_ID = 0
-RELEASE_ID = int(os.environ['HEROKU_RELEASE_VERSION'].lstrip('v'))
+RELEASE_ID = int(os.environ.get('HEROKU_RELEASE_VERSION', '0').lstrip('v'))
 OUR_EPOCH = timestamp()
 
 
