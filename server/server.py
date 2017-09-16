@@ -313,7 +313,8 @@ def new() -> Any:
 @app.route('/<project_id:project_id>/<int(min=0):revision_number>')
 def existing(project_id: ProjectId, revision_number: int) -> Any:
     if project_id.is_old:
-        url = url_for('existing', project_id, revision_number)
+        url = url_for('existing', project_id=project_id,
+                      revision_number=revision_number)
         return redirect(url, code=301)
 
     revision = storage.get_revision(project_id, revision_number)
@@ -350,7 +351,8 @@ def terms(terms_version: int) -> Any:
 @app.route('/embed/<project_id:project_id>/<int(min=0):revision_number>')
 def embed(project_id: ProjectId, revision_number: int) -> Any:
     if project_id.is_old:
-        url = url_for('embed', project_id, revision_number)
+        url = url_for('embed', project_id=project_id,
+                      revision_number=revision_number)
         return redirect(url, code=301)
 
     data = {}
