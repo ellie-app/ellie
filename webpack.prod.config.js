@@ -6,6 +6,8 @@ const ManifestPlugin = require('webpack-manifest-plugin')
 const Md5Hash = require('webpack-md5-hash')
 const CopyPlugin = require('copy-webpack-plugin')
 
+const generatedElmCss = path.resolve(__dirname, 'client/elm-stuff/generated-code/rtfeldman/elm-css/output.css')
+
 module.exports = {
   cache: true,
   target: 'web',
@@ -15,8 +17,8 @@ module.exports = {
   },
 
   entry: {
-    editor: ['es6-promise', path.join(__dirname, 'client/src/Pages/Editor/index.js')],
-    embed: ['es6-promise', path.join(__dirname, 'client/src/Pages/Embed/index.js')],
+    editor: ['es6-promise', generatedElmCss, path.join(__dirname, 'client/src/Pages/Editor/index.js')],
+    embed: ['es6-promise', generatedElmCss, path.join(__dirname, 'client/src/Pages/Embed/index.js')],
   },
 
   output: {
@@ -59,38 +61,6 @@ module.exports = {
         loader: 'json-loader'
       },
       {
-        test: /Editor\/Stylesheets\.elm$/,
-        loader: ExtractTextPlugin.extract({
-          fallback: 'style-loader',
-          use: [
-            'css-loader',
-            'postcss-loader',
-            {
-              loader: 'elm-css-webpack-loader',
-              options: {
-                module: 'Pages.Editor.Stylesheets'
-              }
-            }
-          ]
-        }),
-      },
-      {
-        test: /Embed\/Stylesheets\.elm$/,
-        loader: ExtractTextPlugin.extract({
-          fallback: 'style-loader',
-          use: [
-            'css-loader',
-            'postcss-loader',
-            {
-              loader: 'elm-css-webpack-loader',
-              options: {
-                module: 'Pages.Embed.Stylesheets'
-              }
-            }
-          ]
-        }),
-      },
-      {
         test:    /Main\.elm$/,
         exclude: [/elm-stuff/, /node_modules/],
         loaders:  [
@@ -104,7 +74,7 @@ module.exports = {
               { pattern: /\%ENV\%/g, replacement: () => 'production' },
             ]
           }),
-          'elm-webpack-loader?yes',
+          `elm-webpack-loader?yes&cwd=${path.join(__dirname, 'client')}`,
         ]
       },
     ]
