@@ -3,6 +3,8 @@ const webpack = require('webpack')
 const StringReplacePlugin = require('string-replace-webpack-plugin')
 const CopyPlugin = require('copy-webpack-plugin')
 
+const generatedElmCss = path.resolve(__dirname, 'client/elm-stuff/generated-code/rtfeldman/elm-css/output.css')
+
 module.exports = {
   cache: true,
   target: 'web',
@@ -12,8 +14,8 @@ module.exports = {
   },
 
   entry: {
-    editor: ['es6-promise', 'webpack-dev-server/client?http://localhost:8000/', path.join(__dirname, 'client/src/Pages/Editor/index.js')],
-    embed: ['es6-promise', 'webpack-dev-server/client?http://localhost:8000/', path.join(__dirname, 'client/src/Pages/Embed/index.js')]
+    editor: ['es6-promise/auto', generatedElmCss, 'webpack-dev-server/client?http://localhost:8000/', path.join(__dirname, 'client/src/Pages/Editor/index.js')],
+    embed: ['es6-promise/auto', generatedElmCss, 'webpack-dev-server/client?http://localhost:8000/', path.join(__dirname, 'client/src/Pages/Embed/index.js')]
   },
 
   output: {
@@ -102,7 +104,7 @@ module.exports = {
               { pattern: /\%ENV\%/g, replacement: () => 'development' },
             ]
           }),
-          'elm-webpack-loader?yes&debug',
+          `elm-webpack-loader?yes&debug&cwd=${path.join(__dirname, 'client')}`,
         ]
       },
       {

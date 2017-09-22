@@ -38,7 +38,12 @@
     "webpack-md5-hash": "0.0.5"
   },
   "scripts": {
-    "watch": "webpack-dev-server --watch --config ./webpack.dev.config.js",
+    "elm-css:build": "cd client && elm-css -o elm-stuff/generated-code/rtfeldman/build",
+    "elm-css:concat": "find client/elm-stuff/generated-code/rtfeldman/build -name '*.css' | xargs cat > client/elm-stuff/generated-code/rtfeldman/elm-css/output.css",
+    "elm-css": "npm run elm-css:build && npm run elm-css:concat",
+    "watch:elm-css": "nodemon --exec \"npm run elm-css\" --watch client/css -e elm",
+    "watch:webpack": "webpack-dev-server --watch --config ./webpack.dev.config.js",
+    "watch": "run-p watch:**",
     "clean": "rm -rf ./build",
     "install:elm": "elm-package install --yes",
     "clean:elm": "rm -rf ./elm-stuff/build-artifacts/0.18.0/user",

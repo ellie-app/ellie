@@ -3,38 +3,47 @@ module Pages.Embed.View exposing (view)
 import Data.Ellie.Revision as Revision exposing (Revision, Snapshot(..))
 import Data.Ellie.RevisionId as RevisionId exposing (RevisionId)
 import Data.Elm.Compiler.Error as CompilerError
+import Extra.Html.Attributes as Attributes
 import Html exposing (Html, a, button, div, header, iframe, span, text)
 import Html.Attributes exposing (href, src, style, target)
 import Html.Events exposing (onClick)
-import Pages.Embed.Classes exposing (..)
 import Pages.Embed.Model as Model exposing (Model, Tab(..))
 import Pages.Embed.Routing exposing (Route(..))
 import Pages.Embed.Update as Update exposing (Msg(..))
+import Pages.Embed.View.Styles as Styles
 import RemoteData exposing (RemoteData(..))
 import Shared.Constants as Constants
 import Shared.Icons as Icons
-import Views.Editors.View as Editors
-import Views.Output.View as Output
+import Views.Editors as Editors
+import Views.Output as Output
+
+
+attrWhen : Html.Attribute msg -> Bool -> Html.Attribute msg
+attrWhen attr cond =
+    if cond then
+        attr
+    else
+        Attributes.none
 
 
 viewNotFound : Html Msg
 viewNotFound =
-    div [ class [ FailureContainer ] ]
-        [ div [ class [ FailureTitle ] ]
+    div [ Styles.failureContainer ]
+        [ div [ Styles.failureTitle ]
             [ text "Not found!" ]
-        , div [ class [ FailureMessage ] ]
+        , div [ Styles.failureMessage ]
             [ text "We couldn't find the project you asked for." ]
         ]
 
 
 viewFailure : String -> Html Msg
 viewFailure message =
-    div [ class [ FailureContainer ] ]
-        [ div [ class [ FailureTitle ] ]
+    div [ Styles.failureContainer ]
+        [ div [ Styles.failureTitle ]
             [ text "Oh no!" ]
-        , div [ class [ FailureMessage ] ]
+        , div [ Styles.failureMessage ]
             [ text "Something went wrong while loading this project. The server said:" ]
-        , div [ class [ FailureDetails ] ]
+        , div [ Styles.failureDetails ]
             [ text message ]
         ]
 
@@ -43,14 +52,11 @@ viewHeaderButton : Tab -> Tab -> Html Msg -> String -> Html Msg
 viewHeaderButton activeTab myTab icon label =
     button
         [ onClick <| SwitchTab myTab
-        , classList
-            [ ( HeaderTab, True )
-            , ( HeaderTabActive, activeTab == myTab )
-            ]
+        , Styles.headerTab
+        , attrWhen Styles.headerTabActive <| activeTab == myTab
         ]
-        [ div [ class [ HeaderTabInner ] ]
-            [ span [ class [ HeaderTabIcon ] ]
-                [ icon ]
+        [ div [ Styles.headerTabInner ]
+            [ span [ Styles.headerTabIcon ] [ icon ]
             , text label
             ]
         ]
@@ -58,22 +64,22 @@ viewHeaderButton activeTab myTab icon label =
 
 viewHeader : Tab -> RevisionId -> Html Msg
 viewHeader activeTab { projectId, revisionNumber } =
-    header [ class [ Header ] ]
-        [ div [ class [ HeaderLeft ] ]
+    header [ Styles.header ]
+        [ div [ Styles.headerLeft ]
             [ viewHeaderButton activeTab ElmTab Icons.elmLogo "Elm"
             , viewHeaderButton activeTab HtmlTab Icons.code "HTML"
             , viewHeaderButton activeTab ResultsTab Icons.eye "Results"
             ]
-        , div [ class [ HeaderRight ] ]
+        , div [ Styles.headerRight ]
             [ a
-                [ class [ HeaderLink, HeaderLinkInner ]
+                [ Styles.headerLink
+                , Styles.headerLinkInner
                 , href <| Constants.editorBase ++ "/" ++ projectId ++ "/" ++ toString revisionNumber
                 , target "_blank"
                 ]
-                [ span [ class [ HeaderLinkIcon ] ]
-                    [ Icons.edit ]
+                [ span [ Styles.headerLinkIcon ] [ Icons.edit ]
                 , span [] [ text "Edit on " ]
-                , span [ class [ HeaderLinkLogo ] ] [ text " Ellie" ]
+                , span [ Styles.headerLinkLogo ] [ text " Ellie" ]
                 ]
             ]
         ]
@@ -98,7 +104,7 @@ viewResultsUploaded : RevisionId -> Html Msg
 viewResultsUploaded revisionId =
     iframe
         [ src <| iframeSrc revisionId
-        , class [ Iframe ]
+        , Styles.iframe
         ]
         []
 
@@ -125,10 +131,8 @@ viewResults revision =
 viewLoaded : Model -> Revision -> Html Msg
 viewLoaded model revision =
     div
-        [ classList
-            [ ( LoadedContainer, True )
-            , ( LoadingContainer, not (RemoteData.isSuccess model.revision) )
-            ]
+        [ Styles.loadedContainer
+        , attrWhen Styles.loadingContainer <| not (RemoteData.isSuccess model.revision)
         ]
         [ case model.currentRoute of
             SpecificRevision revisionId ->
@@ -136,12 +140,10 @@ viewLoaded model revision =
 
             _ ->
                 text ""
-        , div [ class [ WorkArea ] ]
+        , div [ Styles.workArea ]
             [ div
-                [ classList
-                    [ ( WorkAreaTabHidden, ElmTab /= model.tab )
-                    , ( WorkAreaTab, True )
-                    ]
+                [ attrWhen Styles.workAreaTabHidden <| ElmTab /= model.tab
+                , Styles.workAreaTab
                 ]
                 [ viewElm
                     revision.elmCode
@@ -154,17 +156,13 @@ viewLoaded model revision =
                     )
                 ]
             , div
-                [ classList
-                    [ ( WorkAreaTabHidden, HtmlTab /= model.tab )
-                    , ( WorkAreaTab, True )
-                    ]
+                [ attrWhen Styles.workAreaTabHidden <| HtmlTab /= model.tab
+                , Styles.workAreaTab
                 ]
                 [ viewHtml revision.htmlCode ]
             , div
-                [ classList
-                    [ ( WorkAreaTabHidden, ResultsTab /= model.tab )
-                    , ( WorkAreaTab, True )
-                    ]
+                [ attrWhen Styles.workAreaTabHidden <| ResultsTab /= model.tab
+                , Styles.workAreaTab
                 ]
                 [ viewResults revision ]
             ]
@@ -173,7 +171,7 @@ viewLoaded model revision =
 
 view : Model -> Html Msg
 view model =
-    div [ class [ Container ] ]
+    div [ Styles.container ]
         [ case model.currentRoute of
             NotFound ->
                 viewNotFound

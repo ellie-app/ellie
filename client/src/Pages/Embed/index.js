@@ -1,5 +1,3 @@
-import 'es6-promise/auto'
-import './Stylesheets.elm'
 import initCodeMirror from '../../Views/Editors/CodeMirror'
 
 initCodeMirror()
