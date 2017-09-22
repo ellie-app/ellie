@@ -20,7 +20,7 @@
     "copy-webpack-plugin": "4.0.1",
     "css-loader": "0.28.4",
     "elm": "0.18.0",
-    "elm-css-webpack-loader": "https://github.com/OzTK/elm-css-webpack-loader.git#6194f2be3f99e0a9d521c3cabf87b2898cb4fa6b",
+    "elm-css": "0.7.0-beta8",
     "elm-format": "0.7.0-exp",
     "elm-test": "0.18.7",
     "elm-webpack-loader": "4.3.1",
