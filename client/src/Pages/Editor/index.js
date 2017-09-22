@@ -1,6 +1,5 @@
 import 'es6-promise/auto'
 import './Main.css'
-import './Stylesheets.elm'
 import initCodeMirror from '../../Views/Editors/CodeMirror'
 import fixHtml from './fixHtml'
 import captureOpbeat from '../../Shared/Opbeat'

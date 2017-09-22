@@ -4,26 +4,35 @@ import Data.Ellie.CompileStage as CompileStage exposing (CompileStage)
 import Data.Ellie.Notification as Notification
 import Data.Ellie.SaveState as SaveState
 import Extra.Html as Html
+import Extra.Html.Attributes as Attributes
 import Html exposing (Html, button, div, header, iframe, main_, span, text)
 import Html.Attributes exposing (style)
 import Html.Events exposing (onClick, onMouseDown)
-import Pages.Editor.Classes exposing (..)
 import Pages.Editor.Model as Model exposing (Model, PopoutState(..))
 import Pages.Editor.Routing as Routing exposing (..)
 import Pages.Editor.Update as Update exposing (Msg(..))
 import Pages.Editor.Update.Save as UpdateSave
+import Pages.Editor.View.Styles as Styles
 import RemoteData exposing (RemoteData(..))
 import Shared.Icons as Icons
 import Shared.Utils as Utils
-import Views.Editor.About.View as About
-import Views.Editor.EmbedLink.View as EmbedLink
-import Views.Editor.Header.View as Header
-import Views.Editor.Notifications.View as Notifications
-import Views.Editor.Search.View as Search
-import Views.Editor.Sidebar.View as Sidebar
-import Views.Editor.Terms.View as Terms
-import Views.Editors.View as Editors
-import Views.Output.View as Output
+import Views.Editor.About as About
+import Views.Editor.EmbedLink as EmbedLink
+import Views.Editor.Header as Header
+import Views.Editor.Notifications as Notifications
+import Views.Editor.Search as Search
+import Views.Editor.Sidebar as Sidebar
+import Views.Editor.Terms as Terms
+import Views.Editors as Editors
+import Views.Output as Output
+
+
+attrWhen : Html.Attribute msg -> Bool -> Html.Attribute msg
+attrWhen attr cond =
+    if cond then
+        attr
+    else
+        Attributes.none
 
 
 htmlHeightCss : Model -> String
@@ -81,7 +90,7 @@ viewPopout model =
             Html.none
 
 
-sidebarContext : Model -> Sidebar.ViewModel Msg
+sidebarContext : Model -> Sidebar.Config Msg
 sidebarContext model =
     { title = model.clientRevision.title
     , description = model.clientRevision.description
@@ -111,10 +120,10 @@ viewSearch model =
 
 viewWorkArea : Model -> Html Msg
 viewWorkArea model =
-    div [ class [ WorkArea ] ]
+    div [ Styles.workArea ]
         [ viewEditors model
         , div
-            [ class [ OutputResizeHandle ]
+            [ Styles.outputResizeHandle
             , style [ ( "left", Utils.numberToPercent model.resultSplit ) ]
             , onMouseDown ResultDragStarted
             ]
@@ -126,15 +135,13 @@ viewWorkArea model =
 viewEditors : Model -> Html Msg
 viewEditors model =
     div
-        [ class [ EditorsContainer ]
+        [ Styles.editorsContainer
         , style [ ( "width", Utils.numberToPercent model.resultSplit ) ]
         ]
         [ div
-            [ classList
-                [ ( EditorContainer, True )
-                , ( EditorContainerCollapse, Model.elmIsHidden model )
-                , ( EditorContainerFull, Model.htmlIsHidden model )
-                ]
+            [ Styles.editorContainer
+            , attrWhen Styles.editorContainerCollapse <| Model.elmIsHidden model
+            , attrWhen Styles.editorContainerFull <| Model.htmlIsHidden model
             , style
                 [ ( "height"
                   , elmHeightCss model
@@ -151,28 +158,27 @@ viewEditors model =
                         (Model.compileErrors model)
                 )
             , button
-                [ class [ OverlayButton, CollapseButton ]
+                [ Styles.overlayButton
+                , Styles.collapseButton
                 , onClick ToggleElmCollapse
                 ]
-                [ span [ class [ OverlayButtonText ] ] [ text "Elm" ]
-                , span [ class [ OverlayButtonIcon ] ] [ expandButtonIcon <| Model.elmIsHidden model ]
+                [ span [ Styles.overlayButtonText ] [ text "Elm" ]
+                , span [ Styles.overlayButtonIcon ] [ expandButtonIcon <| Model.elmIsHidden model ]
                 ]
             ]
         , Html.viewIf
             (not (Model.elmIsHidden model) && not (Model.htmlIsHidden model))
             (div
-                [ class [ EditorResizeHandle ]
+                [ Styles.editorResizeHandle
                 , style [ ( "top", elmHeightCss model ) ]
                 , onMouseDown EditorDragStarted
                 ]
                 []
             )
         , div
-            [ classList
-                [ ( EditorContainer, True )
-                , ( EditorContainerCollapse, Model.htmlIsHidden model )
-                , ( EditorContainerFull, Model.elmIsHidden model )
-                ]
+            [ Styles.editorContainer
+            , attrWhen Styles.editorContainerCollapse <| Model.htmlIsHidden model
+            , attrWhen Styles.editorContainerFull <| Model.elmIsHidden model
             , style
                 [ ( "height"
                   , htmlHeightCss model
@@ -188,11 +194,12 @@ viewEditors model =
                         model.stagedHtmlCode
                 )
             , button
-                [ class [ OverlayButton, CollapseButton ]
+                [ Styles.overlayButton
+                , Styles.collapseButton
                 , onClick ToggleHtmlCollapse
                 ]
-                [ span [ class [ OverlayButtonText ] ] [ text "HTML" ]
-                , span [ class [ OverlayButtonIcon ] ] [ expandButtonIcon <| Model.htmlIsHidden model ]
+                [ span [ Styles.overlayButtonText ] [ text "HTML" ]
+                , span [ Styles.overlayButtonIcon ] [ expandButtonIcon <| Model.htmlIsHidden model ]
                 ]
             ]
         ]
@@ -230,7 +237,7 @@ viewHeader model =
 viewOutput : Model -> Html Msg
 viewOutput model =
     div
-        [ class [ OutputContainer ]
+        [ Styles.outputContainer
         , style [ ( "width", Utils.numberToPercent (1 - model.resultSplit) ) ]
         ]
         [ case model.compileStage of
@@ -266,25 +273,18 @@ viewOutput model =
 view : Model -> Html Msg
 view model =
     div
-        [ classList
-            [ ( AppContainer, True )
-            , ( ResizeEw, model.resultDragging )
-            , ( ResizeNs, model.editorDragging )
-            ]
+        [ Styles.appContainer
+        , attrWhen Styles.resizeEw model.resultDragging
+        , attrWhen Styles.resizeNs model.editorDragging
         ]
         [ div
-            [ classList
-                [ ( AppContainerInner
-                  , True
-                  )
-                , ( LoadingRevision
-                  , RemoteData.isLoading model.serverRevision
-                        || RemoteData.isNotAsked model.serverRevision
-                  )
-                ]
+            [ Styles.appContainerInner
+            , attrWhen Styles.loadingRevision <|
+                RemoteData.isLoading model.serverRevision
+                    || RemoteData.isNotAsked model.serverRevision
             ]
             [ viewHeader model
-            , div [ class [ MainContainer ] ]
+            , div [ Styles.mainContainer ]
                 [ Sidebar.view <| sidebarContext model
                 , viewWorkArea model
                 , viewPopout model
