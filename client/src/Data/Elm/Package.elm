@@ -50,3 +50,13 @@ docsLink ( name, version ) =
         ++ name.project
         ++ "/"
         ++ Version.toString version
+
+
+codeLink : Package -> String
+codeLink ( name, version ) =
+    "http://github.com/"
+        ++ name.user
+        ++ "/"
+        ++ name.project
+        ++ "/tree/"
+        ++ Version.toString version

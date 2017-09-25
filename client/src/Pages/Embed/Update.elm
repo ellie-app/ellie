@@ -10,12 +10,12 @@ import Data.Ellie.ApiError as ApiError exposing (ApiError)
 import Data.Ellie.Revision as Revision exposing (Revision)
 import Data.Ellie.RevisionId as RevisionId exposing (RevisionId)
 import Data.Elm.Compiler.Error as CompilerError
+import Ellie.CodeMirror as CodeMirror
 import Navigation
 import Pages.Embed.Model as Model exposing (Model, Tab(..))
 import Pages.Embed.Routing as Routing exposing (Route(..))
 import RemoteData exposing (RemoteData(..))
 import Shared.Api as Api
-import Views.Editors as Editors
 
 
 resultOnError : (x -> Result y a) -> Result x a -> Result y a
@@ -52,11 +52,11 @@ update msg model =
         LoadRevisionCompleted (Ok revision) ->
             ( { model | revision = RemoteData.Success revision }
             , Cmd.batch
-                [ Editors.updateValue "elmEditor" revision.elmCode
-                , Editors.updateValue "htmlEditor" revision.htmlCode
+                [ CodeMirror.updateValue "elmEditor" revision.elmCode
+                , CodeMirror.updateValue "htmlEditor" revision.htmlCode
                 , case revision.snapshot of
                     Revision.Errored compileErrors ->
-                        Editors.updateLinter "elmEditor" <| List.map CompilerError.toLinterMessage compileErrors
+                        CodeMirror.updateLinter "elmEditor" <| List.map CompilerError.toLinterMessage compileErrors
 
                     _ ->
                         Cmd.none
@@ -96,7 +96,7 @@ initialize location =
         model.currentRoute
         ( model
         , Cmd.batch
-            [ Editors.setup "elmEditor"
+            [ CodeMirror.setup "elmEditor"
                 { vimMode = False
                 , theme = "material"
                 , mode = "elm"
@@ -104,7 +104,7 @@ initialize location =
                 , readOnly = True
                 , tabSize = 4
                 }
-            , Editors.setup "htmlEditor"
+            , CodeMirror.setup "htmlEditor"
                 { vimMode = False
                 , theme = "material"
                 , mode = "htmlmixed"

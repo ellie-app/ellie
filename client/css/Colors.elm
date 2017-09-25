@@ -1,5 +1,62 @@
 module Colors exposing (..)
 
+import Css exposing (..)
+
+
+boxShadowRight : Style
+boxShadowRight =
+    boxShadow5 (px 2) zero (px 4) zero <| rgba 0 0 0 0.75
+
+
+boxShadowBottom : Style
+boxShadowBottom =
+    boxShadow5 zero (px 2) (px 4) zero <| rgba 0 0 0 0.75
+
+
+boxShadowLeft : Style
+boxShadowLeft =
+    boxShadow5 (px -2) zero (px 4) zero <| rgba 0 0 0 0.75
+
+
+boxShadowBottomHover : Style
+boxShadowBottomHover =
+    boxShadow5 zero (px 3) (px 4) zero <| rgba 0 0 0 0.75
+
+
+boxShadowPopout : Style
+boxShadowPopout =
+    boxShadow5 zero (px 2) (px 8) (px 2) <| rgba 0 0 0 0.75
+
+
+darkMediumGray : Color
+darkMediumGray =
+    hex "292929"
+
+
+lightGray_ : Color
+lightGray_ =
+    hex "#DDDDDD"
+
+
+mediumGray_ : Color
+mediumGray_ =
+    hex "#525252"
+
+
+pink_ : Color
+pink_ =
+    hex "#FC6ECC"
+
+
+darkGray_ : Color
+darkGray_ =
+    hex "#1D1D1D"
+
+
+lightMediumGray : Color
+lightMediumGray =
+    hex "#9C9C9C"
+
 
 white : String
 white =

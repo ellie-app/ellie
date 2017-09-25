@@ -12,7 +12,7 @@ htmlStyles : Snippet
 htmlStyles =
     html
         [ height (pct 100)
-        , backgroundColor (hex Colors.darkGray)
+        , backgroundColor Colors.darkGray_
         ]
 
 
@@ -70,14 +70,13 @@ appContainer =
         , height (pct 100)
         , displayFlex
         , position relative
-        , backgroundColor (hex Colors.mediumGray)
         ]
 
 
 workArea : UniqueClass
 workArea =
     uniqueClass
-        [ width <| calc (pct 100) minus (px Constants.sidebarWidth)
+        [ width <| calc (pct 100) minus (px 240)
         , height (pct 100)
         , displayFlex
         , position relative
@@ -88,7 +87,7 @@ mainContainer : UniqueClass
 mainContainer =
     uniqueClass
         [ width (pct 100)
-        , height <| calc (pct 100) minus (px Constants.headerHeight)
+        , height <| calc (pct 100) minus (px 40)
         , displayFlex
         , position relative
         , zIndex (int 1)

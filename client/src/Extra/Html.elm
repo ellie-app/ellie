@@ -1,4 +1,4 @@
-module Extra.Html exposing (none, viewIf, viewIfLazy)
+module Extra.Html exposing (maybe, none, viewIf, viewIfLazy)
 
 import Html exposing (Html)
 
@@ -22,3 +22,8 @@ viewIfLazy predicate thunk =
         thunk ()
     else
         none
+
+
+maybe : Maybe (Html msg) -> Html msg
+maybe =
+    Maybe.withDefault none

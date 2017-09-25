@@ -51,46 +51,6 @@ module.exports = {
         loader: 'json-loader'
       },
       {
-        test: /Editor\/Stylesheets\.elm$/,
-        use: [
-          'style-loader',
-          'css-loader',
-          {
-            loader: 'elm-css-webpack-loader',
-            options: {
-              module: 'Pages.Editor.Stylesheets'
-            }
-          }
-        ]
-      },
-      {
-        test: /Embed\/Stylesheets\.elm$/,
-        use: [
-          'style-loader',
-          'css-loader',
-          {
-            loader: 'elm-css-webpack-loader',
-            options: {
-              module: 'Pages.Embed.Stylesheets'
-            }
-          }
-        ]
-      },
-      {
-        test:    /\.html$/,
-        exclude: /node_modules/,
-        loader:  'file-loader?name=[name].[ext]',
-      },
-      {
-        test: /ServiceWorker\.js$/,
-        exclude: /node_modules/,
-        loader: 'serviceworker-loader',
-      },
-      {
-        test: /\.worker\.js$/,
-        loader: 'worker-loader?inline'
-      },
-      {
         test:    /Main\.elm$/,
         exclude: [/elm-stuff/, /node_modules/],
         loaders:  [
@@ -104,16 +64,18 @@ module.exports = {
               { pattern: /\%ENV\%/g, replacement: () => 'development' },
             ]
           }),
-          `elm-webpack-loader?yes&debug&cwd=${path.join(__dirname, 'client')}`,
+          {
+            loader: 'elm-webpack-loader',
+            options: {
+              maxInstances: 1,
+              forceWatch: true,
+              cache: true,
+              yes: true,
+              debug: true,
+              cwd: path.join(__dirname, 'client')
+            }
+          }
         ]
-      },
-      {
-        test: /\.woff(2)?(\?v=[0-9]\.[0-9]\.[0-9])?$/,
-        loader: 'url-loader?limit=10000&mimetype=application/font-woff',
-      },
-      {
-        test: /\.(ttf|eot|svg)(\?v=[0-9]\.[0-9]\.[0-9])?$/,
-        loader: 'file-loader',
       },
     ]
   },
@@ -128,7 +90,7 @@ module.exports = {
     }),
     new StringReplacePlugin(),
     new CopyPlugin([
-      { from: path.join(__dirname, 'images'), to: 'images', toType: 'dir' }
+      { from: path.join(__dirname, 'client/images'), to: 'images', toType: 'dir' }
     ], {
       copyUnmodified: true
     })
@@ -139,6 +101,12 @@ module.exports = {
     stats: { colors: true },
     historyApiFallback: true,
     port: '8000',
+    allowedHosts: [
+      'http://localhost:5000'
+    ],
+    headers: {
+      'Access-Control-Allow-Origin': '*',
+    },
     watchOptions: {
       aggregateTimeout: 300,
       poll: 1000

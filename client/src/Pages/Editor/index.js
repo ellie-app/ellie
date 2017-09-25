@@ -1,10 +1,15 @@
 import 'es6-promise/auto'
 import './Main.css'
-import initCodeMirror from '../../Views/Editors/CodeMirror'
+import initCodeMirror from '../../Ellie/CodeMirror/Loader'
 import fixHtml from './fixHtml'
 import captureOpbeat from '../../Shared/Opbeat'
-import EditorsRunner from '../../Views/Editors/Runner'
+import CodeMirrorRunner from '../../Ellie/CodeMirror/Runner'
 import AwsRunner from '../../Shared/Aws/Runner'
+import Icon from '../../Ellie/Ui/Icon'
+import '../../Ellie/Ui/ProgressBar.css'
+import Layout from './Layout'
+
+Icon.load()
 
 const vimMode = window.location.search.indexOf('vim=true') !== -1
 initCodeMirror(vimMode)
@@ -38,7 +43,8 @@ initCodeMirror(vimMode)
 
     app.ports.opbeatCaptureOut.subscribe(captureOpbeat)
 
-    EditorsRunner.start(CodeMirror, app)
+    Layout.start(app)
+    CodeMirrorRunner.start(CodeMirror, app)
     AwsRunner.start(app)
 
     app.ports.pathChangedOut.subscribe(() => {
@@ -83,10 +89,7 @@ initCodeMirror(vimMode)
     window.addEventListener('message', function (event) {
       if (event.data.type === 'error') {
         app.ports.jsError.send(event.data.message)
-        return
       }
-
-      app.ports.windowMessageIn.send(event.data)
     })
 
 
