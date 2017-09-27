@@ -6,6 +6,20 @@ import Css.Extra exposing (..)
 import Css.File exposing (..)
 
 
+notifications : UniqueClass
+notifications =
+    uniqueClass
+        [ position absolute
+        , bottom zero
+        , right zero
+        , width (px 400)
+        , zIndex (int 10)
+        , padding (px 16)
+        , maxHeight (pct 100)
+        , overflowY auto
+        ]
+
+
 sidebar =
     uniqueClass
         [ width (px 240)
@@ -88,7 +102,7 @@ editorContainer =
     uniqueClass
         [ height (pct 50)
         , position relative
-        , backgroundColor (hex Colors.darkGray)
+        , backgroundColor Colors.darkMediumGray
         , firstChild
             [ borderBottom3 (px 1) solid Colors.darkGray_
             ]
@@ -173,60 +187,11 @@ resizeEw =
         ]
 
 
-embedLinkContainer : UniqueClass
-embedLinkContainer =
-    uniqueClass
-        [ position absolute
-        , zIndex (int 2)
-        , width (px 320)
-        , left (px 448)
-        , top (px 16)
-        ]
-
-
-overlayButton : UniqueClass
-overlayButton =
-    uniqueClass
-        [ position absolute
-        , property "background" "none"
-        , border zero
-        , color (hex Colors.white)
-        , displayFlex
-        , zIndex (int 7)
-        , cursor pointer
-        , borderRadius (px 3)
-        , padding (px 6)
-        , backgroundColor <|
-            rgba
-                (.r Colors.darkGrayRgb)
-                (.g Colors.darkGrayRgb)
-                (.b Colors.darkGrayRgb)
-                0.5
-        ]
-
-
 collapseButton : UniqueClass
 collapseButton =
     uniqueClass
-        [ top (px 6)
-        , right (px 6)
-        ]
-
-
-overlayButtonText : UniqueClass
-overlayButtonText =
-    uniqueClass
-        [ fontSize (px 16)
-        , textTransform uppercase
-        , lineHeight (px 16)
-        ]
-
-
-overlayButtonIcon : UniqueClass
-overlayButtonIcon =
-    uniqueClass
-        [ marginLeft (px 6)
-        , display block
-        , width (px 16)
-        , height (px 16)
+        [ top (px 8)
+        , right (px 12)
+        , position absolute
+        , zIndex (int 2)
         ]

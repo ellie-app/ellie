@@ -51,7 +51,7 @@ module.exports = {
         loader: 'json-loader'
       },
       {
-        test:    /Main\.elm$/,
+        test:    /\.elm$/,
         exclude: [/elm-stuff/, /node_modules/],
         loaders:  [
           StringReplacePlugin.replace({
@@ -72,7 +72,8 @@ module.exports = {
               cache: true,
               yes: true,
               debug: true,
-              cwd: path.join(__dirname, 'client')
+              cwd: path.join(__dirname, 'client'),
+              ignore: /generated-code/
             }
           }
         ]

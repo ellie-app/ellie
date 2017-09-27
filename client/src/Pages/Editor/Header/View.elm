@@ -194,7 +194,7 @@ view config =
                             , size = Button.Medium
                             , icon = Just Icon.Link
                             , label = "SHARE"
-                            , disabled = not config.embedLinkButtonEnabled
+                            , disabled = config.revisionId == Nothing
                             , attributes = []
                             , action = Button.none
                             }

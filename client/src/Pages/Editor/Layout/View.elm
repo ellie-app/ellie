@@ -1,5 +1,7 @@
 module Pages.Editor.Layout.View exposing (..)
 
+import Ellie.Ui.Button as Button
+import Ellie.Ui.Icon as Icon
 import Extra.Html as Html
 import Extra.Html.Attributes as Attributes exposing (style)
 import Html exposing (Html, aside, div, header, main_)
@@ -16,6 +18,7 @@ type alias Config msg =
     , sidebar : Html msg
     , output : Html msg
     , loading : Bool
+    , notifications : Html msg
     , model : Model
     , mapMsg : Msg -> msg
     , elmId : String
@@ -43,6 +46,25 @@ elmHeightCss model =
             ""
 
 
+viewCollapseButton : msg -> Bool -> String -> Html msg
+viewCollapseButton msg collapsed label =
+    div [ Styles.collapseButton ]
+        [ Button.view
+            { label = label
+            , disabled = False
+            , size = Button.Medium
+            , style = Button.Link
+            , attributes = []
+            , action = Button.click msg
+            , icon =
+                if collapsed then
+                    Just Icon.Unfold
+                else
+                    Just Icon.Fold
+            }
+        ]
+
+
 viewEditors : Config msg -> Html msg
 viewEditors config =
     div
@@ -60,6 +82,10 @@ viewEditors config =
                 , Attributes.cond (style "display" "none") <| config.model.editorCollapse == Model.JustHtmlOpen
                 ]
                 []
+            , viewCollapseButton
+                (config.mapMsg <| ToggleEditorCollapse Model.JustHtmlOpen)
+                (config.model.editorCollapse == Model.JustHtmlOpen)
+                "Elm"
             ]
         , Html.viewIf (config.model.editorCollapse == Model.BothOpen) <|
             div
@@ -79,6 +105,10 @@ viewEditors config =
                 , Attributes.cond (style "display" "none") <| config.model.editorCollapse == Model.JustElmOpen
                 ]
                 []
+            , viewCollapseButton
+                (config.mapMsg <| ToggleEditorCollapse Model.JustElmOpen)
+                (config.model.editorCollapse == Model.JustElmOpen)
+                "HTML"
             ]
         ]
 
@@ -110,6 +140,10 @@ view config =
                         , style "width" <| Utils.numberToPercent (1 - config.model.resultSplit)
                         ]
                         [ config.output ]
+                    , div
+                        [ Styles.notifications ]
+                        [ config.notifications
+                        ]
                     ]
                 ]
             ]

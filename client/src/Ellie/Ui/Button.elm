@@ -101,7 +101,8 @@ view config =
                     a
     in
     elemFn
-        [ Styles.button
+        [ Attributes.cond Styles.disabledLink config.disabled
+        , Styles.button
         , disabled config.disabled
         , styleClass config.style
         , sizeClass config.size

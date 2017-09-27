@@ -116,3 +116,11 @@ inner =
         [ displayFlex
         , alignItems center
         ]
+
+
+disabledLink : UniqueClass
+disabledLink =
+    uniqueClass
+        [ hover [ color Colors.lightMediumGray |> important ]
+        , cursor notAllowed
+        ]

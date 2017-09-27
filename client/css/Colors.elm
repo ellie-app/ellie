@@ -83,9 +83,19 @@ yellow =
     "#decb6b"
 
 
+yellow_ : Color
+yellow_ =
+    hex "#decb6b"
+
+
 green : String
 green =
     "#689f8e"
+
+
+green_ : Color
+green_ =
+    hex "#689f8e"
 
 
 blue : String
@@ -93,9 +103,19 @@ blue =
     "#82B1ff"
 
 
+blue_ : Color
+blue_ =
+    hex "#82B1ff"
+
+
 red : String
 red =
     "#ec5f67"
+
+
+red_ : Color
+red_ =
+    hex "#ec5f67"
 
 
 darkGray : String

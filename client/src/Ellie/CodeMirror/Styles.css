@@ -25,11 +25,11 @@
 }
 
 .CodeMirror-lint-tooltip {
-  background-color: #565868 !important;
+  background-color: #292929 !important;
   color: #e9eded !important;
-  border: #8D8D97 !important;
+  border: 0 !important;
   padding: 12px !important;
-  box-shadow: -6px 6px 15px -4px rgba(0, 0, 0, 0.5);
+  box-shadow: 0 2px 8px 2px rgba(0, 0, 0, 0.75);
   border-radius: 3px !important;
 }
 
@@ -41,11 +41,12 @@
 
 .CodeMirror-lint-mark-error, .CodeMirror-lint-mark-warning {
     background-image: none !important;
-    border-bottom-style: dotted;
+    border-bottom-style: dashed;
+    border-bottom-width: 1px !important;
 }
 
 .CodeMirror-lint-mark-error {
-  border-bottom-color: #FF5369;
+  border-bottom-color: #ec5f67;
 }
 
 .CodeMirror-lint-mark-warning {

@@ -101,19 +101,21 @@ viewSuccess iframeUrl =
 
 viewErrors : List Error -> List (Html msg)
 viewErrors errors =
-    List.map
-        (CompileError.view >> List.singleton >> div [])
-        errors
+    [ div [ Styles.errorsContainer ] <|
+        List.map
+            (CompileError.view >> List.singleton >> div [ Styles.error ])
+            errors
+    ]
 
 
 viewFailure : Config msg -> String -> List (Html msg)
 viewFailure config message =
-    [ div []
-        [ div [] [ text "Compilation Failed" ]
-        , div [] [ text message ]
+    [ div [ Styles.details ]
+        [ div [ Styles.detailsTitle ] [ text "Compilation Failed" ]
+        , div [ Styles.failureMessage ] [ text message ]
         ]
-    , div []
-        [ div [] [ text "Hint: sometimes clearing the compiler cache (elm-stuff) can help resolve compilation issues." ]
+    , div [ Styles.failureHint ]
+        [ div [ Styles.hintText ] [ text "Hint: sometimes clearing the compiler cache (elm-stuff) can help resolve compilation issues." ]
         , div []
             [ Button.view
                 { disabled = False

@@ -70,3 +70,52 @@ detailsExtraNotice =
         , textAlign center
         , maxWidth (px 360)
         ]
+
+
+failureMessage =
+    uniqueClass
+        [ backgroundColor Colors.mediumGray_
+        , borderLeft3 (px 1) solid Colors.pink_
+        , padding (px 12)
+        , marginTop (px 16)
+        , fontSize (px 16)
+        , whiteSpace preWrap
+        ]
+
+
+failureHint =
+    uniqueClass
+        [ backgroundColor Colors.darkMediumGray
+        , borderRadius (px 2)
+        , Colors.boxShadowBottom
+        , marginTop (px 24)
+        , padding (px 16)
+        , width <| calc (pct 100) minus (px 96)
+        , color Colors.lightGray_
+        , displayFlex
+        , flexDirection column
+        , alignItems center
+        ]
+
+
+hintText =
+    uniqueClass
+        [ paddingBottom (px 12)
+        , maxWidth (px 500)
+        , textAlign center
+        ]
+
+
+errorsContainer =
+    uniqueClass
+        [ padding3 (px 48) (px 48) (px 16)
+        , position relative
+        , width (pct 100)
+        ]
+
+
+error =
+    uniqueClass
+        [ marginBottom (px 24)
+        , lastChild [ marginBottom zero ]
+        ]
