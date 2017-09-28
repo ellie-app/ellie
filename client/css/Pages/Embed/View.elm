@@ -82,7 +82,7 @@ failureDetails : UniqueClass
 failureDetails =
     uniqueClass
         [ maxWidth (px 600)
-        , backgroundColor (hex Colors.darkGray)
+        , backgroundColor Colors.darkGray_
         , color (hex Colors.white)
         , borderRadius (px 3)
         , padding (px 12)
@@ -93,9 +93,8 @@ failureDetails =
 header : UniqueClass
 header =
     uniqueClass
-        [ backgroundColor (hex Colors.darkGray)
-        , borderBottom3 (px 1) solid (hex Colors.pink)
-        , property "border-image" <| Colors.pinkPurpleGradient ++ " 1"
+        [ backgroundColor Colors.darkGray_
+        , borderBottom3 (px 1) solid Colors.pink_
         , displayFlex
         , height (px 40)
         , property "justify-content" "space-between"
@@ -126,7 +125,6 @@ headerTab =
         , color (hex Colors.white)
         , fontSize (px 16)
         , lineHeight (px 16)
-        , textTransform uppercase
         , border zero
         , cursor pointer
         , margin zero
@@ -311,5 +309,6 @@ iframe =
         [ border zero
         , position relative
         , width (pct 100)
+        , backgroundColor (hex "fff")
         , height (pct 100)
         ]

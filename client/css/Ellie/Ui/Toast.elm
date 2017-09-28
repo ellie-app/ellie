@@ -28,12 +28,12 @@ container =
         , marginBottom (px 8)
         , padding (px 16)
         , position relative
-        , color (hex Colors.white)
+        , color Colors.lightGray_
         , property "align-items" "center"
         , Colors.boxShadowPopout
         , borderRadius (px 2)
         , lastChild [ marginBottom zero ]
-        , borderLeft3 (px 2) solid (hex Colors.green)
+        , borderLeft3 (px 2) solid Colors.green_
         ]
 
 
@@ -64,44 +64,19 @@ itemTimestamp =
         ]
 
 
-itemActions : UniqueClass
-itemActions =
-    uniqueClass
-        [ paddingTop (px 12)
-        ]
-
-
-buttonBase : Style
-buttonBase =
-    batch
-        [ fontFamily inherit
-        , fontSize (px 12)
-        , fontWeight bold
-        , textTransform uppercase
-        , padding (px 8)
-        , borderRadius (px 3)
-        , border zero
-        , cursor pointer
-        , margin2 zero (px 4)
-        , firstChild [ marginLeft zero ]
-        , lastChild [ marginRight zero ]
-        , color (hex Colors.white)
-        , boxShadow5 zero (px 2) (px 4) zero (rgba 0 0 0 0.5)
-        ]
-
-
-itemActionButton : UniqueClass
-itemActionButton =
-    uniqueClass
-        [ backgroundColor (hex Colors.red)
-        , buttonBase
-        ]
-
-
 closeButton : UniqueClass
 closeButton =
     uniqueClass
-        [ backgroundColor (hex Colors.mediumGray)
-        , color (hex Colors.white)
-        , buttonBase
+        [ color Colors.mediumGray_
+        , property "background" "none"
+        , position absolute
+        , border zero
+        , top (px 16)
+        , right (px 16)
+        , width (px 12)
+        , height (px 12)
+        , padding zero
+        , cursor pointer
+        , hover [ color Colors.lightMediumGray ]
+        , active [ color Colors.lightGray_ ]
         ]
