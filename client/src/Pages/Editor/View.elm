@@ -32,8 +32,18 @@ viewHeader model =
         , buttonsVisible =
             RemoteData.isSuccess model.serverRevision
                 && model.isOnline
-        , showTerms =
-            model.termsShown && (model.acceptedTermsVersion == Just model.latestTermsVersion)
+        , termsState =
+            case model.saveState of
+                SaveState.AwaitingTermsAcceptance ->
+                    Header.Visible
+                        (SaveMsg << UpdateSave.TermsAcceptanceStart)
+                        model.latestTermsVersion
+
+                SaveState.AcceptingTerms ->
+                    Header.Accepting model.latestTermsVersion
+
+                _ ->
+                    Header.Accepted
         , saveButtonOption =
             if SaveState.isWorking model.saveState then
                 Header.Saving

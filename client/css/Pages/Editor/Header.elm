@@ -3,6 +3,7 @@ module Pages.Editor.Header exposing (..)
 import Colors
 import Constants
 import Css exposing (..)
+import Css.Elements exposing (..)
 import Css.File exposing (..)
 
 
@@ -18,6 +19,18 @@ header =
         , position relative
         , zIndex (int 4)
         , padding2 zero (px 16)
+        ]
+
+
+termsLabel =
+    uniqueClass
+        [ color Colors.lightGray_
+        , descendants
+            [ a
+                [ color Colors.pink_
+                , textDecoration underline
+                ]
+            ]
         ]
 
 
