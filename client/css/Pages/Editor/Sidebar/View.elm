@@ -6,12 +6,34 @@ import Css.Elements exposing (..)
 import Css.File exposing (..)
 
 
+ad =
+    uniqueClass
+        [ width (pct 100)
+        , flexShrink (int 0)
+        , backgroundColor Colors.darkGray_
+        ]
+
+
+sections =
+    uniqueClass
+        [ position relative
+        , flexShrink (int 1)
+        , height (pct 100)
+        , overflowY hidden
+        , width (pct 100)
+        ]
+
+
 container : UniqueClass
 container =
     uniqueClass
         [ position relative
         , width (pct 100)
         , backgroundColor Colors.darkGray_
+        , displayFlex
+        , flexDirection column
+        , alignItems center
+        , height (pct 100)
         ]
 
 

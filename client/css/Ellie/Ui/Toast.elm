@@ -30,7 +30,7 @@ container =
         , position relative
         , color Colors.lightGray_
         , property "align-items" "center"
-        , Colors.boxShadowPopout
+        , Colors.boxShadow |> .popout
         , borderRadius (px 2)
         , lastChild [ marginBottom zero ]
         , borderLeft3 (px 2) solid Colors.green_

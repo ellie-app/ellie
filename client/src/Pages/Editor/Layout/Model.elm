@@ -23,7 +23,7 @@ init : Size -> Model
 init windowSize =
     { resultSplit = 0.5
     , resultDragging = False
-    , editorSplit = 0.5
+    , editorSplit = 0.7
     , editorDragging = False
     , editorCollapse = BothOpen
     , windowSize = windowSize

@@ -87,7 +87,7 @@ toIdString icon =
             "unfold"
 
         ElmLogo ->
-            "elm-loco"
+            "elm-logo"
 
         HtmlTag ->
             "html-tag"

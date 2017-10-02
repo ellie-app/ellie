@@ -36,32 +36,34 @@ view sections =
                 |> Zipper.after
                 |> List.map (viewSection False)
     in
-    div [] <| before ++ current ++ after
+    div [ Styles.container ] <| before ++ current ++ after
 
 
 viewSection : Bool -> Section msg -> Html msg
 viewSection open sectionConfig =
-    div []
-        [ div []
-            [ button
-                [ Styles.button
-                , Attributes.cond Styles.buttonOpen open
-                , Attributes.cond
-                    (onClick sectionConfig.onSelect)
-                    (not open)
-                ]
-                [ div [ Styles.buttonInner ]
-                    [ div
-                        [ Styles.arrow
-                        , Attributes.cond Styles.arrowOpen open
-                        ]
-                        [ Icon.view Icon.Chevron ]
-                    , div [ Styles.icon ] [ Icon.view sectionConfig.icon ]
-                    , div [] [ text sectionConfig.title ]
+    div
+        [ Styles.section
+        , Attributes.cond Styles.openSection open
+        , Attributes.cond Styles.closedSection (not open)
+        ]
+        [ button
+            [ Styles.button
+            , Attributes.cond Styles.buttonOpen open
+            , Attributes.cond
+                (onClick sectionConfig.onSelect)
+                (not open)
+            ]
+            [ div [ Styles.buttonInner ]
+                [ div
+                    [ Styles.arrow
+                    , Attributes.cond Styles.arrowOpen open
                     ]
+                    [ Icon.view Icon.Chevron ]
+                , div [ Styles.icon ] [ Icon.view sectionConfig.icon ]
+                , div [] [ text sectionConfig.title ]
                 ]
             ]
         , Html.viewIfLazy open <|
             \_ ->
-                div [] [ sectionConfig.content () ]
+                div [ Styles.content ] [ sectionConfig.content () ]
         ]

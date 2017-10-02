@@ -218,9 +218,9 @@ def get_default_revision() -> Any:
     return jsonify({
         'packages': [default_core.to_json(), default_html.to_json()],
         'elmVersion': '0.18.0',
-        'title': 'Untitled',
+        'title': '',
+        'description': '',
         'id': None,
-        'description': 'Tell the world about your project!',
         'elmCode': '''module Main exposing (main)
 
 import Html exposing (Html, text)
@@ -233,15 +233,13 @@ main =
         'htmlCode': '''<html>
 <head>
   <style>
-    html {
-      background: #F7F7F7;
-      color: red;
-    }
+    /* you can style your program here */
   </style>
 </head>
 <body>
   <script>
     var app = Elm.Main.fullscreen()
+    // you can use ports and stuff here
   </script>
 </body>
 </html>

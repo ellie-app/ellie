@@ -24,11 +24,11 @@ backgroundShared : Style
 backgroundShared =
     batch
         [ borderRadius (px 2)
-        , Colors.boxShadowBottom
+        , .bottom Colors.boxShadow
         , property "transition" "transform 150ms, box-shadow 150ms, background-color 150ms"
         , hover
             [ property "transform" "translateY(-1px)"
-            , Colors.boxShadowBottomHover
+            , .bottomHover Colors.boxShadow
             ]
         , active
             [ property "transform" "none"

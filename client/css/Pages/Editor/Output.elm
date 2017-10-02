@@ -31,7 +31,7 @@ details =
         [ width <| calc (pct 100) minus (px 96)
         , backgroundColor Colors.darkMediumGray
         , borderRadius (px 2)
-        , Colors.boxShadowBottom
+        , Colors.boxShadow |> .bottom
         , marginTop (px 48)
         , padding2 (px 48) (px 16)
         , color Colors.lightGray_
@@ -87,7 +87,7 @@ failureHint =
     uniqueClass
         [ backgroundColor Colors.darkMediumGray
         , borderRadius (px 2)
-        , Colors.boxShadowBottom
+        , Colors.boxShadow |> .bottom
         , marginTop (px 24)
         , padding (px 16)
         , width <| calc (pct 100) minus (px 96)

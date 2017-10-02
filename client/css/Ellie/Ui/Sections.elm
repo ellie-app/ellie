@@ -7,7 +7,38 @@ import Css.File exposing (..)
 
 container =
     uniqueClass
-        []
+        [ position relative
+        , displayFlex
+        , flexDirection column
+        , height (pct 100)
+        ]
+
+
+section =
+    uniqueClass
+        [ position relative
+        , displayFlex
+        , flexDirection column
+        , width (pct 100)
+        ]
+
+
+closedSection =
+    uniqueClass
+        [ flexShrink (int 0) ]
+
+
+openSection =
+    uniqueClass
+        [ flexShrink (int 1) ]
+
+
+content =
+    uniqueClass
+        [ position relative
+        , flexShrink (int 1)
+        , overflowY auto
+        ]
 
 
 button =
@@ -25,13 +56,15 @@ button =
         , fontWeight bold
         , fontSize (px 16)
         , cursor pointer
+        , flexShrink (int 0)
         ]
 
 
 buttonOpen =
     uniqueClass
-        [ Colors.boxShadowBottom
+        [ Colors.boxShadow |> .bottom
         , borderBottom3 (px 1) solid Colors.pink_
+        , cursor default
         ]
 
 

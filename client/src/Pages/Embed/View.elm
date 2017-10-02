@@ -3,6 +3,8 @@ module Pages.Embed.View exposing (view)
 import Data.Ellie.Revision as Revision exposing (Revision, Snapshot(..))
 import Data.Ellie.RevisionId as RevisionId exposing (RevisionId)
 import Data.Elm.Compiler.Error as CompilerError
+import Ellie.Ui.CompileError as ErrorView
+import Ellie.Ui.Icon as Icon
 import Extra.Html.Attributes as Attributes
 import Html exposing (Html, a, button, div, header, iframe, span, text)
 import Html.Attributes exposing (href, id, src, style, target)
@@ -13,16 +15,8 @@ import Pages.Embed.Update as Update exposing (Msg(..))
 import Pages.Embed.View.Styles as Styles
 import RemoteData exposing (RemoteData(..))
 import Shared.Constants as Constants
-import Shared.Icons as Icons
-import Views.Output as Output
-
-
-attrWhen : Html.Attribute msg -> Bool -> Html.Attribute msg
-attrWhen attr cond =
-    if cond then
-        attr
-    else
-        Attributes.none
+import Svg exposing (svg, use)
+import Svg.Attributes exposing (xlinkHref)
 
 
 viewNotFound : Html Msg
@@ -47,15 +41,15 @@ viewFailure message =
         ]
 
 
-viewHeaderButton : Tab -> Tab -> Html Msg -> String -> Html Msg
+viewHeaderButton : Tab -> Tab -> Icon.Icon -> String -> Html Msg
 viewHeaderButton activeTab myTab icon label =
     button
         [ onClick <| SwitchTab myTab
         , Styles.headerTab
-        , attrWhen Styles.headerTabActive <| activeTab == myTab
+        , Attributes.cond Styles.headerTabActive <| activeTab == myTab
         ]
         [ div [ Styles.headerTabInner ]
-            [ span [ Styles.headerTabIcon ] [ icon ]
+            [ span [ Styles.headerTabIcon ] [ Icon.view icon ]
             , text label
             ]
         ]
@@ -65,9 +59,9 @@ viewHeader : Tab -> RevisionId -> Html Msg
 viewHeader activeTab { projectId, revisionNumber } =
     header [ Styles.header ]
         [ div [ Styles.headerLeft ]
-            [ viewHeaderButton activeTab ElmTab Icons.elmLogo "Elm"
-            , viewHeaderButton activeTab HtmlTab Icons.code "HTML"
-            , viewHeaderButton activeTab ResultsTab Icons.eye "Results"
+            [ viewHeaderButton activeTab ElmTab Icon.ElmLogo "Elm"
+            , viewHeaderButton activeTab HtmlTab Icon.HtmlTag "HTML"
+            , viewHeaderButton activeTab ResultsTab Icon.Eye "Results"
             ]
         , div [ Styles.headerRight ]
             [ a
@@ -76,9 +70,10 @@ viewHeader activeTab { projectId, revisionNumber } =
                 , href <| Constants.editorBase ++ "/" ++ projectId ++ "/" ++ toString revisionNumber
                 , target "_blank"
                 ]
-                [ span [ Styles.headerLinkIcon ] [ Icons.edit ]
+                [ span [ Styles.headerLinkIcon ] [ Icon.view Icon.External ]
                 , span [] [ text "Edit on " ]
-                , span [ Styles.headerLinkLogo ] [ text " Ellie" ]
+                , svg [ Styles.headerLinkLogo ]
+                    [ use [ xlinkHref "#ellie-logo" ] [] ]
                 ]
             ]
         ]
@@ -110,7 +105,10 @@ viewResultsUploaded revisionId =
 
 viewResultsErrors : List CompilerError.Error -> Html Msg
 viewResultsErrors errors =
-    Output.errors errors
+    div [ Styles.errors ] <|
+        List.map
+            (ErrorView.view >> List.singleton >> div [ Styles.error ])
+            errors
 
 
 viewResults : Revision -> Html Msg
@@ -131,7 +129,7 @@ viewLoaded : Model -> Revision -> Html Msg
 viewLoaded model revision =
     div
         [ Styles.loadedContainer
-        , attrWhen Styles.loadingContainer <| not (RemoteData.isSuccess model.revision)
+        , Attributes.cond Styles.loadingContainer <| not (RemoteData.isSuccess model.revision)
         ]
         [ case model.currentRoute of
             SpecificRevision revisionId ->
@@ -141,7 +139,7 @@ viewLoaded model revision =
                 text ""
         , div [ Styles.workArea ]
             [ div
-                [ attrWhen Styles.workAreaTabHidden <| ElmTab /= model.tab
+                [ Attributes.cond Styles.workAreaTabHidden <| ElmTab /= model.tab
                 , Styles.workAreaTab
                 ]
                 [ viewElm
@@ -155,12 +153,12 @@ viewLoaded model revision =
                     )
                 ]
             , div
-                [ attrWhen Styles.workAreaTabHidden <| HtmlTab /= model.tab
+                [ Attributes.cond Styles.workAreaTabHidden <| HtmlTab /= model.tab
                 , Styles.workAreaTab
                 ]
                 [ viewHtml revision.htmlCode ]
             , div
-                [ attrWhen Styles.workAreaTabHidden <| ResultsTab /= model.tab
+                [ Attributes.cond Styles.workAreaTabHidden <| ResultsTab /= model.tab
                 , Styles.workAreaTab
                 ]
                 [ viewResults revision ]

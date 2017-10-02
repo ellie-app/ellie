@@ -129,12 +129,11 @@ type alias PartialNotification =
     { title : String
     , level : Notification.Level
     , message : String
-    , action : Maybe Notification.Action
     }
 
 
 notify : (Notification -> msg) -> PartialNotification -> Cmd msg
-notify tagger { title, level, message, action } =
+notify tagger { title, level, message } =
     Time.now
-        |> Task.map (Notification level message title action)
+        |> Task.map (Notification level message title)
         |> Task.perform tagger

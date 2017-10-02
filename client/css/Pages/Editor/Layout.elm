@@ -26,7 +26,7 @@ sidebar =
         , height (pct 100)
         , position relative
         , zIndex (int 1)
-        , Colors.boxShadowRight
+        , Colors.boxShadow |> .right
         ]
 
 
@@ -133,7 +133,7 @@ outputContainer =
         , height (pct 100)
         , position relative
         , zIndex (int 1)
-        , Colors.boxShadowLeft
+        , Colors.boxShadow |> .left
         , overflow hidden
         ]
 

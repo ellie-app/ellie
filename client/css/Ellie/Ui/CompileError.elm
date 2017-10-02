@@ -9,7 +9,7 @@ container =
     uniqueClass
         [ width (pct 100)
         , backgroundColor Colors.darkMediumGray
-        , Colors.boxShadowBottom
+        , Colors.boxShadow |> .bottom
         , padding2 (px 12) (px 16)
         , borderLeft3 (px 1) solid Colors.red_
         , color Colors.lightGray_

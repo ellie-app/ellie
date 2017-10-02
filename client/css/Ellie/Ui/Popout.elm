@@ -28,7 +28,7 @@ tooltip =
         , zIndex (int 2)
         , backgroundColor Colors.darkGray_
         , padding2 (px 12) (px 8)
-        , Colors.boxShadowPopout
+        , Colors.boxShadow |> .popout
         , top (pct 100)
         , marginTop (px 8)
         , borderLeft3 (px 1) solid Colors.pink_

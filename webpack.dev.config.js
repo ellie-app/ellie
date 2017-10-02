@@ -1,7 +1,6 @@
 const path = require('path')
 const webpack = require('webpack')
 const StringReplacePlugin = require('string-replace-webpack-plugin')
-const CopyPlugin = require('copy-webpack-plugin')
 
 const generatedElmCss = path.resolve(__dirname, 'client/elm-stuff/generated-code/rtfeldman/elm-css/output.css')
 
@@ -33,6 +32,12 @@ module.exports = {
   module: {
     rules: [
       {
+        test: /\.svg$/,
+        use: {
+          loader: 'svg-inline-loader'
+        }
+      },
+      {
         test: /\.js$/,
         exclude: /node_modules/,
         use: {
@@ -58,9 +63,9 @@ module.exports = {
             replacements: [
               { pattern: /\%CDN_BASE\%/g, replacement: () => 'https://s3.us-east-2.amazonaws.com/development-cdn.ellie-app.com' },
               { pattern: /\%SERVER_ORIGIN\%/g, replacement: () => 'http://localhost:5000' },
-              { pattern: /\%CARBON_ZONE_ID\%/g, replacement: () => 'test' },
-              { pattern: /\%CARBON_SERVE\%/g, replacement: () => 'test' },
-              { pattern: /\%CARBON_PLACEMENT\%/g, replacement: () => 'test' },
+              { pattern: /\%CARBON_ZONE_ID\%/g, replacement: () => process.env.CARBON_ZONE_ID },
+              { pattern: /\%CARBON_SERVE\%/g, replacement: () => process.env.CARBON_SERVE },
+              { pattern: /\%CARBON_PLACEMENT\%/g, replacement: () => process.env.CARBON_PLACEMENT },
               { pattern: /\%ENV\%/g, replacement: () => 'development' },
             ]
           }),
@@ -90,11 +95,6 @@ module.exports = {
       'process.env.NODE_ENV': JSON.stringify('development')
     }),
     new StringReplacePlugin(),
-    new CopyPlugin([
-      { from: path.join(__dirname, 'client/images'), to: 'images', toType: 'dir' }
-    ], {
-      copyUnmodified: true
-    })
   ],
 
   devServer: {

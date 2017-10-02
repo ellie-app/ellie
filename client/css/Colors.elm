@@ -3,29 +3,25 @@ module Colors exposing (..)
 import Css exposing (..)
 
 
-boxShadowRight : Style
-boxShadowRight =
-    boxShadow5 (px 2) zero (px 4) zero <| rgba 0 0 0 0.75
+type alias BoxShadow =
+    { right : Style
+    , bottom : Style
+    , left : Style
+    , bottomHover : Style
+    , popout : Style
+    , top : Style
+    }
 
 
-boxShadowBottom : Style
-boxShadowBottom =
-    boxShadow5 zero (px 2) (px 4) zero <| rgba 0 0 0 0.75
-
-
-boxShadowLeft : Style
-boxShadowLeft =
-    boxShadow5 (px -2) zero (px 4) zero <| rgba 0 0 0 0.75
-
-
-boxShadowBottomHover : Style
-boxShadowBottomHover =
-    boxShadow5 zero (px 3) (px 4) zero <| rgba 0 0 0 0.75
-
-
-boxShadowPopout : Style
-boxShadowPopout =
-    boxShadow5 zero (px 2) (px 8) (px 2) <| rgba 0 0 0 0.75
+boxShadow : BoxShadow
+boxShadow =
+    { right = boxShadow5 (px 2) zero (px 4) zero <| rgba 0 0 0 0.75
+    , bottom = boxShadow5 zero (px 2) (px 4) zero <| rgba 0 0 0 0.75
+    , left = boxShadow5 (px -2) zero (px 4) zero <| rgba 0 0 0 0.75
+    , bottomHover = boxShadow5 zero (px 3) (px 4) zero <| rgba 0 0 0 0.75
+    , popout = boxShadow5 zero (px 2) (px 8) (px 2) <| rgba 0 0 0 0.75
+    , top = boxShadow5 zero (px -2) (px 4) zero <| rgba 0 0 0 0.75
+    }
 
 
 darkMediumGray : Color

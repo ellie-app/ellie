@@ -1,16 +1,12 @@
 module Data.Ellie.Notification
     exposing
-        ( Action(..)
-        , Level(..)
+        ( Level(..)
         , Notification
+        , eq
         , hash
         )
 
 import Time exposing (Time)
-
-
-type Action
-    = ClearElmStuff
 
 
 type Level
@@ -24,7 +20,6 @@ type alias Notification =
     { level : Level
     , message : String
     , title : String
-    , action : Maybe Action
     , timestamp : Time
     }
 
@@ -32,3 +27,10 @@ type alias Notification =
 hash : Notification -> String
 hash notification =
     toString notification
+
+
+eq : Notification -> Notification -> Bool
+eq left right =
+    (left.level == right.level)
+        && (left.message == right.message)
+        && (left.title == right.title)

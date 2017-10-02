@@ -12,7 +12,7 @@ container =
         , width (pct 100)
         , displayFlex
         , backgroundColor Colors.darkMediumGray
-        , Colors.boxShadowBottom
+        , Colors.boxShadow |> .bottom
         , borderRadius (px 2)
         , padding (px 8)
         ]

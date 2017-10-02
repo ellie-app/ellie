@@ -250,12 +250,13 @@ headerLinkIcon =
         ]
 
 
-headerLinkLogo : UniqueClass
+headerLinkLogo : UniqueSvgClass
 headerLinkLogo =
-    uniqueClass
-        [ fontFamilies [ Constants.scriptFont ]
-        , property "text-transform" "none"
-        , marginLeft (px 6)
+    uniqueSvgClass
+        [ marginLeft (px 6)
+        , width (px 41)
+        , height (px 16)
+        , fill Colors.lightGray_
         ]
 
 
@@ -311,4 +312,23 @@ iframe =
         , width (pct 100)
         , backgroundColor (hex "fff")
         , height (pct 100)
+        ]
+
+
+errors =
+    uniqueClass
+        [ displayFlex
+        , padding (px 16)
+        , flexDirection column
+        , alignItems center
+        , position relative
+        ]
+
+
+error =
+    uniqueClass
+        [ marginBottom (px 16)
+        , lastChild [ marginBottom (px 16) ]
+        , maxWidth (px 500)
+        , width (pct 100)
         ]

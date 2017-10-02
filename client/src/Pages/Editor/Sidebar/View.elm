@@ -2,6 +2,7 @@ module Pages.Editor.Sidebar.View exposing (..)
 
 import Data.Ellie.TermsVersion as TermsVersion exposing (TermsVersion)
 import Data.Elm.Package as Package exposing (Package)
+import Ellie.Ui.Ad as Ad
 import Ellie.Ui.Button as Button
 import Ellie.Ui.Icon as Icon
 import Ellie.Ui.Package as PackageView
@@ -15,6 +16,7 @@ import List.Zipper as Zipper exposing (Zipper)
 import Pages.Editor.Sidebar.Model as Model exposing (Model)
 import Pages.Editor.Sidebar.Update exposing (Msg(..))
 import Pages.Editor.Sidebar.View.Styles as Styles
+import Shared.Constants as Constants
 
 
 type alias Config msg =
@@ -109,16 +111,18 @@ viewPackages config () =
             ]
         , if String.length config.model.search > 3 then
             div [] <|
-                List.map
-                    (\p ->
-                        div [ Styles.package ]
-                            [ PackageView.view
-                                { package = p
-                                , action = PackageView.install <| config.onPackageAdded p
-                                }
-                            ]
-                    )
-                    config.model.results
+                (config.model.results
+                    |> List.filter (\( name, _ ) -> not <| List.any (Tuple.first >> (==) name) config.installed)
+                    |> List.map
+                        (\p ->
+                            div [ Styles.package ]
+                                [ PackageView.view
+                                    { package = p
+                                    , action = PackageView.install <| config.onPackageAdded p
+                                    }
+                                ]
+                        )
+                )
           else
             div []
                 [ div [ Styles.packagesSectionTitle ]
@@ -187,7 +191,15 @@ aboutSection config =
 view : Config msg -> Html msg
 view config =
     div [ Styles.container ]
-        [ Sections.view <| toZipper config
+        [ div [ Styles.sections ]
+            [ Sections.view <| toZipper config ]
+        , div [ Styles.ad ]
+            [ Ad.view
+                { zoneId = Constants.carbonZoneId
+                , serve = Constants.carbonServe
+                , placement = Constants.carbonPlacement
+                }
+            ]
         ]
 
 

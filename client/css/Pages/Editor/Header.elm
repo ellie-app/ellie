@@ -15,7 +15,7 @@ header =
         , backgroundColor Colors.darkGray_
         , displayFlex
         , alignItems center
-        , Colors.boxShadowBottom
+        , Colors.boxShadow |> .bottom
         , position relative
         , zIndex (int 4)
         , padding2 zero (px 16)
