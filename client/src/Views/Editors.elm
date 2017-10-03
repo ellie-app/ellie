@@ -1,84 +1,123 @@
-module Views.Editors
+port module Views.Editors
     exposing
-        ( elm
-        , html
+        ( Id
+        , Inbound(..)
+        , setup
+        , subscriptions
+        , updateLinter
+        , updateValue
         )
 
-import Data.Elm.Compiler.Error as CompilerError
-import Html exposing (Html, div, span, text)
-import Html.Attributes exposing (style, value)
-import Shared.Utils as Utils
-import Views.Editors.CodeMirror as CodeMirror
+import Data.CodeMirror.LinterMessage as LinterMessage exposing (LinterMessage)
+import Data.CodeMirror.Options as Options exposing (Options)
+import Json.Decode as Decode exposing (Decoder)
+import Json.Encode as Encode exposing (Value)
+import Shared.Opbeat as Opbeat
 
 
-elm : Bool -> Maybe (String -> msg) -> String -> List CompilerError.Error -> Html msg
-elm vimMode onUpdate content compileErrors =
-    let
-        compileErrorLevelToSeverity level =
-            case level of
-                "warning" ->
-                    CodeMirror.Warning
+port viewsEditorsOut : Value -> Cmd msg
+
+
+port viewsEditorsIn : (Value -> msg) -> Sub msg
+
+
+type alias Id =
+    String
+
+
+type Outbound
+    = Setup Id Options
+    | UpdateOptions Id Options
+    | UpdateValue Id String
+    | UpdateLinter Id (List LinterMessage)
+
+
+outboundEncoder : Outbound -> Value
+outboundEncoder outbound =
+    case outbound of
+        Setup id options ->
+            Encode.object
+                [ ( "tag", Encode.string "Setup" )
+                , ( "id", Encode.string id )
+                , ( "options", Options.encoder options )
+                ]
+
+        UpdateOptions id options ->
+            Encode.object
+                [ ( "tag", Encode.string "UpdateOptions" )
+                , ( "id", Encode.string id )
+                , ( "options", Options.encoder options )
+                ]
+
+        UpdateValue id value ->
+            Encode.object
+                [ ( "tag", Encode.string "UpdateValue" )
+                , ( "id", Encode.string id )
+                , ( "value", Encode.string value )
+                ]
+
+        UpdateLinter id messages ->
+            Encode.object
+                [ ( "tag", Encode.string "UpdateLinter" )
+                , ( "id", Encode.string id )
+                , ( "messages", Encode.list <| List.map LinterMessage.encoder messages )
+                ]
+
+
+type Inbound
+    = ValueChanged String String
+
+
+inboundDecoder : Decoder Inbound
+inboundDecoder =
+    Decode.andThen
+        (\tag ->
+            case tag of
+                "ValueChanged" ->
+                    Decode.map2 ValueChanged
+                        (Decode.field "id" Decode.string)
+                        (Decode.field "value" Decode.string)
 
                 _ ->
-                    CodeMirror.Error
-
-        actualRegion compileError =
-            compileError.subregion
-                |> Maybe.withDefault compileError.region
-
-        compileErrorToLinterMessage compileError =
-            let
-                region =
-                    actualRegion compileError
-            in
-            CodeMirror.linterMessage
-                (compileErrorLevelToSeverity compileError.level)
-                (Utils.replaceAll <| compileError.overview ++ "\n\n" ++ compileError.details)
-                (CodeMirror.position (region.start.line - 1) (compileError.region.start.column - 1))
-                (CodeMirror.position (region.end.line - 1) compileError.region.end.column)
-
-        linterMessages =
-            List.map compileErrorToLinterMessage compileErrors
-
-        baseAttrs =
-            [ CodeMirror.value content
-            , CodeMirror.linterMessages linterMessages
-            , CodeMirror.theme "material"
-            , CodeMirror.mode "elm"
-            , CodeMirror.vimMode vimMode
-            , CodeMirror.indentWidth 4
-            , style
-                [ ( "height", "100%" )
-                , ( "width", "100%" )
-                ]
-            ]
-
-        updateAttrs =
-            onUpdate
-                |> Maybe.map (\u -> [ CodeMirror.onUpdate u, CodeMirror.readOnly False ])
-                |> Maybe.withDefault [ CodeMirror.readOnly True ]
-    in
-    CodeMirror.editor (baseAttrs ++ updateAttrs)
+                    Decode.fail <| "Unexpected port message from Views/Editors/Runner.js: \"" ++ tag ++ "\""
+        )
+        (Decode.field "tag" Decode.string)
 
 
-html : Bool -> Maybe (String -> msg) -> String -> Html msg
-html vimMode onUpdate content =
-    let
-        baseAttrs =
-            [ CodeMirror.value content
-            , CodeMirror.theme "material"
-            , CodeMirror.mode "htmlmixed"
-            , CodeMirror.vimMode vimMode
-            , CodeMirror.indentWidth 2
-            , style
-                [ ( "height", "100%" )
-                , ( "width", "100%" )
-                ]
-            ]
+subscriptions : Sub (Result Opbeat.Exception Inbound)
+subscriptions =
+    viewsEditorsIn <|
+        \value ->
+            case Decode.decodeValue inboundDecoder value of
+                Ok data ->
+                    Ok data
 
-        updateAttrs =
-            onUpdate
-                |> Maybe.map (\u -> [ CodeMirror.onUpdate u, CodeMirror.readOnly False ])
-                |> Maybe.withDefault [ CodeMirror.readOnly True ]
-    in
-    CodeMirror.editor (baseAttrs ++ updateAttrs)
+                Err message ->
+                    Err <|
+                        { tag = "UnknownOutboundPortMessage"
+                        , message = message
+                        , moduleName = "Views.Editors"
+                        , line = 94
+                        , extraData = [ ( "original", Encode.encode 2 value ) ]
+                        }
+
+
+setup : Id -> Options -> Cmd msg
+setup id options =
+    Setup id options
+        |> outboundEncoder
+        |> viewsEditorsOut
+
+
+updateValue : Id -> String -> Cmd msg
+updateValue id value =
+    UpdateValue id value
+        |> outboundEncoder
+        |> viewsEditorsOut
+
+
+updateLinter : Id -> List LinterMessage -> Cmd msg
+updateLinter id messages =
+    UpdateLinter id messages
+        |> outboundEncoder
+        |> viewsEditorsOut

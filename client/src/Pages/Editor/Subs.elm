@@ -9,6 +9,7 @@ import Mouse
 import Pages.Editor.Model as Model exposing (Model, PopoutState(..))
 import Pages.Editor.Update as Update exposing (Msg(..))
 import Pages.Editor.Update.Save as UpdateSave
+import Views.Editors as Editors
 import Window
 
 
@@ -186,6 +187,30 @@ clearNotifications model =
         Sub.none
 
 
+editors : Sub Msg
+editors =
+    Editors.subscriptions
+        |> Sub.map
+            (\result ->
+                case result of
+                    Ok inbound ->
+                        case inbound of
+                            Editors.ValueChanged id value ->
+                                case id of
+                                    "elmEditor" ->
+                                        ElmCodeChanged value
+
+                                    "htmlEditor" ->
+                                        HtmlCodeChanged value
+
+                                    _ ->
+                                        NoOp
+
+                    Err exception ->
+                        ReportException exception
+            )
+
+
 subscriptions : Model -> Sub Msg
 subscriptions model =
     Sub.batch
@@ -200,4 +225,5 @@ subscriptions model =
         , compileForSave
         , keyCombos model
         , clearNotifications model
+        , editors
         ]

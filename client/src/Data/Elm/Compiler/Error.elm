@@ -5,11 +5,33 @@ module Data.Elm.Compiler.Error
         , Region
         , decoder
         , encoder
+        , toLinterMessage
         )
 
+import Data.CodeMirror.LinterMessage as LinterMessage exposing (LinterMessage)
 import Json.Decode as Decode exposing (Decoder)
 import Json.Decode.Pipeline as Decode
 import Json.Encode as Encode exposing (Value)
+import Shared.Utils as Utils
+
+
+toLinterMessage : Error -> LinterMessage
+toLinterMessage error =
+    let
+        region =
+            Maybe.withDefault error.region error.subregion
+    in
+    { from = { line = region.start.line - 1, column = region.start.column - 1 }
+    , to = { line = region.end.line - 1, column = region.end.column - 1 }
+    , message = Utils.replaceAll <| error.overview ++ "\n\n" ++ error.details
+    , severity =
+        case error.level of
+            "warning" ->
+                LinterMessage.Warning
+
+            _ ->
+                LinterMessage.Error
+    }
 
 
 type alias Location =

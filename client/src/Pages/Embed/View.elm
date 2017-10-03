@@ -5,7 +5,7 @@ import Data.Ellie.RevisionId as RevisionId exposing (RevisionId)
 import Data.Elm.Compiler.Error as CompilerError
 import Extra.Html.Attributes as Attributes
 import Html exposing (Html, a, button, div, header, iframe, span, text)
-import Html.Attributes exposing (href, src, style, target)
+import Html.Attributes exposing (href, id, src, style, target)
 import Html.Events exposing (onClick)
 import Pages.Embed.Model as Model exposing (Model, Tab(..))
 import Pages.Embed.Routing exposing (Route(..))
@@ -14,7 +14,6 @@ import Pages.Embed.View.Styles as Styles
 import RemoteData exposing (RemoteData(..))
 import Shared.Constants as Constants
 import Shared.Icons as Icons
-import Views.Editors as Editors
 import Views.Output as Output
 
 
@@ -87,12 +86,12 @@ viewHeader activeTab { projectId, revisionNumber } =
 
 viewHtml : String -> Html Msg
 viewHtml code =
-    Editors.html False Nothing code
+    div [ id "htmlEditor" ] []
 
 
 viewElm : String -> List CompilerError.Error -> Html Msg
 viewElm code errors =
-    Editors.elm False Nothing code errors
+    div [ id "elmEditor" ] []
 
 
 iframeSrc : RevisionId -> String

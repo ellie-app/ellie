@@ -12,12 +12,12 @@ export default function (vimMode) {
   ]).then(([CodeMirror]) => {
     window.CodeMirror = CodeMirror
 
-    if (!vimMode) return
+    if (!vimMode) return CodeMirror
 
     return Promise.all([
       import(/* webpackChunkName: "codemirror-vim" */ 'codemirror/keymap/vim'),
       import(/* webpackChunkName: "codemirror-vim" */ 'codemirror/addon/dialog/dialog'),
       import(/* webpackChunkName: "codemirror-vim", webpackMode: "eager" */ 'codemirror/addon/dialog/dialog.css')
-    ]).then(() => {})
+    ]).then(() => CodeMirror)
   })
 }

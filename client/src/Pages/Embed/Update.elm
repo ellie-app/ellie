@@ -9,11 +9,13 @@ module Pages.Embed.Update
 import Data.Ellie.ApiError as ApiError exposing (ApiError)
 import Data.Ellie.Revision as Revision exposing (Revision)
 import Data.Ellie.RevisionId as RevisionId exposing (RevisionId)
+import Data.Elm.Compiler.Error as CompilerError
 import Navigation
 import Pages.Embed.Model as Model exposing (Model, Tab(..))
 import Pages.Embed.Routing as Routing exposing (Route(..))
 import RemoteData exposing (RemoteData(..))
 import Shared.Api as Api
+import Views.Editors as Editors
 
 
 resultOnError : (x -> Result y a) -> Result x a -> Result y a
@@ -47,13 +49,26 @@ update msg model =
         SwitchTab tab ->
             ( { model | tab = tab }, Cmd.none )
 
-        LoadRevisionCompleted result ->
-            ( { model | revision = RemoteData.fromResult result }
-            , result
-                |> Result.map (\_ -> False)
-                |> resultOnError (\apiError -> Ok <| apiError.statusCode == 404)
-                |> Result.map (choose (Navigation.modifyUrl <| Routing.construct NotFound) Cmd.none)
-                |> Result.withDefault Cmd.none
+        LoadRevisionCompleted (Ok revision) ->
+            ( { model | revision = RemoteData.Success revision }
+            , Cmd.batch
+                [ Editors.updateValue "elmEditor" revision.elmCode
+                , Editors.updateValue "htmlEditor" revision.htmlCode
+                , case revision.snapshot of
+                    Revision.Errored compileErrors ->
+                        Editors.updateLinter "elmEditor" <| List.map CompilerError.toLinterMessage compileErrors
+
+                    _ ->
+                        Cmd.none
+                ]
+            )
+
+        LoadRevisionCompleted (Err apiError) ->
+            ( { model | revision = RemoteData.Failure apiError }
+            , if apiError.statusCode == 404 then
+                Navigation.modifyUrl <| Routing.construct NotFound
+              else
+                Cmd.none
             )
 
         RouteChanged route ->
@@ -73,12 +88,32 @@ initialize location =
     let
         initialModel =
             Model.model
+
+        model =
+            { initialModel | currentRoute = Routing.parse location }
     in
-    location
-        |> Routing.parse
-        |> (\route -> { initialModel | currentRoute = route })
-        |> (\model -> ( model, Cmd.none ))
-        |> (\( model, cmd ) -> handleRouteChanged model.currentRoute ( model, cmd ))
+    handleRouteChanged
+        model.currentRoute
+        ( model
+        , Cmd.batch
+            [ Editors.setup "elmEditor"
+                { vimMode = False
+                , theme = "material"
+                , mode = "elm"
+                , initialValue = ""
+                , readOnly = True
+                , tabSize = 4
+                }
+            , Editors.setup "htmlEditor"
+                { vimMode = False
+                , theme = "material"
+                , mode = "htmlmixed"
+                , initialValue = ""
+                , readOnly = True
+                , tabSize = 2
+                }
+            ]
+        )
 
 
 

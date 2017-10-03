@@ -28,6 +28,7 @@ import Shared.Constants as Constants
 import Shared.Opbeat as Opbeat
 import Task
 import Time exposing (Time)
+import Views.Editors as Editors
 import Window exposing (Size)
 
 
@@ -80,8 +81,6 @@ type Msg
     | CompileRequested
     | CompileStageChanged CompileStage
     | CompileForSaveStarted Int
-    | ElmCodeChanged String
-    | HtmlCodeChanged String
     | OnlineChanged Bool
     | FormattingRequested
     | FormattingCompleted (Result ApiError String)
@@ -114,6 +113,11 @@ type Msg
     | ClearElmStuff
     | NoOp
     | TogglePopouts Model.PopoutState
+      -- CodeMirror Stuff
+    | ElmCodeChanged String
+    | HtmlCodeChanged String
+      -- Error Handling
+    | ReportException Opbeat.Exception
 
 
 onlineNotification : Bool -> Cmd Msg
@@ -137,6 +141,11 @@ onlineNotification isOnline =
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
+        ReportException exception ->
+            ( model
+            , Opbeat.capture exception
+            )
+
         ClearElmStuff ->
             ( model
             , Cmd.batch
@@ -371,13 +380,17 @@ update msg model =
               }
                 |> Model.resetStagedCode
             , case revisionResult of
-                Ok _ ->
-                    Cmds.notify NotificationReceived
-                        { level = Notification.Success
-                        , title = "Your Project Is Loaded!"
-                        , message = "Ellie found the project and revision you asked for. It's loaded up and ready to be run."
-                        , action = Nothing
-                        }
+                Ok result ->
+                    Cmd.batch
+                        [ Cmds.notify NotificationReceived
+                            { level = Notification.Success
+                            , title = "Your Project Is Loaded!"
+                            , message = "Ellie found the project and revision you asked for. It's loaded up and ready to be run."
+                            , action = Nothing
+                            }
+                        , Editors.updateValue "elmEditor" result.elmCode
+                        , Editors.updateValue "htmlEditor" result.htmlCode
+                        ]
 
                 Err apiError ->
                     if apiError.statusCode == 404 then
@@ -409,6 +422,10 @@ update msg model =
                         , message = message ++ "\n\n" ++ "Sometimes it helps to clear the compiler cache and try again!"
                         , action = Just Notification.ClearElmStuff
                         }
+
+                CompileStage.FinishedWithErrors compilerErrors ->
+                    Editors.updateLinter "elmEditor" <|
+                        List.map CompilerError.toLinterMessage compilerErrors
 
                 _ ->
                     Cmd.none
@@ -452,39 +469,38 @@ update msg model =
                 ]
             )
 
-        FormattingCompleted result ->
+        FormattingCompleted (Ok code) ->
             ( { model
-                | stagedElmCode =
-                    Result.withDefault model.stagedElmCode result
+                | stagedElmCode = code
                 , previousElmCode =
                     if model.previousElmCode == model.stagedElmCode then
-                        Result.withDefault model.previousElmCode result
+                        code
                     else
                         model.previousElmCode
               }
-            , case result of
-                Ok _ ->
-                    Cmd.none
+            , Editors.updateValue "elmEditor" code
+            )
 
-                Err apiError ->
-                    Cmd.batch
-                        [ Cmds.notify NotificationReceived
-                            { level = Notification.Error
-                            , title = "Formatting Your Code Failed"
-                            , message = "Ellie couldn't format your code. Here's what the server said:\n" ++ apiError.explanation
-                            , action = Nothing
-                            }
-                        , if apiError.statusCode == 500 then
-                            Opbeat.capture
-                                { tag = "FORMAT_ERROR"
-                                , message = apiError.explanation
-                                , moduleName = "Pages.Editor.Update"
-                                , line = 498
-                                , extraData = [ ( "input", model.stagedElmCode ) ]
-                                }
-                          else
-                            Cmd.none
-                        ]
+        FormattingCompleted (Err apiError) ->
+            ( model
+            , Cmd.batch
+                [ Cmds.notify NotificationReceived
+                    { level = Notification.Error
+                    , title = "Formatting Your Code Failed"
+                    , message = "Ellie couldn't format your code. Here's what the server said:\n" ++ apiError.explanation
+                    , action = Nothing
+                    }
+                , if apiError.statusCode == 500 then
+                    Opbeat.capture
+                        { tag = "FORMAT_ERROR"
+                        , message = apiError.explanation
+                        , moduleName = "Pages.Editor.Update"
+                        , line = 480
+                        , extraData = [ ( "input", model.stagedElmCode ) ]
+                        }
+                  else
+                    Cmd.none
+                ]
             )
 
         RemovePackageRequested package ->
@@ -522,12 +538,32 @@ initialize flags location =
     let
         initialModel =
             Model.model flags
+
+        model =
+            { initialModel | currentRoute = Routing.parse location }
     in
-    location
-        |> Routing.parse
-        |> (\route -> { initialModel | currentRoute = route })
-        |> (\model -> ( model, Cmd.none ))
-        |> (\( model, cmd ) -> handleRouteChanged model.currentRoute ( model, cmd ))
+    handleRouteChanged
+        model.currentRoute
+        ( model
+        , Cmd.batch
+            [ Editors.setup "elmEditor"
+                { vimMode = model.vimMode
+                , theme = "material"
+                , mode = "elm"
+                , initialValue = model.clientRevision.elmCode
+                , readOnly = False
+                , tabSize = 4
+                }
+            , Editors.setup "htmlEditor"
+                { vimMode = model.vimMode
+                , theme = "material"
+                , mode = "htmlmixed"
+                , initialValue = model.clientRevision.htmlCode
+                , readOnly = False
+                , tabSize = 2
+                }
+            ]
+        )
 
 
 handleRouteChanged : Route -> ( Model, Cmd Msg ) -> ( Model, Cmd Msg )

@@ -43,6 +43,26 @@ inputStyles =
     input [ focus [ outline zero ] ]
 
 
+elmEditor : Snippet
+elmEditor =
+    id "elmEditor"
+        [ width (pct 100)
+        , height (pct 100)
+        , position relative
+        , zIndex (int 0)
+        ]
+
+
+htmlEditor : Snippet
+htmlEditor =
+    id "htmlEditor"
+        [ width (pct 100)
+        , height (pct 100)
+        , position relative
+        , zIndex (int 1)
+        ]
+
+
 appContainer : UniqueClass
 appContainer =
     uniqueClass
