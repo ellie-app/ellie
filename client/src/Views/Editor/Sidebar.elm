@@ -10,9 +10,8 @@ import Html exposing (Attribute, Html, a, aside, button, div, h3, hr, input, lab
 import Html.Attributes exposing (attribute, disabled, href, id, target, type_, value)
 import Html.Events exposing (onClick, onInput, onWithOptions)
 import Json.Decode as Decode
-import Native.CarbonAds
-import Shared.Constants as Constants
 import Shared.Icons as Icons
+import Views.Editor.Ad as Ad
 import Views.Editor.Sidebar.Styles as Styles
 
 
@@ -25,14 +24,6 @@ type alias Config msg =
     , onAddPackageClick : msg
     , onRemove : Package -> msg
     }
-
-
-viewAd : Html msg
-viewAd =
-    Native.CarbonAds.ad
-        Constants.carbonZoneId
-        Constants.carbonServe
-        Constants.carbonPlacement
 
 
 viewProjectInfo : Config msg -> Html msg
@@ -145,7 +136,7 @@ viewTopStuff config =
 viewBottomStuff : Html msg
 viewBottomStuff =
     div [ Styles.bottomStuff ]
-        [ viewAd
+        [ Ad.view
         ]
 
 
