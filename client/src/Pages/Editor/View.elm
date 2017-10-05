@@ -10,8 +10,8 @@ import Html.Attributes exposing (id, style)
 import Html.Events exposing (onClick, onMouseDown)
 import Pages.Editor.Model as Model exposing (Model, PopoutState(..))
 import Pages.Editor.Routing as Routing exposing (..)
+import Pages.Editor.Save.Update as UpdateSave
 import Pages.Editor.Update as Update exposing (Msg(..))
-import Pages.Editor.Update.Save as UpdateSave
 import Pages.Editor.View.Styles as Styles
 import RemoteData exposing (RemoteData(..))
 import Shared.Icons as Icons

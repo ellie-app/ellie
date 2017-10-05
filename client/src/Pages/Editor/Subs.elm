@@ -7,8 +7,9 @@ import Json.Decode.Pipeline as Decode
 import Keyboard
 import Mouse
 import Pages.Editor.Model as Model exposing (Model, PopoutState(..))
+import Pages.Editor.Save.Subscriptions as Save
+import Pages.Editor.Save.Update as Save
 import Pages.Editor.Update as Update exposing (Msg(..))
-import Pages.Editor.Update.Save as UpdateSave
 import Views.Editors as Editors
 import Window
 
@@ -70,18 +71,18 @@ compileForSave =
                         case Debug.log "stage" stage of
                             Compiling { total, complete } ->
                                 if complete == 0 then
-                                    SaveMsg <| UpdateSave.CompileStarted total
+                                    SaveMsg <| Save.CompileStarted total
                                 else
                                     NoOp
 
                             Success url ->
-                                SaveMsg <| UpdateSave.CompileCompleted (Ok url)
+                                SaveMsg <| Save.CompileCompleted (Ok url)
 
                             FinishedWithErrors errors ->
-                                SaveMsg <| UpdateSave.CompileCompleted (Err errors)
+                                SaveMsg <| Save.CompileCompleted (Err errors)
 
                             Failed message ->
-                                SaveMsg <| UpdateSave.CompileAborted message
+                                SaveMsg <| Save.CompileAborted message
 
                             _ ->
                                 NoOp
@@ -226,4 +227,5 @@ subscriptions model =
         , keyCombos model
         , clearNotifications model
         , editors
+        , Sub.map SaveMsg Save.subscriptions
         ]

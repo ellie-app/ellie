@@ -94,7 +94,7 @@ subscriptions =
 
                 Err message ->
                     Err <|
-                        { tag = "UnknownOutboundPortMessage"
+                        { tag = "UnknownInboundPortMessage"
                         , message = message
                         , moduleName = "Views.Editors"
                         , line = 94

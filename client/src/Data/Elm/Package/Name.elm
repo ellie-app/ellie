@@ -1,6 +1,5 @@
 module Data.Elm.Package.Name exposing (..)
 
-import Data.FilePath exposing ((</>), FilePath)
 import Json.Decode as Decode exposing (Decoder)
 import Json.Encode as Encode exposing (Value)
 
@@ -38,11 +37,6 @@ decoder =
                     Decode.fail "No package name"
         )
         Decode.string
-
-
-toFilePath : Name -> FilePath
-toFilePath { user, project } =
-    user </> project
 
 
 compare : Name -> Name -> Order

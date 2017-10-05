@@ -20,7 +20,7 @@ import Pages.Editor.Cmds as Cmds
 import Pages.Editor.Flags as Flags exposing (Flags)
 import Pages.Editor.Model as Model exposing (EditorCollapseState(..), Model, PopoutState(..))
 import Pages.Editor.Routing as Routing exposing (Route(..))
-import Pages.Editor.Update.Save as Save
+import Pages.Editor.Save.Update as Save
 import Process
 import RemoteData exposing (RemoteData(..))
 import Shared.Api as Api
