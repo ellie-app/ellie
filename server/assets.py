@@ -1,9 +1,10 @@
 import json
-import boto3
 import os
 
+import boto3
+
 _CDN_BASE = os.environ['CDN_BASE']
-_PRODUCTION = os.environ['ENV'] == 'production'
+_PRODUCTION = os.environ['ENV'] != 'development'
 
 with open('./build/manifest.json') as file_data:
     _manifest = json.load(file_data)

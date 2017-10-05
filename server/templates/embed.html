@@ -18,7 +18,7 @@
     <meta name="twitter:image" content="{{ constants.PROFILE_PIC }}" />
     <meta name="twitter:site" content="@ellie_editor" />
     <link href="https://fonts.googleapis.com/css?family=Leckerli+One|Quicksand" rel="stylesheet" />
-    {% if constants.ENV == "production" %}
+    {% if constants.ENV != "development" %}
       <link href="{{ constants.APP_CSS }}" rel="stylesheet" />
     {% endif %}
     <script src="{{ constants.APP_JS }}" async></script>
