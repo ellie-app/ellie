@@ -71,7 +71,7 @@ module.exports = {
               { pattern: /\%CARBON_ZONE_ID\%/g, replacement: () => process.env.CARBON_ZONE_ID },
               { pattern: /\%CARBON_SERVE\%/g, replacement: () => process.env.CARBON_SERVE },
               { pattern: /\%CARBON_PLACEMENT\%/g, replacement: () => process.env.CARBON_PLACEMENT },
-              { pattern: /\%ENV\%/g, replacement: () => 'production' },
+              { pattern: /\%ENV\%/g, replacement: () => process.env.ENV },
             ]
           }),
           `elm-webpack-loader?yes&cwd=${path.join(__dirname, 'client')}`,
@@ -87,7 +87,7 @@ module.exports = {
       CDN_BASE: JSON.stringify(process.env.CDN_BASE),
       OPBEAT_APP_ID: JSON.stringify(process.env.OPBEAT_FRONTEND_APP_ID),
       OPBEAT_ORGANIZATION_ID: JSON.stringify(process.env.OPBEAT_ORGANIZATION_ID),
-      'process.env.NODE_ENV': JSON.stringify('production'),
+      'process.env.NODE_ENV': JSON.stringify(process.env.NODE_ENV),
     }),
     new webpack.optimize.OccurrenceOrderPlugin(),
     new webpack.optimize.UglifyJsPlugin({
