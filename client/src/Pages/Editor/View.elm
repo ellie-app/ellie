@@ -6,12 +6,12 @@ import Data.Ellie.SaveState as SaveState
 import Extra.Html as Html
 import Extra.Html.Attributes as Attributes
 import Html exposing (Html, button, div, header, iframe, main_, span, text)
-import Html.Attributes exposing (style)
+import Html.Attributes exposing (id, style)
 import Html.Events exposing (onClick, onMouseDown)
 import Pages.Editor.Model as Model exposing (Model, PopoutState(..))
 import Pages.Editor.Routing as Routing exposing (..)
+import Pages.Editor.Save.Update as UpdateSave
 import Pages.Editor.Update as Update exposing (Msg(..))
-import Pages.Editor.Update.Save as UpdateSave
 import Pages.Editor.View.Styles as Styles
 import RemoteData exposing (RemoteData(..))
 import Shared.Icons as Icons
@@ -148,15 +148,15 @@ viewEditors model =
                   )
                 ]
             ]
-            [ Html.viewIfLazy
-                (not <| Model.elmIsHidden model)
-                (\_ ->
-                    Editors.elm
-                        model.vimMode
-                        (Just ElmCodeChanged)
-                        model.stagedElmCode
-                        (Model.compileErrors model)
-                )
+            [ div
+                [ id "elmEditor"
+                , style <|
+                    if Model.elmIsHidden model then
+                        [ ( "display", "none" ) ]
+                    else
+                        []
+                ]
+                []
             , button
                 [ Styles.overlayButton
                 , Styles.collapseButton
@@ -185,14 +185,15 @@ viewEditors model =
                   )
                 ]
             ]
-            [ Html.viewIfLazy
-                (not <| Model.htmlIsHidden model)
-                (\_ ->
-                    Editors.html
-                        model.vimMode
-                        (Just HtmlCodeChanged)
-                        model.stagedHtmlCode
-                )
+            [ div
+                [ id "htmlEditor"
+                , style <|
+                    if Model.htmlIsHidden model then
+                        [ ( "display", "none" ) ]
+                    else
+                        []
+                ]
+                []
             , button
                 [ Styles.overlayButton
                 , Styles.collapseButton

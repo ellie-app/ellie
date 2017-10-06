@@ -3,10 +3,12 @@ import './Main.css'
 import initCodeMirror from '../../Views/Editors/CodeMirror'
 import fixHtml from './fixHtml'
 import captureOpbeat from '../../Shared/Opbeat'
+import EditorsRunner from '../../Views/Editors/Runner'
+import AwsRunner from '../../Shared/Aws/Runner'
 
 const vimMode = window.location.search.indexOf('vim=true') !== -1
 initCodeMirror(vimMode)
-  .then(() => {
+  .then(CodeMirror => {
     const Elm = require('./Main.elm')
     let hasUnsavedWork = false;
     let previousLocation = window.location.pathname
@@ -35,6 +37,9 @@ initCodeMirror(vimMode)
     })
 
     app.ports.opbeatCaptureOut.subscribe(captureOpbeat)
+
+    EditorsRunner.start(CodeMirror, app)
+    AwsRunner.start(app)
 
     app.ports.pathChangedOut.subscribe(() => {
       previousLocation = window.location.pathname

@@ -9,7 +9,7 @@ module Shared.Api
         , send
         , termsContent
         , toTask
-        , uploadRevision
+        , uploadSignatures
         )
 
 import Data.Aws.UploadSignature as UploadSignature exposing (UploadSignature)
@@ -17,11 +17,9 @@ import Data.Ellie.ApiError as ApiError exposing (ApiError)
 import Data.Ellie.Revision as Revision exposing (Revision, Snapshot(..))
 import Data.Ellie.RevisionId as RevisionId exposing (RevisionId)
 import Data.Ellie.TermsVersion as TermsVersion exposing (TermsVersion)
-import Data.Elm.Compiler.Error as CompilerError
 import Data.Elm.Package as Package exposing (Package)
 import Data.Elm.Package.Description as Description exposing (Description)
 import Data.Elm.Package.Version as Version exposing (Version)
-import Data.File as File exposing (File)
 import Http exposing (Error(..), Expect, Request)
 import Http.Extra as Http
 import HttpBuilder exposing (..)
@@ -237,20 +235,6 @@ uploadExpect =
         |> Http.expectJson
 
 
-revisionFile : Revision -> File
-revisionFile revision =
-    revision
-        |> Revision.encoder
-        |> Encode.encode 0
-        |> List.singleton
-        |> File.fromStringParts "revision.json" "application/json"
-
-
-postBody : List ( String, String ) -> File -> Http.Body
-postBody fields file =
-    Http.multipartBody (List.map (uncurry Http.stringPart) fields ++ [ File.toPart "file" file ])
-
-
 uploadSignatures : Revision -> Task ApiError ( UploadSignature, UploadSignature )
 uploadSignatures revision =
     get (fullUrl "/upload")
@@ -265,62 +249,3 @@ uploadSignatures revision =
                         builder
            )
         |> toTask
-
-
-uploadRevision :
-    Result (List CompilerError.Error) String
-    -> Revision
-    -> TermsVersion
-    -> Task ApiError Revision
-uploadRevision compileResult revision acceptedTerms =
-    case compileResult of
-        Ok resultUrl ->
-            get resultUrl
-                |> withExpect (File.expect "result.html" "text/html")
-                |> toTask
-                |> Task.andThen
-                    (\result ->
-                        uploadSignatures revision
-                            |> Task.andThen
-                                (\( revSig, resultSig ) ->
-                                    let
-                                        updatedRevision =
-                                            { revision
-                                                | snapshot = Uploaded
-                                                , id = Just <| RevisionId revSig.projectId revSig.revisionNumber
-                                                , acceptedTerms = Just acceptedTerms
-                                                , owned = True
-                                            }
-                                    in
-                                    post resultSig.url
-                                        |> withBody (postBody resultSig.fields result)
-                                        |> withExpect Http.expectNoContent
-                                        |> toTask
-                                        |> Task.andThen
-                                            (\_ ->
-                                                post revSig.url
-                                                    |> withBody (postBody revSig.fields (revisionFile updatedRevision))
-                                                    |> withExpect Http.expectNoContent
-                                                    |> toTask
-                                            )
-                                        |> Task.map (\_ -> updatedRevision)
-                                )
-                    )
-
-        Err compilerErrors ->
-            uploadSignatures revision
-                |> Task.andThen
-                    (\( revSig, _ ) ->
-                        let
-                            updatedRevision =
-                                { revision
-                                    | snapshot = Errored compilerErrors
-                                    , id = Just <| RevisionId revSig.projectId revSig.revisionNumber
-                                }
-                        in
-                        post revSig.url
-                            |> withBody (postBody revSig.fields (revisionFile updatedRevision))
-                            |> withExpect Http.expectNoContent
-                            |> toTask
-                            |> Task.map (\_ -> updatedRevision)
-                    )

@@ -1,12 +1,15 @@
 module Data.Ellie.SaveState exposing (Error(..), SaveState(..), canSave, isWorking)
 
 import Data.Ellie.ApiError as ApiError exposing (ApiError)
+import Data.Ellie.Revision as Revision exposing (Revision)
+import Data.Elm.Compiler.Error as CompilerError
 
 
 type Error
     = TermsAcceptanceFailed ApiError
     | CompileFailed String
-    | UploadFailed ApiError
+    | SignatureFailed ApiError
+    | UploadFailed String
 
 
 type SaveState
@@ -14,7 +17,8 @@ type SaveState
     | AwaitingTermsAcceptance
     | AcceptingTerms
     | Compiling
-    | Uploading
+    | RequestingSignature (Result (List CompilerError.Error) String)
+    | Uploading Revision
     | Failed Error
 
 
