@@ -30,7 +30,9 @@ closedSection =
 
 openSection =
     uniqueClass
-        [ flexShrink (int 1) ]
+        [ flexShrink (int 1)
+        , overflow hidden
+        ]
 
 
 content =

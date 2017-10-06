@@ -21,6 +21,8 @@ sections =
         , height (pct 100)
         , overflowY hidden
         , width (pct 100)
+        , displayFlex
+        , flexDirection column
         ]
 
 

@@ -1,6 +1,7 @@
 module Ellie.Ui.Ad exposing (view)
 
 import Ellie.Ui.Ad.Styles as Styles
+import Extra.Html.Attributes exposing (style)
 import Html exposing (Html, div, node, text)
 import Html.Attributes exposing (async, id, src, type_)
 import Shared.Constants as Constants
@@ -33,5 +34,5 @@ view { zoneId, serve, placement } =
                     []
                 ]
           else
-            text ""
+            div [ style "height" "140px" ] []
         ]

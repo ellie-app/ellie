@@ -126,6 +126,7 @@ initCodeMirror(vimMode)
         }
 
         const callback = (data) => {
+          console.log('getting callbacks')
           workQueue.push(data)
           setTimeout(function work() {
             if (!workQueue.length) return

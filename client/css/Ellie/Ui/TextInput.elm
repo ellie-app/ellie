@@ -61,6 +61,7 @@ underline =
         , width (pct 100)
         , transform <| scaleX 0
         , property "transition" "transform 250ms"
+        , left zero
         ]
 
 

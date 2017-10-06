@@ -17,6 +17,15 @@ type alias Config msg =
     }
 
 
+viewLoading : Float -> List (Html msg)
+viewLoading percentage =
+    [ div [ Styles.details ]
+        [ div [ Styles.detailsTitle ] [ text "Loading Compiler" ]
+        , div [ Styles.progressBarContainer ] [ ProgressBar.view <| ProgressBar.Percentage percentage ]
+        ]
+    ]
+
+
 viewReady : List (Html msg)
 viewReady =
     [ div [ Styles.details ]
@@ -139,13 +148,7 @@ view config =
                 viewReady
 
             LoadingCompiler percentage ->
-                [ div []
-                    [ div [] [ text "Loading Compiler" ]
-                    , div []
-                        [ ProgressBar.view <| ProgressBar.Percentage percentage
-                        ]
-                    ]
-                ]
+                viewLoading percentage
 
             InstallingPackages ->
                 viewInstalling
