@@ -81,7 +81,7 @@ module.exports = {
   },
 
   plugins: [
-    new Md5Hash(),
+    new webpack.HashedModuleIdsPlugin(),
     new webpack.DefinePlugin({
       SERVER_ORIGIN: JSON.stringify(process.env.SERVER_HOSTNAME),
       CDN_BASE: JSON.stringify(process.env.CDN_BASE),
