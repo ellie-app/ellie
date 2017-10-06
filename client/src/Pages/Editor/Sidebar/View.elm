@@ -206,20 +206,22 @@ view config =
 toZipper : Config msg -> Zipper (Sections.Section msg)
 toZipper config =
     case config.model.panel of
-        Model.Settings ->
-            Zipper.Zipper
-                []
-                (settingsSection config)
-                [ packagesSection config, aboutSection config ]
-
         Model.Packages ->
             Zipper.Zipper
-                [ settingsSection config ]
+                []
                 (packagesSection config)
+                [ settingsSection config
+                , aboutSection config
+                ]
+
+        Model.Settings ->
+            Zipper.Zipper
+                [ packagesSection config ]
+                (settingsSection config)
                 [ aboutSection config ]
 
         Model.About ->
             Zipper.Zipper
-                [ packagesSection config, settingsSection config ]
+                [ settingsSection config, packagesSection config ]
                 (aboutSection config)
                 []

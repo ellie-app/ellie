@@ -20,7 +20,7 @@ model : Model
 model =
     { search = ""
     , results = []
-    , panel = Settings
+    , panel = Packages
     }
 
 
