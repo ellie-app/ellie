@@ -1,4 +1,4 @@
-export default function (vimMode) {
+const load = () => {
   return Promise.all([
     import(/* webpackChunkName: "codemirror-base" */ 'codemirror/lib/codemirror'),
     import(/* webpackChunkName: "codemirror-base", webpackMode: "eager" */ 'codemirror/lib/codemirror.css'),
@@ -9,15 +9,20 @@ export default function (vimMode) {
     import(/* webpackChunkName: "codemirror-base", webpackMode: "eager" */ 'codemirror/addon/lint/lint.css'),
     import(/* webpackChunkName: "codemirror-base", webpackMode: "eager" */ 'codemirror/theme/material.css'),
     import(/* webpackChunkName: "codemirror-base", webpackMode: "eager" */ './Styles.css')
-  ]).then(([CodeMirror]) => {
-    window.CodeMirror = CodeMirror
+  ])
+  .then(([CodeMirror]) => CodeMirror)
+}
 
-    if (!vimMode) return CodeMirror
+const loadVimMode = () => {
+  return Promise.all([
+    import(/* webpackChunkName: "codemirror-vim" */ 'codemirror/keymap/vim'),
+    import(/* webpackChunkName: "codemirror-vim" */ 'codemirror/addon/dialog/dialog'),
+    import(/* webpackChunkName: "codemirror-vim", webpackMode: "eager" */ 'codemirror/addon/dialog/dialog.css')
+  ])
+  .then(() => {})
+}
 
-    return Promise.all([
-      import(/* webpackChunkName: "codemirror-vim" */ 'codemirror/keymap/vim'),
-      import(/* webpackChunkName: "codemirror-vim" */ 'codemirror/addon/dialog/dialog'),
-      import(/* webpackChunkName: "codemirror-vim", webpackMode: "eager" */ 'codemirror/addon/dialog/dialog.css')
-    ]).then(() => CodeMirror)
-  })
+export default {
+  load,
+  loadVimMode
 }

@@ -1,9 +1,14 @@
-module Pages.Editor.Sidebar.View exposing (..)
+module Pages.Editor.Sidebar exposing (..)
 
 import Colors
 import Css exposing (..)
 import Css.Elements exposing (..)
 import Css.File exposing (..)
+
+
+vimModeLabel =
+    uniqueClass
+        [ color Colors.lightMediumGray ]
 
 
 ad =

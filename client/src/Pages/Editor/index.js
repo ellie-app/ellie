@@ -1,6 +1,6 @@
 import 'es6-promise/auto'
 import './Main.css'
-import initCodeMirror from '../../Ellie/CodeMirror/Loader'
+import CodeMirrorLoader from '../../Ellie/CodeMirror/Loader'
 import fixHtml from './fixHtml'
 import captureOpbeat from '../../Shared/Opbeat'
 import CodeMirrorRunner from '../../Ellie/CodeMirror/Runner'
@@ -11,10 +11,11 @@ import Layout from './Layout'
 
 IconLoader.load()
 
-const vimMode = window.location.search.indexOf('vim=true') !== -1
-initCodeMirror(vimMode)
+CodeMirrorLoader
+  .load()
   .then(CodeMirror => {
     const Elm = require('./Main.elm')
+
     let hasUnsavedWork = false;
     let previousLocation = window.location.pathname
     window.addEventListener('popstate', e => {
@@ -36,9 +37,9 @@ initCodeMirror(vimMode)
         height: window.innerHeight
       },
       online: process.env.NODE_ENV === 'production' ? window.navigator.onLine : true,
+      vimMode: localStorage.getItem('Pages.Editor.vimMode') === 'true',
       acceptedTermsVersion,
       latestTermsVersion,
-      vimMode,
     })
 
     app.ports.opbeatCaptureOut.subscribe(captureOpbeat)
@@ -70,6 +71,10 @@ initCodeMirror(vimMode)
     app.ports.openNewWindow.subscribe(url => {
       var win = window.open(url, '_blank')
       win.focus()
+    })
+
+    app.ports.saveVimMode.subscribe(enabled => {
+      localStorage.setItem('Pages.Editor.vimMode', enabled)
     })
 
     window.addEventListener('online', function () {
@@ -126,7 +131,6 @@ initCodeMirror(vimMode)
         }
 
         const callback = (data) => {
-          console.log('getting callbacks')
           workQueue.push(data)
           setTimeout(function work() {
             if (!workQueue.length) return

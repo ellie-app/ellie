@@ -43,7 +43,7 @@ type alias NotificationInfo =
 
 update : Model -> Msg -> ( Model, Maybe NotificationInfo, Cmd Msg )
 update model msg =
-    case Debug.log "msg" msg of
+    case msg of
         Start ->
             if
                 SaveState.canSave model.saveState

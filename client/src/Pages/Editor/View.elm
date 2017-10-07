@@ -68,10 +68,12 @@ viewSidebar : Model -> Html Msg
 viewSidebar model =
     Sidebar.view
         { title = model.clientRevision.title
-        , onTitleChange = TitleChanged
         , description = model.clientRevision.description
+        , vimMode = model.vimMode
+        , onTitleChange = TitleChanged
         , onDescriptionChange = DescriptionChanged
         , onClearElmStuff = ClearElmStuff
+        , onVimModeChange = ToggleVimMode
         , installed = model.clientRevision.packages
         , onPackageRemoved = RemovePackageRequested
         , onPackageAdded = PackageSelected

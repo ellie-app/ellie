@@ -6,6 +6,7 @@ port module Ellie.CodeMirror
         , subscriptions
         , updateLinter
         , updateValue
+        , updateVimMode
         )
 
 import Data.CodeMirror.LinterMessage as LinterMessage exposing (LinterMessage)
@@ -15,10 +16,10 @@ import Json.Encode as Encode exposing (Value)
 import Shared.Opbeat as Opbeat
 
 
-port viewsEditorsOut : Value -> Cmd msg
+port ellieCodeMirrorOut : Value -> Cmd msg
 
 
-port viewsEditorsIn : (Value -> msg) -> Sub msg
+port ellieCodeMirrorIn : (Value -> msg) -> Sub msg
 
 
 type alias Id =
@@ -27,7 +28,7 @@ type alias Id =
 
 type Outbound
     = Setup Id Options
-    | UpdateOptions Id Options
+    | UpdateVimMode Id Bool
     | UpdateValue Id String
     | UpdateLinter Id (List LinterMessage)
 
@@ -42,11 +43,11 @@ outboundEncoder outbound =
                 , ( "options", Options.encoder options )
                 ]
 
-        UpdateOptions id options ->
+        UpdateVimMode id enabled ->
             Encode.object
-                [ ( "tag", Encode.string "UpdateOptions" )
+                [ ( "tag", Encode.string "UpdateVimMode" )
                 , ( "id", Encode.string id )
-                , ( "options", Options.encoder options )
+                , ( "enabled", Encode.bool enabled )
                 ]
 
         UpdateValue id value ->
@@ -86,7 +87,7 @@ inboundDecoder =
 
 subscriptions : Sub (Result Opbeat.Exception Inbound)
 subscriptions =
-    viewsEditorsIn <|
+    ellieCodeMirrorIn <|
         \value ->
             case Decode.decodeValue inboundDecoder value of
                 Ok data ->
@@ -106,18 +107,25 @@ setup : Id -> Options -> Cmd msg
 setup id options =
     Setup id options
         |> outboundEncoder
-        |> viewsEditorsOut
+        |> ellieCodeMirrorOut
 
 
 updateValue : Id -> String -> Cmd msg
 updateValue id value =
     UpdateValue id value
         |> outboundEncoder
-        |> viewsEditorsOut
+        |> ellieCodeMirrorOut
 
 
 updateLinter : Id -> List LinterMessage -> Cmd msg
 updateLinter id messages =
     UpdateLinter id messages
         |> outboundEncoder
-        |> viewsEditorsOut
+        |> ellieCodeMirrorOut
+
+
+updateVimMode : Id -> Bool -> Cmd msg
+updateVimMode id enabled =
+    UpdateVimMode id enabled
+        |> outboundEncoder
+        |> ellieCodeMirrorOut

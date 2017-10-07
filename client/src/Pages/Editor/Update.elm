@@ -95,6 +95,7 @@ type Msg
     | CreateGist
     | CreateGistComplete (Result ApiError String)
     | ClearElmStuff
+    | ToggleVimMode Bool
     | NoOp
       -- CodeMirror Stuff
     | ElmCodeChanged String
@@ -128,6 +129,15 @@ onlineNotification isOnline =
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
+        ToggleVimMode enabled ->
+            ( { model | vimMode = enabled }
+            , Cmd.batch
+                [ CodeMirror.updateVimMode "elmEditor" enabled
+                , CodeMirror.updateVimMode "htmlEditor" enabled
+                , Cmds.saveVimMode enabled
+                ]
+            )
+
         ReportException exception ->
             ( model
             , Opbeat.capture exception

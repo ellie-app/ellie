@@ -4,18 +4,19 @@ import Data.Ellie.TermsVersion as TermsVersion exposing (TermsVersion)
 import Data.Elm.Package as Package exposing (Package)
 import Ellie.Ui.Ad as Ad
 import Ellie.Ui.Button as Button
+import Ellie.Ui.Checkbox as Checkbox
 import Ellie.Ui.Icon as Icon
 import Ellie.Ui.Package as PackageView
 import Ellie.Ui.Sections as Sections
 import Ellie.Ui.Setting as Setting
 import Ellie.Ui.TextArea as TextArea
 import Ellie.Ui.TextInput as TextInput
-import Html exposing (Html, a, div, p, text)
+import Html exposing (Html, a, div, p, span, text)
 import Html.Attributes exposing (href)
 import List.Zipper as Zipper exposing (Zipper)
 import Pages.Editor.Sidebar.Model as Model exposing (Model)
+import Pages.Editor.Sidebar.Styles as Styles
 import Pages.Editor.Sidebar.Update exposing (Msg(..))
-import Pages.Editor.Sidebar.View.Styles as Styles
 import Shared.Constants as Constants
 
 
@@ -23,8 +24,10 @@ type alias Config msg =
     { title : String
     , onTitleChange : String -> msg
     , description : String
+    , vimMode : Bool
     , onDescriptionChange : String -> msg
     , onClearElmStuff : msg
+    , onVimModeChange : Bool -> msg
     , installed : List Package
     , onPackageRemoved : Package -> msg
     , onPackageAdded : Package -> msg
@@ -60,6 +63,19 @@ viewSettings config () =
                         { placeholder = "Description goes here."
                         , value = config.description
                         , onChange = config.onDescriptionChange
+                        }
+                }
+            ]
+        , div [ Styles.setting ]
+            [ Setting.view
+                { label = "Vim Mode"
+                , description = "Use vim keybindings in the editors"
+                , control =
+                    Checkbox.view
+                        { onChange = config.onVimModeChange
+                        , checked = config.vimMode
+                        , label = span [ Styles.vimModeLabel ] [ text "Enabled" ]
+                        , id = "vimMode"
                         }
                 }
             ]

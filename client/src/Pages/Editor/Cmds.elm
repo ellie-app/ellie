@@ -9,6 +9,7 @@ port module Pages.Editor.Cmds
         , pathChanged
         , prepCompiler
         , reloadIframe
+        , saveVimMode
         , withAdditionalCmd
         , withCmd
         , withCmdWhen
@@ -70,6 +71,9 @@ port prepCompilerOut : String -> Cmd msg
 
 
 port clearElmStuffOut : () -> Cmd msg
+
+
+port saveVimMode : Bool -> Cmd msg
 
 
 clearElmStuff : Cmd msg

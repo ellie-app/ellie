@@ -1,4 +1,5 @@
 import captureException from '../../Shared/Opbeat'
+import CodeMirrorLoader from './Loader'
 
 const start = (CodeMirror, app) => {
   const linterFormatDiv = document.createElement('div')
@@ -7,7 +8,7 @@ const start = (CodeMirror, app) => {
     return instance.__ellie_errors || []
   })
 
-  app.ports.viewsEditorsOut.subscribe(data => {
+  app.ports.ellieCodeMirrorOut.subscribe(data => {
     requestAnimationFrame(() => {
       switch (data.tag) {
         case 'Setup':
@@ -22,8 +23,8 @@ const start = (CodeMirror, app) => {
           updateValue(data.id, data.value)
           return
 
-        case 'UpdateOptions':
-          updateOptions(data.id, data.options)
+        case 'UpdateVimMode':
+          updateVimMode(data.id, data.enabled)
           return
 
         default:
@@ -52,7 +53,7 @@ const start = (CodeMirror, app) => {
       tabSize: options.tabSize,
       indentUnit: options.tabSize,
       lint: { lintOnChange: false },
-      keyMap: options.vimMode ? 'vim' : 'default',
+      keyMap: 'default',
       readOnly: options.readOnly,
       mode: options.mode,
       theme: options.theme,
@@ -71,7 +72,7 @@ const start = (CodeMirror, app) => {
     instance.__ellie_errors = []
 
     instance.on('change', () => {
-      app.ports.viewsEditorsIn.send({
+      app.ports.ellieCodeMirrorIn.send({
         tag: 'ValueChanged',
         id: id,
         value: instance.getValue()
@@ -87,6 +88,14 @@ const start = (CodeMirror, app) => {
     requestAnimationFrame(() => {
       instance.refresh()
     })
+
+    if (options.vimMode) {
+      CodeMirrorLoader
+        .loadVimMode()
+        .then(() => {
+          instance.setOption('keyMap', 'vim')
+        })
+    }
   }
 
   const updateValue = (id, value) => {
@@ -115,16 +124,16 @@ const start = (CodeMirror, app) => {
     instance.setOption(key, value)
   }
 
-  const updateOptions = (id, options) => {
+  const updateVimMode = (id, enabled) => {
     const element = document.getElementById(id)
     if (!element || !element.__CODE_MIRROR_INSTANCE_ELM__) return
     const instance = element.__CODE_MIRROR_INSTANCE_ELM__
 
-    for (let k in options) {
-      if (options[k] !== instance.getOption(k)) {
-        instance.setOption(id, value)
-      }
-    }
+    CodeMirrorLoader
+      .loadVimMode()
+      .then(() => {
+        instance.setOption('keyMap', enabled ? 'vim' : 'default')
+      })
   }
 
   const formatLinterMessages = messages => {
