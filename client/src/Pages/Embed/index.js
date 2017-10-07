@@ -1,10 +1,11 @@
-import initCodeMirror from '../../Ellie/CodeMirror/Loader'
+import CodeMirrorLoader from '../../Ellie/CodeMirror/Loader'
 import CodeMirrorRunner from '../../Ellie/CodeMirror/Runner'
 import IconLoader from '../../Ellie/Ui/Icon/Loader'
 
 IconLoader.load()
 
-initCodeMirror()
+CodeMirrorLoader
+  .load()
   .then(CodeMirror => {
     const Elm = require('./Main.elm')
     const app = Elm.Pages.Embed.Main.fullscreen()
