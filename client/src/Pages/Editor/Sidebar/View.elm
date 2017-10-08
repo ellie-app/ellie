@@ -125,7 +125,7 @@ viewPackages config () =
                 , onChange = SearchChanged >> config.mapMsg
                 }
             ]
-        , if String.length config.model.search > 3 then
+        , if String.length config.model.search /= 0 then
             div [] <|
                 (config.model.results
                     |> List.filter (\( name, _ ) -> not <| List.any (Tuple.first >> (==) name) config.installed)

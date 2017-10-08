@@ -8,3 +8,4 @@ build/
 __pycache__/
 npm-debug.log
 env/
+.packages_index/

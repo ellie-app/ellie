@@ -17,7 +17,7 @@ update : Version -> Msg -> Model -> ( Model, Cmd Msg )
 update version msg model =
     case msg of
         SearchChanged search ->
-            if String.length search > 3 then
+            if String.length search > 1 then
                 ( { model | search = search }
                 , Api.searchPackages version search
                     |> Api.send ResultsLoaded

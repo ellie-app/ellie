@@ -18,7 +18,7 @@ from flask import (Flask, jsonify, redirect, render_template, request, session,
 from opbeat.contrib.flask import Opbeat
 from werkzeug.routing import BaseConverter, HTTPException, ValidationError
 
-from . import assets, constants, storage
+from . import assets, constants, package_search, storage
 from .classes import (ApiError, Constraint, Package, PackageInfo, PackageName,
                       ProjectId, Version)
 
@@ -90,42 +90,6 @@ def parse_int(string: str) -> Optional[int]:
         return None
 
 
-def package_entry_score(key: PackageName,
-                        entries: Dict[Version, Package],
-                        elm_version: Version,
-                        query: str) -> Tuple[Optional[Package], float]:
-    if elm_version not in entries:
-        return (None, 0)
-
-    score = 0.0
-    package = entries[elm_version]
-
-    username_query = query
-    project_query = query
-    if "/" in query:
-        [username_query, project_query] = query.split("/")
-
-    if project_query in key.project:
-        score += len(project_query) - (key.project.index(project_query) / 2)
-    else:
-        return (None, 0)
-
-    if username_query in key.user:
-        score += (len(username_query) * 1.5) - (
-            key.user.index(username_query) / 2)
-
-    return (entries[elm_version], score)
-
-
-def do_search(elm_version: Version, query: str) -> List[Any]:
-    cache_data = storage.get_searchable_packages()
-    score_gen = (package_entry_score(key, info.latest_by_elm_version, elm_version, query)
-                 for key, info in cache_data.items())
-    filtered = filter(lambda t: t[1] > 0, score_gen)
-    sorted_gen = sorted(list(filtered), key=lambda t: -t[1])
-    return [p.to_json() for p, s in sorted_gen if p is not None][0:5]
-
-
 @app.route('/api/terms/<int(min=0):terms_version>/accept', methods=['POST'])
 def accept_terms(terms_version: int) -> Any:
     session.permanent = True
@@ -152,19 +116,18 @@ def search() -> Any:
     query = request.args.get('query')
     if not isinstance(query, str):
         raise (ApiError(400, 'query field must be a string'))
-    if len(query) <= 3:
-        return jsonify([])
 
     elm_version = request.args.get('elmVersion')
     if not isinstance(elm_version, str):
         raise ApiError(400, 'elm version must be a semver string like 0.18.0')
+
     parsed_elm_version = Version.from_string(elm_version)
     if parsed_elm_version is None:
         raise ApiError(400, 'elm version must be a semver string like 0.18.0')
 
-    packages = do_search(parsed_elm_version, query)
+    packages = package_search.search(parsed_elm_version, query)
 
-    return jsonify(packages)
+    return jsonify([p.to_json() for p in packages])
 
 
 @app.route('/api/upload')
