@@ -61,7 +61,7 @@ def build_indices(packages: List[PackageInfo]) -> Dict[Version, Any]:
     for elm_version in _all_compiler_versions:
         idx_path = INDEX_DIR + "/" + str(elm_version)
         if not os.path.exists(idx_path):
-            os.mkdir(idx_path)
+            os.makedirs(idx_path)
         idx = index.create_in(idx_path, _schema)
         writer = idx.writer()
 

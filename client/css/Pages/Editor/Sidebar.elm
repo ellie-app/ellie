@@ -112,5 +112,5 @@ aboutParagraph =
 aboutCopyright =
     uniqueClass
         [ fontSize (px 12)
-        , color Colors.mediumGray_
+        , color Colors.lightMediumGray
         ]
