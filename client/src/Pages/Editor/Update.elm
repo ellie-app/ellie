@@ -313,7 +313,7 @@ update msg model =
                         List.map CompilerError.toLinterMessage compilerErrors
 
                 _ ->
-                    Cmd.none
+                    CodeMirror.updateLinter "elmEditor" []
             )
 
         CompileForSaveStarted totalModules ->
