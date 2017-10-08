@@ -9,10 +9,10 @@ module Data.Elm.Compiler.Error
         )
 
 import Data.CodeMirror.LinterMessage as LinterMessage exposing (LinterMessage)
+import Extra.Markdown as Markdown
 import Json.Decode as Decode exposing (Decoder)
 import Json.Decode.Pipeline as Decode
 import Json.Encode as Encode exposing (Value)
-import Shared.Utils as Utils
 
 
 toLinterMessage : Error -> LinterMessage
@@ -23,7 +23,7 @@ toLinterMessage error =
     in
     { from = { line = region.start.line - 1, column = region.start.column - 1 }
     , to = { line = region.end.line - 1, column = region.end.column - 1 }
-    , message = Utils.replaceAll <| error.overview ++ "\n\n" ++ error.details
+    , message = Markdown.toString <| error.overview ++ "\n\n" ++ error.details
     , severity =
         case error.level of
             "warning" ->
