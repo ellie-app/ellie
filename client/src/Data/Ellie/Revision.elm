@@ -21,7 +21,6 @@ import Json.Decode as Decode exposing (Decoder)
 import Json.Decode.Pipeline as Decode
 import Json.Encode as Encode exposing (Value)
 import Regex exposing (Regex)
-import Shared.Utils as Utils
 
 
 moduleName : Revision -> String

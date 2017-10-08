@@ -1,12 +1,12 @@
 import 'es6-promise/auto'
 import './Main.css'
-import CodeMirrorLoader from '../../Ellie/CodeMirror/Loader'
-import fixHtml from './fixHtml'
-import captureOpbeat from '../../Shared/Opbeat'
-import CodeMirrorRunner from '../../Ellie/CodeMirror/Runner'
-import AwsRunner from '../../Shared/Aws/Runner'
-import IconLoader from '../../Ellie/Ui/Icon/Loader'
 import '../../Ellie/Ui/ProgressBar.css'
+import fixHtml from './fixHtml'
+import CodeMirrorLoader from '../../Ellie/CodeMirror/Loader'
+import OpbeatRunner from '../../Ellie/Opbeat/Runner'
+import CodeMirrorRunner from '../../Ellie/CodeMirror/Runner'
+import AwsRunner from '../../Ellie/Aws/Runner'
+import IconLoader from '../../Ellie/Ui/Icon/Loader'
 import Layout from './Layout'
 
 IconLoader.load()
@@ -47,6 +47,7 @@ CodeMirrorLoader
     Layout.start(app)
     CodeMirrorRunner.start(CodeMirror, app)
     AwsRunner.start(app)
+    OpbeatRunner.start(app)
 
     app.ports.pathChangedOut.subscribe(() => {
       previousLocation = window.location.pathname

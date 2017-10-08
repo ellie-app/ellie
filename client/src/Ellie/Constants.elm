@@ -1,4 +1,4 @@
-module Shared.Constants exposing (..)
+module Ellie.Constants exposing (..)
 
 
 sidebarWidth : number

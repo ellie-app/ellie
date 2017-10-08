@@ -1,4 +1,4 @@
-import captureException from '../Opbeat'
+import OpbeatRunner from '../Opbeat/Runner'
 
 const start = app => {
   app.ports.sharedAwsOut.subscribe(data => {
@@ -12,11 +12,11 @@ const start = app => {
         return
 
       default:
-        captureException({
+        OpbeatRunner.capture({
           tag: 'UnknownOutboundPortMessage',
           message: `Unexpected port message from Shared.Aws: "${data.tag}"`,
           line: 11,
-          moduleName: 'Shared/Aws/Runner.js',
+          moduleName: 'Ellie/Aws/Runner.js',
           extraData: data
         })
         return

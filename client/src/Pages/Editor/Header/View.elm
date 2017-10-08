@@ -19,7 +19,7 @@ import Html.Attributes exposing (href, tabindex)
 import Pages.Editor.Header.Model exposing (Model)
 import Pages.Editor.Header.Styles as Styles
 import Pages.Editor.Header.Update exposing (Msg(..))
-import Shared.Constants as Constants
+import Ellie.Constants as Constants
 import Svg exposing (svg, use)
 import Svg.Attributes exposing (xlinkHref)
 

@@ -1,9 +1,8 @@
 module Pages.Editor.Layout.Update exposing (..)
 
-import Math
+import Ellie.Constants as Constants
 import Mouse
 import Pages.Editor.Layout.Model as Model exposing (Model)
-import Shared.Constants as Constants
 import Window
 
 
@@ -19,6 +18,16 @@ type Msg
     | NoOp
 
 
+clamp : comparable -> comparable -> comparable -> comparable
+clamp minimum maximum current =
+    if current >= maximum then
+        maximum
+    else if current <= minimum then
+        minimum
+    else
+        current
+
+
 update : Msg -> Model -> Model
 update msg model =
     case msg of
@@ -31,7 +40,7 @@ update msg model =
                     position
                         |> (\p -> toFloat (p.y - Constants.headerHeight))
                         |> (\h -> h / toFloat (model.windowSize.height - Constants.headerHeight))
-                        |> Math.clamp 0.2 0.8
+                        |> clamp 0.2 0.8
             }
 
         EditorDragEnded ->
@@ -49,7 +58,7 @@ update msg model =
                     position
                         |> (\p -> toFloat (p.x - Constants.sidebarWidth))
                         |> (\w -> w / toFloat (model.windowSize.width - Constants.sidebarWidth))
-                        |> Math.clamp 0.2 0.8
+                        |> clamp 0.2 0.8
             }
 
         ResultDragEnded ->

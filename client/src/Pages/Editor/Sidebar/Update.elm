@@ -3,8 +3,8 @@ module Pages.Editor.Sidebar.Update exposing (..)
 import Data.Ellie.ApiError as ApiError exposing (ApiError)
 import Data.Elm.Package as Package exposing (Package)
 import Data.Elm.Package.Version as Version exposing (Version)
+import Ellie.Api as Api
 import Pages.Editor.Sidebar.Model as Model exposing (Model)
-import Shared.Api as Api
 
 
 type Msg

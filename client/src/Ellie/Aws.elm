@@ -1,4 +1,4 @@
-port module Shared.Aws
+port module Ellie.Aws
     exposing
         ( Content(..)
         , Id
@@ -11,9 +11,9 @@ port module Shared.Aws
         , uploadBatch
         )
 
+import Ellie.Opbeat as Opbeat
 import Json.Decode as Decode exposing (Decoder)
 import Json.Encode as Encode exposing (Value)
-import Shared.Opbeat as Opbeat
 
 
 port sharedAwsOut : Value -> Cmd msg
