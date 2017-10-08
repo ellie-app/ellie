@@ -8,6 +8,7 @@ import Ellie.Ui.ProgressBar as ProgressBar
 import Extra.Html as Html
 import Html exposing (Html, div, iframe, text)
 import Html.Attributes exposing (id, src)
+import Markdown
 import Pages.Editor.Output.Styles as Styles
 
 
@@ -121,7 +122,7 @@ viewFailure : Config msg -> String -> List (Html msg)
 viewFailure config message =
     [ div [ Styles.details ]
         [ div [ Styles.detailsTitle ] [ text "Compilation Failed" ]
-        , div [ Styles.failureMessage ] [ text message ]
+        , div [ Styles.failureMessage ] (Markdown.toHtml Nothing message)
         ]
     , div [ Styles.failureHint ]
         [ div [ Styles.hintText ] [ text "Hint: sometimes clearing the compiler cache (elm-stuff) can help resolve compilation issues." ]

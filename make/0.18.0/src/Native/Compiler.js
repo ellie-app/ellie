@@ -82,6 +82,7 @@ var _user$project$Native_Compiler = (function () {
       self.ElmCompiler
         .compile(nameJs, isExposed, source, interfacesJs)
         .then(function (result) {
+          debugger
           var success = result[0] !== 'false'
           var errorsOrInterface = result[1]
           var elmo = result[2]

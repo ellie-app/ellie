@@ -2,6 +2,7 @@ module Ellie.Ui.CompileError exposing (..)
 
 import Colors
 import Css exposing (..)
+import Css.Elements exposing (..)
 import Css.File exposing (..)
 
 
