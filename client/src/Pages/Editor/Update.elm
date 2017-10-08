@@ -13,23 +13,23 @@ import Data.Ellie.Notification as Notification exposing (Notification)
 import Data.Ellie.Revision as Revision exposing (Revision)
 import Data.Elm.Compiler.Error as CompilerError
 import Data.Elm.Package as Package exposing (Package)
-import Dom
-import Mouse exposing (Position)
+import Ellie.CodeMirror as CodeMirror
 import Navigation
 import Pages.Editor.Cmds as Cmds
 import Pages.Editor.Flags as Flags exposing (Flags)
-import Pages.Editor.Model as Model exposing (EditorCollapseState(..), Model, PopoutState(..))
+import Pages.Editor.Header.Update as Header
+import Pages.Editor.Layout.Update as Layout
+import Pages.Editor.Model as Model exposing (Model)
 import Pages.Editor.Routing as Routing exposing (Route(..))
 import Pages.Editor.Save.Update as Save
+import Pages.Editor.Sidebar.Model as Sidebar
+import Pages.Editor.Sidebar.Update as Sidebar
 import Process
 import RemoteData exposing (RemoteData(..))
 import Shared.Api as Api
-import Shared.Constants as Constants
 import Shared.Opbeat as Opbeat
 import Task
 import Time exposing (Time)
-import Views.Editors as Editors
-import Window exposing (Size)
 
 
 when : (m -> Bool) -> (m -> m) -> m -> m
@@ -76,7 +76,6 @@ onlyErrors errors =
 
 type Msg
     = RouteChanged Route
-    | OpenDebugger
     | LoadRevisionCompleted (Result ApiError Revision)
     | CompileRequested
     | CompileStageChanged CompileStage
@@ -84,40 +83,31 @@ type Msg
     | OnlineChanged Bool
     | FormattingRequested
     | FormattingCompleted (Result ApiError String)
-    | RemovePackageRequested Package
     | NotificationReceived Notification
     | ClearStaleNotifications Time
     | ClearAllNotifications
     | ClearNotification Notification
-    | ResultDragStarted
-    | ResultDragged Position
-    | ResultDragEnded
-    | EditorDragStarted
-    | EditorDragged Position
-    | EditorDragEnded
-    | WindowSizeChanged Size
     | TitleChanged String
     | DescriptionChanged String
-    | SearchChanged String
-    | SearchResultsCompleted String (Result ApiError (List Package))
+    | RemovePackageRequested Package
     | PackageSelected Package
-    | ToggleSearch
     | IframeJsError String
-    | ToggleHtmlCollapse
-    | ToggleElmCollapse
-    | ReloadIframe
     | CreateGist
     | CreateGistComplete (Result ApiError String)
-    | KeyComboMsg KeyCombo.Msg
-    | SaveMsg Save.Msg
     | ClearElmStuff
+    | ToggleVimMode Bool
     | NoOp
-    | TogglePopouts Model.PopoutState
       -- CodeMirror Stuff
     | ElmCodeChanged String
     | HtmlCodeChanged String
       -- Error Handling
     | ReportException Opbeat.Exception
+      -- Nested Stuff
+    | SaveMsg Save.Msg
+    | KeyComboMsg KeyCombo.Msg
+    | HeaderMsg Header.Msg
+    | SidebarMsg Sidebar.Msg
+    | LayoutMsg Layout.Msg
 
 
 onlineNotification : Bool -> Cmd Msg
@@ -127,23 +117,46 @@ onlineNotification isOnline =
             { level = Notification.Success
             , title = "You're Online!"
             , message = "Ellie has detected that your internet connection is online."
-            , action = Nothing
             }
     else
         Cmds.notify NotificationReceived
             { level = Notification.Error
             , title = "You're Offline!"
             , message = "Ellie can't connect to the server right now, so we've disabled most features."
-            , action = Nothing
             }
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
+        ToggleVimMode enabled ->
+            ( { model | vimMode = enabled }
+            , Cmd.batch
+                [ CodeMirror.updateVimMode "elmEditor" enabled
+                , CodeMirror.updateVimMode "htmlEditor" enabled
+                , Cmds.saveVimMode enabled
+                ]
+            )
+
         ReportException exception ->
             ( model
             , Opbeat.capture exception
+            )
+
+        SidebarMsg sidebarMsg ->
+            model.sidebar
+                |> Sidebar.update model.clientRevision.elmVersion sidebarMsg
+                |> Tuple.mapFirst (\s -> { model | sidebar = s })
+                |> Tuple.mapSecond (Cmd.map SidebarMsg)
+
+        LayoutMsg layoutMsg ->
+            ( { model | layout = Layout.update layoutMsg model.layout }
+            , Cmd.none
+            )
+
+        HeaderMsg headerMsg ->
+            ( { model | header = Header.update headerMsg model.header }
+            , Cmd.none
             )
 
         ClearElmStuff ->
@@ -154,7 +167,6 @@ update msg model =
                     { level = Notification.Info
                     , title = "Compiler Cache Cleared"
                     , message = "All cached compiler artifacts have been removed. Your next build may take a while!"
-                    , action = Nothing
                     }
                 ]
             )
@@ -162,11 +174,6 @@ update msg model =
         KeyComboMsg keyComboMsg ->
             ( { model | keyCombo = KeyCombo.update keyComboMsg model.keyCombo }
             , Cmd.none
-            )
-
-        OpenDebugger ->
-            ( model
-            , Cmds.openDebugger
             )
 
         CreateGist ->
@@ -193,39 +200,7 @@ update msg model =
                         { level = Notification.Error
                         , title = "Creating Gist Failed"
                         , message = "We couldn't create a Gist for your project. Here's what GitHub said:\n" ++ apiError.explanation
-                        , action = Nothing
                         }
-            )
-
-        ReloadIframe ->
-            ( model
-            , Cmds.reloadIframe
-            )
-
-        ToggleElmCollapse ->
-            ( { model
-                | editorsCollapse =
-                    case model.editorsCollapse of
-                        JustHtmlOpen ->
-                            BothOpen
-
-                        _ ->
-                            JustHtmlOpen
-              }
-            , Cmd.none
-            )
-
-        ToggleHtmlCollapse ->
-            ( { model
-                | editorsCollapse =
-                    case model.editorsCollapse of
-                        JustElmOpen ->
-                            BothOpen
-
-                        _ ->
-                            JustElmOpen
-              }
-            , Cmd.none
             )
 
         IframeJsError message ->
@@ -234,52 +209,17 @@ update msg model =
                 { level = Notification.Error
                 , title = "JavaScript Error"
                 , message = "A JavaScript Error was thrown by your program:\n" ++ message
-                , action = Nothing
                 }
             )
 
-        TogglePopouts popoutState ->
-            ( { model
-                | popoutState =
-                    if popoutState == model.popoutState then
-                        AllClosed
-                    else
-                        popoutState
-              }
-            , Cmd.none
-            )
-
         PackageSelected package ->
-            ( { model | searchOpen = False, packagesChanged = True, searchValue = "", searchResults = [] }
+            ( { model
+                | packagesChanged = True
+                , sidebar = Sidebar.resetSearch model.sidebar
+              }
                 |> Model.updateClientRevision (\r -> { r | packages = r.packages ++ [ package ] })
             , Cmd.none
             )
-
-        SearchChanged value ->
-            ( { model | searchValue = value }
-            , Api.searchPackages model.clientRevision.elmVersion value
-                |> Api.send (SearchResultsCompleted value)
-            )
-
-        SearchResultsCompleted searchTerm result ->
-            if searchTerm /= model.searchValue then
-                ( model, Cmd.none )
-            else
-                ( { model | searchResults = Result.withDefault model.searchResults result }
-                , Cmd.none
-                )
-
-        ToggleSearch ->
-            if model.searchOpen then
-                ( model
-                    |> Model.closeSearch
-                , Cmd.none
-                )
-            else
-                ( { model | searchOpen = True }
-                , Dom.focus "searchInput"
-                    |> Task.attempt (\_ -> NoOp)
-                )
 
         TitleChanged title ->
             ( model
@@ -293,56 +233,11 @@ update msg model =
             , Cmd.none
             )
 
-        EditorDragStarted ->
-            ( { model | editorDragging = True }
-            , Cmd.none
-            )
-
-        EditorDragged position ->
-            ( { model
-                | editorSplit =
-                    position
-                        |> (\p -> toFloat (p.y - Constants.headerHeight))
-                        |> (\h -> h / toFloat (model.windowSize.height - Constants.headerHeight))
-                        |> clamp 0.2 0.8
-              }
-            , Cmd.none
-            )
-
-        EditorDragEnded ->
-            ( { model | editorDragging = False }
-            , Cmd.none
-            )
-
-        WindowSizeChanged size ->
-            ( { model | windowSize = size }
-            , Cmd.none
-            )
-
-        ResultDragStarted ->
-            ( { model | resultDragging = True }
-            , Cmd.none
-            )
-
-        ResultDragged position ->
-            ( { model
-                | resultSplit =
-                    position
-                        |> (\p -> toFloat (p.x - Constants.sidebarWidth))
-                        |> (\w -> w / toFloat (model.windowSize.width - Constants.sidebarWidth))
-                        |> clamp 0.2 0.8
-              }
-            , Cmd.none
-            )
-
-        ResultDragEnded ->
-            ( { model | resultDragging = False }
-            , Cmd.none
-            )
-
         NotificationReceived notification ->
             ( { model
-                | notifications = notification :: model.notifications
+                | notifications =
+                    notification
+                        :: List.filter (Notification.eq notification >> not) model.notifications
               }
             , Process.sleep (15 * Time.second)
                 |> Task.andThen (\_ -> Time.now)
@@ -386,10 +281,9 @@ update msg model =
                             { level = Notification.Success
                             , title = "Your Project Is Loaded!"
                             , message = "Ellie found the project and revision you asked for. It's loaded up and ready to be run."
-                            , action = Nothing
                             }
-                        , Editors.updateValue "elmEditor" result.elmCode
-                        , Editors.updateValue "htmlEditor" result.htmlCode
+                        , CodeMirror.updateValue "elmEditor" result.elmCode
+                        , CodeMirror.updateValue "htmlEditor" result.htmlCode
                         ]
 
                 Err apiError ->
@@ -400,7 +294,6 @@ update msg model =
                             { level = Notification.Error
                             , title = "Failed To Load Project"
                             , message = "Ellie couldn't load the project you asked for. Here's what the server said:\n" ++ apiError.explanation
-                            , action = Nothing
                             }
             )
 
@@ -415,16 +308,8 @@ update msg model =
         CompileStageChanged stage ->
             ( { model | compileStage = stage }
             , case stage of
-                CompileStage.Failed message ->
-                    Cmds.notify NotificationReceived
-                        { level = Notification.Error
-                        , title = "Compilation Failed!"
-                        , message = message ++ "\n\n" ++ "Sometimes it helps to clear the compiler cache and try again!"
-                        , action = Just Notification.ClearElmStuff
-                        }
-
                 CompileStage.FinishedWithErrors compilerErrors ->
-                    Editors.updateLinter "elmEditor" <|
+                    CodeMirror.updateLinter "elmEditor" <|
                         List.map CompilerError.toLinterMessage compilerErrors
 
                 _ ->
@@ -438,7 +323,6 @@ update msg model =
                     { level = Notification.Info
                     , title = "Saving may take a while"
                     , message = "It looks like there are a lot of modules to compile. Please wait a moment while I build everything and save it!"
-                    , action = Nothing
                     }
               else
                 Cmd.none
@@ -478,7 +362,7 @@ update msg model =
                     else
                         model.previousElmCode
               }
-            , Editors.updateValue "elmEditor" code
+            , CodeMirror.updateValue "elmEditor" code
             )
 
         FormattingCompleted (Err apiError) ->
@@ -488,7 +372,6 @@ update msg model =
                     { level = Notification.Error
                     , title = "Formatting Your Code Failed"
                     , message = "Ellie couldn't format your code. Here's what the server said:\n" ++ apiError.explanation
-                    , action = Nothing
                     }
                 , if apiError.statusCode == 500 then
                     Opbeat.capture
@@ -546,7 +429,7 @@ initialize flags location =
         model.currentRoute
         ( model
         , Cmd.batch
-            [ Editors.setup "elmEditor"
+            [ CodeMirror.setup "elmEditor"
                 { vimMode = model.vimMode
                 , theme = "material"
                 , mode = "elm"
@@ -554,7 +437,7 @@ initialize flags location =
                 , readOnly = False
                 , tabSize = 4
                 }
-            , Editors.setup "htmlEditor"
+            , CodeMirror.setup "htmlEditor"
                 { vimMode = model.vimMode
                 , theme = "material"
                 , mode = "htmlmixed"

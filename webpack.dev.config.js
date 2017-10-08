@@ -1,7 +1,6 @@
 const path = require('path')
 const webpack = require('webpack')
 const StringReplacePlugin = require('string-replace-webpack-plugin')
-const CopyPlugin = require('copy-webpack-plugin')
 
 const generatedElmCss = path.resolve(__dirname, 'client/elm-stuff/generated-code/rtfeldman/elm-css/output.css')
 
@@ -33,6 +32,12 @@ module.exports = {
   module: {
     rules: [
       {
+        test: /\.svg$/,
+        use: {
+          loader: 'svg-inline-loader'
+        }
+      },
+      {
         test: /\.js$/,
         exclude: /node_modules/,
         use: {
@@ -51,69 +56,32 @@ module.exports = {
         loader: 'json-loader'
       },
       {
-        test: /Editor\/Stylesheets\.elm$/,
-        use: [
-          'style-loader',
-          'css-loader',
-          {
-            loader: 'elm-css-webpack-loader',
-            options: {
-              module: 'Pages.Editor.Stylesheets'
-            }
-          }
-        ]
-      },
-      {
-        test: /Embed\/Stylesheets\.elm$/,
-        use: [
-          'style-loader',
-          'css-loader',
-          {
-            loader: 'elm-css-webpack-loader',
-            options: {
-              module: 'Pages.Embed.Stylesheets'
-            }
-          }
-        ]
-      },
-      {
-        test:    /\.html$/,
-        exclude: /node_modules/,
-        loader:  'file-loader?name=[name].[ext]',
-      },
-      {
-        test: /ServiceWorker\.js$/,
-        exclude: /node_modules/,
-        loader: 'serviceworker-loader',
-      },
-      {
-        test: /\.worker\.js$/,
-        loader: 'worker-loader?inline'
-      },
-      {
-        test:    /Main\.elm$/,
+        test:    /\.elm$/,
         exclude: [/elm-stuff/, /node_modules/],
         loaders:  [
           StringReplacePlugin.replace({
             replacements: [
               { pattern: /\%CDN_BASE\%/g, replacement: () => 'https://s3.us-east-2.amazonaws.com/development-cdn.ellie-app.com' },
               { pattern: /\%SERVER_ORIGIN\%/g, replacement: () => 'http://localhost:5000' },
-              { pattern: /\%CARBON_ZONE_ID\%/g, replacement: () => 'test' },
-              { pattern: /\%CARBON_SERVE\%/g, replacement: () => 'test' },
-              { pattern: /\%CARBON_PLACEMENT\%/g, replacement: () => 'test' },
+              { pattern: /\%CARBON_ZONE_ID\%/g, replacement: () => process.env.CARBON_ZONE_ID },
+              { pattern: /\%CARBON_SERVE\%/g, replacement: () => process.env.CARBON_SERVE },
+              { pattern: /\%CARBON_PLACEMENT\%/g, replacement: () => process.env.CARBON_PLACEMENT },
               { pattern: /\%ENV\%/g, replacement: () => 'development' },
             ]
           }),
-          `elm-webpack-loader?yes&debug&cwd=${path.join(__dirname, 'client')}`,
+          {
+            loader: 'elm-webpack-loader',
+            options: {
+              maxInstances: 1,
+              forceWatch: true,
+              cache: true,
+              yes: true,
+              debug: true,
+              cwd: path.join(__dirname, 'client'),
+              ignore: /generated-code/
+            }
+          }
         ]
-      },
-      {
-        test: /\.woff(2)?(\?v=[0-9]\.[0-9]\.[0-9])?$/,
-        loader: 'url-loader?limit=10000&mimetype=application/font-woff',
-      },
-      {
-        test: /\.(ttf|eot|svg)(\?v=[0-9]\.[0-9]\.[0-9])?$/,
-        loader: 'file-loader',
       },
     ]
   },
@@ -127,11 +95,6 @@ module.exports = {
       'process.env.NODE_ENV': JSON.stringify('development')
     }),
     new StringReplacePlugin(),
-    new CopyPlugin([
-      { from: path.join(__dirname, 'images'), to: 'images', toType: 'dir' }
-    ], {
-      copyUnmodified: true
-    })
   ],
 
   devServer: {
@@ -139,6 +102,12 @@ module.exports = {
     stats: { colors: true },
     historyApiFallback: true,
     port: '8000',
+    allowedHosts: [
+      'http://localhost:5000'
+    ],
+    headers: {
+      'Access-Control-Allow-Origin': '*',
+    },
     watchOptions: {
       aggregateTimeout: 300,
       poll: 1000

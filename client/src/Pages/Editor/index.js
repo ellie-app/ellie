@@ -1,15 +1,21 @@
 import 'es6-promise/auto'
 import './Main.css'
-import initCodeMirror from '../../Views/Editors/CodeMirror'
+import CodeMirrorLoader from '../../Ellie/CodeMirror/Loader'
 import fixHtml from './fixHtml'
 import captureOpbeat from '../../Shared/Opbeat'
-import EditorsRunner from '../../Views/Editors/Runner'
+import CodeMirrorRunner from '../../Ellie/CodeMirror/Runner'
 import AwsRunner from '../../Shared/Aws/Runner'
+import IconLoader from '../../Ellie/Ui/Icon/Loader'
+import '../../Ellie/Ui/ProgressBar.css'
+import Layout from './Layout'
 
-const vimMode = window.location.search.indexOf('vim=true') !== -1
-initCodeMirror(vimMode)
+IconLoader.load()
+
+CodeMirrorLoader
+  .load()
   .then(CodeMirror => {
     const Elm = require('./Main.elm')
+
     let hasUnsavedWork = false;
     let previousLocation = window.location.pathname
     window.addEventListener('popstate', e => {
@@ -31,14 +37,15 @@ initCodeMirror(vimMode)
         height: window.innerHeight
       },
       online: process.env.NODE_ENV === 'production' ? window.navigator.onLine : true,
+      vimMode: localStorage.getItem('Pages.Editor.vimMode') === 'true',
       acceptedTermsVersion,
       latestTermsVersion,
-      vimMode,
     })
 
     app.ports.opbeatCaptureOut.subscribe(captureOpbeat)
 
-    EditorsRunner.start(CodeMirror, app)
+    Layout.start(app)
+    CodeMirrorRunner.start(CodeMirror, app)
     AwsRunner.start(app)
 
     app.ports.pathChangedOut.subscribe(() => {
@@ -66,6 +73,10 @@ initCodeMirror(vimMode)
       win.focus()
     })
 
+    app.ports.saveVimMode.subscribe(enabled => {
+      localStorage.setItem('Pages.Editor.vimMode', enabled)
+    })
+
     window.addEventListener('online', function () {
       app.ports.online.send(true)
     })
@@ -83,10 +94,7 @@ initCodeMirror(vimMode)
     window.addEventListener('message', function (event) {
       if (event.data.type === 'error') {
         app.ports.jsError.send(event.data.message)
-        return
       }
-
-      app.ports.windowMessageIn.send(event.data)
     })
 
 

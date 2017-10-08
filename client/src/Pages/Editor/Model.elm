@@ -1,17 +1,12 @@
 module Pages.Editor.Model
     exposing
-        ( EditorCollapseState(..)
-        , Model
-        , PopoutState(..)
+        ( Model
         , canCompile
         , canSave
-        , closeSearch
         , commitStagedCode
         , compileErrors
         , elmCodeForCompile
-        , elmIsHidden
         , hasUnsavedWork
-        , htmlIsHidden
         , isOwnedProject
         , isRevisionChanged
         , isSavedProject
@@ -30,24 +25,12 @@ import Data.Ellie.Revision as Revision exposing (Revision)
 import Data.Ellie.SaveState as SaveState exposing (SaveState)
 import Data.Ellie.TermsVersion as TermsVersion exposing (TermsVersion)
 import Data.Elm.Compiler.Error as CompilerError
-import Data.Elm.Package as Package exposing (Package)
 import Pages.Editor.Flags as Flags exposing (Flags)
+import Pages.Editor.Header.Model as Header
+import Pages.Editor.Layout.Model as Layout
 import Pages.Editor.Routing as Routing exposing (Route(..))
+import Pages.Editor.Sidebar.Model as Sidebar
 import RemoteData exposing (RemoteData(..))
-import Window exposing (Size)
-
-
-type PopoutState
-    = AllClosed
-    | AboutOpen
-    | TermsOpen
-    | EmbedLinkOpen
-
-
-type EditorCollapseState
-    = BothOpen
-    | JustHtmlOpen
-    | JustElmOpen
 
 
 type alias Model =
@@ -62,23 +45,16 @@ type alias Model =
     , saveState : SaveState
     , isOnline : Bool
     , notifications : List Notification
-    , popoutState : PopoutState
-    , resultSplit : Float
-    , resultDragging : Bool
-    , editorSplit : Float
-    , editorDragging : Bool
-    , windowSize : Size
-    , searchOpen : Bool
-    , searchValue : String
-    , searchResults : List Package
     , vimMode : Bool
     , packagesChanged : Bool
-    , editorsCollapse : EditorCollapseState
-    , resultsCollapse : Bool
     , creatingGist : Bool
     , keyCombo : KeyCombo
     , latestTermsVersion : TermsVersion
     , acceptedTermsVersion : Maybe TermsVersion
+    , sidebar : Sidebar.Model
+    , layout : Layout.Model
+    , header : Header.Model
+    , termsShown : Bool
     }
 
 
@@ -95,23 +71,16 @@ model flags =
     , saveState = SaveState.Ready
     , isOnline = flags.online
     , notifications = []
-    , popoutState = AllClosed
-    , resultSplit = 0.5
-    , resultDragging = False
-    , editorSplit = 0.5
-    , editorDragging = False
-    , windowSize = flags.windowSize
-    , searchOpen = False
-    , searchValue = ""
-    , searchResults = []
     , vimMode = flags.vimMode
     , packagesChanged = False
-    , editorsCollapse = BothOpen
-    , resultsCollapse = False
     , creatingGist = False
     , keyCombo = KeyCombo.empty
     , latestTermsVersion = flags.latestTermsVersion
     , acceptedTermsVersion = flags.acceptedTermsVersion
+    , sidebar = Sidebar.model
+    , layout = Layout.init flags.windowSize
+    , header = Header.init
+    , termsShown = False
     }
 
 
@@ -161,15 +130,6 @@ resetToNew model =
         , saveState = SaveState.Ready
         , vimMode = model.vimMode
         , packagesChanged = False
-    }
-
-
-closeSearch : Model -> Model
-closeSearch model =
-    { model
-        | searchOpen = False
-        , searchResults = []
-        , searchValue = ""
     }
 
 
@@ -247,16 +207,6 @@ hasUnsavedWork model =
 
         _ ->
             False
-
-
-htmlIsHidden : Model -> Bool
-htmlIsHidden model =
-    model.editorsCollapse == JustElmOpen
-
-
-elmIsHidden : Model -> Bool
-elmIsHidden model =
-    model.editorsCollapse == JustHtmlOpen
 
 
 compileErrors : Model -> List CompilerError.Error

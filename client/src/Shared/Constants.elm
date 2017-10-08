@@ -3,12 +3,12 @@ module Shared.Constants exposing (..)
 
 sidebarWidth : number
 sidebarWidth =
-    250
+    240
 
 
 headerHeight : number
 headerHeight =
-    52
+    40
 
 
 isProduction : Bool

@@ -50,10 +50,7 @@
 
 #carbon {
   width: 100%;
-  background: #282A37;
   padding: 12px;
-  padding-bottom: 6px;
-  border-radius: 3px;
   min-height: 120px;
 }
 
@@ -91,7 +88,7 @@
 
 #carbonads .carbon-poweredby {
   text-decoration: none;
-  color: #A3A7AB;
+  color: #FC6ECC;
   text-align: right;
   width: 100%;
   position: relative;

@@ -10,3 +10,4 @@ requests==2.18.1
 hashids==1.2.0
 py-postgresql==1.2.1
 opbeat[flask]
+Whoosh==2.7.4

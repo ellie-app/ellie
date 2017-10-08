@@ -21,8 +21,8 @@ overlay =
         [ width (pct 100)
         , height (pct 100)
         , position relative
-        , backgroundColor (hex Colors.mediumGray)
-        , color (hex Colors.white)
+        , backgroundColor Colors.mediumGray_
+        , color Colors.lightGray_
         , padding (px 16)
         ]
 
@@ -66,9 +66,9 @@ errorsContainer =
     uniqueClass
         [ padding (px 16)
         , width (pct 100)
-        , backgroundColor (hex Colors.mediumGray)
         , height (pct 100)
         , overflowY auto
+        , maxWidth (px 500)
         ]
 
 
@@ -76,8 +76,7 @@ errorItem : UniqueClass
 errorItem =
     uniqueClass
         [ padding (px 16)
-        , backgroundColor (hex Colors.darkGray)
-        , color (hex Colors.white)
+        , backgroundColor Colors.darkGray_
         , marginBottom (px 2)
         , firstChild
             [ borderTopRightRadius (px 3)
@@ -106,7 +105,7 @@ errorItemHeader =
         [ displayFlex
         , property "justify-content" "space-between"
         , fontSize (px 10)
-        , color (hex Colors.lightGray)
+        , color Colors.lightMediumGray
         , lineHeight (px 10)
         , textTransform uppercase
         , paddingBottom (px 16)

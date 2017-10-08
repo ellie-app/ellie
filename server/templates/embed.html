@@ -17,12 +17,12 @@
     <meta name="twitter:description" content="{{ data.description }}" />
     <meta name="twitter:image" content="{{ constants.PROFILE_PIC }}" />
     <meta name="twitter:site" content="@ellie_editor" />
-    <link href="https://fonts.googleapis.com/css?family=Leckerli+One|Quicksand" rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css?family=Quicksand" rel="stylesheet" />
     {% if constants.ENV != "development" %}
       <link href="{{ constants.APP_CSS }}" rel="stylesheet" />
     {% endif %}
     <script src="{{ constants.APP_JS }}" async></script>
-    {% if constants.ENV == "production" %}
+    {% if constants.ENV == "development" %}
       <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src='https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);})(window,document,'script','dataLayer','{{ constants.GTM_ID }}');</script>
     {% endif %}
   </head>

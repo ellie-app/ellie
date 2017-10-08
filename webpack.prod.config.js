@@ -4,7 +4,6 @@ const StringReplacePlugin = require('string-replace-webpack-plugin')
 const ExtractTextPlugin = require('extract-text-webpack-plugin')
 const ManifestPlugin = require('webpack-manifest-plugin')
 const Md5Hash = require('webpack-md5-hash')
-const CopyPlugin = require('copy-webpack-plugin')
 
 const generatedElmCss = path.resolve(__dirname, 'client/elm-stuff/generated-code/rtfeldman/elm-css/output.css')
 
@@ -36,6 +35,12 @@ module.exports = {
 
   module: {
     rules: [
+      {
+        test: /\.svg$/,
+        use: {
+          loader: 'svg-inline-loader'
+        }
+      },
       {
         test: /\.js$/,
         exclude: /node_modules/,
@@ -109,8 +114,5 @@ module.exports = {
     new ManifestPlugin(),
     new StringReplacePlugin(),
     new ExtractTextPlugin('[name].[chunkhash:8].css'),
-    new CopyPlugin([
-      { from: path.join(__dirname, 'images'), to: 'images', toType: 'dir' }
-    ])
   ]
 }
