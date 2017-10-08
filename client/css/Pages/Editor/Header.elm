@@ -12,7 +12,7 @@ header =
     uniqueClass
         [ width (pct 100)
         , height (px 40)
-        , backgroundColor Colors.darkGray_
+        , backgroundColor Colors.darkGray
         , displayFlex
         , alignItems center
         , Colors.boxShadow |> .bottom
@@ -24,10 +24,10 @@ header =
 
 termsLabel =
     uniqueClass
-        [ color Colors.lightGray_
+        [ color Colors.lightGray
         , descendants
             [ a
-                [ color Colors.pink_
+                [ color Colors.pink
                 , textDecoration underline
                 ]
             ]
@@ -45,7 +45,7 @@ headerGroup =
 logo : UniqueSvgClass
 logo =
     uniqueSvgClass
-        [ fill (hex Colors.white)
+        [ fill Colors.lightGray
         , height (px 20)
         , width (px 51)
         , marginRight (px 24)

@@ -22,7 +22,7 @@ textarea =
         , width (pct 100)
         , fontSize (px 15)
         , lineHeight (num 1)
-        , color Colors.lightGray_
+        , color Colors.lightGray
         , fontFamily monospace
         , padding zero
         , paddingBottom (px 9)
@@ -37,14 +37,14 @@ textarea =
                 [ selector "[data-underline]"
                     [ transform <| scaleX 1 ]
                 , selector "[data-resize]"
-                    [ fill Colors.pink_
+                    [ fill Colors.pink
                     , property "transition-delay" "200ms"
                     ]
                 ]
             ]
-        , pseudoElement "-ms-input-placeholder" [ color Colors.mediumGray_ ]
-        , pseudoElement "-webkit-input-placeholder" [ color Colors.mediumGray_ ]
-        , pseudoElement "-moz-placeholder" [ color Colors.mediumGray_ ]
+        , pseudoElement "-ms-input-placeholder" [ color Colors.mediumGray ]
+        , pseudoElement "-webkit-input-placeholder" [ color Colors.mediumGray ]
+        , pseudoElement "-moz-placeholder" [ color Colors.mediumGray ]
         ]
 
 
@@ -72,7 +72,7 @@ underlineTop =
         [ underlineBase
         , transform <| scaleX 0
         , property "transition" "transform 250ms"
-        , backgroundColor Colors.pink_
+        , backgroundColor Colors.pink
         ]
 
 

@@ -8,7 +8,7 @@ import Css.File exposing (..)
 title =
     uniqueClass
         [ fontSize (px 16)
-        , color Colors.lightGray_
+        , color Colors.lightGray
         ]
 
 

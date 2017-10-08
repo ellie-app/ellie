@@ -10,7 +10,7 @@ container =
         [ position relative
         , width (pct 100)
         , height (pct 100)
-        , backgroundColor Colors.darkGray_
+        , backgroundColor Colors.darkGray
         , displayFlex
         , flexDirection column
         , alignItems center
@@ -34,7 +34,7 @@ details =
         , Colors.boxShadow |> .bottom
         , marginTop (px 48)
         , padding2 (px 48) (px 16)
-        , color Colors.lightGray_
+        , color Colors.lightGray
         , displayFlex
         , flexDirection column
         , alignItems center
@@ -74,8 +74,8 @@ detailsExtraNotice =
 
 failureMessage =
     uniqueClass
-        [ backgroundColor Colors.mediumGray_
-        , borderLeft3 (px 1) solid Colors.pink_
+        [ backgroundColor Colors.mediumGray
+        , borderLeft3 (px 1) solid Colors.pink
         , padding (px 12)
         , marginTop (px 16)
         , fontSize (px 16)
@@ -91,7 +91,7 @@ failureHint =
         , marginTop (px 24)
         , padding (px 16)
         , width <| calc (pct 100) minus (px 96)
-        , color Colors.lightGray_
+        , color Colors.lightGray
         , displayFlex
         , flexDirection column
         , alignItems center

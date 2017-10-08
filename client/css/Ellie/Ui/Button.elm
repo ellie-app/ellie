@@ -36,7 +36,7 @@ backgroundShared =
         , disabled
             [ property "transform" "none"
             , boxShadow none
-            , backgroundColor Colors.mediumGray_
+            , backgroundColor Colors.mediumGray
             ]
         ]
 
@@ -44,8 +44,8 @@ backgroundShared =
 primary : UniqueClass
 primary =
     uniqueClass
-        [ backgroundColor Colors.mediumGray_
-        , color Colors.lightGray_
+        [ backgroundColor Colors.mediumGray
+        , color Colors.lightGray
         , backgroundShared
         ]
 
@@ -53,8 +53,8 @@ primary =
 accent : UniqueClass
 accent =
     uniqueClass
-        [ backgroundColor Colors.pink_
-        , color Colors.lightGray_
+        [ backgroundColor Colors.pink
+        , color Colors.lightGray
         , backgroundShared
         ]
 
@@ -68,7 +68,7 @@ link =
         , fontWeight bold
         , property "transition" "color 150ms"
         , hover
-            [ color Colors.lightGray_
+            [ color Colors.lightGray
             ]
         , disabled
             [ color Colors.lightMediumGray

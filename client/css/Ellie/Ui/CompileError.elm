@@ -11,8 +11,8 @@ container =
         , backgroundColor Colors.darkMediumGray
         , Colors.boxShadow |> .bottom
         , padding2 (px 12) (px 16)
-        , borderLeft3 (px 1) solid Colors.red_
-        , color Colors.lightGray_
+        , borderLeft3 (px 1) solid Colors.red
+        , color Colors.lightGray
         , position relative
         ]
 

@@ -26,7 +26,7 @@ container =
         , active
             [ descendants
                 [ selector "[data-checkbox]"
-                    [ fill Colors.mediumGray_ ]
+                    [ fill Colors.mediumGray ]
                 ]
             ]
         ]
@@ -43,5 +43,5 @@ svgCheckbox =
     uniqueSvgClass
         [ width (px 16)
         , height (px 16)
-        , fill Colors.mediumGray_
+        , fill Colors.mediumGray
         ]
