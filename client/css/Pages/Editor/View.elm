@@ -12,7 +12,7 @@ htmlStyles : Snippet
 htmlStyles =
     html
         [ height (pct 100)
-        , backgroundColor Colors.darkGray_
+        , backgroundColor Colors.darkGray
         ]
 
 
@@ -120,7 +120,7 @@ editorsContainer =
         , flexDirection column
         , height (pct 100)
         , width (pct 50)
-        , borderRight3 (px 2) solid (hex Colors.mediumGray)
+        , borderRight3 (px 2) solid Colors.mediumGray
         , overflow hidden
         ]
 
@@ -130,12 +130,12 @@ editorContainer =
     uniqueClass
         [ height (pct 50)
         , position relative
-        , backgroundColor (hex Colors.darkGray)
+        , backgroundColor Colors.darkGray
         , firstChild
-            [ borderBottom3 (px 1) solid (hex Colors.mediumGray)
+            [ borderBottom3 (px 1) solid Colors.mediumGray
             ]
         , lastChild
-            [ borderTop3 (px 1) solid (hex Colors.mediumGray)
+            [ borderTop3 (px 1) solid Colors.mediumGray
             ]
         ]
 
@@ -232,18 +232,15 @@ overlayButton =
         [ position absolute
         , property "background" "none"
         , border zero
-        , color (hex Colors.white)
+        , color Colors.lightGray
         , displayFlex
         , zIndex (int 7)
         , cursor pointer
         , borderRadius (px 3)
         , padding (px 6)
-        , backgroundColor <|
-            rgba
-                (.r Colors.darkGrayRgb)
-                (.g Colors.darkGrayRgb)
-                (.b Colors.darkGrayRgb)
-                0.5
+        , Colors.darkGray
+            |> withAlpha 0.5
+            |> backgroundColor
         ]
 
 

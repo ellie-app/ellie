@@ -13,7 +13,9 @@ import Data.Ellie.Notification as Notification exposing (Notification)
 import Data.Ellie.Revision as Revision exposing (Revision)
 import Data.Elm.Compiler.Error as CompilerError
 import Data.Elm.Package as Package exposing (Package)
+import Ellie.Api as Api
 import Ellie.CodeMirror as CodeMirror
+import Ellie.Opbeat as Opbeat
 import Navigation
 import Pages.Editor.Cmds as Cmds
 import Pages.Editor.Flags as Flags exposing (Flags)
@@ -26,8 +28,6 @@ import Pages.Editor.Sidebar.Model as Sidebar
 import Pages.Editor.Sidebar.Update as Sidebar
 import Process
 import RemoteData exposing (RemoteData(..))
-import Shared.Api as Api
-import Shared.Opbeat as Opbeat
 import Task
 import Time exposing (Time)
 

@@ -104,10 +104,10 @@ editorContainer =
         , position relative
         , backgroundColor Colors.darkMediumGray
         , firstChild
-            [ borderBottom3 (px 1) solid Colors.darkGray_
+            [ borderBottom3 (px 1) solid Colors.darkGray
             ]
         , lastChild
-            [ borderTop3 (px 1) solid Colors.darkGray_
+            [ borderTop3 (px 1) solid Colors.darkGray
             ]
         ]
 

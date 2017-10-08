@@ -14,7 +14,7 @@ import Pages.Embed.Routing exposing (Route(..))
 import Pages.Embed.Update as Update exposing (Msg(..))
 import Pages.Embed.View.Styles as Styles
 import RemoteData exposing (RemoteData(..))
-import Shared.Constants as Constants
+import Ellie.Constants as Constants
 import Svg exposing (svg, use)
 import Svg.Attributes exposing (xlinkHref)
 

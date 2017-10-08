@@ -1,4 +1,4 @@
-import captureException from '../../Shared/Opbeat'
+import OpbeatRunner from '../Opbeat/Runner'
 import CodeMirrorLoader from './Loader'
 
 const start = (CodeMirror, app) => {
@@ -28,11 +28,11 @@ const start = (CodeMirror, app) => {
           return
 
         default:
-          captureException({
+          OpbeatRunner.capture({
             tag: 'UnknownOutboundPortMessage',
             message: `Unexpected port message from Views.Editors: "${data.tag}"`,
             line: 31,
-            moduleName: 'Views/Editors/Runner.js',
+            moduleName: 'Ellie/CodeMirror/Runner.js',
             extraData: data
           })
           return

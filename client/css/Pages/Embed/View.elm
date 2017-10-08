@@ -51,7 +51,7 @@ failureContainer =
         , alignItems center
         , padding (px 16)
         , paddingTop (px 100)
-        , backgroundColor (hex Colors.mediumGray)
+        , backgroundColor Colors.mediumGray
         ]
 
 
@@ -59,7 +59,7 @@ failureTitle : UniqueClass
 failureTitle =
     uniqueClass
         [ fontFamilies [ Constants.scriptFont ]
-        , color (hex Colors.white)
+        , color Colors.lightGray
         , fontSize (px 48)
         , lineHeight (px 48)
         , paddingBottom (px 24)
@@ -70,7 +70,7 @@ failureMessage : UniqueClass
 failureMessage =
     uniqueClass
         [ fontSize (px 24)
-        , color (hex Colors.white)
+        , color Colors.lightGray
         , padding2 zero (px 16)
         , maxWidth (px 528)
         , textAlign center
@@ -82,8 +82,8 @@ failureDetails : UniqueClass
 failureDetails =
     uniqueClass
         [ maxWidth (px 600)
-        , backgroundColor Colors.darkGray_
-        , color (hex Colors.white)
+        , backgroundColor Colors.darkGray
+        , color Colors.lightGray
         , borderRadius (px 3)
         , padding (px 12)
         , fontSize (px 16)
@@ -93,8 +93,8 @@ failureDetails =
 header : UniqueClass
 header =
     uniqueClass
-        [ backgroundColor Colors.darkGray_
-        , borderBottom3 (px 1) solid Colors.pink_
+        [ backgroundColor Colors.darkGray
+        , borderBottom3 (px 1) solid Colors.pink
         , displayFlex
         , height (px 40)
         , property "justify-content" "space-between"
@@ -122,7 +122,7 @@ headerTab =
         [ padding2 zero (px 12)
         , paddingTop (px 2)
         , height (pct 100)
-        , color (hex Colors.white)
+        , color Colors.lightGray
         , fontSize (px 16)
         , lineHeight (px 16)
         , border zero
@@ -141,20 +141,14 @@ headerTab =
             , cursor notAllowed
             ]
         , hover
-            [ backgroundColor <|
-                rgba
-                    (.r Colors.mediumGrayRgb)
-                    (.g Colors.mediumGrayRgb)
-                    (.b Colors.mediumGrayRgb)
-                    0.2
+            [ Colors.mediumGray
+                |> withAlpha 0.2
+                |> backgroundColor
             ]
         , active
-            [ backgroundColor <|
-                rgba
-                    (.r Colors.mediumGrayRgb)
-                    (.g Colors.mediumGrayRgb)
-                    (.b Colors.mediumGrayRgb)
-                    0.35
+            [ Colors.mediumGray
+                |> withAlpha 0.35
+                |> backgroundColor
             ]
         ]
 
@@ -162,16 +156,12 @@ headerTab =
 headerTabActive : UniqueClass
 headerTabActive =
     uniqueClass
-        [ borderTop3 (px 2) solid (hex Colors.pink)
-        , property "border-image" <| Colors.pinkPurpleGradient ++ " 1"
+        [ borderTop3 (px 2) solid Colors.pink
         , paddingTop zero
-        , color (hex Colors.white)
-        , backgroundColor <|
-            rgba
-                (.r Colors.mediumGrayRgb)
-                (.g Colors.mediumGrayRgb)
-                (.b Colors.mediumGrayRgb)
-                0.5
+        , color Colors.lightGray
+        , Colors.mediumGray
+            |> withAlpha 0.5
+            |> backgroundColor
         ]
 
 
@@ -180,7 +170,7 @@ headerLink =
     uniqueClass
         [ padding2 (px 6) (px 12)
         , borderRadius (px 3)
-        , color (hex Colors.white)
+        , color Colors.lightGray
         , fontSize (px 16)
         , lineHeight (px 16)
         , textTransform uppercase
@@ -191,27 +181,18 @@ headerLink =
         , outline zero
         , fontFamily inherit
         , property "-webkit-appearance" "none"
-        , backgroundColor <|
-            rgba
-                (.r Colors.mediumGrayRgb)
-                (.g Colors.mediumGrayRgb)
-                (.b Colors.mediumGrayRgb)
-                0.3
+        , Colors.mediumGray
+            |> withAlpha 0.3
+            |> backgroundColor
         , hover
-            [ backgroundColor <|
-                rgba
-                    (.r Colors.mediumGrayRgb)
-                    (.g Colors.mediumGrayRgb)
-                    (.b Colors.mediumGrayRgb)
-                    0.5
+            [ Colors.mediumGray
+                |> withAlpha 0.5
+                |> backgroundColor
             ]
         , active
-            [ backgroundColor <|
-                rgba
-                    (.r Colors.mediumGrayRgb)
-                    (.g Colors.mediumGrayRgb)
-                    (.b Colors.mediumGrayRgb)
-                    0.7
+            [ Colors.mediumGray
+                |> withAlpha 0.7
+                |> backgroundColor
             ]
         ]
 
@@ -256,7 +237,7 @@ headerLinkLogo =
         [ marginLeft (px 6)
         , width (px 41)
         , height (px 16)
-        , fill Colors.lightGray_
+        , fill Colors.lightGray
         ]
 
 

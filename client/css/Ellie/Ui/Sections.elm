@@ -49,8 +49,8 @@ button =
         , property "background" "none"
         , border zero
         , outline zero
-        , backgroundColor Colors.darkGray_
-        , color Colors.lightGray_
+        , backgroundColor Colors.darkGray
+        , color Colors.lightGray
         , height (px 44)
         , padding2 zero (px 12)
         , width (pct 100)
@@ -65,7 +65,7 @@ button =
 buttonOpen =
     uniqueClass
         [ Colors.boxShadow |> .bottom
-        , borderBottom3 (px 1) solid Colors.pink_
+        , borderBottom3 (px 1) solid Colors.pink
         , cursor default
         ]
 
@@ -89,7 +89,7 @@ arrow =
 
 arrowOpen =
     uniqueClass
-        [ color Colors.pink_
+        [ color Colors.pink
         , transform none
         ]
 

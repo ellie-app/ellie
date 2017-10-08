@@ -10,7 +10,7 @@ outer =
         [ width (pct 100)
         , height (px 8)
         , overflowX hidden
-        , backgroundColor Colors.mediumGray_
+        , backgroundColor Colors.mediumGray
         ]
 
 
@@ -20,7 +20,7 @@ innerIndeterminate =
         , property "transform-origin" "left"
         , height (px 8)
         , width (pct 100)
-        , backgroundColor Colors.pink_
+        , backgroundColor Colors.pink
         ]
 
 
@@ -30,5 +30,5 @@ innerPercentage =
         , height (px 8)
         , property "transition" "transform 150ms"
         , width (pct 100)
-        , backgroundColor Colors.pink_
+        , backgroundColor Colors.pink
         ]

@@ -10,12 +10,12 @@ import Data.Ellie.ApiError as ApiError exposing (ApiError)
 import Data.Ellie.Revision as Revision exposing (Revision)
 import Data.Ellie.RevisionId as RevisionId exposing (RevisionId)
 import Data.Elm.Compiler.Error as CompilerError
+import Ellie.Api as Api
 import Ellie.CodeMirror as CodeMirror
 import Navigation
 import Pages.Embed.Model as Model exposing (Model, Tab(..))
 import Pages.Embed.Routing as Routing exposing (Route(..))
 import RemoteData exposing (RemoteData(..))
-import Shared.Api as Api
 
 
 resultOnError : (x -> Result y a) -> Result x a -> Result y a

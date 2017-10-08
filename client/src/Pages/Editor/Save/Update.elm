@@ -8,6 +8,9 @@ import Data.Ellie.RevisionId as RevisionId exposing (RevisionId)
 import Data.Ellie.SaveState as SaveState exposing (SaveState)
 import Data.Ellie.TermsVersion as TermsVersion exposing (TermsVersion)
 import Data.Elm.Compiler.Error as CompilerError
+import Ellie.Api as Api
+import Ellie.Aws as Aws
+import Ellie.Opbeat as Opbeat
 import Http.Extra as Http
 import Json.Encode as Encode exposing (Value)
 import Navigation
@@ -15,9 +18,6 @@ import Pages.Editor.Cmds as Cmds
 import Pages.Editor.Model as Model exposing (Model)
 import Pages.Editor.Routing as Routing
 import RemoteData
-import Shared.Api as Api
-import Shared.Aws as Aws
-import Shared.Opbeat as Opbeat
 import Task
 
 

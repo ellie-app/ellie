@@ -10,7 +10,6 @@ import Html.Events exposing (onMouseDown)
 import Pages.Editor.Layout.Model as Model exposing (Model)
 import Pages.Editor.Layout.Styles as Styles
 import Pages.Editor.Layout.Update exposing (Msg(..))
-import Shared.Utils as Utils
 
 
 type alias Config msg =
@@ -26,11 +25,16 @@ type alias Config msg =
     }
 
 
+numberToPercent : number -> String
+numberToPercent number =
+    toString (number * 100) ++ "%"
+
+
 htmlHeightCss : Model -> String
 htmlHeightCss model =
     case model.editorCollapse of
         Model.BothOpen ->
-            Utils.numberToPercent (1 - model.editorSplit)
+            numberToPercent (1 - model.editorSplit)
 
         _ ->
             ""
@@ -40,7 +44,7 @@ elmHeightCss : Model -> String
 elmHeightCss model =
     case model.editorCollapse of
         Model.BothOpen ->
-            Utils.numberToPercent model.editorSplit
+            numberToPercent model.editorSplit
 
         _ ->
             ""
@@ -69,7 +73,7 @@ viewEditors : Config msg -> Html msg
 viewEditors config =
     div
         [ Styles.editorsContainer
-        , style "width" <| Utils.numberToPercent config.model.resultSplit
+        , style "width" <| numberToPercent config.model.resultSplit
         ]
         [ div
             [ Styles.editorContainer
@@ -131,13 +135,13 @@ view config =
                     [ viewEditors config
                     , div
                         [ Styles.outputResizeHandle
-                        , style "left" <| Utils.numberToPercent config.model.resultSplit
+                        , style "left" <| numberToPercent config.model.resultSplit
                         , onMouseDown (config.mapMsg ResultDragStarted)
                         ]
                         []
                     , div
                         [ Styles.outputContainer
-                        , style "width" <| Utils.numberToPercent (1 - config.model.resultSplit)
+                        , style "width" <| numberToPercent (1 - config.model.resultSplit)
                         ]
                         [ config.output ]
                     , div

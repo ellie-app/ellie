@@ -17,7 +17,7 @@ import List.Zipper as Zipper exposing (Zipper)
 import Pages.Editor.Sidebar.Model as Model exposing (Model)
 import Pages.Editor.Sidebar.Styles as Styles
 import Pages.Editor.Sidebar.Update exposing (Msg(..))
-import Shared.Constants as Constants
+import Ellie.Constants as Constants
 
 
 type alias Config msg =

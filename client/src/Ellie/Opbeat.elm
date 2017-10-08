@@ -1,4 +1,4 @@
-port module Shared.Opbeat exposing (Exception, capture)
+port module Ellie.Opbeat exposing (Exception, capture)
 
 
 type alias Exception =
@@ -10,9 +10,9 @@ type alias Exception =
     }
 
 
-port opbeatCaptureOut : Exception -> Cmd msg
+port ellieOpbeatOut : Exception -> Cmd msg
 
 
 capture : Exception -> Cmd msg
 capture exception =
-    opbeatCaptureOut exception
+    ellieOpbeatOut exception
