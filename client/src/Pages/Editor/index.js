@@ -42,8 +42,6 @@ CodeMirrorLoader
       latestTermsVersion,
     })
 
-    app.ports.opbeatCaptureOut.subscribe(captureOpbeat)
-
     Layout.start(app)
     CodeMirrorRunner.start(CodeMirror, app)
     AwsRunner.start(app)
