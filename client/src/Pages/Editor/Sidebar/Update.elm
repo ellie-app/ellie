@@ -33,6 +33,12 @@ update version msg model =
             )
 
         ChangePanel panel ->
-            ( { model | panel = panel }
+            ( { model
+                | panel =
+                    if Just panel == model.panel then
+                        Nothing
+                    else
+                        Just panel
+              }
             , Cmd.none
             )

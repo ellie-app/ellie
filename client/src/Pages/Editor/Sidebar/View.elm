@@ -2,6 +2,8 @@ module Pages.Editor.Sidebar.View exposing (..)
 
 import Data.Ellie.TermsVersion as TermsVersion exposing (TermsVersion)
 import Data.Elm.Package as Package exposing (Package)
+import Data.List.Iterator as Iterator exposing (Iterator(..))
+import Ellie.Constants as Constants
 import Ellie.Ui.Ad as Ad
 import Ellie.Ui.Button as Button
 import Ellie.Ui.Checkbox as Checkbox
@@ -13,11 +15,9 @@ import Ellie.Ui.TextArea as TextArea
 import Ellie.Ui.TextInput as TextInput
 import Html exposing (Html, a, div, p, span, text)
 import Html.Attributes exposing (href)
-import List.Zipper as Zipper exposing (Zipper)
 import Pages.Editor.Sidebar.Model as Model exposing (Model)
 import Pages.Editor.Sidebar.Styles as Styles
 import Pages.Editor.Sidebar.Update exposing (Msg(..))
-import Ellie.Constants as Constants
 
 
 type alias Config msg =
@@ -208,7 +208,7 @@ view : Config msg -> Html msg
 view config =
     div [ Styles.container ]
         [ div [ Styles.sections ]
-            [ Sections.view <| toZipper config ]
+            [ Sections.view <| toIterator config ]
         , div [ Styles.ad ]
             [ Ad.view
                 { zoneId = Constants.carbonZoneId
@@ -219,25 +219,29 @@ view config =
         ]
 
 
-toZipper : Config msg -> Zipper (Sections.Section msg)
-toZipper config =
+toIterator : Config msg -> Iterator (Sections.Section msg)
+toIterator config =
     case config.model.panel of
-        Model.Packages ->
-            Zipper.Zipper
+        Just Model.Packages ->
+            Iterator
                 []
-                (packagesSection config)
+                (Just <| packagesSection config)
                 [ settingsSection config
                 , aboutSection config
                 ]
 
-        Model.Settings ->
-            Zipper.Zipper
+        Just Model.Settings ->
+            Iterator
                 [ packagesSection config ]
-                (settingsSection config)
+                (Just <| settingsSection config)
                 [ aboutSection config ]
 
-        Model.About ->
-            Zipper.Zipper
+        Just Model.About ->
+            Iterator
                 [ settingsSection config, packagesSection config ]
-                (aboutSection config)
+                (Just <| aboutSection config)
                 []
+
+        Nothing ->
+            Iterator.fromList <|
+                [ packagesSection config, settingsSection config, aboutSection config ]

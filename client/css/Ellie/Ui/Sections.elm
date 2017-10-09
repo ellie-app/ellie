@@ -66,7 +66,6 @@ buttonOpen =
     uniqueClass
         [ Colors.boxShadow |> .bottom
         , borderBottom3 (px 1) solid Colors.pink
-        , cursor default
         ]
 
 
