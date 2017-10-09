@@ -15,10 +15,38 @@ header =
         , backgroundColor Colors.darkGray
         , displayFlex
         , alignItems center
+        , justifyContent spaceBetween
         , Colors.boxShadow |> .bottom
         , position relative
         , zIndex (int 4)
         , padding2 zero (px 16)
+        ]
+
+
+rightSide : UniqueClass
+rightSide =
+    uniqueClass
+        [ displayFlex
+        , alignItems center
+        ]
+
+
+socialLink =
+    uniqueClass
+        [ width (px 20)
+        , height (px 20)
+        , color Colors.lightMediumGray
+        , marginRight (px 8)
+        , lastChild [ marginRight zero ]
+        , hover [ color Colors.lightGray ]
+        ]
+
+
+leftSide : UniqueClass
+leftSide =
+    uniqueClass
+        [ displayFlex
+        , alignItems center
         ]
 
 
@@ -57,6 +85,7 @@ button =
     uniqueClass
         [ marginRight (px 16)
         , lastChild [ marginRight zero ]
+        , displayFlex
         ]
 
 
