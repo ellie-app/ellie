@@ -38,6 +38,7 @@ socialLink =
         , color Colors.lightMediumGray
         , marginRight (px 8)
         , lastChild [ marginRight zero ]
+        , hover [ color Colors.lightGray ]
         ]
 
 
