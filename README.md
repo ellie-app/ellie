@@ -17,15 +17,15 @@
 
 1. Choose your favorite way to load `.env` files
   - I have a shell function that does it:
-```
-function dotenv () {
-  env $(cat .env | xargs) $*
-}
-```
+    ```
+    function dotenv () {
+      env $(cat .env | xargs) $*
+    }
+    ```
   - There are various `dotenv` programs written in different languages that you can try
 
 1. Give `http://localhost:5000` write access to your S3 bucket
-![AWS Bucket CORS Config](docs/images/aws_bucket_cors.png)
+  ![AWS Bucket CORS Config](docs/images/aws_bucket_cors.png)
 
 1. Set up a virtual python environment and load it.
   ```
