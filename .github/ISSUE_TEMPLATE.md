@@ -1,6 +1,6 @@
 ### Feature Request?
 
-- Sign up for the Elm slack at elmlang.herokuapp.com and join the [#ellie channel](https://elmlang.slack.com/#ellie)
+- Sign up for the Elm slack at http://elmlang.herokuapp.com and join the [#ellie channel](https://elmlang.slack.com/#ellie)
 - Alternatively, send an email to ellie-app@lukewestby.com
 - Have a conversation about your idea!
 - **Please do not submit feature requests as GitHub issues, they will be closed!**

@@ -1,6 +1,6 @@
 ### New Feature or UX change?
 
-- Sign up for the Elm slack at elmlang.herokuapp.com and join the [#ellie channel](https://elmlang.slack.com/#ellie)
+- Sign up for the Elm slack at http://elmlang.herokuapp.com and join the [#ellie channel](https://elmlang.slack.com/#ellie)
 - Alternatively, send an email to ellie-app@lukewestby.com
 - Have a conversation about your idea!
 - New features and changes to Ellie's UX are considered thoroughly and carefully. An unannounced pull request is not the correct way to propose them! Ellie is managed in the same spirit as Elm itself. You can find out more in [this talk](https://www.youtube.com/watch?v=DSjbTC-hvqQ)
