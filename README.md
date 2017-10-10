@@ -15,7 +15,7 @@
 
   > I don't recommend that you change the CDN_BASE variable right now, it's needed for loading the compiler web worker and installing packages
 
-1. Choose your favorite way to load `.env` files
+2. Choose your favorite way to load `.env` files
   - I have a shell function that does it:
     ```
     function dotenv () {
@@ -24,32 +24,32 @@
     ```
   - There are various `dotenv` programs written in different languages that you can try
 
-1. Give `http://localhost:5000` write access to your S3 bucket
+3. Give `http://localhost:5000` write access to your S3 bucket
   ![AWS Bucket CORS Config](docs/images/aws_bucket_cors.png)
 
-1. Set up a virtual python environment and load it.
+4. Set up a virtual python environment and load it.
   ```
   python3 -m venv ./env && . env/bin/activate
   ```
 
-1. Install Python dependencies
+5. Install Python dependencies
   ```
   pip install -r requirements.txt
   ```
 
-1. Install frontend dependencies
+6. Install frontend dependencies
   ```
   npm install
   ```
 
-1. Run the server
+7. Run the server
   ```
   dotenv flask run
   ```
 
-1. Run the client development server
+8. Run the client development server
   ```
   dotenv npm run watch
   ```
 
-1. Open `http://localhost:5000`
+9. Open `http://localhost:5000`
