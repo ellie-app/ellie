@@ -3,13 +3,11 @@
   "description": "ellie-app.com",
   "repository": "https://github.com/lukewestby/ellie.git",
   "version": "1.0.0",
-  "main": "index.js",
   "license": "MIT",
   "engines": {
     "node": "6.9.5"
   },
   "dependencies": {
-    "ajv": "5.2.2",
     "autoprefixer": "7.1.4",
     "babel-core": "6.25.0",
     "babel-loader": "7.1.1",
@@ -17,7 +15,6 @@
     "babel-preset-env": "1.6.0",
     "babel-preset-es2017": "6.24.1",
     "codemirror": "5.27.4",
-    "copy-webpack-plugin": "4.0.1",
     "css-loader": "0.28.4",
     "elm": "0.18.0",
     "elm-css": "0.7.0-beta10",
@@ -26,8 +23,8 @@
     "elm-webpack-loader": "https://github.com/lukewestby/elm-webpack-loader.git",
     "es6-promise": "4.1.0",
     "extract-text-webpack-plugin": "3.0.0",
-    "highlight.js": "^9.12.0",
     "json-loader": "0.5.4",
+    "nodemon": "1.12.1",
     "npm-run-all": "4.1.1",
     "opbeat-js": "^3.1.4",
     "postcss-loader": "2.0.6",
@@ -36,8 +33,7 @@
     "svg-inline-loader": "0.8.0",
     "webpack": "3.3.0",
     "webpack-dev-server": "2.5.1",
-    "webpack-manifest-plugin": "1.1.2",
-    "webpack-md5-hash": "0.0.5"
+    "webpack-manifest-plugin": "1.1.2"
   },
   "scripts": {
     "elm-css:build": "cd client && elm-css -o elm-stuff/generated-code/rtfeldman/build",
