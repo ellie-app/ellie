@@ -91,6 +91,7 @@ CodeMirrorLoader
     })
 
     window.addEventListener('message', function (event) {
+      if (event.origin !== SERVER_ORIGIN) return
       if (event.data.type === 'error') {
         app.ports.jsError.send(event.data.message)
       }
