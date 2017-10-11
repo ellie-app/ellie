@@ -54,6 +54,11 @@ detailsSubMessage =
         ]
 
 
+detailsButton =
+    uniqueClass
+        [ paddingTop (px 20) ]
+
+
 progressBarContainer =
     uniqueClass
         [ width (pct 100)
