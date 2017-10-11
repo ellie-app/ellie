@@ -4,6 +4,7 @@ import Data.Ellie.CompileStage as CompileStage exposing (CompileStage(..))
 import Data.Elm.Compiler.Error as Error exposing (Error)
 import Ellie.Ui.Button as Button
 import Ellie.Ui.CompileError as CompileError
+import Ellie.Ui.Icon as Icon
 import Ellie.Ui.ProgressBar as ProgressBar
 import Extra.Html as Html
 import Html exposing (Html, div, iframe, text)
@@ -15,6 +16,7 @@ import Pages.Editor.Output.Styles as Styles
 type alias Config msg =
     { stage : CompileStage
     , onClearElmStuff : msg
+    , onCompile : msg
     }
 
 
@@ -27,11 +29,21 @@ viewLoading percentage =
     ]
 
 
-viewReady : List (Html msg)
-viewReady =
+viewReady : msg -> List (Html msg)
+viewReady onCompile =
     [ div [ Styles.details ]
         [ div [ Styles.detailsTitle ] [ text "Ready" ]
-        , div [ Styles.detailsSubMessage ] [ text "Run the compiler to use your program." ]
+        , div [ Styles.detailsButton ]
+            [ Button.view
+                { size = Button.Medium
+                , style = Button.Primary
+                , icon = Just Icon.Play
+                , label = "COMPILE"
+                , disabled = False
+                , action = Button.click onCompile
+                , attributes = []
+                }
+            ]
         ]
     ]
 
@@ -146,7 +158,7 @@ view config =
     div [ Styles.container ] <|
         case config.stage of
             Initial ->
-                viewReady
+                viewReady config.onCompile
 
             LoadingCompiler percentage ->
                 viewLoading percentage

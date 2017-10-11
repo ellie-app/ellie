@@ -61,6 +61,7 @@ viewOutput model =
     Output.view
         { onClearElmStuff = ClearElmStuff
         , stage = model.compileStage
+        , onCompile = CompileRequested
         }
 
 
