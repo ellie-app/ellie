@@ -33,7 +33,7 @@ decodeMsg model value =
             msg
 
         Err message ->
-            Debug.crash message
+            NoOp
 
 
 windowMessageDecoder : Model -> Decoder Msg
