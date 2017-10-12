@@ -4,7 +4,6 @@ import Prelude
 import Elm.Package as Package
 import Data.String as String
 
-
 newtype Raw = Raw (Array String)
 
 
@@ -13,9 +12,9 @@ instance showRaw :: Show Raw where
     String.joinWith "." segments
 
 
-isNative :: Raw -> Bool
-isNative (Raw ("Native" : _ )) = True
-isNative _ = False
+isNative :: Raw -> Boolean
+isNative (Raw ["Native", _]) = true
+isNative _ = false
 
 
 newtype Canonical = Canonical
@@ -25,20 +24,20 @@ newtype Canonical = Canonical
 
 
 instance showCanonical :: Show Canonical where
-  show (Canonical { package, _module }) =
+  show (Canonical { _package, _module }) =
     show _module
 
 
 inVirtualDom :: Raw -> Canonical
 inVirtualDom raw =
-  Canonical Package.virtualDom raw
+  Canonical { _package: Package.virtualDom, _module: raw }
 
 
 inCore :: Raw -> Canonical
 inCore raw =
-  Canonical Package.core raw
+  Canonical { _package: Package.core, _module: raw }
 
 
 inHtml :: Raw -> Canonical
 inHtml raw =
-  Canonical Package.html raw
+  Canonical { _package: Package.html, _module: raw }
