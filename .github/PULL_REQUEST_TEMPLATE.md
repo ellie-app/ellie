@@ -1,3 +1,5 @@
+**Please consider discussing complicated changes in [Slack](https://elmlang.slack.com/#ellie) [(join)](http://elmlang.herokuapp.com) or [via email](mailto:ellie-app@lukewestby.com) before submitting a PR**
+
 ### New Feature or UX change?
 
 - Sign up for the Elm slack at http://elmlang.herokuapp.com and join the [#ellie channel](https://elmlang.slack.com/#ellie)
