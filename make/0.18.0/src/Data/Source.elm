@@ -110,8 +110,7 @@ isVarChar char =
     Char.isLower char
         || Char.isUpper char
         || Char.isDigit char
-        || char
-        == '_'
+        || (char == '_')
 
 
 keywords : Set.Set String
