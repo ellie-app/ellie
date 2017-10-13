@@ -123,7 +123,6 @@ const start = app => {
       xhr.addEventListener('error', () => {
         if (failed) return
         failed = true
-        debugger
         reject(Error(`Failed to read content from ${url}`))
       })
 

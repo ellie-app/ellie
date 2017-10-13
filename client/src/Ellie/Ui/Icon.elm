@@ -32,6 +32,7 @@ type Icon
     | Twitter
     | GitHub
     | Trello
+    | Console
 
 
 view : Icon -> Html msg
@@ -118,3 +119,6 @@ toIdString icon =
 
         Trello ->
             "trello"
+
+        Console ->
+            "console"

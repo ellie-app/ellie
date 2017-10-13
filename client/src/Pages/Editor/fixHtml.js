@@ -26,6 +26,18 @@ const embeddedApi = (doc) => {
       if (button) button.click()
     }
   })
+
+  var oldLog = console.log
+  console.log = function () {
+    var firstArg = arguments[0]
+    if (arguments.length === 1 && typeof firstArg === 'string' && firstArg.indexOf(':') !== -1) {
+      var split = firstArg.split(': ')
+      var label = split[0]
+      var value = split.slice(1).join(': ')
+      parent.postMessage({ type: 'log', label: label, value: value }, origin)
+    }
+    oldLog.apply(this, arguments)
+  }
   delete window.parent
 }())`
 

@@ -2,6 +2,7 @@ module Pages.Editor.View exposing (view)
 
 import Data.Ellie.SaveState as SaveState
 import Ellie.Ui.Toast as Toast
+import Extra.Html as Html
 import Html exposing (Html, button, div, header, iframe, main_, span, text)
 import Pages.Editor.Header.View as Header
 import Pages.Editor.Layout.View as Layout
@@ -86,15 +87,16 @@ viewSidebar model =
 
 viewNotifications : Model -> Html Msg
 viewNotifications model =
-    div [] <|
-        List.map
-            (\notification ->
-                Toast.view
-                    { notification = notification
-                    , onClose = ClearNotification notification
-                    }
-            )
-            model.notifications
+    Html.viewIf (not (List.isEmpty model.notifications)) <|
+        div [] <|
+            List.map
+                (\notification ->
+                    Toast.view
+                        { notification = notification
+                        , onClose = ClearNotification notification
+                        }
+                )
+                model.notifications
 
 
 view : Model -> Html Msg
@@ -108,6 +110,7 @@ view model =
         , notifications = viewNotifications model
         , mapMsg = LayoutMsg
         , model = model.layout
+        , logs = Html.text "this is the logs"
         , loading =
             RemoteData.isLoading model.serverRevision
                 || RemoteData.isNotAsked model.serverRevision
