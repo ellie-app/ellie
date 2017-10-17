@@ -7,4 +7,5 @@ import Elm.Package
 
 main :: forall e. Eff (console :: CONSOLE | e) Unit
 main = do
+  let stuff = [1]
   log "Hello sailor!"

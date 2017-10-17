@@ -22,6 +22,14 @@ join p p' | absolute p'                  = p <> p'
 join p p'                                = p <> "/" <> p'
 
 
+infixr 5 extension as <.>
+
+
+extension :: FilePath -> String -> FilePath
+extension p ext =
+  p <> "." <> ext
+
+
 absolute :: FilePath -> Boolean
 absolute p = (singleton <$> charAt 0 p) == Just "/"
 
@@ -44,8 +52,7 @@ normalize p =
     # trailing
   where
     leading :: FilePath -> FilePath
-    leading p' | absolute p = "/" <> p'
-    leading p'              = p'
+    leading p' = "/" <> p'
 
     trailing :: FilePath -> FilePath
     trailing p' | hasTrailing p  && length p > 1 = p' <> "/"

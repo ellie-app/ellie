@@ -1,21 +1,36 @@
-module Elm.Package where
+module Elm.Package
+  ( Name(..)
+  , core
+  , virtualDom
+  , html
+  , toFilePath
+  , Version(..)
+  , Package(..)
+  )
+  where
 
-import Prelude
-import Data.Argonaut (class EncodeJson, class DecodeJson, decodeJson, encodeJson, toString, fromString, toArray, fromArray)
-import Data.String.Read (class Read, class Zero, read)
-import Data.String (split, Pattern(..))
-import Data.Maybe (Maybe(..), maybe)
-import Data.Int as Int
-import Data.Monoid
-import Control.Monad (bind)
+import System.FilePath (FilePath, (</>))
 import Data.Either
+import Data.Argonaut (class EncodeJson, class DecodeJson, decodeJson, encodeJson, toString, fromString, toArray, fromArray)
+import Data.Int as Int
+import Data.Maybe (Maybe(..), maybe)
+import Data.Monoid ((<>))
+import Data.String (split, Pattern(..))
+import Data.String.Read (class Read, class Zero, read)
+import Prelude (class Show, class Ord, class Eq, bind, show, (#), ($), (>>=))
+import Data.Generic (class Generic)
 
 -- NAME
+
 
 newtype Name = Name
   { user :: String
   , project :: String
   }
+
+derive instance eqName :: Eq Name
+derive instance ordName :: Ord Name
+derive instance genericName :: Generic Name
 
 
 instance readName :: Read Name where
@@ -26,6 +41,12 @@ instance readName :: Read Name where
 
       _ ->
         Nothing
+
+
+instance zeroName :: Zero Name where
+  zero =
+    Name { user: "user", project: "project" }
+
 
 instance showName :: Show Name where
   show (Name { user, project }) =
@@ -47,6 +68,11 @@ instance encodeJsonName :: EncodeJson Name where
       # fromString
 
 
+toFilePath :: Name -> FilePath
+toFilePath (Name { user, project }) =
+     user </> project
+
+
 core :: Name
 core =
   Name { user: "elm-lang", project: "core" }
@@ -64,11 +90,17 @@ html =
 
 -- VERSION
 
-newtype Version = Version
-  { major :: Int
-  , minor :: Int
-  , patch :: Int
-  }
+
+newtype Version =
+  Version
+    { major :: Int
+    , minor :: Int
+    , patch :: Int
+    }
+
+derive instance eqVersion :: Eq Version
+derive instance ordVersion :: Ord Version
+derive instance genericVersion :: Generic Version
 
 
 instance readVersion :: Read Version where
@@ -112,17 +144,24 @@ instance encodeJsonVersion :: EncodeJson Version where
       # show
       # fromString
 
+
 -- PACKAGE
 
-newtype Package = Package
-  { name :: Name
-  , version :: Version
-  }
+
+newtype Package =
+  Package
+    { name :: Name
+    , version :: Version
+    }
+
+derive instance eqPackage :: Eq Package
+derive instance ordPackage :: Ord Package
+derive instance genericPackage :: Generic Package
 
 
 instance showPackage :: Show Package where
   show (Package { name, version }) =
-    show name <> "@" <> show version
+    (show name) <> "@" <> (show version)
 
 
 instance decodeJsonPackage :: DecodeJson Package where
@@ -135,6 +174,7 @@ instance decodeJsonPackage :: DecodeJson Package where
 
       _ ->
         Left "Package must be an array of [name, version]"
+
 
 instance encodeJsonpackage :: EncodeJson Package where
   encodeJson (Package { name, version }) =

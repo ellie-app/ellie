@@ -26,7 +26,10 @@ var PS = {};
   var Control_Monad_Eff_Console = PS["Control.Monad.Eff.Console"];
   var Elm_Package = PS["Elm.Package"];
   var Prelude = PS["Prelude"];        
-  var main = Control_Monad_Eff_Console.log("Hello sailor!");
+  var main = (function () {
+      var stuff = [ 1 ];
+      return Control_Monad_Eff_Console.log("Hello sailor!");
+  })();
   exports["main"] = main;
 })(PS["Main"] = PS["Main"] || {});
 PS["Main"].main();
