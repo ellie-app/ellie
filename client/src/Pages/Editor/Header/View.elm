@@ -8,6 +8,7 @@ module Pages.Editor.Header.View
 
 import Data.Ellie.RevisionId as RevisionId exposing (RevisionId)
 import Data.Ellie.TermsVersion as TermsVersion exposing (TermsVersion)
+import Ellie.Constants as Constants
 import Ellie.Ui.Button as Button
 import Ellie.Ui.Checkbox as Checkbox
 import Ellie.Ui.CopyLink as CopyLink
@@ -19,7 +20,6 @@ import Html.Attributes exposing (href, tabindex, target, title)
 import Pages.Editor.Header.Model exposing (Model)
 import Pages.Editor.Header.Styles as Styles
 import Pages.Editor.Header.Update exposing (Msg(..))
-import Ellie.Constants as Constants
 import Svg exposing (svg, use)
 import Svg.Attributes exposing (xlinkHref)
 
@@ -259,7 +259,6 @@ viewSocialLink url description icon =
 viewRightSide : List (Html msg)
 viewRightSide =
     [ viewSocialLink "https://github.com/lukewestby/ellie" "Repository" Icon.GitHub
-    , viewSocialLink "https://twitter.com/ellie_editor" "Follow" Icon.Twitter
     , viewSocialLink "https://trello.com/b/7cFN60SP/ellie" "Roadmap" Icon.Trello
     ]
 

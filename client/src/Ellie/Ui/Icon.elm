@@ -29,7 +29,6 @@ type Icon
     | Chevron
     | Document
     | Copy
-    | Twitter
     | GitHub
     | Trello
 
@@ -109,9 +108,6 @@ toIdString icon =
 
         Copy ->
             "copy"
-
-        Twitter ->
-            "twitter"
 
         GitHub ->
             "github"
