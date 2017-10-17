@@ -27,8 +27,8 @@ const start = app => {
     return Promise
       .all(
         infos.map(info => {
-          return fileFromContent(info.content, info.name, info.mime)
-            .then(uploadToAws(info.url, info.fields))
+          return blobFromContent(info.content, info.mime)
+            .then(uploadToAws(info.url, info.name, info.fields))
         })
       )
       .then(() => {
@@ -47,8 +47,8 @@ const start = app => {
   }
 
   const uploadStart = (id, info) => {
-    fileFromContent(info.content, info.name, info.mime)
-      .then(uploadToAws(info.url, info.fields))
+    blobFromContent(info.content, info.mime)
+      .then(uploadToAws(info.url, info.name, info.fields))
       .then(() => {
         app.ports.sharedAwsIn.send({
           tag: 'UploadSucceeded',
@@ -64,11 +64,11 @@ const start = app => {
       })
   }
 
-  const uploadToAws = (url, fields) => file => {
+  const uploadToAws = (url, filename, fields) => blob => {
     return new Promise((resolve, reject) => {
       const formData = new FormData();
       fields.forEach(field => formData.append(field[0], field[1]))
-      formData.append('file', file)
+      formData.append('file', blob, filename)
 
       let failed = false
       const xhr = new XMLHttpRequest()
@@ -99,21 +99,21 @@ const start = app => {
     })
   }
 
-  const fileFromContent = (content, filename, mimeType) => {
+  const blobFromContent = (content, mimeType) => {
     switch(content.tag) {
       case 'Stream':
-        return readStreamedContent(content.url, filename, mimeType)
+        return readStreamedContent(content.url, mimeType)
       case 'Direct':
-        return createDirectFile(content.data, filename, mimeType)
+        return createDirectBlob(content.data, mimeType)
     }
   }
 
-  const createDirectFile = (data, filename, mimeType) => {
-    const file = new File([data], filename, { type: mimeType })
-    return Promise.resolve(file)
+  const createDirectBlob = (data, mimeType) => {
+    const blob = new Blob([data], { type: mimeType })
+    return Promise.resolve(blob)
   }
 
-  const readStreamedContent = (url, filename, mimeType) => {
+  const readStreamedContent = (url, mimeType) => {
     return new Promise((resolve, reject) => {
       let failed = false
       const xhr = new XMLHttpRequest()
@@ -123,7 +123,6 @@ const start = app => {
       xhr.addEventListener('error', () => {
         if (failed) return
         failed = true
-        debugger
         reject(Error(`Failed to read content from ${url}`))
       })
 
@@ -140,8 +139,8 @@ const start = app => {
           return
         }
 
-        const file = new File([body], filename, { type: mimeType })
-        resolve(file)
+        const blob = new Blob([body], { type: mimeType })
+        resolve(blob)
   		})
 
       xhr.open('GET', url, true)
