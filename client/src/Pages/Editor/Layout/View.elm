@@ -157,8 +157,7 @@ viewOutputAndLogs config =
             , Styles.logsContainer
             , Attributes.cond Styles.logsContainerCollapsed config.model.logsCollapsed
             ]
-            [ Html.viewIf (not config.model.logsCollapsed) <|
-                div [] [ config.logs ]
+            [ Html.viewIf (not config.model.logsCollapsed) <| config.logs
             , viewCollapseButton
                 (config.mapMsg <| ToggleLogsCollapse)
                 config.model.logsCollapsed

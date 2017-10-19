@@ -21,6 +21,7 @@ import Pages.Editor.Cmds as Cmds
 import Pages.Editor.Flags as Flags exposing (Flags)
 import Pages.Editor.Header.Update as Header
 import Pages.Editor.Layout.Update as Layout
+import Pages.Editor.Logs.Update as Logs
 import Pages.Editor.Model as Model exposing (Model)
 import Pages.Editor.Routing as Routing exposing (Route(..))
 import Pages.Editor.Save.Update as Save
@@ -108,6 +109,7 @@ type Msg
     | HeaderMsg Header.Msg
     | SidebarMsg Sidebar.Msg
     | LayoutMsg Layout.Msg
+    | LogsMsg Logs.Msg
 
 
 onlineNotification : Bool -> Cmd Msg
@@ -129,6 +131,11 @@ onlineNotification isOnline =
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
+        LogsMsg logsMsg ->
+            ( { model | logs = Logs.update logsMsg model.logs }
+            , Cmd.none
+            )
+
         ToggleVimMode enabled ->
             ( { model | vimMode = enabled }
             , Cmd.batch

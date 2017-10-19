@@ -6,6 +6,7 @@ import Extra.Html as Html
 import Html exposing (Html, button, div, header, iframe, main_, span, text)
 import Pages.Editor.Header.View as Header
 import Pages.Editor.Layout.View as Layout
+import Pages.Editor.Logs.View as Logs
 import Pages.Editor.Model as Model exposing (Model)
 import Pages.Editor.Output.View as Output
 import Pages.Editor.Routing as Routing exposing (..)
@@ -110,7 +111,7 @@ view model =
         , notifications = viewNotifications model
         , mapMsg = LayoutMsg
         , model = model.layout
-        , logs = Html.text "this is the logs"
+        , logs = Html.map LogsMsg <| Logs.view model.logs
         , loading =
             RemoteData.isLoading model.serverRevision
                 || RemoteData.isNotAsked model.serverRevision

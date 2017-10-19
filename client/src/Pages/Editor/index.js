@@ -7,6 +7,7 @@ import OpbeatRunner from '../../Ellie/Opbeat/Runner'
 import CodeMirrorRunner from '../../Ellie/CodeMirror/Runner'
 import AwsRunner from '../../Ellie/Aws/Runner'
 import IconLoader from '../../Ellie/Ui/Icon/Loader'
+import LogsRunner from '../../Pages/Editor/Logs/Runner'
 import Layout from './Layout'
 
 IconLoader.load()
@@ -46,6 +47,7 @@ CodeMirrorLoader
     CodeMirrorRunner.start(CodeMirror, app)
     AwsRunner.start(app)
     OpbeatRunner.start(app)
+    LogsRunner.start(app)
 
     app.ports.pathChangedOut.subscribe(() => {
       previousLocation = window.location.pathname

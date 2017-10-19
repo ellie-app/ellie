@@ -28,6 +28,7 @@ import Data.Elm.Compiler.Error as CompilerError
 import Pages.Editor.Flags as Flags exposing (Flags)
 import Pages.Editor.Header.Model as Header
 import Pages.Editor.Layout.Model as Layout
+import Pages.Editor.Logs.Model as Logs
 import Pages.Editor.Routing as Routing exposing (Route(..))
 import Pages.Editor.Sidebar.Model as Sidebar
 import RemoteData exposing (RemoteData(..))
@@ -54,6 +55,7 @@ type alias Model =
     , sidebar : Sidebar.Model
     , layout : Layout.Model
     , header : Header.Model
+    , logs : Logs.Model
     , termsShown : Bool
     }
 
@@ -80,6 +82,7 @@ model flags =
     , sidebar = Sidebar.model
     , layout = Layout.init flags.windowSize
     , header = Header.init
+    , logs = Logs.default
     , termsShown = False
     }
 

@@ -30,11 +30,11 @@ const embeddedApi = (doc) => {
   var oldLog = console.log
   console.log = function () {
     var firstArg = arguments[0]
-    if (arguments.length === 1 && typeof firstArg === 'string' && firstArg.indexOf(':') !== -1) {
+    if (arguments.length === 1 && typeof firstArg === 'string' && firstArg.indexOf(': ') !== -1) {
       var split = firstArg.split(': ')
-      var label = split[0]
-      var value = split.slice(1).join(': ')
-      parent.postMessage({ type: 'log', label: label, value: value }, origin)
+      var tag = split[0]
+      var body = split.slice(1).join(': ')
+      parent.postMessage({ type: 'log', log: { tag: tag, body: body } }, origin)
     }
     oldLog.apply(this, arguments)
   }

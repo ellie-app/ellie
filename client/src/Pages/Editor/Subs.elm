@@ -6,6 +6,7 @@ import Ellie.CodeMirror as CodeMirror
 import Json.Decode as Decode exposing (Decoder, Value)
 import Keyboard
 import Pages.Editor.Layout.Subscriptions as Layout
+import Pages.Editor.Logs.Subscriptions as Logs
 import Pages.Editor.Model as Model exposing (Model)
 import Pages.Editor.Save.Subscriptions as Save
 import Pages.Editor.Save.Update as Save
@@ -136,5 +137,6 @@ subscriptions model =
         , clearNotifications model
         , codeMirror
         , Sub.map SaveMsg Save.subscriptions
+        , Sub.map LogsMsg <| Logs.subscriptions model.logs
         , Sub.map LayoutMsg <| Layout.subscriptions model.layout
         ]
