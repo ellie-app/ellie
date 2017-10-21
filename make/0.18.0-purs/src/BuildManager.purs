@@ -1,10 +1,10 @@
 module BuildManager where
 
 import Prelude
-import Control.Monad.Except (ExceptT, runExceptT, throwError)
+import Control.Monad.Except (ExceptT, runExceptT)
 import Control.Monad.State (StateT, runStateT)
 import Control.Monad.State as State
-import Data.DateTime.Instant
+import Data.DateTime.Instant (Instant)
 import Elm.Compiler as Compiler
 import Elm.Compiler.Error as Error
 import Elm.Compiler.Module as Module
@@ -13,12 +13,11 @@ import Elm.Package.Paths as Path
 import System.FilePath (FilePath, (</>))
 import TheMasterPlan as TMP
 import Data.Tuple.Nested ((/\), type (/\))
-import Data.Tuple.Nested as Tuple
-import Data.Either
-import Data.Maybe
+import Data.Either (Either(..))
+import Data.Maybe (Maybe)
 import Control.Monad.Aff (Aff)
-import Control.Monad.Aff.Class
-import Control.Monad.Eff.Class
+import Control.Monad.Aff.Class (liftAff)
+import Control.Monad.Eff.Class (liftEff)
 import Control.Monad.Eff.Now as Now
 import Control.Monad.Eff.Now (NOW)
 import Data.Array ((:))

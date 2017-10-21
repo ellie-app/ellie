@@ -25,7 +25,8 @@
     "purescript-partial": "^1.2.1",
     "purescript-newtype": "^2.0.0",
     "purescript-sequences": "^1.0.3",
-    "purescript-st": "^3.0.0"
+    "purescript-st": "^3.0.0",
+    "purescript-affjax": "^5.0.0"
   },
   "devDependencies": {
     "purescript-psci-support": "^3.0.0"
