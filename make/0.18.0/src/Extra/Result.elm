@@ -8,8 +8,8 @@ decoder : Decoder x -> Decoder a -> Decoder (Result x a)
 decoder x a =
     Decode.field "type" Decode.string
         |> Decode.andThen
-            (\tipe ->
-                case tipe of
+            (\type_ ->
+                case type_ of
                     "Ok" ->
                         Decode.field "arg" a
                             |> Decode.map Ok
