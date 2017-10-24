@@ -3,7 +3,7 @@ port module Pages.Editor.Layout.Subscriptions exposing (subscriptions)
 import Json.Decode as Decode exposing (Decoder, Value)
 import Json.Decode.Pipeline as Decode
 import Mouse
-import Pages.Editor.Layout.Model as Model exposing (Model)
+import Pages.Editor.Layout.Model as Model exposing (DragTarget(..), Model)
 import Pages.Editor.Layout.Update exposing (Msg(..))
 import Window
 
@@ -43,12 +43,19 @@ windowMessageDecoder model =
             (\type_ ->
                 case type_ of
                     "mouseup" ->
-                        if model.resultDragging then
-                            Decode.succeed ResultDragEnded
-                        else if model.editorDragging then
-                            Decode.succeed EditorDragEnded
-                        else
-                            Decode.succeed NoOp
+                        Decode.succeed <|
+                            case model.dragTarget of
+                                EditorsHandle ->
+                                    EditorDragEnded
+
+                                OutputHandle ->
+                                    ResultDragEnded
+
+                                LogsHandle ->
+                                    LogsDragEnded
+
+                                NoTarget ->
+                                    NoOp
 
                     "mousemove" ->
                         Decode.decode Mouse.Position
@@ -56,12 +63,18 @@ windowMessageDecoder model =
                             |> Decode.required "y" Decode.int
                             |> Decode.map
                                 (\position ->
-                                    if model.resultDragging then
-                                        ResultDragged position
-                                    else if model.editorDragging then
-                                        EditorDragged position
-                                    else
-                                        NoOp
+                                    case model.dragTarget of
+                                        EditorsHandle ->
+                                            EditorDragged position
+
+                                        OutputHandle ->
+                                            ResultDragged position
+
+                                        LogsHandle ->
+                                            LogsDragged position
+
+                                        NoTarget ->
+                                            NoOp
                                 )
 
                     _ ->
@@ -69,33 +82,35 @@ windowMessageDecoder model =
             )
 
 
-editorDrags : Model -> Sub Msg
-editorDrags model =
-    if model.editorDragging then
-        Sub.batch
-            [ Mouse.moves EditorDragged
-            , Mouse.ups (\_ -> EditorDragEnded)
-            ]
-    else
-        Sub.none
+drags : Model -> Sub Msg
+drags model =
+    case model.dragTarget of
+        EditorsHandle ->
+            Sub.batch
+                [ Mouse.moves EditorDragged
+                , Mouse.ups (\_ -> EditorDragEnded)
+                ]
 
+        LogsHandle ->
+            Sub.batch
+                [ Mouse.moves LogsDragged
+                , Mouse.ups (\_ -> LogsDragEnded)
+                ]
 
-resultDrags : Model -> Sub Msg
-resultDrags model =
-    if model.resultDragging then
-        Sub.batch
-            [ Mouse.moves ResultDragged
-            , Mouse.ups (\_ -> ResultDragEnded)
-            ]
-    else
-        Sub.none
+        OutputHandle ->
+            Sub.batch
+                [ Mouse.moves ResultDragged
+                , Mouse.ups (\_ -> ResultDragEnded)
+                ]
+
+        NoTarget ->
+            Sub.none
 
 
 subscriptions : Model -> Sub Msg
 subscriptions model =
     Sub.batch
         [ Window.resizes WindowSizeChanged
-        , editorDrags model
-        , resultDrags model
+        , drags model
         , pagesEditorLayoutSubscriptionsIn (decodeMsg model)
         ]

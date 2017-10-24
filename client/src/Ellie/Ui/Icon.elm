@@ -31,6 +31,7 @@ type Icon
     | Copy
     | GitHub
     | Trello
+    | Console
 
 
 view : Icon -> Html msg
@@ -114,3 +115,6 @@ toIdString icon =
 
         Trello ->
             "trello"
+
+        Console ->
+            "console"

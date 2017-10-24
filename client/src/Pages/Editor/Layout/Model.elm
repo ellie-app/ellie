@@ -1,4 +1,4 @@
-module Pages.Editor.Layout.Model exposing (EditorCollapse(..), Model, init, reset)
+module Pages.Editor.Layout.Model exposing (DragTarget(..), EditorCollapse(..), Model, init, reset)
 
 import Window exposing (Size)
 
@@ -9,24 +9,33 @@ type EditorCollapse
     | JustElmOpen
 
 
+type DragTarget
+    = EditorsHandle
+    | LogsHandle
+    | OutputHandle
+    | NoTarget
+
+
 type alias Model =
     { resultSplit : Float
-    , resultDragging : Bool
     , editorSplit : Float
-    , editorDragging : Bool
+    , dragTarget : DragTarget
     , windowSize : Size
     , editorCollapse : EditorCollapse
+    , logsCollapsed : Bool
+    , logsSplit : Float
     }
 
 
 init : Size -> Model
 init windowSize =
     { resultSplit = 0.5
-    , resultDragging = False
     , editorSplit = 0.7
-    , editorDragging = False
     , editorCollapse = BothOpen
     , windowSize = windowSize
+    , logsCollapsed = True
+    , logsSplit = 0.5
+    , dragTarget = NoTarget
     }
 
 

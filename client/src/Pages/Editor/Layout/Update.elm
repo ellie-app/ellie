@@ -2,7 +2,7 @@ module Pages.Editor.Layout.Update exposing (..)
 
 import Ellie.Constants as Constants
 import Mouse
-import Pages.Editor.Layout.Model as Model exposing (Model)
+import Pages.Editor.Layout.Model as Model exposing (DragTarget(..), Model)
 import Window
 
 
@@ -15,6 +15,10 @@ type Msg
     | EditorDragEnded
     | WindowSizeChanged Window.Size
     | ToggleEditorCollapse Model.EditorCollapse
+    | ToggleLogsCollapse
+    | LogsDragStarted
+    | LogsDragged Mouse.Position
+    | LogsDragEnded
     | NoOp
 
 
@@ -31,8 +35,11 @@ clamp minimum maximum current =
 update : Msg -> Model -> Model
 update msg model =
     case msg of
+        ToggleLogsCollapse ->
+            { model | logsCollapsed = not model.logsCollapsed }
+
         EditorDragStarted ->
-            { model | editorDragging = True }
+            { model | dragTarget = EditorsHandle }
 
         EditorDragged position ->
             { model
@@ -44,13 +51,29 @@ update msg model =
             }
 
         EditorDragEnded ->
-            { model | editorDragging = False }
+            { model | dragTarget = NoTarget }
+
+        LogsDragStarted ->
+            { model | dragTarget = LogsHandle }
+
+        LogsDragged position ->
+            -- TODO: extract vertical dragging stuff to a helper function
+            { model
+                | logsSplit =
+                    position
+                        |> (\p -> toFloat (p.y - Constants.headerHeight))
+                        |> (\h -> h / toFloat (model.windowSize.height - Constants.headerHeight))
+                        |> clamp 0.5 0.8
+            }
+
+        LogsDragEnded ->
+            { model | dragTarget = NoTarget }
 
         WindowSizeChanged size ->
             { model | windowSize = size }
 
         ResultDragStarted ->
-            { model | resultDragging = True }
+            { model | dragTarget = OutputHandle }
 
         ResultDragged position ->
             { model
@@ -62,7 +85,7 @@ update msg model =
             }
 
         ResultDragEnded ->
-            { model | resultDragging = False }
+            { model | dragTarget = NoTarget }
 
         ToggleEditorCollapse collapse ->
             { model
