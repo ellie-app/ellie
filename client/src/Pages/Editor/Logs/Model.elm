@@ -1,16 +1,19 @@
 module Pages.Editor.Logs.Model exposing (Model, default)
 
+import BoundedDeque exposing (BoundedDeque)
 import Data.Ellie.Log as Log exposing (Log)
 
 
 type alias Model =
-    { logs : List Log
+    { logs : BoundedDeque Log
     , search : String
+    , scrollToBottom : Bool
     }
 
 
 default : Model
 default =
-    { logs = []
+    { logs = BoundedDeque.empty 50
     , search = ""
+    , scrollToBottom = True
     }

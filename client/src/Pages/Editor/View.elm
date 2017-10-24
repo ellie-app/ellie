@@ -13,6 +13,7 @@ import Pages.Editor.Routing as Routing exposing (..)
 import Pages.Editor.Save.Update as UpdateSave
 import Pages.Editor.Sidebar.View as Sidebar
 import Pages.Editor.Update as Update exposing (Msg(..))
+import Pages.Editor.View.Styles as Styles
 import RemoteData exposing (RemoteData(..))
 
 
@@ -89,7 +90,7 @@ viewSidebar model =
 viewNotifications : Model -> Html Msg
 viewNotifications model =
     Html.viewIf (not (List.isEmpty model.notifications)) <|
-        div [] <|
+        div [ Styles.notifications ] <|
             List.map
                 (\notification ->
                     Toast.view

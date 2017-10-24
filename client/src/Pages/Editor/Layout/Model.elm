@@ -33,7 +33,7 @@ init windowSize =
     , editorSplit = 0.7
     , editorCollapse = BothOpen
     , windowSize = windowSize
-    , logsCollapsed = False
+    , logsCollapsed = True
     , logsSplit = 0.5
     , dragTarget = NoTarget
     }

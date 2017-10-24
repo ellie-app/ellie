@@ -132,9 +132,9 @@ update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
         LogsMsg logsMsg ->
-            ( { model | logs = Logs.update logsMsg model.logs }
-            , Cmd.none
-            )
+            Logs.update logsMsg model.logs
+                |> Tuple.mapFirst (\l -> { model | logs = l })
+                |> Tuple.mapSecond (Cmd.map LogsMsg)
 
         ToggleVimMode enabled ->
             ( { model | vimMode = enabled }

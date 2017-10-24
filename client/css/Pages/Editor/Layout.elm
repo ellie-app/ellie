@@ -19,6 +19,7 @@ notifications =
         ]
 
 
+sidebar : UniqueClass
 sidebar =
     uniqueClass
         [ width (px 240)
@@ -29,6 +30,7 @@ sidebar =
         ]
 
 
+header : UniqueClass
 header =
     uniqueClass
         [ height (px 40)
