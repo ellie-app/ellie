@@ -9,6 +9,28 @@ type alias KeyCombo =
     }
 
 
+controlKeysCodes : List Int
+controlKeysCodes =
+    [ 91, 92, 93, 224 ]
+
+
+controlKey : Int -> Bool
+controlKey int =
+    controlKeysCodes
+        |> List.any ((==) int)
+
+
+shiftKeyCodes : List Int
+shiftKeyCodes =
+    [ 16 ]
+
+
+shiftKey : Int -> Bool
+shiftKey int =
+    shiftKeyCodes
+        |> List.any ((==) int)
+
+
 type Msg
     = ControlDown
     | ControlUp
@@ -22,18 +44,18 @@ subscriptions =
     Sub.batch
         [ Keyboard.downs
             (\code ->
-                if code == 91 || code == 93 then
+                if controlKey code then
                     ControlDown
-                else if code == 16 then
+                else if shiftKey code then
                     ShiftDown
                 else
                     NoOp
             )
         , Keyboard.ups
             (\code ->
-                if code == 91 || code == 93 then
+                if controlKey code then
                     ControlUp
-                else if code == 16 then
+                else if shiftKey code then
                     ShiftUp
                 else
                     NoOp
