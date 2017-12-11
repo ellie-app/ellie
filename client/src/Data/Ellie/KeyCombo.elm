@@ -1,6 +1,7 @@
 module Data.Ellie.KeyCombo exposing (..)
 
 import Keyboard
+import Set exposing (Set)
 
 
 type alias KeyCombo =
@@ -9,26 +10,26 @@ type alias KeyCombo =
     }
 
 
-controlKeysCodes : List Int
-controlKeysCodes =
-    [ 91, 92, 93, 224 ]
+controlKeyCodes : Set Int
+controlKeyCodes =
+    Set.fromList [ 91, 92, 93, 224 ]
 
 
 controlKey : Int -> Bool
-controlKey int =
-    controlKeysCodes
-        |> List.any ((==) int)
+controlKey code =
+    controlKeyCodes
+        |> Set.member code
 
 
-shiftKeyCodes : List Int
+shiftKeyCodes : Set Int
 shiftKeyCodes =
-    [ 16 ]
+    Set.singleton 16
 
 
 shiftKey : Int -> Bool
-shiftKey int =
+shiftKey code =
     shiftKeyCodes
-        |> List.any ((==) int)
+        |> Set.member code
 
 
 type Msg
