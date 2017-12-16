@@ -1,151 +1,34 @@
 module Elm.Package
-  ( Name(..)
-  , core
-  , virtualDom
-  , html
-  , toFilePath
-  , Version(..)
-  , Package(..)
+  ( Package(..)
+  , fetchSources
+  , saveSources
+  , fetchArtifacts
+  , saveArtifacts
+  , markAsSaved
+  , isSaved
+  , fromTuple
   )
   where
 
-import System.FilePath (FilePath, (</>))
-import Data.Either
-import Data.Argonaut (class EncodeJson, class DecodeJson, decodeJson, encodeJson, toString, fromString, toArray, fromArray)
-import Data.Int as Int
-import Data.Maybe (Maybe(..), maybe)
-import Data.Monoid ((<>))
-import Data.String (split, Pattern(..))
-import Data.String.Read (class Read, class Zero, read)
-import Prelude (class Show, class Ord, class Eq, bind, show, (#), ($), (>>=))
-import Data.Generic (class Generic)
+import Ellie.Prelude
 
--- NAME
-
-
-newtype Name = Name
-  { user :: String
-  , project :: String
-  }
-
-derive instance eqName :: Eq Name
-derive instance ordName :: Ord Name
-derive instance genericName :: Generic Name
-
-
-instance readName :: Read Name where
-  read input =
-    case split (Pattern "/") input of
-      [ user, project ] ->
-        Just $ Name { user, project }
-
-      _ ->
-        Nothing
-
-
-instance zeroName :: Zero Name where
-  zero =
-    Name { user: "user", project: "project" }
-
-
-instance showName :: Show Name where
-  show (Name { user, project }) =
-    user <> "/" <> project
-
-
-instance decodeJsonName :: DecodeJson Name where
-  decodeJson input =
-    input
-      # toString
-      >>= read
-      # maybe (Left "Package names must be in the form user/project") Right
-
-
-instance encodeJsonName :: EncodeJson Name where
-  encodeJson name =
-    name
-      # show
-      # fromString
-
-
-toFilePath :: Name -> FilePath
-toFilePath (Name { user, project }) =
-     user </> project
-
-
-core :: Name
-core =
-  Name { user: "elm-lang", project: "core" }
-
-
-virtualDom :: Name
-virtualDom =
-  Name { user: "elm-lang", project: "virtual-dom" }
-
-
-html :: Name
-html =
-  Name { user: "elm-lang", project: "html" }
-
-
--- VERSION
-
-
-newtype Version =
-  Version
-    { major :: Int
-    , minor :: Int
-    , patch :: Int
-    }
-
-derive instance eqVersion :: Eq Version
-derive instance ordVersion :: Ord Version
-derive instance genericVersion :: Generic Version
-
-
-instance readVersion :: Read Version where
-  read input =
-    case split (Pattern ".") input of
-      [majorString, minorString, patchString] -> do
-        major <- Int.fromString majorString
-        minor <- Int.fromString minorString
-        patch <- Int.fromString patchString
-        Just $ Version { major, minor, patch }
-
-      _ ->
-        Nothing
-
-
-instance showVersion :: Show Version where
-  show (Version { major, minor, patch }) =
-    show major
-      <> "."
-      <> show minor
-      <> "."
-      <> show patch
-
-
-instance zeroVersion :: Zero Version where
-  zero =
-    Version { major: 0, minor: 0, patch: 0 }
-
-
-instance decodeJsonVersion :: DecodeJson Version where
-  decodeJson value =
-    value
-      # toString
-      >>= read
-      # maybe (Left "Versions must be in the form MAJOR.MINOR.PATCH") Right
-
-
-instance encodeJsonVersion :: EncodeJson Version where
-  encodeJson version =
-    version
-      # show
-      # fromString
-
-
--- PACKAGE
+import Control.Monad.Task (Task)
+import Data.Foreign as Foreign
+import Data.Foreign.Class (class Foreignable, put, get)
+import Data.Foreign.Index ((!))
+import Data.Newtype (class Newtype)
+import Data.StrMap as StrMap
+import Data.Traversable (traverse)
+import Data.Tuple (Tuple(..))
+import Data.Url (Url)
+import Data.Url as Url
+import Elm.Compiler.Version as Compiler
+import Elm.Package.Name (Name(..))
+import Elm.Package.Version (Version)
+import System.FileSystem (FILESYSTEM, (</>))
+import System.FileSystem as FileSystem
+import System.Http (HTTP)
+import System.Http as Http
 
 
 newtype Package =
@@ -154,9 +37,24 @@ newtype Package =
     , version :: Version
     }
 
+
+derive instance newtypePackage :: Newtype Package _
 derive instance eqPackage :: Eq Package
 derive instance ordPackage :: Ord Package
-derive instance genericPackage :: Generic Package
+
+
+instance foreignablePackage :: Foreignable Package where
+  put (Package { name, version }) =
+    Foreign.toForeign <|
+      { name: put name
+      , version: put version
+      }
+    
+  get value =
+    { name: _, version: _ }
+      <$> (value ! "name" >>= get)
+      <*> (value ! "version" >>= get)
+      <#> Package
 
 
 instance showPackage :: Show Package where
@@ -164,18 +62,91 @@ instance showPackage :: Show Package where
     (show name) <> "@" <> (show version)
 
 
-instance decodeJsonPackage :: DecodeJson Package where
-  decodeJson value =
-    case toArray value of
-      Just [nameJson, versionJson] -> do
-        name <- decodeJson nameJson
-        version <- decodeJson versionJson
-        Right $ Package { name, version }
 
-      _ ->
-        Left "Package must be an array of [name, version]"
+fromTuple :: Tuple Name Version -> Package
+fromTuple (Tuple name version) =
+  Package { name, version }
 
 
-instance encodeJsonpackage :: EncodeJson Package where
-  encodeJson (Package { name, version }) =
-    fromArray [ encodeJson name, encodeJson version ]
+url :: Package -> Array String -> Url
+url (Package { name: (Name name), version }) ending =
+  Url.absolute
+    (["package-artifacts/", name.user, name.project, show version] <> ending)
+    []
+
+
+fetchSources :: ∀ e. Package -> Task (http :: HTTP | e) Http.Error (Array (Tuple String String))
+fetchSources package =
+  url package [ "source.json" ]
+    |> Http.get
+    |> Http.withHeader "Content-Type" "application/json"
+    |> Http.withExpect Http.expectJson
+    |> Http.send
+    |> map StrMap.toUnfoldable
+
+
+saveSources :: ∀ e. Package -> Array (Tuple String String) -> Task (fileSystem :: FILESYSTEM | e) FileSystem.Error Unit
+saveSources package@(Package { name: (Name name), version }) sources =
+  let
+    path =
+      "/elm-stuff/packages"
+          </> name.user
+          </> name.project
+          </> show version
+  in
+  traverse
+    (\(Tuple key value) -> FileSystem.write (path </> key) value)
+    sources
+    <#> const unit
+
+
+fetchArtifacts :: ∀ e. Package -> Task (http :: HTTP | e) Http.Error (Array (Tuple String String))
+fetchArtifacts package@(Package { name: (Name name) }) =
+  if name.user == "elm-lang" then
+    url package [ "artifacts", show Compiler.version ]
+      |> Http.get
+      |> Http.withHeader "Content-Type" "application/json"
+      |> Http.withExpect Http.expectJson
+      |> Http.send
+      |> map StrMap.toUnfoldable
+  else
+    pure []
+
+
+saveArtifacts :: ∀ e. Package -> Array (Tuple String String) -> Task (fileSystem :: FILESYSTEM | e) FileSystem.Error Unit
+saveArtifacts package@(Package { name: (Name name), version }) artifacts =
+  let
+    path =
+      "elm-stuff/build-artifacts"
+          </> show Compiler.version
+          </> name.user
+          </> name.project
+          </> show version
+  in
+  traverse
+    (\(Tuple key value) -> FileSystem.write (path </> key) value)
+    artifacts
+    <#> const unit
+
+
+markAsSaved :: ∀ e. Package -> Task (fileSystem :: FILESYSTEM | e) FileSystem.Error Unit
+markAsSaved package@(Package { name: (Name name), version }) =
+  let
+    path =
+      "elm-stuff/packages"
+        </> name.user
+        </> name.project
+        </> show version
+        </> ".downloaded"
+  in
+  FileSystem.write path ""
+
+
+isSaved :: ∀ x e. Package -> Task (fileSystem :: FILESYSTEM | e) x Boolean
+isSaved package@(Package { name: (Name name), version }) =
+  "elm-stuff/packages"
+    </> name.user
+    </> name.project
+    </> show version
+    </> ".downloaded"
+    |> FileSystem.exists

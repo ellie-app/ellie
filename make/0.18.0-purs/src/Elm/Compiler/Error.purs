@@ -1,36 +1,30 @@
-module Elm.Compiler.Error where
+module Elm.Compiler.Error
+  ( Location
+  , Region
+  , Error
+  ) where
 
-import Data.Argonaut (class DecodeJson, class EncodeJson)
-import Data.Argonaut.Decode.Generic (gDecodeJson)
-import Data.Argonaut.Encode.Generic (gEncodeJson)
-import Data.Generic (class Generic)
+import Ellie.Prelude
+
+import Data.Foreign (Foreign, F)
+import Data.Foreign as Foreign
+import Data.Foreign.Class (class Foreignable, put, get)
+import Data.Foreign.Index ((!))
 import Data.Maybe (Maybe)
+import Data.Traversable (traverse)
 
--- LOCATION
 
-newtype Location =
-  Location
-    { line :: Int
-    , column :: Int
-    }
+type Location =
+  { line :: Int
+  , column :: Int
+  }
 
-derive instance genericLocation :: Generic Location
-instance decodeJsonLocation :: DecodeJson Location where decodeJson = gDecodeJson
-instance encodeJsonLocation :: EncodeJson Location where encodeJson = gEncodeJson
 
--- REGION
+type Region =
+  { start :: Location
+  , end :: Location
+  }
 
-newtype Region =
-  Region
-    { start :: Location
-    , end :: Location
-    }
-
-derive instance genericRegion :: Generic Region
-instance decodeJsonRegion :: DecodeJson Region where decodeJson = gDecodeJson
-instance encodeJsonRegion :: EncodeJson Region where encodeJson = gEncodeJson
-
--- ERROR
 
 newtype Error =
   Error
@@ -42,6 +36,52 @@ newtype Error =
     , level :: String
     }
 
-derive instance genericError :: Generic Error
-instance decodeJsonError :: DecodeJson Error where decodeJson = gDecodeJson
-instance encodeJsonError :: EncodeJson Error where encodeJson = gEncodeJson
+
+instance foreignableError :: Foreignable Error where
+  put (Error value) =
+    Foreign.toForeign <|
+      { tag: put value.tag
+      , overview: put value.overview
+      , details: put value.details
+      , subregion: put <| map putRegion value.subregion
+      , region: putRegion value.region
+      , level: put value.level
+      }
+
+  get value =
+    { tag: _, overview: _, details: _, subregion: _, region: _, level: _ }
+      <$> (value ! "tag" >>= get)
+      <*> (value ! "overview" >>= get)
+      <*> (value ! "details" >>= get)
+      <*> (value ! "subregion" >>= Foreign.readNull >>= traverse getRegion)
+      <*> (value ! "region" >>= getRegion)
+      <*> (value ! "level" >>= get)
+      <#> Error
+
+
+getLocation :: Foreign -> F Location
+getLocation value =
+  { line: _, column: _ }
+    <$> (value ! "line" >>= get)
+    <*> (value ! "column" >>= get)
+
+putLocation :: Location -> Foreign
+putLocation location =
+  Foreign.toForeign
+    { line: put location.line
+    , column: put location.column
+    }
+
+
+putRegion :: Region -> Foreign
+putRegion region  =
+  Foreign.toForeign
+    { start: putLocation region.start
+    , end: putLocation region.end
+    }
+
+getRegion :: Foreign -> F Region
+getRegion value =
+  { start: _, end: _ }
+    <$> (value ! "start" >>= getLocation)
+    <*> (value ! "end" >>= getLocation)

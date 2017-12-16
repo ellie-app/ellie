@@ -25,11 +25,12 @@ module.exports = {
 
   resolve: {
     alias: {
-      'Make/0.18.0$': path.resolve(__dirname, 'make/0.18.0/build/Make0180.js')
+      'Make/0.18.0$': path.resolve(__dirname, 'make/0.18.0-purs/build/bundle.js')
     }
   },
 
   module: {
+    noParse: [ /Make\/0\.18\.0$/ ],
     rules: [
       {
         test: /\.svg$/,
@@ -39,7 +40,7 @@ module.exports = {
       },
       {
         test: /\.js$/,
-        exclude: /node_modules/,
+        exclude: /(node_modules|make)/,
         use: {
           loader: 'babel-loader',
           options: {
