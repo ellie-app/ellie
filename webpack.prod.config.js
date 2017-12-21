@@ -28,7 +28,7 @@ module.exports = {
 
   resolve: {
     alias: {
-      'Make/0.18.0$': path.resolve(__dirname, 'make/0.18.0/build/Make0180.js')
+      'Make/0.18.0$': path.resolve(__dirname, 'make/0.18.0/build/bundle.js')
     }
   },
 
@@ -42,7 +42,7 @@ module.exports = {
       },
       {
         test: /\.js$/,
-        exclude: /node_modules/,
+        exclude: /(node_modules|make)/,
         use: {
           loader: 'babel-loader',
           options: {
