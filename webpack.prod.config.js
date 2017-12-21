@@ -3,7 +3,6 @@ const webpack = require('webpack')
 const StringReplacePlugin = require('string-replace-webpack-plugin')
 const ExtractTextPlugin = require('extract-text-webpack-plugin')
 const ManifestPlugin = require('webpack-manifest-plugin')
-const Md5Hash = require('webpack-md5-hash')
 
 const generatedElmCss = path.resolve(__dirname, 'client/elm-stuff/generated-code/rtfeldman/elm-css/output.css')
 

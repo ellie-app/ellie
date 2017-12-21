@@ -12,7 +12,7 @@ type Panel
 type alias Model =
     { search : String
     , results : List Package
-    , panel : Panel
+    , panel : Maybe Panel
     }
 
 
@@ -20,7 +20,7 @@ model : Model
 model =
     { search = ""
     , results = []
-    , panel = Packages
+    , panel = Just Packages
     }
 
 

@@ -21,7 +21,6 @@ import Json.Decode as Decode exposing (Decoder)
 import Json.Decode.Pipeline as Decode
 import Json.Encode as Encode exposing (Value)
 import Regex exposing (Regex)
-import Shared.Utils as Utils
 
 
 moduleName : Revision -> String
@@ -75,7 +74,7 @@ encoder revision =
         , ( "elmCode", Encode.string revision.elmCode )
         , ( "packages", Encode.list <| List.map Package.encoder revision.packages )
         , ( "owned", Encode.bool revision.owned )
-        , ( "id", Utils.encodeNullable RevisionId.encoder revision.id )
+        , ( "id", Encode.maybeNull RevisionId.encoder revision.id )
         , ( "title", Encode.string revision.title )
         , ( "description", Encode.string revision.description )
         , ( "snapshot", encodeSnapshot revision.snapshot )

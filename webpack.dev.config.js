@@ -77,7 +77,7 @@ module.exports = {
               forceWatch: true,
               cache: true,
               yes: true,
-              debug: true,
+              debug: false,
               cwd: path.join(__dirname, 'client'),
               ignore: /generated-code/
             }

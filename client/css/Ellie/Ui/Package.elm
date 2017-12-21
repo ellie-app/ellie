@@ -54,7 +54,7 @@ project =
     uniqueClass
         [ fontSize (px 16)
         , fontWeight bold
-        , color Colors.lightGray_
+        , color Colors.lightGray
         , ellipsisText
         ]
 

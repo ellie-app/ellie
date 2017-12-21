@@ -6,34 +6,34 @@ import Css.File exposing (..)
 
 
 warning =
-    uniqueClass [ borderColor Colors.yellow_ ]
+    uniqueClass [ borderColor Colors.yellow ]
 
 
 error =
-    uniqueClass [ borderColor Colors.red_ ]
+    uniqueClass [ borderColor Colors.red ]
 
 
 success =
-    uniqueClass [ borderColor Colors.green_ ]
+    uniqueClass [ borderColor Colors.green ]
 
 
 info =
-    uniqueClass [ borderColor Colors.blue_ ]
+    uniqueClass [ borderColor Colors.blue ]
 
 
 container : UniqueClass
 container =
     uniqueClass
-        [ backgroundColor Colors.darkGray_
+        [ backgroundColor Colors.darkGray
         , marginBottom (px 8)
         , padding (px 16)
         , position relative
-        , color Colors.lightGray_
+        , color Colors.lightGray
         , property "align-items" "center"
         , Colors.boxShadow |> .popout
         , borderRadius (px 2)
         , lastChild [ marginBottom zero ]
-        , borderLeft3 (px 2) solid Colors.green_
+        , borderLeft3 (px 2) solid Colors.green
         ]
 
 
@@ -67,7 +67,7 @@ itemTimestamp =
 closeButton : UniqueClass
 closeButton =
     uniqueClass
-        [ color Colors.mediumGray_
+        [ color Colors.mediumGray
         , property "background" "none"
         , position absolute
         , border zero
@@ -78,5 +78,5 @@ closeButton =
         , padding zero
         , cursor pointer
         , hover [ color Colors.lightMediumGray ]
-        , active [ color Colors.lightGray_ ]
+        , active [ color Colors.lightGray ]
         ]

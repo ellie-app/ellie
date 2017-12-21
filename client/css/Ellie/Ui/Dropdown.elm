@@ -9,7 +9,7 @@ container : UniqueClass
 container =
     uniqueClass
         [ position relative
-        , borderBottom3 (px 1) solid Colors.mediumGray_
+        , borderBottom3 (px 1) solid Colors.mediumGray
         ]
 
 
@@ -23,7 +23,7 @@ select =
         , width (pct 100)
         , fontFamily inherit
         , fontSize (px 15)
-        , color Colors.lightGray_
+        , color Colors.lightGray
         , padding4 (px 8) (px 20) (px 8) zero
         , outline zero
         , cursor pointer
@@ -34,7 +34,7 @@ select =
                     [ transform <| scaleX 1
                     ]
                 , selector "[data-arrow]"
-                    [ color Colors.pink_
+                    [ color Colors.pink
                     ]
                 ]
             ]
@@ -50,7 +50,7 @@ select =
             , cursor notAllowed
             , generalSiblings
                 [ selector "[data-arrow]"
-                    [ color Colors.mediumGray_ ]
+                    [ color Colors.mediumGray ]
                 ]
             ]
         ]
@@ -63,7 +63,7 @@ underline =
         , bottom (px -1)
         , height (px 1)
         , width (pct 100)
-        , backgroundColor Colors.pink_
+        , backgroundColor Colors.pink
         , transform <| scaleX 0
         , property "transition" "transform 250ms"
         ]

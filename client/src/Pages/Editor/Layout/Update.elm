@@ -1,9 +1,8 @@
 module Pages.Editor.Layout.Update exposing (..)
 
-import Math
+import Ellie.Constants as Constants
 import Mouse
-import Pages.Editor.Layout.Model as Model exposing (Model)
-import Shared.Constants as Constants
+import Pages.Editor.Layout.Model as Model exposing (DragTarget(..), Model)
 import Window
 
 
@@ -16,14 +15,31 @@ type Msg
     | EditorDragEnded
     | WindowSizeChanged Window.Size
     | ToggleEditorCollapse Model.EditorCollapse
+    | ToggleLogsCollapse
+    | LogsDragStarted
+    | LogsDragged Mouse.Position
+    | LogsDragEnded
     | NoOp
+
+
+clamp : comparable -> comparable -> comparable -> comparable
+clamp minimum maximum current =
+    if current >= maximum then
+        maximum
+    else if current <= minimum then
+        minimum
+    else
+        current
 
 
 update : Msg -> Model -> Model
 update msg model =
     case msg of
+        ToggleLogsCollapse ->
+            { model | logsCollapsed = not model.logsCollapsed }
+
         EditorDragStarted ->
-            { model | editorDragging = True }
+            { model | dragTarget = EditorsHandle }
 
         EditorDragged position ->
             { model
@@ -31,17 +47,33 @@ update msg model =
                     position
                         |> (\p -> toFloat (p.y - Constants.headerHeight))
                         |> (\h -> h / toFloat (model.windowSize.height - Constants.headerHeight))
-                        |> Math.clamp 0.2 0.8
+                        |> clamp 0.2 0.8
             }
 
         EditorDragEnded ->
-            { model | editorDragging = False }
+            { model | dragTarget = NoTarget }
+
+        LogsDragStarted ->
+            { model | dragTarget = LogsHandle }
+
+        LogsDragged position ->
+            -- TODO: extract vertical dragging stuff to a helper function
+            { model
+                | logsSplit =
+                    position
+                        |> (\p -> toFloat (p.y - Constants.headerHeight))
+                        |> (\h -> h / toFloat (model.windowSize.height - Constants.headerHeight))
+                        |> clamp 0.5 0.8
+            }
+
+        LogsDragEnded ->
+            { model | dragTarget = NoTarget }
 
         WindowSizeChanged size ->
             { model | windowSize = size }
 
         ResultDragStarted ->
-            { model | resultDragging = True }
+            { model | dragTarget = OutputHandle }
 
         ResultDragged position ->
             { model
@@ -49,11 +81,11 @@ update msg model =
                     position
                         |> (\p -> toFloat (p.x - Constants.sidebarWidth))
                         |> (\w -> w / toFloat (model.windowSize.width - Constants.sidebarWidth))
-                        |> Math.clamp 0.2 0.8
+                        |> clamp 0.2 0.8
             }
 
         ResultDragEnded ->
-            { model | resultDragging = False }
+            { model | dragTarget = NoTarget }
 
         ToggleEditorCollapse collapse ->
             { model

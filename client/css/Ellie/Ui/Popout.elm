@@ -26,12 +26,12 @@ tooltip =
         [ position absolute
         , display none
         , zIndex (int 2)
-        , backgroundColor Colors.darkGray_
+        , backgroundColor Colors.darkGray
         , padding2 (px 12) (px 8)
         , Colors.boxShadow |> .popout
         , top (pct 100)
         , marginTop (px 8)
-        , borderLeft3 (px 1) solid Colors.pink_
+        , borderLeft3 (px 1) solid Colors.pink
         ]
 
 

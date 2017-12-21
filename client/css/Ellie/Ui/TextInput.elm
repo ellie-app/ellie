@@ -36,7 +36,7 @@ input =
         , width (pct 100)
         , fontSize (px 15)
         , lineHeight (num 1)
-        , color Colors.lightGray_
+        , color Colors.lightGray
         , fontFamily monospace
         , padding3 zero zero (px 8)
         , focus
@@ -45,16 +45,16 @@ input =
                     [ transform <| scaleX 1 ]
                 ]
             ]
-        , pseudoElement "-ms-input-placeholder" [ color Colors.mediumGray_ ]
-        , pseudoElement "-webkit-input-placeholder" [ color Colors.mediumGray_ ]
-        , pseudoElement "-moz-placeholder" [ color Colors.mediumGray_ ]
+        , pseudoElement "-ms-input-placeholder" [ color Colors.mediumGray ]
+        , pseudoElement "-webkit-input-placeholder" [ color Colors.mediumGray ]
+        , pseudoElement "-moz-placeholder" [ color Colors.mediumGray ]
         ]
 
 
 underline : UniqueClass
 underline =
     uniqueClass
-        [ backgroundColor Colors.pink_
+        [ backgroundColor Colors.pink
         , height (px 1)
         , position absolute
         , bottom (px -1)
@@ -70,7 +70,7 @@ clearButton =
     uniqueClass
         [ property "background" "none"
         , border zero
-        , color Colors.mediumGray_
+        , color Colors.mediumGray
         , width (px 12)
         , height (px 12)
         , right zero

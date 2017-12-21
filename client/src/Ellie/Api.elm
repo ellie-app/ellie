@@ -1,4 +1,4 @@
-module Shared.Api
+module Ellie.Api
     exposing
         ( acceptTerms
         , createGist
@@ -20,12 +20,12 @@ import Data.Ellie.TermsVersion as TermsVersion exposing (TermsVersion)
 import Data.Elm.Package as Package exposing (Package)
 import Data.Elm.Package.Description as Description exposing (Description)
 import Data.Elm.Package.Version as Version exposing (Version)
+import Ellie.Constants as Constants
 import Http exposing (Error(..), Expect, Request)
 import Http.Extra as Http
 import HttpBuilder exposing (..)
 import Json.Decode as Decode exposing (Decoder)
 import Json.Encode as Encode exposing (Value)
-import Shared.Constants as Constants
 import Task exposing (Task)
 
 

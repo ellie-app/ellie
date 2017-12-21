@@ -1,8 +1,8 @@
 module Pages.Editor.Save.Subscriptions exposing (..)
 
+import Ellie.Aws as Aws
 import Extra.Result as Result
 import Pages.Editor.Save.Update exposing (Msg(..))
-import Shared.Aws as Aws
 
 
 awsToMsg : Aws.Inbound -> Msg

@@ -1,12 +1,12 @@
 module Ellie.Ui.Sections exposing (..)
 
+import Data.List.Iterator as Iterator exposing (Iterator)
 import Ellie.Ui.Icon as Icon
 import Ellie.Ui.Sections.Styles as Styles
 import Extra.Html as Html
 import Extra.Html.Attributes as Attributes
 import Html exposing (Html, button, div, text)
 import Html.Events exposing (onClick)
-import List.Zipper as Zipper exposing (Zipper)
 
 
 type alias Section msg =
@@ -17,23 +17,23 @@ type alias Section msg =
     }
 
 
-view : Zipper (Section msg) -> Html msg
+view : Iterator (Section msg) -> Html msg
 view sections =
     let
         before =
             sections
-                |> Zipper.before
+                |> Iterator.before
                 |> List.map (viewSection False)
 
         current =
             sections
-                |> Zipper.current
-                |> viewSection True
-                |> List.singleton
+                |> Iterator.current
+                |> Maybe.map (viewSection True >> List.singleton)
+                |> Maybe.withDefault []
 
         after =
             sections
-                |> Zipper.after
+                |> Iterator.after
                 |> List.map (viewSection False)
     in
     div [ Styles.container ] <| before ++ current ++ after
@@ -49,9 +49,7 @@ viewSection open sectionConfig =
         [ button
             [ Styles.button
             , Attributes.cond Styles.buttonOpen open
-            , Attributes.cond
-                (onClick sectionConfig.onSelect)
-                (not open)
+            , onClick sectionConfig.onSelect
             ]
             [ div [ Styles.buttonInner ]
                 [ div

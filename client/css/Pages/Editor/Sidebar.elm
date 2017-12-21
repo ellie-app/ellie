@@ -15,7 +15,7 @@ ad =
     uniqueClass
         [ width (pct 100)
         , flexShrink (int 0)
-        , backgroundColor Colors.darkGray_
+        , backgroundColor Colors.darkGray
         ]
 
 
@@ -36,7 +36,7 @@ container =
     uniqueClass
         [ position relative
         , width (pct 100)
-        , backgroundColor Colors.darkGray_
+        , backgroundColor Colors.darkGray
         , displayFlex
         , flexDirection column
         , alignItems center
@@ -61,7 +61,7 @@ setting =
 packagesSectionTitle =
     uniqueClass
         [ fontSize (px 14)
-        , color Colors.lightGray_
+        , color Colors.lightGray
         , paddingBottom (px 8)
         ]
 
@@ -95,16 +95,16 @@ aboutHeading =
     uniqueClass
         [ fontSize (px 16)
         , fontWeight bold
-        , color Colors.lightGray_
+        , color Colors.lightGray
         ]
 
 
 aboutParagraph =
     uniqueClass
         [ fontSize (px 14)
-        , color Colors.lightGray_
+        , color Colors.lightGray
         , descendants
-            [ a [ color Colors.pink_, textDecoration underline ]
+            [ a [ color Colors.pink, textDecoration underline ]
             ]
         ]
 

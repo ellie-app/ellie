@@ -5,8 +5,8 @@ import Date exposing (Date)
 import Ellie.Ui.Icon as Icon
 import Ellie.Ui.Toast.Styles as Styles
 import Html exposing (Attribute, Html, button, div, text)
-import Html.Attributes
 import Html.Events exposing (onClick)
+import Markdown
 
 
 type alias Config msg =
@@ -23,7 +23,7 @@ view { onClose, notification } =
         ]
         [ div [ Styles.itemTitle ] [ text notification.title ]
         , div [ Styles.itemTimestamp ] [ text <| formatDate (Date.fromTime notification.timestamp) ]
-        , div [ Styles.itemMessage ] [ text <| String.trim notification.message ]
+        , div [ Styles.itemMessage ] (Markdown.toHtml Nothing notification.message)
         , button
             [ Styles.closeButton
             , onClick onClose

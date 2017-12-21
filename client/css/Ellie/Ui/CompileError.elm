@@ -2,6 +2,7 @@ module Ellie.Ui.CompileError exposing (..)
 
 import Colors
 import Css exposing (..)
+import Css.Elements exposing (..)
 import Css.File exposing (..)
 
 
@@ -11,8 +12,8 @@ container =
         , backgroundColor Colors.darkMediumGray
         , Colors.boxShadow |> .bottom
         , padding2 (px 12) (px 16)
-        , borderLeft3 (px 1) solid Colors.red_
-        , color Colors.lightGray_
+        , borderLeft3 (px 1) solid Colors.red
+        , color Colors.lightGray
         , position relative
         ]
 

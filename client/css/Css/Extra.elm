@@ -1,4 +1,4 @@
-module Css.Extra exposing (backdropFilter, blur, filter)
+module Css.Extra exposing (backdropFilter, blur, filter, withAlpha)
 
 import Css exposing (..)
 
@@ -31,3 +31,8 @@ filter filterValue =
     filterValue
         |> filterToString
         |> property "filter"
+
+
+withAlpha : Float -> Color -> Color
+withAlpha alpha color =
+    rgba color.red color.green color.blue alpha

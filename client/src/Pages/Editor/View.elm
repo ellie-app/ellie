@@ -2,15 +2,18 @@ module Pages.Editor.View exposing (view)
 
 import Data.Ellie.SaveState as SaveState
 import Ellie.Ui.Toast as Toast
+import Extra.Html as Html
 import Html exposing (Html, button, div, header, iframe, main_, span, text)
 import Pages.Editor.Header.View as Header
 import Pages.Editor.Layout.View as Layout
+import Pages.Editor.Logs.View as Logs
 import Pages.Editor.Model as Model exposing (Model)
 import Pages.Editor.Output.View as Output
 import Pages.Editor.Routing as Routing exposing (..)
 import Pages.Editor.Save.Update as UpdateSave
 import Pages.Editor.Sidebar.View as Sidebar
 import Pages.Editor.Update as Update exposing (Msg(..))
+import Pages.Editor.View.Styles as Styles
 import RemoteData exposing (RemoteData(..))
 
 
@@ -61,6 +64,7 @@ viewOutput model =
     Output.view
         { onClearElmStuff = ClearElmStuff
         , stage = model.compileStage
+        , onCompile = CompileRequested
         }
 
 
@@ -85,15 +89,16 @@ viewSidebar model =
 
 viewNotifications : Model -> Html Msg
 viewNotifications model =
-    div [] <|
-        List.map
-            (\notification ->
-                Toast.view
-                    { notification = notification
-                    , onClose = ClearNotification notification
-                    }
-            )
-            model.notifications
+    Html.viewIf (not (List.isEmpty model.notifications)) <|
+        div [ Styles.notifications ] <|
+            List.map
+                (\notification ->
+                    Toast.view
+                        { notification = notification
+                        , onClose = ClearNotification notification
+                        }
+                )
+                model.notifications
 
 
 view : Model -> Html Msg
@@ -107,6 +112,7 @@ view model =
         , notifications = viewNotifications model
         , mapMsg = LayoutMsg
         , model = model.layout
+        , logs = Html.map LogsMsg <| Logs.view model.logs
         , loading =
             RemoteData.isLoading model.serverRevision
                 || RemoteData.isNotAsked model.serverRevision

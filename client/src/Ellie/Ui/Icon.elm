@@ -29,6 +29,9 @@ type Icon
     | Chevron
     | Document
     | Copy
+    | GitHub
+    | Trello
+    | Console
 
 
 view : Icon -> Html msg
@@ -106,3 +109,12 @@ toIdString icon =
 
         Copy ->
             "copy"
+
+        GitHub ->
+            "github"
+
+        Trello ->
+            "trello"
+
+        Console ->
+            "console"

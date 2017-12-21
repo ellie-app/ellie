@@ -12,9 +12,10 @@ header =
     uniqueClass
         [ width (pct 100)
         , height (px 40)
-        , backgroundColor Colors.darkGray_
+        , backgroundColor Colors.darkGray
         , displayFlex
         , alignItems center
+        , justifyContent spaceBetween
         , Colors.boxShadow |> .bottom
         , position relative
         , zIndex (int 4)
@@ -22,12 +23,39 @@ header =
         ]
 
 
+rightSide : UniqueClass
+rightSide =
+    uniqueClass
+        [ displayFlex
+        , alignItems center
+        ]
+
+
+socialLink =
+    uniqueClass
+        [ width (px 20)
+        , height (px 20)
+        , color Colors.lightMediumGray
+        , marginRight (px 8)
+        , lastChild [ marginRight zero ]
+        , hover [ color Colors.lightGray ]
+        ]
+
+
+leftSide : UniqueClass
+leftSide =
+    uniqueClass
+        [ displayFlex
+        , alignItems center
+        ]
+
+
 termsLabel =
     uniqueClass
-        [ color Colors.lightGray_
+        [ color Colors.lightGray
         , descendants
             [ a
-                [ color Colors.pink_
+                [ color Colors.pink
                 , textDecoration underline
                 ]
             ]
@@ -45,7 +73,7 @@ headerGroup =
 logo : UniqueSvgClass
 logo =
     uniqueSvgClass
-        [ fill (hex Colors.white)
+        [ fill Colors.lightGray
         , height (px 20)
         , width (px 51)
         , marginRight (px 24)
@@ -57,6 +85,7 @@ button =
     uniqueClass
         [ marginRight (px 16)
         , lastChild [ marginRight zero ]
+        , displayFlex
         ]
 
 

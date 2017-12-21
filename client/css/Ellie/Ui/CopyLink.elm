@@ -20,9 +20,9 @@ button =
         , property "background" "none"
         , border zero
         , cursor pointer
-        , color Colors.mediumGray_
+        , color Colors.mediumGray
         , hover [ color Colors.lightMediumGray ]
-        , active [ color Colors.lightGray_ ]
+        , active [ color Colors.lightGray ]
         ]
 
 
@@ -32,7 +32,7 @@ input =
         , property "background" "none"
         , fontFamily monospace
         , fontSize (px 15)
-        , color Colors.lightGray_
+        , color Colors.lightGray
         , width (px 240)
         ]
 

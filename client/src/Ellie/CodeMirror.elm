@@ -11,9 +11,9 @@ port module Ellie.CodeMirror
 
 import Data.CodeMirror.LinterMessage as LinterMessage exposing (LinterMessage)
 import Data.CodeMirror.Options as Options exposing (Options)
+import Ellie.Opbeat as Opbeat
 import Json.Decode as Decode exposing (Decoder)
 import Json.Encode as Encode exposing (Value)
-import Shared.Opbeat as Opbeat
 
 
 port ellieCodeMirrorOut : Value -> Cmd msg

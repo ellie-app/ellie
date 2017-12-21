@@ -7,6 +7,10 @@ if (process.env.NODE_ENV === 'production') {
   })
 }
 
+const start = app => {
+  app.ports.ellieOpbeatOut.subscribe(capture)
+}
+
 const capture = (exception) => {
   if (process.env.NODE_ENV === 'production') {
     const extraData = {
@@ -25,4 +29,7 @@ const capture = (exception) => {
   }
 }
 
-export default capture
+export default {
+  capture,
+  start
+}
