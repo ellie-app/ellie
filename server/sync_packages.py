@@ -121,7 +121,8 @@ def read_source_files(base_dir: str, package: PackageInfo,
 def read_artifacts(base_dir: str, package: PackageInfo) -> Any:
     artifacts_base = os.path.join(base_dir,
                                   package.package + '-' + str(package.version),
-                                  'elm-stuff/build-artifacts/0.18.0/elm-lang/',
+                                  'elm-stuff/build-artifacts/0.18.0/',
+                                  package.username,
                                   package.package,
                                   str(package.version))
     artifacts = [
@@ -182,7 +183,7 @@ def process_package(package: PackageInfo) -> Tuple[bool, PackageInfo]:
 
         package.set_elm_constraint(constraint)
 
-        if package.username == 'elm-lang':
+        if needs_prebuild(package):
             elm_path = os.path.realpath(
                 os.path.dirname(os.path.realpath(__file__)) +
                 '/../node_modules/elm/Elm-Platform/0.18.0/.cabal-sandbox/bin/elm-make')
