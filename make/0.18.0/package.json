@@ -8,14 +8,15 @@
   },
   "scripts": {
     "install-dependencies": "bower install",
-    "build-purescript": "pulp browserify -O --standalone Make --skip-entry-point -m Api -t build/bundle.js --no-check-main",
+    "build-purescript": "pulp browserify -O --transform envify --standalone Make --skip-entry-point -m Api -t build/bundle.js --no-check-main",
     "build": "npm run install-dependencies && npm run build-purescript",
-    "watch": "pulp -w browserify -O --standalone Make --skip-entry-point -m Api -t build/bundle.js --no-check-main"
+    "watch": "pulp -w browserify -O --transform envify --standalone Make --skip-entry-point -m Api -t build/bundle.js --no-check-main"
   },
   "author": "",
   "license": "ISC",
   "dependencies": {
     "bower": "1.8.2",
+    "envify": "^4.1.0",
     "pulp": "12.0.1",
     "purescript": "0.11.7"
   }
