@@ -28,7 +28,6 @@ import TheMasterPlan.CanonicalModule as CanonicalModule
 import TheMasterPlan.Location (Location)
 import TheMasterPlan.Project (ProjectGraph(..), ProjectData(..))
 
-
 type InterfaceInfo =
   { path :: FilePath
   , modified :: Instant
@@ -238,7 +237,6 @@ topologicalSort ::
     -> Task (Array CanonicalModule)
 topologicalSort dependencies =
   dependencies
-    |> Graph.fromAdjacency
     |> Graph.topologicalSort
     |> lmap (Array.head >>> map Graph.nodes >>> Maybe.fromMaybe [] >>> BM.Cycle)
     |> Task.fromEither

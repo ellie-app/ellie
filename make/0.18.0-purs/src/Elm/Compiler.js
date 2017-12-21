@@ -1,4 +1,6 @@
-exports._exec = null
+exports._makeCompiler = null
+exports._compile = null
+exports._parseDependencies = null
 exports._parseJson = null
 
 ;(function () {
@@ -9,23 +11,31 @@ exports._parseJson = null
     return out
   }
 
+  function repeatPromise(count, thunk) {
+    var out = []
+    for (var i = 0; i < count; i++) {
+      out.push(thunk())
+    }
+    return Promise.all(out)
+  }
+
   function rpc(mtype, args, worker) {
-    child.working = true
+    worker.working = true
     return new Promise(function (resolve, reject) {
       var rid = genId()
 
       function onResolve(event) {
         var data = event.data
         if (data.type === mtype && data.id === rid) {
-          child.worker.removeEventListener('message', onResolve)
-          child.working = false
+          worker.worker.removeEventListener('message', onResolve)
+          worker.working = false
           if (data.success) resolve(data.result)
           else reject(Error(data.message))
         }
       }
       
-      child.worker.addEventListener('message', onResolve)
-      child.worker.postMessage({ type: mtype, id: rid, args: args })
+      worker.worker.addEventListener('message', onResolve)
+      worker.worker.postMessage({ type: mtype, id: rid, args: args })
     }) 
   }
 
@@ -55,84 +65,90 @@ exports._parseJson = null
     })
   }
 
-  function repeatPromise(count, thunk) {
-    var out = []
-    for (var i = 0; i < count; i++) {
-      out.push(thunk())
-    }
-    return Promise.all(out)
-  }
-
-  var workQueue = null
-  var workers = null
-
-  function ready() {
-    return workQueue !== null && workers !== null
-  }
-
   function makePool(compilerUrl) {
     return repeatPromise(
       navigator.hardwareConcurrency || 4,
       function () { return startChild(compilerUrl) }
     )
-    .then(function (w) {
-      workers = w
-      workQueue = []
-    })
   }
 
-  function doWork() {
-    if (!workers || !workQueue) return
-    workers.forEach(function (worker) {
+  function Compiler(workers) {
+    this._workers = workers
+    this._queue = []
+  }
+
+  Compiler.prototype._doWork = function _doWork() {
+    var self = this
+    self._workers.forEach(function (worker) {
       if (worker.working) return
-      if (workQueue.length === 0) return
-      var nextItem = workQueue.shift()
+      if (self._queue.length === 0) return
+      var nextItem = self._queue.shift()
       rpc(nextItem.type, nextItem.args, worker)
         .then(nextItem.resolve)
         .catch(nextItem.reject)
-        .then(doWork)
+        .then(function () { self._doWork() })
     })
   }
 
-  function enqueue(mtype, args, resolve, reject) {
-    workQueue.push({
+  Compiler.prototype._enqueue =  function _enqueue(mtype, args, resolve, reject) {
+    this._queue.push({
       type: mtype,
       args: args,
       resolve: resolve,
       reject: reject
     })
-    doWork()
+    this._doWork()
   }
 
-  exports._exec = function _exec(ffiHelpers, compilerUrl, mtype, args) {
-    return function runAff(fail, succeed) {
-      if (!ready()) {
-        makePool(compilerUrl)
-          .then(function () {
-            enqueue(
-              mtype,
-              args,
-              function (result) { succeed(ffiHelpers.right(result)) },
-              function (error) { succeed(ffiHelpers.left(error.message)) }
-            )
-          })
-          .catch(fail)
-      } else {
-        enqueue(
-          mtype,
-          args,
-          function (result) { succeed(ffiHelpers.right(result)) },
-          function (error) { succeed(ffiHelpers.left(error.message)) }
-        )
-      }
+  Compiler.prototype.parseDependencies = function parseDependencies(args) {
+    var self = this
+    return new Promise(function (resolve, reject) {
+      self._enqueue('parse', args, resolve, reject)
+    })
+  }
+
+  Compiler.prototype.compile = function compile(args) {
+    var self = this
+    return new Promise(function (resolve, reject) {
+      self._enqueue('compile', args, resolve, reject)
+    })
+  }
+  
+
+  exports._makeCompiler = function _makeCompiler(compilerUrl) {
+    return function (fail, succeed) {
+      makePool(compilerUrl)
+        .then(function (workers) {
+          return new Compiler(workers)
+        })
+        .then(succeed)
+        .catch(function (error) { fail(error.message) })
     }
   }
 
-  exports._parseJson = function _parseJson(right, left, input) {
+  exports._compile = function _compile(compiler, args) {
+    return function (fail, succeed) {
+      compiler
+        .compile(args)
+        .then(succeed)
+        .catch(function (error) { fail(error.message) })
+    }
+  }
+
+  exports._parseDependencies = function _parseDependencies(compiler, args) {
+    return function (fail, succeed) {
+      compiler
+        .parseDependencies(args)
+        .then(succeed)
+        .catch(function (error) { fail(error.message) })
+    }
+  }
+
+  exports._parseJson = function _parseJson(ffiHelpers, input) {
     try {
-      return right(JSON.parse(input))
+      return ffiHelpers.right(JSON.parse(input))
     } catch (e) {
-      return left(e.message)
+      return ffiHelpers.left(e.message)
     }
   }
 }())

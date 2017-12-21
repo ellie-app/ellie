@@ -12,15 +12,12 @@
     "bundle-purescript": "rollup --config",
     "minify": "uglifyjs build/bundle.prepack.js -c unsafe -m toplevel --mangle-props -o build/bundle.min.js",
     "full-build": "npm run install-dependencies && npm run build-purescript && npm run bundle-purescript",
-    "watch:source": "pulp -w build",
-    "watch:bundle": "rollup -c -w",
-    "watch": "run-p watch:**"
+    "watch": "pulp -w browserify -O --standalone Make --skip-entry-point -m Api -t build/bundle.js --no-check-main"
   },
   "author": "",
   "license": "ISC",
   "dependencies": {
     "bower": "1.8.2",
-    "npm-run-all": "^4.1.2",
     "pulp": "12.0.1",
     "purescript": "0.11.7",
     "rollup": "0.52.1",

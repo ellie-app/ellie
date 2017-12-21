@@ -10,3 +10,9 @@ exports._revokeObjectUrl = function _revokeObjectUrl(unit, url) {
     return unit
   }
 }
+
+exports._create = function _create(parts, type) {
+  return function runEff() {
+    return new Blob(parts, { type: type })
+  }
+}

@@ -4,10 +4,14 @@ import Ellie.Prelude
 
 import BuildManager (Task)
 import BuildManager as BM
+import Control.Monad.Task as Task
+import Control.Monad.Eff.Exception as Exception
 import Data.Array ((:))
 import Data.Array (concatMap, filter, mapMaybe, reverse, sort, tail) as Array
 import Data.Array.Extra (inits) as Array
 import Data.Bifunctor (lmap)
+import Data.Blob (Blob)
+import Data.Blob as Blob
 import Data.Either.Extra (withDefault) as Either
 import Data.Graph as Graph
 import Data.Graph.Tree as Tree
@@ -40,7 +44,7 @@ generate ::
   -> Map CanonicalModule (Array CanonicalModule)
   -> Map CanonicalModule Location
   -> Array CanonicalModule
-  -> Task (Maybe String)
+  -> Task (Maybe Blob)
 generate interfaces dependencies natives rootModules =
   case rootModules of
     [] ->
@@ -66,9 +70,10 @@ generate interfaces dependencies natives rootModules =
       [ footer ]
         |> (objectFiles <> _)
         |> (header : _)
-        |> String.joinWith ""
-        |> Just
-        |> pure
+        |> flip Blob.create "application/javascript"
+        |> Task.liftEff "Blob.create"
+        |> lmap (Exception.message >>> BM.ImpossibleError)
+        |> map Just
 
 
 tupleToNativeNode :: Tuple CanonicalModule Location -> Node
@@ -129,7 +134,6 @@ getReachableObjectFiles moduleNames allNodes =
       nodes
         |> map (\{ path, name, deps } -> Tuple name deps)
         |> Map.fromFoldable
-        |> Graph.fromAdjacency
 
     graphNodes =
       Graph.nodes graph

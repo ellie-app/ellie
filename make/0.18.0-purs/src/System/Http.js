@@ -22,11 +22,11 @@ exports._send = function _send(ffiHelpers, errors, showUrl, request) {
 		var xhr = new XMLHttpRequest()
 
 		xhr.addEventListener('error', function() {
-			succeed(ffiHelpers.left(errors.networkError))
+			fail(errors.networkError)
 		})
 
 		xhr.addEventListener('timeout', function() {
-			succeed(ffiHelpers.left(errors.timeout))
+			fail(errors.timeout)
 		})
 
 		xhr.addEventListener('load', function() {
@@ -40,23 +40,23 @@ exports._send = function _send(ffiHelpers, errors, showUrl, request) {
 
       if (xhr.status < 200 || 300 <= xhr.status) {
         response.body = xhr.responseText
-        return succeed(ffiHelpers.left(errors.badStatus(response)))
+        return fail(errors.badStatus(response))
       }
 
       var result = request.expect.responseToResult(response)
 
       if (ffiHelpers.isLeft(result)) {
         response.body = xhr.responseText
-        return succeed(ffiHelpers.left(errors.badPayload(ffiHelpers.fromLeft(result), response)))
+        return fail(errors.badPayload(ffiHelpers.fromLeft(result), response))
       } else {
-        return succeed(result)
+        return succeed(ffiHelpers.fromRight(result))
       }
 		})
 
 		try {
 			xhr.open(request.method, showUrl(request.url), true)
 		} catch (e) {
-			return succeed(ffiHelpers.left(errors.barUrl(request.url)))
+			return fail(errors.barUrl(request.url))
 		}
 
     var headers = request.headers
@@ -81,13 +81,9 @@ exports._send = function _send(ffiHelpers, errors, showUrl, request) {
 		xhr.send()
 
 		return function() {
-      return function cancelAff(fail, succeed) {
-        try {
-          xhr.abort()
-          succeed()
-        } catch (e) {
-          fail(e)
-        }
+      try {
+        xhr.abort()
+      } catch (e) {
       }
     }
 	}

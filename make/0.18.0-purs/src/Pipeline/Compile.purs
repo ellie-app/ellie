@@ -4,6 +4,8 @@ import Ellie.Prelude
 
 import BuildManager (Task)
 import BuildManager as BM
+import Control.Monad.Eff.Exception as Exception
+import Control.Monad.Error.Class (catchError, try)
 import Control.Monad.Task (AVar)
 import Control.Monad.Task as Task
 import Data.Array as Array
@@ -21,6 +23,7 @@ import Data.Set as Set
 import Data.Traversable (mapAccumR, traverse)
 import Data.Tuple (Tuple(..))
 import Data.Url (Url)
+import Elm.Compiler (Compiler)
 import Elm.Compiler as Compiler
 import Elm.Compiler.Error as Error
 import Elm.Compiler.Module.Interface (Interface)
@@ -30,7 +33,7 @@ import Report as Report
 import System.FileSystem (FilePath)
 import System.FileSystem as FileSystem
 import TheMasterPlan.Build (BuildData(..), BuildGraph)
-import TheMasterPlan.CanonicalModule (CanonicalModule)
+import TheMasterPlan.CanonicalModule (CanonicalModule, interfacePath)
 import TheMasterPlan.CanonicalModule as CanonicalModule
 import TheMasterPlan.Location (Location)
 
@@ -49,9 +52,9 @@ type Interfaces =
 
 type Env =
   { numTasks :: Int
-  , compilerUrl :: Url
-  , resultChannel :: AVar Result
-  , doneChannel :: AVar (Either (Array Error.Error) Interfaces)
+  , compiler :: Compiler
+  , resultChannel :: AVar (Either BM.Error Result)
+  , doneChannel :: AVar (Either BM.Error (Either (Array Error.Error) Interfaces))
   , dependencies :: Map CanonicalModule (Array CanonicalModule)
   , reverseDependencies :: Map CanonicalModule (Array CanonicalModule)
   , modulesForGeneration :: Set CanonicalModule
@@ -61,7 +64,7 @@ type Env =
 type State =
   { numActiveThreads :: Int
   , blockedModules :: Map CanonicalModule BuildData
-  , results :: Either (Array Error.Error) Interfaces
+  , results :: Either BM.Error (Either (Array Error.Error) Interfaces)
   , numBuilt :: Int
   }
 
@@ -72,24 +75,20 @@ type State =
 
 initEnv ::
   ∀  e x
-  .  Url
+  .  Compiler
   -> Array CanonicalModule
   -> Map CanonicalModule (Array CanonicalModule)
   -> BuildGraph
   -> Task Env
-initEnv compilerUrl modulesForGeneration dependencies buildGraph = do
-  let
-    { completedInterfaces, blockedModules } =
-      unwrap buildGraph
-
-  resultChannel <- Task.makeEmptyVar
-  doneChannel <- Task.makeEmptyVar
-
+initEnv compiler modulesForGeneration dependencies buildGraph = do
+  let { completedInterfaces, blockedModules } = unwrap buildGraph
+  resultChannel <- lmap (Exception.message >>> BM.ImpossibleError) <| Task.makeEmptyVar
+  doneChannel <- lmap (Exception.message >>> BM.ImpossibleError) <| Task.makeEmptyVar
   pure
     { numTasks: Map.size blockedModules
     , reverseDependencies: reverseGraph dependencies
     , modulesForGeneration: Set.fromFoldable modulesForGeneration
-    , compilerUrl
+    , compiler
     , dependencies
     , resultChannel
     , doneChannel
@@ -132,70 +131,105 @@ initState env buildGraph =
         |> Array.fromFoldable
   in do
     _ <-
-      traverse (Task.fork <<< buildModule env completedInterfaces) readyList
+      traverse
+        (buildModule env completedInterfaces
+          >>> Task.fork
+          >>> Task.liftEff "Compile.buildModule >>> Task.fork"
+          >>> lmap (Exception.message >>> BM.ImpossibleError)
+        )
+        readyList
 
     pure
       { numActiveThreads: Array.length readyList
       , numBuilt: 0
       , blockedModules
-      , results: Right completedInterfaces
+      , results: Right (Right completedInterfaces)
       }
 
 
 build ::
   ∀  e x
-  .  Url
+  .  Compiler
   -> Reporter
   -> Package
   -> Array CanonicalModule
   -> Map CanonicalModule (Array CanonicalModule)
   -> BuildGraph
   -> Task (Either (Array Error.Error) Interfaces)
-build compilerUrl reporter rootPkg modulesForGeneration dependencies summary = do
-  env <- initEnv compilerUrl modulesForGeneration dependencies summary
-  _ <- Task.fork (buildManager reporter env =<< initState env summary)
+build compiler reporter rootPkg modulesForGeneration dependencies summary = do
+  env <- initEnv compiler modulesForGeneration dependencies summary
+
+  reporter (Report.Compiling { total: env.numTasks, complete: 0 })
+    |> lmap (Exception.message >>> BM.ImpossibleError)
+
+  _ <-
+    initState env summary
+      >>= buildManager reporter env
+      |> Task.fork
+      |> Task.liftEff "Pipeline.Compile.buildManager >>> Task.fork"
+      |> lmap (Exception.message >>> BM.ImpossibleError)
+
   Task.readVar env.doneChannel
+    |> lmap (Exception.message >>> BM.ImpossibleError)
+    >>= Task.fromEither
 
 
 updateLeft :: ∀ x a. x -> (x -> x) -> Either x a -> Either x a
 updateLeft _ updater (Left x) = Left (updater x)
-updateLeft default _ _ = Left default
+updateLeft default updater _ = Left (updater default)
 
 
 buildManager :: Reporter -> Env -> State -> Task Unit
 buildManager reporter env state =
-  if state.numActiveThreads == 0 then do
+  if state.numActiveThreads == 0 then
     Task.putVar state.results env.doneChannel
+      |> lmap (Exception.message >>> BM.ImpossibleError)
   else do
-    { source, path, moduleId, result } <-
+    compileResult <-
       Task.takeVar env.resultChannel
+        |> lmap (Exception.message >>> BM.ImpossibleError)
 
-    case result of
-      Right { interface, js } -> do
-        FileSystem.write
-          (CanonicalModule.interfacePath moduleId)
-          interface
+    case compileResult of        
+      Right { source, path, moduleId, result: Right output } -> do
+        let interfacePath = CanonicalModule.interfacePath moduleId
+        let jsPath = CanonicalModule.objectPath moduleId
 
-        FileSystem.write
-          (CanonicalModule.objectPath moduleId)
-          js
+        output.interface
+          |> FileSystem.write interfacePath
+          |> lmap (const (BM.CorruptedArtifact interfacePath))
 
-        newState <- registerSuccess env state moduleId interface
-        reporter <| Report.Compiling { total: env.numTasks, complete: newState.numBuilt }
+        output.js
+          |> FileSystem.write jsPath
+          |> lmap (const (BM.CorruptedArtifact jsPath))
+
+        newState <- registerSuccess env state moduleId output.interface
+
+        { total: env.numTasks, complete: newState.numBuilt }
+          |> Report.Compiling
+          |> reporter
+          |> lmap (Exception.message >>> BM.ImpossibleError)
+
         buildManager reporter env newState
 
-      Left errors ->
+      Right { source, path, moduleId, result: Left errors } -> do
         buildManager reporter env <|
           state
             { numActiveThreads = state.numActiveThreads - 1
-            , results = updateLeft [] (_ <> errors) state.results
+            , results = map (updateLeft [] (_ <> errors)) state.results
+            }
+      
+      Left crash ->
+        buildManager reporter env <|
+          state
+            { numActiveThreads = state.numActiveThreads - 1
+            , results = Left crash
             }
 
 
 registerSuccess :: Env -> State -> CanonicalModule -> Interface -> Task State
 registerSuccess env state name interface =
     case state.results of
-      Right completedInterfaces ->
+      Right (Right completedInterfaces) ->
         let
           { accum: updatedBlockedModules, value: readyModules } =
             mapAccumR
@@ -210,16 +244,22 @@ registerSuccess env state name interface =
             Map.insert name interface completedInterfaces
         in do
           _ <-
-            traverse (Task.fork <<< buildModule env newCompletedInterfaces) readyList
+            traverse
+              (buildModule env newCompletedInterfaces
+                >>> Task.fork
+                >>> Task.liftEff "Compile.buildModule >>> Task.fork"
+                >>> lmap (Exception.message >>> BM.ImpossibleError)
+              )
+              readyList
 
           pure <|
             state
               { numActiveThreads = state.numActiveThreads - 1 + Array.length readyList
               , blockedModules = updatedBlockedModules
-              , results = Right newCompletedInterfaces
+              , results = Right (Right newCompletedInterfaces)
               , numBuilt = state.numBuilt + 1
               }
-      Left _ ->
+      _ ->
         pure state
 
 
@@ -283,15 +323,11 @@ buildModule env interfaces (Tuple modul location) =
         |> lmap (unwrap >>> _.path >>> BM.CorruptedArtifact)
 
     result <-
-      Compiler.compile env.compilerUrl packageName source interfaces
+      Compiler.compile env.compiler packageName source interfaces
+        |> map { moduleId: modul, source, path, result: _ }
         |> lmap ({ name: moduleName, source, message: _ } >>> BM.CompilerCrash)
+        |> try
 
-    let
-      finished =
-        { moduleId: modul
-        , source
-        , path
-        , result
-        }
-
-    Task.putVar finished env.resultChannel
+    Task.putVar result env.resultChannel
+      |> lmap (Exception.message >>> BM.ImpossibleError)
+    

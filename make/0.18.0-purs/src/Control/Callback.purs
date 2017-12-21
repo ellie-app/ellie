@@ -5,25 +5,15 @@ module Control.Callback
   ) where
 
 import Ellie.Prelude
-import Control.Monad.Task (Task, EffFnTask, kind Effect)
-import Control.Monad.Task as Task
+import Control.Monad.Eff (kind Effect, Eff)
 import Data.Function.Uncurried (Fn3, runFn3)
 import Data.Foreign (Foreign)
 
 foreign import data CALLBACK :: Effect
-
 foreign import data Callback :: Type
-
-foreign import _runCallback ::
-  ∀ e x
-  . Fn3
-      Task.FfiHelpers
-      Callback
-      Foreign
-      (EffFnTask (callback :: CALLBACK | e) x Unit)
+foreign import _runCallback :: ∀ e. Fn3 Unit Callback Foreign (Eff (callback :: CALLBACK | e) Unit)
 
 
-run :: ∀ x e. Callback -> Foreign -> Task (callback :: CALLBACK | e) x Unit
-run callback value =
-  Task.fromEffFnTask <|
-    runFn3 _runCallback Task.ffiHelpers callback value
+run :: ∀ e. Callback -> Foreign -> Eff (callback :: CALLBACK | e) Unit
+run =
+  runFn3 _runCallback unit

@@ -1,47 +1,111 @@
-module Data.Graph.Tree where
+module Data.Graph.Tree
+  ( Forest
+  , Tree
+  , empty
+  , height
+  , inner
+  , isEmpty
+  , leaf
+  , levelOrder
+  , levelOrderArray
+  , postOrder
+  , postOrderArray
+  , preOrder
+  , preOrderArray
+  , root
+  , size
+  , unfoldForest
+  , unfoldTree
+  ) where
 
-import Ellie.Prelude
+import Prelude
 import Data.Array ((:))
 import Data.Array as Array
 import Data.Maybe (Maybe(..))
-import Data.Maybe as Maybe
 import Data.Queue (Queue)
 import Data.Queue as Queue
 
-newtype Tree v =
-  Tree
-    { index :: Int
-    , children :: Maybe { vertex :: v, children :: Forest v }
-    }
+data Tree a =
+  MkTree Int (Maybe { label :: a, children :: Forest a })
 
+
+type Forest a =
+  Array (Tree a)
+
+
+empty :: ∀ a. Tree a
+empty =
+  MkTree 0 Nothing
+
+
+leaf :: ∀ a. a -> Tree a
+leaf val =
+  inner val []
+
+
+inner :: ∀ a. a -> Forest a -> Tree a
+inner label children =
+  let
+    nonEmptyChildren = Array.filter (not <<< isEmpty) children
+    totalSize = Array.foldl (\out tree -> out + size tree) 1 nonEmptyChildren
+  in
+  MkTree totalSize (Just { label, children: nonEmptyChildren })
+
+
+unfoldTree ::
+  ∀  label seed
+  .  (seed -> { label :: label, children :: Array seed })
+  -> seed
+  -> Tree label
+unfoldTree next seed =
+  let { label, children: seeds } = next seed
+  in inner label (map (unfoldTree next) seeds)
+
+
+unfoldForest ::
+  ∀  seed label
+  .  (seed -> { label :: label, children :: Array seed })
+  -> Array seed
+  -> Forest label
+unfoldForest next seeds =
+  map (unfoldTree next) seeds
+
+
+isEmpty :: ∀ label. Tree label -> Boolean
+isEmpty (MkTree 0 Nothing) = true
+isEmpty _ = false
+
+
+root :: ∀ label. Tree label -> Maybe { label :: label, children :: Forest label }
+root (MkTree _ maybe) = maybe
+
+
+size :: ∀ label. Tree label -> Int
+size (MkTree n _) = n
+
+
+height :: ∀ label. Tree label -> Int
+height tree = go 0 tree
+  where
+    go h t =
+      case root t of
+        Just { children } -> Array.foldl (\out item -> max (go (h + 1) item) out) (h + 1) children
+        Nothing -> h
+    
+
+
+arrayForTraversal ::
+  ∀  a b c d e f g h
+  .  Category e
+  => ((d -> b -> (Array d -> c) -> Array d -> c) -> e f f -> a -> Array g -> h)
+  -> a
+  -> h
 arrayForTraversal traversal tree =
   let
-    f vertex children rest =
-      (vertex : _) >>> rest
-    in
-      traversal f id tree []
-
-
-levelOrder :: ∀ a v. (v -> Forest v -> a -> a) -> a -> Tree v -> a
-levelOrder visit acc tree = go acc (Queue.empty |> Queue.insert tree)
-  where
-    go acc toVisit =
-      case Queue.remove toVisit of
-        { value: Nothing } ->
-          acc
-
-        { value: Just tree, rest: othersToVisit } ->
-            case root tree of
-              Nothing ->
-                go acc othersToVisit
-
-              Just { vertex, children } ->
-                go (visit vertex children acc) (pushMany children othersToVisit)
-
-
-levelOrderArray :: ∀ v. Tree v -> Array v
-levelOrderArray =
-  arrayForTraversal levelOrder
+    f label children rest = (label : _ ) >>> rest
+    acc = id
+  in
+    traversal f acc tree []
 
 
 pushMany :: ∀ a. Array a -> Queue a -> Queue a
@@ -49,56 +113,66 @@ pushMany vals queue =
     Array.foldl (flip Queue.insert) queue vals
 
 
-preOrder :: ∀ a v. (v -> Forest v -> a -> a) -> a -> Tree v -> a
-preOrder visitor acc tree =
+levelOrder ::
+  ∀  label acc
+  .  (label -> Forest label -> acc -> acc)
+  -> acc
+  -> Tree label
+  -> acc
+levelOrder visit acc tree = go acc (Queue.insert tree Queue.empty)
+  where
+    go acc toVisit =
+      case Queue.remove toVisit of
+        { value: Nothing } -> acc
+        { value: Just tree, rest } ->
+          case root tree of
+            Nothing ->
+              go acc rest
+            Just { label, children } ->
+              go (visit label children acc) (pushMany children rest)
+
+
+levelOrderArray :: ∀ label. Tree label -> Array label
+levelOrderArray =
+  arrayForTraversal levelOrder
+
+
+postOrder ::
+  ∀  label acc
+  .  (label -> Forest label -> acc -> acc)
+  -> acc
+  -> Tree label
+  -> acc
+postOrder visit acc tree =
   let
-    fold =
-      preOrder visitor
+    folder = postOrder visit
   in
     case root tree of
-      Nothing ->
-        acc
-      Just { vertex, children } ->
-        Array.foldl fold (visitor vertex children acc) children
+      Nothing -> acc
+      Just { label, children } -> visit label children (Array.foldl folder acc children)
 
 
-preOrderArray :: ∀ v. Tree v -> Array v
+
+postOrderArray :: ∀ label. Tree label -> Array label
+postOrderArray =
+  arrayForTraversal postOrder
+
+
+preOrder ::
+  ∀  label acc
+  .  (label -> Forest label -> acc -> acc)
+  -> acc
+  -> Tree label
+  -> acc
+preOrder visit acc tree =
+  let
+    folder =  preOrder visit
+  in
+    case root tree of
+      Nothing -> acc
+      Just { label, children } -> Array.foldl folder (visit label children acc) children
+
+
+preOrderArray :: ∀ label. Tree label -> Array label
 preOrderArray =
   arrayForTraversal preOrder
-
-
-type Forest v =
-  Array (Tree v)
-
-
-isEmpty :: ∀ v. Tree v -> Boolean
-isEmpty (Tree { index: 0, children: Nothing }) = true
-isEmpty _ = false
-
-
-size :: ∀ v. Tree v -> Int
-size (Tree { index }) =
-  index
-
-
-empty :: ∀ v. Tree v
-empty =
-    Tree { index: 0, children: Nothing }
-
-
-inner :: ∀ v. v -> Array (Tree v) -> Tree v
-inner vertex children =
-  let
-    nonEmptyChildren = Array.filter (not <<< isEmpty) children
-    totalSize = Array.foldl (\a t -> size t + a) 1 nonEmptyChildren
-  in
-    Tree { index: totalSize, children: Just { vertex, children: nonEmptyChildren } }
-
-
-root :: ∀ v. Tree v -> Maybe { vertex :: v, children :: Forest v }
-root (Tree { children }) = children
-
-
-leaf :: ∀ v. v -> Tree v
-leaf val =
-    inner val []

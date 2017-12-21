@@ -2,19 +2,23 @@ module Report where
 
 import Ellie.Prelude
 import Control.Monad.Task (Task)
+import Control.Monad.Task as Task
 import Control.Callback (Callback, CALLBACK)
 import Control.Callback as Callback
+import Data.Blob (Blob)
 import Data.Foreign as Foreign
 import Data.Foreign.Class (class Foreignable, put)
 import Elm.Compiler.Error as Error
+import Control.Monad.Eff.Exception as Exception
 
 
 data Stage
-  = InstallingPackages
+  = LoadingCompiler Number
+  | InstallingPackages
   | PlanningBuild
   | Compiling { total :: Int, complete :: Int }
   | GeneratingCode
-  | Success String
+  | Success Blob
   | FinishedWithErrors (Array Error.Error)
   | Failed String
 
@@ -25,6 +29,9 @@ instance foreignableStage :: Foreignable Stage where
 
   put stage =
     case stage of
+      LoadingCompiler percentage ->
+        Foreign.toForeign { "type": "LoadingCompiler", percentage }
+
       InstallingPackages ->
         Foreign.toForeign { "type": "InstallingPackages" }
 
@@ -41,10 +48,10 @@ instance foreignableStage :: Foreignable Stage where
       GeneratingCode ->
         Foreign.toForeign { "type": "GeneratingCode" }
 
-      Success url ->
+      Success blob ->
         Foreign.toForeign
           { "type": "Success"
-          , url
+          , blob
           }
 
       FinishedWithErrors errors ->
@@ -60,8 +67,11 @@ instance foreignableStage :: Foreignable Stage where
           }
 
 type Reporter =
-  ∀ x e. Stage -> Task (callback :: CALLBACK | e) x Unit
+  ∀ e. Stage -> Task (callback :: CALLBACK | e) Exception.Error Unit
 
 reporter :: Callback -> Reporter
 reporter callback stage =
-  Callback.run callback <| put stage
+  stage
+    |> put
+    |> Callback.run callback
+    |> Task.liftEff "Reporter.report"

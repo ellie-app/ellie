@@ -121,9 +121,7 @@ exports._liftRawError = null
   exports._exists = function (helpers, path) {
     return function aff(fail, succeed) {
       get(path)
-        .then(function (value) { return helpers.right(value !== notFoundToken) })
-        .then(succeed)
-        .catch(fail)
+        .then(function (value) { return succeed(value !== notFoundToken) })
     }
   }
 
@@ -132,17 +130,16 @@ exports._liftRawError = null
       get(path)
         .then(function (value) {
           if (value === notFoundToken) {
-            return helpers.right(helpers.nothing)
+            succeed(helpers.nothing)
+            return
           }
 
           var asInstant = instant(value.modified)
 
-          return helpers.isNothing(asInstant) ?
-            helpers.left({ $: 'CorruptModifiedTime', a: path }) :
-            helpers.right(asInstant)
+          helpers.isNothing(asInstant) ?
+            fail({ $: 'CorruptModifiedTime', a: path }) :
+            succeed(asInstant)
         })
-        .then(succeed)
-        .catch(fail)
     }
   }
 
@@ -150,30 +147,24 @@ exports._liftRawError = null
     return function aff(fail, succeed) {
       get(path)
         .then(function (data) {
-          return data === notFoundToken ?
-            helpers.left({ $: 'FileNotFound', a: path }) :
-            helpers.right(data.value)
+          data === notFoundToken ?
+            fail({ $: 'FileNotFound', a: path }) :
+            succeed(data.value)
         })
-        .then(succeed)
-        .catch(fail)
     }
   }
 
   exports._write = function (helpers, path, data) {
     return function aff(fail, succeed) {
       set(path, { value: data, modified: Date.now() })
-        .then(helpers.const(helpers.right(helpers.unit)))
-        .then(succeed)
-        .catch(fail)
+        .then(function () { return succeed(helpers.unit) })
     }
   }
 
   exports._remove = function (helpers, path) {
     return function aff(fail, succeed) {
       deleteStartsWith(path)
-        .then(helpers.const(helpers.right(helpers.unit)))
-        .then(succeed)
-        .catch(fail)
+        .then(function () { succeed(helpers.unit) })
     }
   }
 

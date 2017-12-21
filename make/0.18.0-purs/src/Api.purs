@@ -1,4 +1,4 @@
-module Api (start) where
+module Api (start, clearElmStuff) where
 
 import Ellie.Prelude
 
@@ -8,24 +8,31 @@ import Control.Callback as Callback
 import Control.Monad.Eff (Eff)
 import Control.Monad.Eff.Unsafe as Eff
 import Control.Monad.Error.Class (catchError)
+import Control.Monad.Eff.Exception as Exception
 import Control.Monad.Rec.Class (forever)
 import Control.Monad.Task (AVar, AVAR)
 import Control.Monad.Task as Task
 import Data.Array as Array
 import Data.Bifunctor (lmap)
+import Data.Blob as Blob
 import Data.Either (Either(..))
 import Data.Foreign as Foreign
+import Data.Foreign.Class as Foreign
+import Data.Maybe (Maybe(..))
 import Data.Maybe as Maybe
 import Data.Newtype (unwrap)
 import Data.Read (read)
 import Data.String (Pattern(..))
 import Data.String as String
-import Data.String.Regex (match, parseFlags) as Regex
+import Data.String.Regex (match) as Regex
+import Data.String.Regex.Flags (noFlags) as Regex
 import Data.String.Regex.Unsafe (unsafeRegex) as Regex
 import Data.Traversable (traverse)
 import Data.Tuple (Tuple(..))
 import Data.Url (Url)
 import Ellie.SourceLoader as SourceLoader
+import Elm.Compiler (Compiler)
+import Elm.Compiler as Compiler
 import Elm.Compiler.Version (version) as Compiler
 import Elm.Package.Constraint (Constraint)
 import Elm.Package.Constraint as Constraint
@@ -40,7 +47,6 @@ import Pipeline.Plan as Plan
 import Report as Report
 import System.FileSystem (FilePath, (<.>), (</>))
 import System.FileSystem as FileSystem
-
 
 type Dependency =
   { name :: String
@@ -65,11 +71,11 @@ parseModuleName source =
     moduleNameRegex =
       Regex.unsafeRegex
         "module ([a-zA-Z.]+) exposing"
-        (Regex.parseFlags "g")
+        Regex.noFlags
 
     matched = do
       matches <- Regex.match moduleNameRegex source
-      first <- Array.head matches
+      first <- Array.index matches 1
       moduleName <- first
       moduleName
         |> String.split (Pattern ".")
@@ -101,77 +107,100 @@ readDescription dependencies = do
 compileService ::
   AVar { source :: String, dependencies :: Array Dependency }
     -> Callback
-    -> Url
+    -> Compiler
     -> BM.Task Unit
-compileService compileChannel reportCallback compilerUrl =
-  forever $
-    Task.onError (show >>> Report.Failed >>> Report.reporter reportCallback) $ do
-        { source, dependencies } <- Task.takeVar compileChannel
-        
-        let
-          reporter =
-            Report.reporter reportCallback
+compileService compileChannel reportCallback compiler =
+  forever $ do
+    { source, dependencies } <-
+      Task.takeVar compileChannel
+        |> lmap (Exception.message >>> BM.ImpossibleError)
 
-        let
-          entryPath =
-            "/src" </> parseModuleName source
+    let
+      reporter =
+        Report.reporter reportCallback
 
-        description <-
-          dependencies
-            |> readDescription
-            |> lmap (\_ -> BM.CorruptedArtifact "elm-package.json")
-            |> Task.fromEither
-
-        source
-          |> FileSystem.write entryPath
-          |> lmap (\_ -> BM.CorruptedArtifact entryPath)
-
-
-        reporter Report.InstallingPackages
-
-        solution <-
-          Install.getSolution description
-
-        reporter Report.PlanningBuild
-
-        { package, exposedModules, allModules, graph } <-
-          Crawl.crawl compilerUrl "/src/Main.elm" description solution
-
-        let
-          dependencies =
-            graph
-              |> unwrap
-              |> _.data
-              |> map (unwrap >>> _.dependencies)
-
-        buildSummary <-
-          Plan.planBuild entryPath graph
-
-        buildResult <-
-          Compile.build
-            compilerUrl
-            reporter
-            package
-            allModules
+    let
+      entryPath =
+        "/src" </> parseModuleName source
+    
+    flip catchError (onCatch reportCallback) $
+      Task.finally (FileSystem.remove entryPath |> lmap (const (BM.CorruptedArtifact entryPath))) $ do
+          description <-
             dependencies
-            buildSummary
+              |> readDescription
+              |> lmap (\_ -> BM.CorruptedArtifact "elm-package.json")
+              |> Task.fromEither
 
-        case buildResult of
-          Right interfaces -> do
-            reporter Report.GeneratingCode
+          source
+            |> FileSystem.write entryPath
+            |> lmap (\_ -> BM.CorruptedArtifact entryPath)
 
-            code <-
-              Generate.generate
-                interfaces
-                dependencies
-                (graph |> unwrap |> _.natives)
-                allModules
 
-            pure unit
+          reporter Report.InstallingPackages
+            |> lmap (Exception.message >>> BM.ImpossibleError)
 
-          Left errors -> do
-            reporter <| Report.FinishedWithErrors errors
-            pure unit
+
+          solution <-
+            Install.getSolution description
+
+          reporter Report.PlanningBuild
+            |> lmap (Exception.message >>> BM.ImpossibleError)
+
+
+          { package, exposedModules, allModules, graph } <-
+            Crawl.crawl compiler entryPath description solution
+
+          let
+            dependencies =
+              graph
+                |> unwrap
+                |> _.data
+                |> map (unwrap >>> _.dependencies)
+
+          buildSummary <-
+            Plan.planBuild entryPath graph
+
+          buildResult <-
+            Compile.build
+              compiler
+              reporter
+              package
+              allModules
+              dependencies
+              buildSummary
+
+          case buildResult of
+            Right interfaces -> do
+              reporter Report.GeneratingCode
+                |> lmap (Exception.message >>> BM.ImpossibleError)
+
+              maybeBlob <-
+                Generate.generate
+                  interfaces
+                  dependencies
+                  (graph |> unwrap |> _.natives)
+                  allModules
+
+              case maybeBlob of
+                Just codeBlob -> do
+                  codeBlob
+                    |> Report.Success
+                    |> reporter
+                    |> lmap (Exception.message >>> BM.ImpossibleError)
+
+                Nothing ->
+                  BM.ImpossibleError "No modules were generated for some reason. This should never happen"
+                      |> show
+                      |> Report.Failed
+                      |> reporter
+                      |> lmap (Exception.message >>> BM.ImpossibleError)
+
+
+            Left errors ->
+              errors
+                |> Report.FinishedWithErrors
+                |> reporter
+                |> lmap (Exception.message >>> BM.ImpossibleError)
 
 compileRequest ::
   ∀  e
@@ -180,24 +209,51 @@ compileRequest ::
   -> Unit
 compileRequest compileChannel stuff =
   Eff.unsafePerformEff $
-    Task.runAndIgnore $
-      Task.putVar stuff compileChannel
+    map (const unit) $
+      Task.fork $
+        Task.putVar stuff compileChannel
 
+onCatch :: Callback -> BM.Error -> BM.Task Unit
 onCatch onReport e =
   case e of
-    Left error -> Task.runAndIgnore $ Callback.run onReport (Foreign.toForeign error)
-    Right ee ->
-      case ee of
-        Left eee -> Task.runAndIgnore $ Callback.run onReport (Foreign.toForeign (show eee))
-        Right v -> Task.runAndIgnore $ Callback.run onReport (Foreign.toForeign v)
+    BM.CompilerErrors _ _ errors ->
+      Report.reporter onReport (Report.FinishedWithErrors errors)
+        |> lmap (Exception.message >>> BM.ImpossibleError)
+
+    _ ->
+      Report.reporter onReport (Report.Failed (show e))
+        |> lmap (Exception.message >>> BM.ImpossibleError)
+
 
 start :: { onReport :: Callback, onReady :: Callback } -> Unit
 start { onReport, onReady } =
   Eff.unsafePerformEff $
-    Task.runAndCatch (onCatch onReport) $ do
-      compileChannel <- Task.makeEmptyVar
-      compilerUrl <-
-        SourceLoader.load onReport
-          |> lmap BM.CompilerInstallationError
-      thread <- Task.fork $ compileService compileChannel onReport compilerUrl
-      Callback.run onReady (Foreign.toForeign (compileRequest compileChannel))
+    map (const unit) $
+      Task.fork $
+        flip catchError (onCatch onReport) $ do
+          compileChannel <-
+            Task.makeEmptyVar
+              |> lmap (Exception.message >>> BM.ImpossibleError)
+
+          compiler <-
+            SourceLoader.load onReport
+              |> lmap BM.CompilerInstallationError
+              >>= (Compiler.makeCompiler >>> lmap BM.ImpossibleError)
+          
+          thread <-
+            compileService compileChannel onReport compiler
+              |> Task.fork
+              |> Task.liftEff "Api.compileService >>> Task.fork"
+              |> lmap (Exception.message >>> BM.ImpossibleError)
+
+          Callback.run onReady (Foreign.toForeign (compileRequest compileChannel))
+            |> Task.liftEff "Callback.run"
+            |> lmap (Exception.message >>> BM.ImpossibleError)
+
+
+clearElmStuff :: Unit -> Unit
+clearElmStuff _ =
+  FileSystem.remove "/elm-stuff"
+    |> Task.fork
+    |> map (const unit)
+    |> Eff.unsafePerformEff

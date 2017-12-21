@@ -39,14 +39,14 @@ downloadPackage package@(Package { name, version }) =
     <$> Package.fetchSources package
     <*> Package.fetchArtifacts package
     <*> Description.fetch name version
-    |> lmap (const (BM.PackageProblem <| "Failed to download " <> show package))
+    |> lmap (\e -> (BM.PackageProblem <| "Failed to download " <> show package <> ": " <> show e))
 
 
 saveFilesToStorage :: Package -> PackageData -> Task Unit
 saveFilesToStorage package@(Package { name, version }) { sources, artifacts, description } =
     (const (const (const unit)))
-      <$> Package.saveArtifacts package sources
-      <*> Package.saveSources package artifacts
+      <$> Package.saveSources package sources
+      <*> Package.saveArtifacts package artifacts
       <*> Description.save description
       >>= (\_ -> Package.markAsSaved package)
       |> lmap (const (BM.PackageProblem <| "Failed to save " <> show package))

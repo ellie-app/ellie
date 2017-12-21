@@ -7,6 +7,7 @@ module Elm.Package
   , markAsSaved
   , isSaved
   , fromTuple
+  , path
   )
   where
 
@@ -25,11 +26,11 @@ import Data.Url as Url
 import Elm.Compiler.Version as Compiler
 import Elm.Package.Name (Name(..))
 import Elm.Package.Version (Version)
-import System.FileSystem (FILESYSTEM, (</>))
+import System.FileSystem (FilePath, FILESYSTEM, (</>), (<.>))
 import System.FileSystem as FileSystem
 import System.Http (HTTP)
 import System.Http as Http
-
+import Constants as Constants
 
 newtype Package =
   Package
@@ -68,10 +69,16 @@ fromTuple (Tuple name version) =
   Package { name, version }
 
 
+path :: Package -> FilePath
+path (Package { name, version }) =
+  "/elm-stuff/packages" </> show name </> show version
+
+
 url :: Package -> Array String -> Url
 url (Package { name: (Name name), version }) ending =
-  Url.absolute
-    (["package-artifacts/", name.user, name.project, show version] <> ending)
+  Url.crossOrigin
+    Constants.cdnBase
+    (["package-artifacts", name.user, name.project, show version] <> ending)
     []
 
 
@@ -79,7 +86,6 @@ fetchSources :: ∀ e. Package -> Task (http :: HTTP | e) Http.Error (Array (Tup
 fetchSources package =
   url package [ "source.json" ]
     |> Http.get
-    |> Http.withHeader "Content-Type" "application/json"
     |> Http.withExpect Http.expectJson
     |> Http.send
     |> map StrMap.toUnfoldable
@@ -103,9 +109,8 @@ saveSources package@(Package { name: (Name name), version }) sources =
 fetchArtifacts :: ∀ e. Package -> Task (http :: HTTP | e) Http.Error (Array (Tuple String String))
 fetchArtifacts package@(Package { name: (Name name) }) =
   if name.user == "elm-lang" then
-    url package [ "artifacts", show Compiler.version ]
+    url package [ "artifacts", show Compiler.version <.> "json" ]
       |> Http.get
-      |> Http.withHeader "Content-Type" "application/json"
       |> Http.withExpect Http.expectJson
       |> Http.send
       |> map StrMap.toUnfoldable
@@ -117,7 +122,7 @@ saveArtifacts :: ∀ e. Package -> Array (Tuple String String) -> Task (fileSyst
 saveArtifacts package@(Package { name: (Name name), version }) artifacts =
   let
     path =
-      "elm-stuff/build-artifacts"
+      "/elm-stuff/build-artifacts"
           </> show Compiler.version
           </> name.user
           </> name.project
@@ -133,7 +138,7 @@ markAsSaved :: ∀ e. Package -> Task (fileSystem :: FILESYSTEM | e) FileSystem.
 markAsSaved package@(Package { name: (Name name), version }) =
   let
     path =
-      "elm-stuff/packages"
+      "/elm-stuff/packages"
         </> name.user
         </> name.project
         </> show version
@@ -144,7 +149,7 @@ markAsSaved package@(Package { name: (Name name), version }) =
 
 isSaved :: ∀ x e. Package -> Task (fileSystem :: FILESYSTEM | e) x Boolean
 isSaved package@(Package { name: (Name name), version }) =
-  "elm-stuff/packages"
+  "/elm-stuff/packages"
     </> name.user
     </> name.project
     </> show version

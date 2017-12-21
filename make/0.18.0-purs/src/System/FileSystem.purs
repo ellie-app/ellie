@@ -5,6 +5,7 @@ module System.FileSystem
   , read
   , exists
   , modified
+  , remove
   , isOlderThan
   , write
   , (</>)
@@ -19,6 +20,7 @@ import Ellie.Prelude
 
 import Control.Monad.Eff.Now (NOW)
 import Control.Monad.Eff.Now as Now
+import Control.Monad.Eff.Exception as Exception
 import Control.Monad.Task (kind Effect, EffFnTask, FfiHelpers, Task)
 import Control.Monad.Task as Task
 import Data.Array (filter, init, intercalate, last, snoc, uncons)
@@ -28,9 +30,9 @@ import Data.DateTime.Instant (Instant)
 import Data.DateTime.Instant as Instant
 import Data.Foldable (foldl)
 import Data.Foreign (Foreign, MultipleErrors)
-import Data.Foreign as Foreign
+import Data.Foreign (renderForeignError) as Foreign
 import Data.Foreign.Class (class Foreignable)
-import Data.Foreign.Class as Foreign
+import Data.Foreign.Class (get, put) as Foreign
 import Data.Function.Uncurried (Fn2, Fn3, runFn2, runFn3)
 import Data.Maybe (fromMaybe, Maybe(..))
 import Data.Newtype (class Newtype)
@@ -45,6 +47,7 @@ data Details
   = FileNotFound
   | CorruptModifiedTime
   | ForeignError MultipleErrors
+  | UnknownRuntimeCrash Exception.Error
 
 
 newtype Error =
@@ -62,7 +65,7 @@ instance showError :: Show Error where
       { path, details: FileNotFound } -> "No file at path `" <> path <> "`"
       { path, details: CorruptModifiedTime } -> "Invalid modified time for path `" <> path <> "`"
       { path, details: ForeignError errors } -> "Could not read Foreign value at path `" <> path <> "`: " <> (intercalate "," (map Foreign.renderForeignError errors))
-
+      { path, details: UnknownRuntimeCrash error } -> "Something failed at runtime while reading path `" <> path <> "`: " <> Exception.message error
 
 foreign import _liftRawError ::
   Fn3
@@ -97,7 +100,7 @@ read path = do
     path
         |> normalize
         |> runFn2 _read Task.ffiHelpers
-        |> Task.fromEffFnTask
+        |> Task.fromEffFnTask "FileSystem.read"
         |> lmap liftRawError
 
   value
@@ -124,7 +127,7 @@ write path value =
   value
     |> Foreign.put
     |> runFn3 _write Task.ffiHelpers (normalize path)
-    |> Task.fromEffFnTask
+    |> Task.fromEffFnTask "FileSystem.write"
 
 
 foreign import _exists ::
@@ -142,7 +145,7 @@ exists path =
   path
     |> normalize
     |> runFn2 _exists Task.ffiHelpers
-    |> Task.fromEffFnTask
+    |> Task.fromEffFnTask "FileSystem.exists"
 
 
 foreign import _modified ::
@@ -161,7 +164,7 @@ modified path =
   path
     |> normalize
     |> runFn3 _modified Task.ffiHelpers Instant.instant
-    |> Task.fromEffFnTask
+    |> Task.fromEffFnTask "FileSystem.modified"
     |> lmap liftRawError
 
 
@@ -175,7 +178,7 @@ isOlderThan duration path = do
   fileExists <- exists path
   if fileExists
     then do
-      now <- Task.liftEff Now.now
+      now <- lmap (UnknownRuntimeCrash >>> { details: _, path } >>> Error) <| Task.liftEff "Now.now" Now.now
       maybeModifiedTime <- modified path
       case maybeModifiedTime of
         Just modifiedTime ->
@@ -202,7 +205,7 @@ remove path =
   path
     |> normalize
     |> runFn2 _remove Task.ffiHelpers
-    |> Task.fromEffFnTask
+    |> Task.fromEffFnTask "FileSystem.remove"
 
 
 -- FILEPATH STUFF

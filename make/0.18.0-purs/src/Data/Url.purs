@@ -33,7 +33,9 @@ relative pathSegments parameters =
 
 crossOrigin :: String -> Array String -> Array QueryParameter -> Url
 crossOrigin origin pathSegments parameters =
-  Url $ origin <> "/" <> String.joinWith "/" pathSegments <> showQuery parameters
+  case pathSegments of
+    [] -> Url $ origin <> showQuery parameters
+    _ -> Url $ origin <> "/" <> String.joinWith "/" pathSegments <> showQuery parameters
 
 
 newtype QueryParameter =

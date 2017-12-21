@@ -3,6 +3,7 @@ module Data.Blob
   , Blob
   , createObjectUrl
   , revokeObjectUrl
+  , create
   ) where
 
 
@@ -21,6 +22,12 @@ foreign import data BLOB :: Effect
 foreign import data Blob :: Type
 foreign import _createObjectUrl :: ∀ e. Blob -> Eff (blob :: BLOB | e) String
 foreign import _revokeObjectUrl :: ∀ e. Fn2 Unit String (Eff (blob :: BLOB | e) Unit)
+foreign import _create :: ∀ e. Fn2 (Array String) String (Eff (blob :: BLOB | e) Blob)
+
+
+create :: ∀ e. Array String -> String -> Eff (blob :: BLOB | e) Blob
+create =
+  runFn2 _create
 
 
 createObjectUrl :: ∀ e. Blob -> Eff (blob :: BLOB | e) Url

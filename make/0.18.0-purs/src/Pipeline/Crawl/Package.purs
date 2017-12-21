@@ -1,20 +1,19 @@
-module Pipeline.Crawl.Package
-  ( dfsFromFiles
-  , dfsFromExposedModules
-  ) where
+module Pipeline.Crawl.Package (dfsFromFiles, dfsFromExposedModules) where 
 
 import Ellie.Prelude
 
 import BuildManager (Task)
 import BuildManager as BM
 import Control.Monad.Error.Class (throwError)
+import Control.Monad.Task as Task
 import Data.Array ((:))
 import Data.Array as Array
-import Data.Bifunctor (lmap)
-import Data.Either (Either(..))
+import Data.Bifunctor (lmap, rmap)
+import Data.Foreign as Foreign
+import Data.Foreign.Class as Foreign
 import Data.Map (Map)
-import Data.Map (empty, fromFoldable, insert, lookup, member) as Map
-import Data.Map.Extra (unionsWith) as Map
+import Data.Map as Map
+import Data.Map.Extra as Map
 import Data.Maybe (Maybe(..))
 import Data.Maybe as Maybe
 import Data.Newtype (unwrap)
@@ -22,43 +21,47 @@ import Data.Traversable (traverse)
 import Data.Tuple (Tuple(..))
 import Data.Tuple as Tuple
 import Data.Url (Url)
+import Elm.Compiler (Compiler)
 import Elm.Compiler as Compiler
 import Elm.Compiler.Module.Name.Raw (Raw(..))
 import Elm.Compiler.Module.Name.Raw as Raw
+import Elm.Package (Package(..))
+import Elm.Package as Package
 import Elm.Package.Description (Description(..))
 import Elm.Package.Description as Description
-import Elm.Package (Package(..))
 import Elm.Package.Name (Name)
-import Pipeline.Install.Solver (Solution)
+import Elm.Package.Name as Name
+import Elm.Package.Version (Version)
+import Elm.Package.Version as Version
+import Pipeline.Install.Solution (Solution)
 import System.FileSystem (FilePath, (</>), (<.>))
 import System.FileSystem as FileSystem
-import TheMasterPlan.Package (PackageGraph(..), PackageData(..))
-
+import TheMasterPlan.Package (PackageData(..), PackageGraph(..))
+import TheMasterPlan.Package as PackageGraph
 
 -- STATE and ENVIRONMENT
 
 
 type Env =
-  { sourceDirs :: Array FilePath
-  , availableForeignModules :: Map Raw (Array Package)
-  , allowNatives :: Boolean
-  , packageName :: Name
-  , compilerUrl :: Url
-  }
-
-
-
-initEnv :: Url -> FilePath -> Description -> Solution -> Task Env
-initEnv compilerUrl root description@(Description d) solution = do
-  availableForeignModules <- readAvailableForeignModules description solution
-  pure <|
-    { sourceDirs: map (root </> _) d.sourceDirs
-    , availableForeignModules
-    , allowNatives: d.natives
-    , packageName: d.name
-    , compilerUrl
+    { sourceDirs :: Array FilePath
+    , availableForeignModules :: Map Raw (Array Package)
+    , allowNatives :: Boolean
+    , packageName :: Name
+    , compiler :: Compiler
     }
 
+
+
+initEnv :: Compiler -> FilePath -> Description -> Solution -> Task Env
+initEnv compiler root desc@(Description d) solution = do
+  availableForeignModules <- readAvailableForeignModules desc solution
+  pure
+    { sourceDirs: map (root </> _) d.sourceDirs
+    , allowNatives: d.natives
+    , packageName: d.name
+    , availableForeignModules
+    , compiler
+    }
 
 
 
@@ -66,34 +69,31 @@ initEnv compilerUrl root description@(Description d) solution = do
 
 
 dfsFromFiles
-  :: Url
+  :: Compiler
   -> FilePath
   -> Solution
   -> Description
   -> Array FilePath
   -> Task { moduleNames :: Array Raw, packageGraph :: PackageGraph }
-dfsFromFiles compilerUrl root solution desc filePaths = do
-  env <- initEnv compilerUrl root desc solution
-  info <- traverse (readPackageData env Nothing) filePaths
-
-  let names = map _.name info
-  let unvisited = Array.concatMap _.unvisited info
-  let packageData = info |> map (\d -> Tuple d.name d.packageData) |> Map.fromFoldable
-  let initialGraph = PackageGraph { data: packageData, natives: Map.empty, foreignDependencies: Map.empty }
-
-  dfs env unvisited initialGraph
-    |> map { moduleNames: names, packageGraph: _ }
+dfsFromFiles compiler root solution desc filePaths = do
+    env <- initEnv compiler root desc solution
+    infos <- traverse (readPackageData env Nothing) filePaths
+    let names = map _.name infos
+    let unvisited = Array.concatMap (_.unvisited) infos
+    let packageData = Map.fromFoldable (map (\{ name, packageData } -> Tuple name packageData) infos)
+    let initialGraph = PackageGraph { data: packageData, natives: Map.empty, foreignDependencies: Map.empty }
+    packageGraph <- dfs env unvisited initialGraph
+    pure { moduleNames: names, packageGraph }
 
 
 dfsFromExposedModules
-  :: Url
+  :: Compiler
   -> FilePath
   -> Solution
   -> Description
   -> Task PackageGraph
-dfsFromExposedModules compilerUrl root solution description@(Description d) = do
-  env <- initEnv compilerUrl root description solution
-
+dfsFromExposedModules compiler root solution desc@(Description d) = do
+  env <- initEnv compiler root desc solution
   dfs
     env
     (map { parent: Nothing, name: _ } d.exposed)
@@ -101,74 +101,66 @@ dfsFromExposedModules compilerUrl root solution description@(Description d) = do
 
 
 
-
 -- DEPTH FIRST SEARCH
 
 
 type Unvisited =
-  { parent :: Maybe Raw
-  , name :: Raw
-  }
+    { parent :: Maybe Raw
+    , name :: Raw
+    }
 
 
-dfs
-  :: Env
-  -> Array Unvisited
-  -> PackageGraph
-  -> Task PackageGraph
+dfs :: Env -> Array Unvisited -> PackageGraph -> Task PackageGraph
 dfs env unvisited summary@(PackageGraph p) =
   case Array.uncons unvisited of
     Nothing ->
       pure summary
 
-    Just { head, tail } ->
-      if Map.member head.name p.data then
-        dfs env tail summary
+    Just { head: next, tail: rest } ->
+      if Map.member next.name p.data then
+        dfs env rest summary
       else
-        dfsHelp env head tail summary
+        dfsHelp env next rest summary
 
 
-dfsHelp
-  :: Env
-  -> Unvisited
-  -> Array Unvisited
-  -> PackageGraph
-  -> Task PackageGraph
-dfsHelp env { parent, name } unvisited summary@(PackageGraph p) = do
+dfsHelp :: Env -> Unvisited -> Array Unvisited -> PackageGraph -> Task PackageGraph
+dfsHelp env { parent, name } unvisited summary@(PackageGraph s) = do
   filePaths <- find env.allowNatives name env.sourceDirs
-  let toMatch = { filePaths, foreigns: Map.lookup name env.availableForeignModules }
-  case toMatch of
-    { filePaths: [Elm filePath], foreigns: Nothing } -> do
+  case Tuple filePaths (Map.lookup name env.availableForeignModules) of
+    Tuple [Elm filePath] Nothing -> do
       { name: statedName, packageData, unvisited: newUnvisited } <-
         readPackageData env (Just name) filePath
 
       dfs
         env
         (newUnvisited <> unvisited)
-        (PackageGraph <| p { data = Map.insert statedName packageData p.data })
+        (PackageGraph (s { data = Map.insert statedName packageData s.data }))
 
-    { filePaths: [JavaScript filePath], foreigns: Nothing } ->
+    Tuple [JavaScript filePath] Nothing ->
       dfs
         env
         unvisited
-        (PackageGraph <| p { natives = Map.insert name filePath p.natives })
+        (PackageGraph (s { natives = Map.insert name filePath s.natives }))
 
-    { filePaths: [], foreigns: Just [package] } ->
+    Tuple [] (Just [package]) ->
       dfs
         env
         unvisited
-        (PackageGraph <| p { foreignDependencies = Map.insert name package p.foreignDependencies })
+        (PackageGraph (s { foreignDependencies = Map.insert name package s.foreignDependencies }))
 
-    { filePaths: [], foreigns: Nothing } ->
+    Tuple [] Nothing ->
       throwError <| BM.ModuleNotFound name parent
 
-    { filePaths: _, foreigns: maybePackages } ->
+    Tuple _ maybePackages ->
       throwError <|
         BM.ModuleDuplicates
           { name: name
           , parent: parent
           , local: map toFilePath filePaths
-          , foreign: maybePackages |> map (map (unwrap >>> _.name)) |> Maybe.fromMaybe []
+          , foreign:
+              maybePackages
+                |> map (map (unwrap >>> _.name))
+                |> Maybe.fromMaybe []
           }
 
 
@@ -176,8 +168,8 @@ dfsHelp env { parent, name } unvisited summary@(PackageGraph p) = do
 
 
 data CodePath
-  = Elm FilePath
-  | JavaScript FilePath
+    = Elm FilePath
+    | JavaScript FilePath
 
 
 toFilePath :: CodePath -> FilePath
@@ -189,42 +181,48 @@ toFilePath codePath =
 
 find :: Boolean -> Raw -> Array FilePath -> Task (Array CodePath)
 find allowNatives moduleName sourceDirs =
-    findHelp allowNatives [] moduleName sourceDirs
-
+  findHelp allowNatives [] moduleName sourceDirs
 
 findHelp :: Boolean -> Array CodePath -> Raw -> Array FilePath -> Task (Array CodePath)
-findHelp allowNatives locations moduleName@(Raw r) srcDirs =
-    case Array.uncons srcDirs of
-        Nothing ->
-          pure locations
+findHelp allowNatives locations moduleName srcDirs =
+  case Array.uncons srcDirs of
+    Nothing ->
+      pure locations
 
-        Just { head: dir, tail: srcDirs' } ->
+    Just { head: dir, tail: srcDirs } ->
+      let
+        consIf :: ∀ a. Boolean -> a -> Array a -> Array a
+        consIf true x xs = x : xs
+        consIf false _ xs = xs
+
+        addElmPath :: Array CodePath -> Task (Array CodePath)
+        addElmPath locs =
           let
-            consIf true x xs = x : xs
-            consIf false x xs = xs
+            elmPath = dir </> Raw.toPath moduleName <.> "elm"
+          in
+            FileSystem.exists elmPath
+              |> map (\e -> consIf e (Elm elmPath) locs)
 
-            addElmPath locs =
-              let elmPath = dir </> Raw.toPath moduleName <.> "elm"
-              in FileSystem.exists elmPath |> map (\exists -> consIf exists (Elm elmPath) locs)
+        addJsPath :: Array CodePath -> Task (Array CodePath)
+        addJsPath locs =
+          let
+            jsPath = dir </> Raw.toPath moduleName <.> "js"
+          in
+            if Raw.isNative moduleName then
+                FileSystem.exists jsPath
+                  |> map (\e -> consIf e (JavaScript jsPath) locs)
+            else
+              pure locs
+      in do
+        locations' <-
+          addElmPath locations
 
-            addJsPath locs =
-              let
-                jsPath =
-                  dir </> Raw.toPath moduleName <.> "js"
-
-                jsExists =
-                  case Array.uncons r of
-                      Just { head: "Native", tail } -> FileSystem.exists jsPath
-                      _ -> pure false
-              in
-                jsExists |> map (\exists -> consIf exists (JavaScript jsPath) locs)
-          in do
-            locations' <- addElmPath locations
-            updatedLocations <-
-              if allowNatives
-                then addJsPath locations'
-                else pure locations'
-            findHelp allowNatives updatedLocations moduleName srcDirs'
+        locations'' <-
+          if allowNatives
+            then addJsPath locations'
+            else pure locations'
+        
+        findHelp allowNatives locations'' moduleName srcDirs
 
 
 
@@ -235,36 +233,25 @@ readPackageData
   :: Env
   -> Maybe Raw
   -> FilePath
-  -> Task
-      { name :: Raw
-      , packageData :: PackageData
-      , unvisited :: Array Unvisited
-      }
+  -> Task { name :: Raw, packageData :: PackageData, unvisited :: Array Unvisited }
 readPackageData env maybeName filePath = do
   sourceCode <-
     FileSystem.read filePath
-      |> lmap (unwrap >>> _.path >>> BM.CorruptedArtifact)
-
+      |> lmap (unwrap >>> _.path >>> BM.PackageProblem)
+ 
   result <-
-    Compiler.parseDependencies env.compilerUrl env.packageName sourceCode
-      |> lmap
-          (\crashMessage ->
-              BM.CompilerCrash
-                  { name: Maybe.fromMaybe (Raw []) maybeName
-                  , source: sourceCode
-                  , message: crashMessage
-                  }
-          )
+     Compiler.parseDependencies env.compiler env.packageName sourceCode
+        |> lmap ({ name: Maybe.fromMaybe (Raw []) maybeName, source: sourceCode, message: _ } >>> BM.CompilerCrash)
 
   { name, dependencies } <-
-    case result of
-      Left compileErrors -> throwError <| BM.CompilerErrors filePath sourceCode compileErrors
-      Right stuff -> pure stuff
+    result
+      |> lmap (BM.CompilerErrors filePath sourceCode)
+      |> Task.fromEither
 
   checkName filePath name maybeName
 
-  pure <|
-    { name: name
+  pure
+    { name
     , packageData: PackageData { path: filePath, dependencies }
     , unvisited: map { parent: Just name, name: _ } dependencies
     }
@@ -285,30 +272,41 @@ checkName path nameFromSource maybeName =
 -- FOREIGN MODULES -- which ones are available, who exposes them?
 
 
-readAvailableForeignModules :: Description -> Solution -> Task (Map Raw (Array Package))
+readAvailableForeignModules
+  :: Description
+  -> Solution
+  -> Task (Map Raw (Array Package))
 readAvailableForeignModules desc solution = do
   visiblePackages <- allVisible desc solution
-  maps <- traverse exposedModules visiblePackages
-  pure <| Map.unionsWith (<>) maps
+  exposed <- traverse exposedModules visiblePackages
+  pure <| Map.unionsWith (<>) exposed
 
 
-allVisible :: Description -> Solution -> Task (Array Package)
-allVisible (Description d) solution = traverse getVersion visible
-  where
-  getVersion name =
-    case Map.lookup name solution of
-      Just version -> pure <| Package { name, version }
-      Nothing -> throwError (BM.MissingPackage name)
-
-  visible = map Tuple.fst (d.dependencies)
-
-
-exposedModules :: Package -> Task (Map Raw (Array Package))
-exposedModules package@(Package { name, version }) =
+allVisible
+  :: Description
+  -> Solution
+  -> Task (Array Package)
+allVisible desc@(Description d) solution =
   let
-    insert moduleName items =
-      Map.insert moduleName [package] items
+    getVersion name =
+      case Map.lookup name solution of
+        Just version -> pure (Package { name, version })
+        Nothing -> throwError (BM.MissingPackage name)
+
+    visible =
+        map Tuple.fst (d.dependencies)
+  in
+    traverse getVersion visible
+
+
+exposedModules
+  :: Package
+  -> Task (Map Raw (Array Package))
+exposedModules (Package { name, version }) =
+  let
+    insert moduleName dict =
+      Map.insert moduleName [Package { name, version }] dict
   in
     Description.load name version
-      |> map (unwrap >>> _.exposed >>> Array.foldr insert Map.empty)
-      |> lmap (unwrap >>> _.path >>> BM.CorruptedArtifact)
+      |> lmap (unwrap >>> _.path >>> BM.PackageProblem)
+      |> rmap (unwrap >>> _.exposed >>> Array.foldr insert Map.empty)

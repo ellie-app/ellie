@@ -18,15 +18,18 @@ import Data.Foreign as Foreign
 import Data.Foreign.Class (class Foreignable, get, put)
 import Data.Foreign.Index ((!))
 import Data.List.NonEmpty as NonEmptyList
+import Data.Maybe (Maybe(..))
 import Data.Maybe as Maybe
 import Data.Newtype (class Newtype)
 import Data.Read (read)
 import Data.StrMap as StrMap
+import Data.String (Pattern(..), Replacement(..))
+import Data.String as String
 import Data.Traversable (traverse)
 import Data.Tuple (Tuple(..))
 import Data.Url as Url
-import Elm.Compiler.Version as Compiler
 import Elm.Compiler.Module.Name.Raw (Raw)
+import Elm.Compiler.Version as Compiler
 import Elm.Package.Constraint (Constraint)
 import Elm.Package.Name (Name(..))
 import Elm.Package.Version (Version)
@@ -34,7 +37,6 @@ import System.FileSystem (FILESYSTEM, FilePath, (</>))
 import System.FileSystem as FileSystem
 import System.Http (HTTP)
 import System.Http as Http
-
 
 newtype Description =
   Description
@@ -58,7 +60,7 @@ instance foreignableDescription :: Foreignable Description where
   put (Description value) =
     Foreign.toForeign <|
       { name: put value.name
-      , repo: put value.repo
+      , repository: put value.repo
       , version: put value.version
       , "elm-version": put value.elmVersion
       , summary: put value.summary
@@ -74,8 +76,8 @@ instance foreignableDescription :: Foreignable Description where
     , license: _, sourceDirs: _, exposed: _, natives: _
     , dependencies: _
     }
-      <$> (value ! "name" >>= get)
-      <*> (value ! "repo" >>= get)
+      <$> (value ! "repository" >>= getName)
+      <*> (value ! "repository" >>= get)
       <*> (value ! "version" >>= get)
       <*> (value ! "elm-version" >>= get)
       <*> (value ! "summary" >>= get)
@@ -85,6 +87,21 @@ instance foreignableDescription :: Foreignable Description where
       <*> (value ! "native-modules" >>= Foreign.readUndefined >>= traverse get <#> Maybe.fromMaybe false)
       <*> (value ! "dependencies" >>= getDependencies)
       <#> Description
+
+
+getName :: Foreign -> F Name
+getName value = do
+  string <- get value
+  case String.split (Pattern "github.com/") string of
+    [ _, name ] ->
+      name
+        |> String.replace (Pattern ".git") (Replacement "")
+        |> read
+        |> lmap (Foreign.ForeignError >>> NonEmptyList.singleton)
+        |> except
+
+    _ ->
+      Foreign.fail (Foreign.ForeignError "Bad repo")
 
 getDependencies :: Foreign -> F (Array ( Tuple Name Constraint ))
 getDependencies object =
@@ -112,8 +129,7 @@ putDependencies values =
 
 filePath :: Name -> Version -> FilePath
 filePath name version =
-  "elm-stuff"
-    </> show Compiler.version
+  "elm-stuff/packages"
     </> show name
     </> show version
     </> "elm-package.json"
@@ -131,19 +147,12 @@ save description@(Description d) =
 
 load :: ∀ e. Name -> Version -> Task (fileSystem :: FILESYSTEM | e) FileSystem.Error Description
 load name version =
-  "elm-stuff"
-    </> show Compiler.version
-    </> show name
-    </> show version
-    </> "elm-package.json"
-    |> FileSystem.read
+  FileSystem.read (filePath name version)
 
 
 fetch :: ∀ e. Name -> Version -> Task (http :: HTTP | e) Http.Error Description
 fetch (Name name) version =
   Url.crossOrigin Constants.cdnBase [ "package-artifacts", name.user, name.project, show version, "elm-package.json" ] []
     |> Http.get
-    |> Http.withHeader "Content-Type" "application/json"
-    |> Http.withHeader "Accept" "application/json"
     |> Http.withExpect Http.expectJson
     |> Http.send

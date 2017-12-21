@@ -27,12 +27,12 @@ import Ellie.Prelude
 
 import Control.Monad.Eff (Eff)
 import Control.Monad.Eff.Unsafe as Eff
-import Control.Monad.Except (runExcept)
+import Control.Monad.Except (except, runExcept)
 import Control.Monad.Task (kind Effect, EffFnTask, Task)
 import Control.Monad.Task as Task
-import Data.Blob (Blob)
 import Data.Array (intercalate, (:))
 import Data.Bifunctor (lmap)
+import Data.Blob (Blob)
 import Data.Either (Either(..))
 import Data.Foreign (Foreign)
 import Data.Foreign (renderForeignError) as Foreign
@@ -120,10 +120,17 @@ expectJson :: ∀ a. Foreignable a => Expect a
 expectJson =
   let
     parser :: Response String -> Either String a
-    parser response =
-      response.body
-        |> parseJson
-        >>= (Foreign.get >>> runExcept >>> lmap (map Foreign.renderForeignError >>> intercalate "\n"))
+    parser response = do
+      foreignData <-
+        parseJson response.body
+
+      parsed <-
+        foreignData
+          |> Foreign.get
+          |> runExcept
+          |> lmap (map Foreign.renderForeignError >>> intercalate "\n")
+      
+      pure parsed
   in
     expectStringResponse parser
 
@@ -224,7 +231,7 @@ foreign import _send ::
 
 send :: ∀ a e. Request a -> Task (http :: HTTP | e) Error a
 send request =
-  Task.fromEffFnTask <|
+  Task.fromEffFnTask "Http.send" <|
     runFn4
       _send
       Task.ffiHelpers

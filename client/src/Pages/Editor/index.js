@@ -100,80 +100,73 @@ CodeMirrorLoader
 
     import(/* webpackChunkName: "make-0.18.0" */'Make/0.18.0')
       .then(Compiler => {
+        let workQueue = []
+        let runForSave, htmlCode
+
+        const readFile = (file) => {
+          new Promise((resolve, reject) => {
+            const fr = new FileReader()
+            fr.addEventListener('load', () => {
+              resolve(fr.result)
+            })
+            fr.addEventListener('error', () => {
+              reject(fr.error)
+            })
+            fr.readAsText(file)
+          })
+        }
+
+        const getSourceScript = (scriptFile) => {
+          if (runForSave) {
+            return readFile(scriptFile)
+              .then(data => '<script>' + data + '</script>')
+          } else {
+            return Promise.resolve(`<script src=${URL.createObjectURL(scriptFile)}></script>`)
+          }
+        }
+
+        const sendToPort = data => {
+          runForSave ?
+            app.ports.compileForSaveIn.send(data) :
+            app.ports.compilerMessagesIn.send(data)
+        }
+
+        const callback = (data) => {
+          workQueue.push(data)
+          setTimeout(function work() {
+            if (!workQueue.length) return
+            var nextMessage = workQueue.shift()
+
+            if (nextMessage.type === 'Success') {
+              getSourceScript(nextMessage.blob)
+                .then(sourceScript => fixHtml({
+                  htmlCode,
+                  embedApi: !runForSave,
+                  sourceScript
+                }))
+                .then(htmlUrl => sendToPort({ type: 'Success', url: htmlUrl }))
+                .catch(error => sendToPort({ type: 'Failed', message: error.message }))
+            } else {
+              console.log(nextMessage)
+              sendToPort(nextMessage)
+            }
+            setTimeout(work)
+          })
+        }
+
+        app.ports.clearElmStuffOut.subscribe(() => {
+          Compiler.clearElmStuff()
+        })
+
         Compiler.start({
-          onReport: console.log.bind(console),
+          onReport: callback,
           onReady: compile => {
-            console.log(compile)
-            app.ports.compileOnClientOut.subscribe(function ([html, elm, packages, forSave]) {
+            app.ports.compileOnClientOut.subscribe(([html, elm, packages, forSave]) => {
+              runForSave = forSave
+              htmlCode = html
               compile({ source: elm, dependencies: packages })
             })
           }
         })
-
-
-
-        // let workQueue = []
-        // let runForSave, htmlCode
-
-        // const readFile = (file) =>
-        //   new Promise((resolve, reject) => {
-        //     const fr = new FileReader()
-        //     fr.addEventListener('load', () => {
-        //       resolve(fr.result)
-        //     })
-        //     fr.addEventListener('error', () => {
-        //       reject(fr.error)
-        //     })
-        //     fr.readAsText(file)
-        //   })
-
-        // const getSourceScript = (scriptFile) => {
-        //   if (runForSave) {
-        //     return readFile(scriptFile)
-        //       .then(data => '<script>' + data + '</script>')
-        //   } else {
-        //     return Promise.resolve(`<script src=${URL.createObjectURL(scriptFile)}></script>`)
-        //   }
-        // }
-
-        // const sendToPort = data => {
-        //   runForSave ?
-        //     app.ports.compileForSaveIn.send(data) :
-        //     app.ports.compilerMessagesIn.send(data)
-        // }
-
-        // const callback = (data) => {
-        //   workQueue.push(data)
-        //   setTimeout(function work() {
-        //     if (!workQueue.length) return
-        //     var nextMessage = workQueue.shift()
-
-        //     if (nextMessage.type === 'Success') {
-        //       getSourceScript(nextMessage.url)
-        //         .then(sourceScript => fixHtml({
-        //           htmlCode,
-        //           embedApi: !runForSave,
-        //           sourceScript
-        //         }))
-        //         .then(htmlUrl => sendToPort({ type: 'Success', url: htmlUrl }))
-        //         .catch(error => sendToPort({ type: 'Failed', message: error.message }))
-        //     } else {
-        //       sendToPort(nextMessage)
-        //     }
-        //     setTimeout(work)
-        //   })
-        // }
-
-        // const compiler = Compiler.init(callback)
-
-        // app.ports.clearElmStuffOut.subscribe(() => {
-        //   compiler.clearElmStuff()
-        // })
-
-        // app.ports.compileOnClientOut.subscribe(function ([html, elm, packages, forSave]) {
-        //   runForSave = forSave
-        //   htmlCode = html
-        //   compiler.compile({ elm, packages })
-        // })
       })
   })

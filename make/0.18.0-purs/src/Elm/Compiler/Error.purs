@@ -45,7 +45,7 @@ instance foreignableError :: Foreignable Error where
       , details: put value.details
       , subregion: put <| map putRegion value.subregion
       , region: putRegion value.region
-      , level: put value.level
+      , "type": put value.level
       }
 
   get value =
@@ -55,7 +55,7 @@ instance foreignableError :: Foreignable Error where
       <*> (value ! "details" >>= get)
       <*> (value ! "subregion" >>= Foreign.readNull >>= traverse getRegion)
       <*> (value ! "region" >>= getRegion)
-      <*> (value ! "level" >>= get)
+      <*> (value ! "type" >>= get)
       <#> Error
 
 

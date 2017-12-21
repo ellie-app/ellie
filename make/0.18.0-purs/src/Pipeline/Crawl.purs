@@ -15,7 +15,9 @@ import Data.Newtype (unwrap)
 import Data.Set (Set)
 import Data.Set as Set
 import Data.Traversable (traverse)
+import Data.Tuple (Tuple)
 import Data.Url (Url)
+import Elm.Compiler (Compiler)
 import Elm.Compiler.Module.Name.Raw (Raw)
 import Elm.Package (Package(..))
 import Elm.Package as Package
@@ -39,52 +41,40 @@ type ProjectInfo =
   }
 
 
-crawl
-  :: Url
-  -> FilePath
-  -> Description
-  -> Solution
-  -> Task ProjectInfo
-crawl compilerUrl entry description@(Description d) solution = do
+crawl :: Compiler -> FilePath -> Description -> Solution -> Task ProjectInfo
+crawl compiler entry desc@(Description d) solution = do
   depGraphs <-
     solution
       |> Map.toArray
       |> map Package.fromTuple
-      |> traverse (crawlDependency compilerUrl entry solution)
-
-  { moduleNames, packageGraph } <-
-    CrawlPackage.dfsFromFiles compilerUrl "/" solution description [ entry ]
-
+      |> traverse (crawlDependency compiler entry solution)
+  
+  { moduleNames: modulesForGeneration, packageGraph } <-
+    CrawlPackage.dfsFromFiles compiler "/" solution desc [ entry ]
+  
   let thisPackage = Package { name: d.name, version: d.version }
   let graph = canonicalizePackageGraph thisPackage packageGraph
-
+  
   case Array.foldl1 ProjectGraph.union (graph : depGraphs) of
     Just projectGraph ->
-      pure <|
+      pure
         { package: thisPackage
+        , exposedModules: Set.fromFoldable <| map ({ package: thisPackage, name: _ } >>> CanonicalModule) d.exposed
+        , allModules: map ({ package: thisPackage, name: _ } >>> CanonicalModule) modulesForGeneration
         , graph: projectGraph
-        , allModules:
-            map
-              ({ package: thisPackage, name: _ } >>> CanonicalModule)
-              moduleNames
-        , exposedModules:
-            d.exposed
-              |> map ({ package: thisPackage, name: _ } >>> CanonicalModule)
-              |> Set.fromFoldable
         }
-
     Nothing ->
-      throwError <|
-        BM.PackageProblem "Somehow got an empty package graph. This should be impossible."
+      throwError (BM.PackageProblem "Somehow got an empty package graph. This should be impossible.")
 
 
 crawlDependency ::
-  Url
+  Compiler
   -> FilePath
   -> Solution
-  -> Package
+  -> Package 
   -> Task (ProjectGraph Location)
-crawlDependency compilerUrl entry solution package@(Package { name, version }) = do
+crawlDependency compiler entry solution package@(Package { name, version }) = do
+  let root = Package.path package
   graphExists <- ProjectGraph.isSaved package
   if graphExists
     then
@@ -96,7 +86,7 @@ crawlDependency compilerUrl entry solution package@(Package { name, version }) =
           |> lmap (unwrap >>> _.path >>> BM.CorruptedArtifact)
 
       packageGraph <-
-        CrawlPackage.dfsFromExposedModules compilerUrl "/" solution description
+        CrawlPackage.dfsFromExposedModules compiler root solution description
 
       let projectGraph = canonicalizePackageGraph package packageGraph
 

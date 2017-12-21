@@ -13,24 +13,17 @@
     "purescript-arrays": "^4.2.1",
     "purescript-maybe": "^3.0.0",
     "purescript-foldable-traversable": "^3.6.1",
-    "purescript-argonaut": "^3.1.0",
-    "purescript-read": "^1.0.0",
     "purescript-monoid": "^3.3.0",
     "purescript-now": "^3.0.0",
-    "purescript-argonaut-generic": "^1.2.0",
     "purescript-datetime": "^3.4.0",
     "purescript-aff": "^4.0.0",
     "purescript-maps": "^3.6.0",
     "purescript-partial": "^1.2.1",
     "purescript-newtype": "^2.0.0",
     "purescript-sequences": "^1.0.3",
-    "purescript-st": "^3.0.0",
-    "purescript-affjax": "^5.0.0",
-    "purescript-unicode": "^3.0.1",
     "purescript-numbers": "^5.0.0",
     "purescript-sets": "^3.1.0",
-    "purescript-signal": "^9.0.0",
-    "purescript-exists": "^3.0.0"
+    "purescript-foreign": "^4.0.1"
   },
   "devDependencies": {
     "purescript-psci-support": "^3.0.0"
