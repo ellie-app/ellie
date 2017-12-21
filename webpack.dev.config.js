@@ -25,7 +25,7 @@ module.exports = {
 
   resolve: {
     alias: {
-      'Make/0.18.0$': path.resolve(__dirname, 'make/0.18.0-purs/build/bundle.js')
+      'Make/0.18.0$': path.resolve(__dirname, 'make/0.18.0/build/bundle.js')
     }
   },
 
