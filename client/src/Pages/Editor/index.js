@@ -166,6 +166,8 @@ CodeMirrorLoader
               htmlCode = html
               compile({ source: elm, dependencies: packages })
             })
+
+            app.ports.compilerMessagesIn.send({ type: 'Initial' })
           }
         })
       })
