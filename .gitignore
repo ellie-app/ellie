@@ -9,3 +9,7 @@ __pycache__/
 npm-debug.log
 env/
 .packages_index/
+.psc-ide-port
+output/
+bower_components/
+.pulp-cache/

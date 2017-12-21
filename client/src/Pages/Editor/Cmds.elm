@@ -101,11 +101,15 @@ compile model forSave =
     compileOnClientOut
         ( model.stagedHtmlCode
         , model.stagedElmCode
-        , model.clientRevision
-            |> Revision.toDescription
-            |> .dependencies
-            |> List.map (\( l, r ) -> ( Name.toString l, Constraint.encoder r ))
-            |> Encode.object
+        , model.clientRevision.packages
+            |> List.map
+                (\( name, version ) ->
+                    Encode.object
+                        [ ("name", Name.encoder name )
+                        , ("version", Version.encoder version )
+                        ]
+                )
+            |> Encode.list
         , forSave
         )
 
