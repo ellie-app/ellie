@@ -22,7 +22,8 @@
     "purescript-sequences": "1.0.3",
     "purescript-numbers": "5.0.0",
     "purescript-sets": "3.1.0",
-    "purescript-foreign": "4.0.1"
+    "purescript-foreign": "4.0.1",
+    "purescript-avar": "2.0.1"
   },
   "devDependencies": {
     "purescript-psci-support": "3.0.0"
