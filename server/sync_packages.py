@@ -161,6 +161,10 @@ def get_current_time() -> int:
 min_required_version = Version(0, 18, 0)
 
 
+def needs_prebuild(package: PackageInfo) -> bool:
+    return package.username == 'elm-lang' or (package.username == 'rtfeldman' and package.package == 'elm-css')
+
+
 def process_package(package: PackageInfo) -> Tuple[bool, PackageInfo]:
     try:
         base_dir = make_temp_directory()
