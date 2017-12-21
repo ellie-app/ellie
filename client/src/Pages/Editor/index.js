@@ -105,7 +105,7 @@ CodeMirrorLoader
         let workQueue = []
         let runForSave, htmlCode
 
-        const readFile = (file) =>
+        const readFile = (file) => {
           new Promise((resolve, reject) => {
             const fr = new FileReader()
             fr.addEventListener('load', () => {
@@ -116,6 +116,7 @@ CodeMirrorLoader
             })
             fr.readAsText(file)
           })
+        }
 
         const getSourceScript = (scriptFile) => {
           if (runForSave) {
@@ -139,7 +140,7 @@ CodeMirrorLoader
             var nextMessage = workQueue.shift()
 
             if (nextMessage.type === 'Success') {
-              getSourceScript(nextMessage.url)
+              getSourceScript(nextMessage.blob)
                 .then(sourceScript => fixHtml({
                   htmlCode,
                   embedApi: !runForSave,
@@ -148,22 +149,28 @@ CodeMirrorLoader
                 .then(htmlUrl => sendToPort({ type: 'Success', url: htmlUrl }))
                 .catch(error => sendToPort({ type: 'Failed', message: error.message }))
             } else {
+              console.log(nextMessage)
               sendToPort(nextMessage)
             }
             setTimeout(work)
           })
         }
 
-        const compiler = Compiler.init(callback)
-
         app.ports.clearElmStuffOut.subscribe(() => {
-          compiler.clearElmStuff()
+          Compiler.clearElmStuff()
         })
 
-        app.ports.compileOnClientOut.subscribe(function ([html, elm, packages, forSave]) {
-          runForSave = forSave
-          htmlCode = html
-          compiler.compile({ elm, packages })
+        Compiler.start({
+          onReport: callback,
+          onReady: compile => {
+            app.ports.compileOnClientOut.subscribe(([html, elm, packages, forSave]) => {
+              runForSave = forSave
+              htmlCode = html
+              compile({ source: elm, dependencies: packages })
+            })
+
+            app.ports.compilerMessagesIn.send({ type: 'Initial' })
+          }
         })
       })
   })
