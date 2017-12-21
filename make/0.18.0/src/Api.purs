@@ -3,6 +3,7 @@ module Api (start, clearElmStuff) where
 import Ellie.Prelude
 
 import BuildManager as BM
+import Constants as Constants
 import Control.Callback (Callback)
 import Control.Callback as Callback
 import Control.Monad.Eff (Eff)
@@ -231,6 +232,8 @@ start { onReport, onReady } =
     map (const unit) $
       Task.fork $
         flip catchError (onCatch onReport) $ do
+          checkStorageFormat
+
           compileChannel <-
             Task.makeEmptyVar
               |> lmap (Exception.message >>> BM.ImpossibleError)
@@ -251,9 +254,33 @@ start { onReport, onReady } =
             |> lmap (Exception.message >>> BM.ImpossibleError)
 
 
-clearElmStuff :: Unit -> Unit
-clearElmStuff _ =
+clearElmStuff :: ∀ e. BM.TopLevelEffect
+clearElmStuff =
   FileSystem.remove "/elm-stuff"
     |> Task.fork
     |> map (const unit)
-    |> Eff.unsafePerformEff
+
+
+readStorageFormat :: BM.Task (Maybe Int)
+readStorageFormat =
+  flip catchError (const (pure Nothing)) $ do
+    isUsingPurescript <-
+      FileSystem.exists "/.ellie-make-psc-storage-format-version"
+        |> lmap (const (BM.CorruptedArtifact "/.ellie-make-psc-storage-format-version"))
+    if isUsingPurescript
+      then 
+        FileSystem.read "/.ellie-make-psc-storage-format-version"
+          |> map Just
+          |> lmap (const (BM.CorruptedArtifact "/.ellie-make-psc-storage-format-version"))
+      else
+        pure Nothing
+
+
+checkStorageFormat :: BM.Task Unit
+checkStorageFormat = do
+  storageFormat <- readStorageFormat
+  if storageFormat == Just Constants.storageFormatVersion
+    then pure unit
+    else do
+      FileSystem.remove "/elm-stuff"
+      FileSystem.write "/.ellie-make-psc-storage-format-version" Constants.storageFormatVersion

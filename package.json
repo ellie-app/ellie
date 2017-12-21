@@ -5,6 +5,7 @@
   "version": "1.0.0",
   "main": "index.js",
   "license": "MIT",
+  "cacheDirectories": ["node_modules", "make/0.18.0/node_modules", "make/0.18.0/bower_components"],
   "engines": {
     "node": "6.9.5"
   },
