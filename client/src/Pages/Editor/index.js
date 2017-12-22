@@ -106,7 +106,7 @@ CodeMirrorLoader
         let runForSave, htmlCode
 
         const readFile = (file) => {
-          new Promise((resolve, reject) => {
+          return new Promise((resolve, reject) => {
             const fr = new FileReader()
             fr.addEventListener('load', () => {
               resolve(fr.result)
