@@ -75,9 +75,9 @@ exports._liftRawError = null
         if (typeof event.target.result === 'undefined') {
           resolve(notFoundToken)
         } else if (navigator.platform === 'iPhone' && value.value.$ === 'File') {
-          resolve({ modified: value.modified, value: new File(value.value.data, value.value.name, { type: value.value.type }) })
+          resolve({ modified: value.modified, value: new File([value.value.data], value.value.name, { type: value.value.type }) })
         } else if (navigator.platform === 'iPhone' && value.value.$ === 'Blob') {
-          resolve({ modified: value.modified, value: new Blob(value.value.data, { type: value.value.type }) })
+          resolve({ modified: value.modified, value: new Blob([value.value.data], { type: value.value.type }) })
         } else {
           resolve(value)
         }
