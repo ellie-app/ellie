@@ -31,8 +31,27 @@ exports._liftRawError = null
     return dbPromise
   }
 
+  function readFile(blob) {
+    return new Promise(function (resolve, reject) {
+      var fr = new FileReader()
+      fr.onload = function () { resolve(fr.result) }
+      fr.onerror = function () { reject(fr.error) }
+      fr.readAsArrayBuffer(blob)
+    })
+  }
+
   function setIndexedDb(key, value) {
     if (!database) return openDb().then(function () { return setIndexedDb(key, value) })
+
+    if (value.value instanceof Blob && navigator.platform === 'iPhone') {
+      return readFile(value.value)
+        .then(function (ab) {
+          if (value.value instanceof File) {
+            return setIndexedDb(key, { modified: value.modified, value: { data: ab, $: 'File', type: value.value.type, name: value.value.name } })
+          }
+          return setIndexedDb(key, { modified: value.modified, value: {  data: ab, $: 'Blob', type: value.value.type } })
+        })
+    }
 
     return new Promise(function (resolve, reject) {
       var store = database.transaction(['Ellie:Store'], 'readwrite').objectStore('Ellie:Store')
@@ -52,9 +71,17 @@ exports._liftRawError = null
       var req = store.get(key)
       req.onerror = reject
       req.onsuccess = function(event) {
-        if (typeof event.target.result === 'undefined') resolve(notFoundToken)
-        else resolve(event.target.result)
-      }
+        var value = event.target.result
+        if (typeof event.target.result === 'undefined') {
+          resolve(notFoundToken)
+        } else if (navigator.platform === 'iPhone' && value.value.$ === 'File') {
+          resolve({ modified: value.modified, value: new File(value.value.data, value.value.name, { type: value.value.type }) })
+        } else if (navigator.platform === 'iPhone' && value.value.$ === 'Blob') {
+          resolve({ modified: value.modified, value: new Blob(value.value.data, { type: value.value.type }) })
+        } else {
+          resolve(value)
+        }
+      } 
     })
   }
 
