@@ -45,16 +45,16 @@ module.exports = {
           loader: 'babel-loader',
           options: {
             presets: ['es2017'],
-            plugins: ['syntax-dynamic-import']
-          }
-        }
+            plugins: ['syntax-dynamic-import'],
+          },
+        },
       },
       {
         test: /\.css$/,
         loader: 'style-loader!css-loader',
       },
       { test: /\.json$/,
-        loader: 'json-loader'
+        loader: 'json-loader',
       },
       {
         test:    /\.elm$/,
@@ -95,7 +95,7 @@ module.exports = {
       OPBEAT_ORGANIZATION_ID: JSON.stringify(process.env.OPBEAT_ORGANIZATION_ID),
       'process.env.NODE_ENV': JSON.stringify('development')
     }),
-    new StringReplacePlugin(),
+    new StringReplacePlugin()
   ],
 
   devServer: {

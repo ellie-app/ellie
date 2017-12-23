@@ -1,12 +1,35 @@
 module Data.Ellie.KeyCombo exposing (..)
 
 import Keyboard
+import Set exposing (Set)
 
 
 type alias KeyCombo =
     { control : Bool
     , shift : Bool
     }
+
+
+controlKeyCodes : Set Int
+controlKeyCodes =
+    Set.fromList [ 91, 92, 93, 224 ]
+
+
+controlKey : Int -> Bool
+controlKey code =
+    controlKeyCodes
+        |> Set.member code
+
+
+shiftKeyCodes : Set Int
+shiftKeyCodes =
+    Set.singleton 16
+
+
+shiftKey : Int -> Bool
+shiftKey code =
+    shiftKeyCodes
+        |> Set.member code
 
 
 type Msg
@@ -22,18 +45,18 @@ subscriptions =
     Sub.batch
         [ Keyboard.downs
             (\code ->
-                if code == 91 || code == 93 then
+                if controlKey code then
                     ControlDown
-                else if code == 16 then
+                else if shiftKey code then
                     ShiftDown
                 else
                     NoOp
             )
         , Keyboard.ups
             (\code ->
-                if code == 91 || code == 93 then
+                if controlKey code then
                     ControlUp
-                else if code == 16 then
+                else if shiftKey code then
                     ShiftUp
                 else
                     NoOp
