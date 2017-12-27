@@ -47,6 +47,7 @@
     "elm-css": "npm run elm-css:build && npm run elm-css:concat",
     "watch:elm-css": "nodemon --exec \"npm run elm-css\" --watch client/css -e elm",
     "watch:webpack": "webpack-dev-server --watch --config ./webpack.dev.config.js",
+    "watch:make": "cd ./make/0.18.0 && npm run watch",
     "watch": "run-p watch:**",
     "clean": "rm -rf ./build",
     "install:elm": "cd client && elm-package install --yes",

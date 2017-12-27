@@ -140,9 +140,9 @@ isSaved name version =
   FileSystem.exists <| filePath name version
 
 
-save :: ∀ e x. Description -> Task (fileSystem :: FILESYSTEM | e) x Unit
-save description@(Description d) =
-  FileSystem.write (filePath d.name d.version) description
+save :: ∀ e x. Name -> Version -> Description -> Task (fileSystem :: FILESYSTEM | e) x Unit
+save name version description =
+  FileSystem.write (filePath name version) description
 
 
 load :: ∀ e. Name -> Version -> Task (fileSystem :: FILESYSTEM | e) FileSystem.Error Description

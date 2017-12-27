@@ -65,6 +65,6 @@ getConstraints name version = do
         Description.fetch name version
           |> lmap (\error -> BM.PackageProblem ("Could not load elm-package.json for package " <> show name <> ": " <> show error))
 
-      _ <- try <| Description.save description
+      _ <- try <| Description.save name version description
 
       pure <| Tuple d.elmVersion d.dependencies

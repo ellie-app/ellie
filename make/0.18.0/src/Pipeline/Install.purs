@@ -47,7 +47,7 @@ saveFilesToStorage package@(Package { name, version }) { sources, artifacts, des
     (const (const (const unit)))
       <$> Package.saveSources package sources
       <*> Package.saveArtifacts package artifacts
-      <*> Description.save description
+      <*> Description.save name version description
       >>= (\_ -> Package.markAsSaved package)
       |> lmap (const (BM.PackageProblem <| "Failed to save " <> show package))
 
