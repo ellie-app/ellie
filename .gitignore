@@ -13,3 +13,4 @@ env/
 output/
 bower_components/
 .pulp-cache/
+.psc-package/
