@@ -359,8 +359,8 @@ def oembed() -> Any:
         raise ApiError(404, 'revision not found')
 
     return jsonify({
-        'width': 'width',
-        'height': 'height',
+        'width': width,
+        'height': height,
         'type': 'rich',
         'version': '1.0',
         'title': revision.title,
