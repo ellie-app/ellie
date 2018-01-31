@@ -1,9 +1,9 @@
 module Ellie.Ui.Icon exposing (Icon(..), view)
 
-import Ellie.Ui.Icon.Styles as Styles
-import Html exposing (Html)
-import Svg exposing (svg, use)
-import Svg.Attributes exposing (xlinkHref)
+import Css exposing (..)
+import Html.Styled exposing (Html, Attribute)
+import Svg.Styled exposing (svg, use)
+import Svg.Styled.Attributes exposing (css, xlinkHref)
 
 
 type Icon
@@ -36,7 +36,7 @@ type Icon
 
 view : Icon -> Html msg
 view icon =
-    svg [ Styles.icon ]
+    svg [ iconStyles ]
         [ use [ xlinkHref <| "#icon-" ++ toIdString icon ] []
         ]
 
@@ -118,3 +118,13 @@ toIdString icon =
 
         Console ->
             "console"
+
+
+iconStyles : Attribute msg
+iconStyles =
+    css
+        [ width (pct 100)
+        , height (pct 100)
+        , fill currentColor
+        , display block
+        ]

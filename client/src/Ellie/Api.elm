@@ -9,10 +9,8 @@ module Ellie.Api
         , send
         , termsContent
         , toTask
-        , uploadSignatures
         )
 
-import Data.Aws.UploadSignature as UploadSignature exposing (UploadSignature)
 import Data.Ellie.ApiError as ApiError exposing (ApiError)
 import Data.Ellie.Revision as Revision exposing (Revision, Snapshot(..))
 import Data.Ellie.RevisionId as RevisionId exposing (RevisionId)
@@ -221,31 +219,3 @@ acceptTerms termsVersion =
     post (fullUrl <| "/terms/" ++ TermsVersion.toString termsVersion ++ "/accept")
         |> withApiHeaders
         |> withExpect Http.expectNoContent
-
-
-
--- UPLOAD
-
-
-uploadExpect : Expect ( UploadSignature, UploadSignature )
-uploadExpect =
-    Decode.map2 (,)
-        (Decode.field "revision" UploadSignature.decoder)
-        (Decode.field "result" UploadSignature.decoder)
-        |> Http.expectJson
-
-
-uploadSignatures : Revision -> Task ApiError ( UploadSignature, UploadSignature )
-uploadSignatures revision =
-    get (fullUrl "/upload")
-        |> withExpect uploadExpect
-        |> (\builder ->
-                case ( revision.id, revision.owned ) of
-                    ( Just { projectId, revisionNumber }, True ) ->
-                        builder
-                            |> withQueryParams [ ( "projectId", projectId ), ( "revisionNumber", toString (revisionNumber + 1) ) ]
-
-                    _ ->
-                        builder
-           )
-        |> toTask

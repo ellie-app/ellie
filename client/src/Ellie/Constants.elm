@@ -1,16 +1,6 @@
 module Ellie.Constants exposing (..)
 
 
-sidebarWidth : number
-sidebarWidth =
-    240
-
-
-headerHeight : number
-headerHeight =
-    40
-
-
 isProduction : Bool
 isProduction =
     "%ENV%" == "production"
@@ -36,6 +26,11 @@ cdnBase =
     "%CDN_BASE%"
 
 
+workspaceUrl : String
+workspaceUrl =
+    "ws://localhost:1337/workspace"
+
+
 assetBase : String
 assetBase =
     if isProduction then
@@ -49,6 +44,16 @@ asset relative =
     assetBase ++ relative
 
 
+sidebarWidth : number
+sidebarWidth =
+    250
+
+
+headerHeight : number
+headerHeight =
+    52
+
+
 scriptFont : String
 scriptFont =
     "Leckerli One"
@@ -57,18 +62,3 @@ scriptFont =
 sansFont : String
 sansFont =
     "Quicksand"
-
-
-carbonZoneId : String
-carbonZoneId =
-    "%CARBON_ZONE_ID%"
-
-
-carbonServe : String
-carbonServe =
-    "%CARBON_SERVE%"
-
-
-carbonPlacement : String
-carbonPlacement =
-    "%CARBON_PLACEMENT%"

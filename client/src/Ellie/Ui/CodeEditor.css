@@ -1,0 +1,72 @@
+code-editor {
+  width: 100%;
+  height: 100%;
+  display: block;
+  position: relative;
+}
+
+code-editor .CodeMirror {
+  background-color: #292929 !important;
+  width: 100%;
+  height: 100%;
+}
+
+.CodeMirror-focused .CodeMirror-activeline-background,
+.CodeMirror-focused .CodeMirror-activeline-gutter {
+  background-color: #1b1b1b !important;
+}
+
+.CodeMirror .CodeMirror-gutters {
+  background-color: #292929 !important;
+}
+
+.CodeMirror .cm-keyword {
+  color: #ff6cc9 !important;
+}
+
+.CodeMirror .cm-variable-2,
+.CodeMirror .cm-qualifier {
+  color: inherit !important;
+}
+
+.CodeMirror .CodeMirror-linenumber {
+  color: #8D8D97 !important;
+}
+
+.CodeMirror-lint-tooltip {
+  background-color: #292929 !important;
+  color: #e9eded !important;
+  border: 0 !important;
+  padding: 12px !important;
+  box-shadow: 0 2px 8px 2px rgba(0, 0, 0, 0.75);
+  border-radius: 3px !important;
+}
+
+.CodeMirror-lint-marker-warning, .CodeMirror-lint-message-warning,
+.CodeMirror-lint-message-error, .CodeMirror-lint-message-warning {
+  background-image: none !important;
+  padding: 0 !important;
+}
+
+.CodeMirror-lint-mark-error, .CodeMirror-lint-mark-warning {
+    background-image: none !important;
+    border-bottom-style: dashed;
+    border-bottom-width: 1px !important;
+}
+
+.CodeMirror-lint-mark-error {
+  border-bottom-color: #ec5f67;
+}
+
+.CodeMirror-lint-mark-warning {
+  border-bottom-color: #DECB6B;
+}
+
+
+.CodeMirror .cm-tag.cm-bracket {
+  color: #82b1ff;
+}
+
+.CodeMirror .cm-attribute {
+  color: #decb6b;
+}

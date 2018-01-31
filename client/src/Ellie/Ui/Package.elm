@@ -1,12 +1,13 @@
 module Ellie.Ui.Package exposing (Action, Config, install, uninstall, view)
 
+import Colors
+import Css exposing (..)
 import Data.Elm.Package as Package exposing (Package)
 import Data.Elm.Package.Version as Version
 import Ellie.Ui.Button as Button
 import Ellie.Ui.Icon as Icon
-import Ellie.Ui.Package.Styles as Styles
-import Html exposing (Html, div, img, text)
-import Html.Attributes exposing (src)
+import Html.Styled exposing (Html, Attribute, div, img, text)
+import Html.Styled.Attributes exposing (css, src)
 
 
 type Action msg
@@ -36,23 +37,23 @@ view config =
         ( name, version ) =
             config.package
     in
-    div [ Styles.container ]
-        [ div [ Styles.details ]
-            [ div [ Styles.project ] [ text name.project ]
-            , div [ Styles.detailsLine ]
-                [ div [ Styles.infoIcon ] [ Icon.view Icon.Tag ]
-                , div [ Styles.infoText ] [ text <| Version.toString version ]
+    div [ containerStyles ]
+        [ div [ detailsStyles ]
+            [ div [ projectStyles ] [ text name.project ]
+            , div [ detailsLineStyles ]
+                [ div [ infoIconStyles ] [ Icon.view Icon.Tag ]
+                , div [ infoTextStyles ] [ text <| Version.toString version ]
                 ]
-            , div [ Styles.detailsLine ]
+            , div [ detailsLineStyles ]
                 [ img
                     [ src <| "https://github.com/" ++ name.user ++ ".png?size=14"
-                    , Styles.infoIcon
+                    , infoIconStyles
                     ]
                     []
-                , div [ Styles.infoText ] [ text name.user ]
+                , div [ infoTextStyles ] [ text name.user ]
                 ]
             ]
-        , div [ Styles.buttons ]
+        , div [ buttonsStyles ]
             [ case config.action of
                 Uninstall action ->
                     Button.view
@@ -102,4 +103,90 @@ view config =
                         }
                 }
             ]
+        ]
+
+
+-- STYLES
+
+
+containerStyles : Attribute msg
+containerStyles =
+    css
+        [ position relative
+        , width (pct 100)
+        , displayFlex
+        , backgroundColor Colors.darkMediumGray
+        , Colors.boxShadow |> .bottom
+        , borderRadius (px 2)
+        , padding (px 8)
+        ]
+
+
+detailsStyles : Attribute msg
+detailsStyles =
+    css
+        [ width (pct 100)
+        , displayFlex
+        , flexDirection column
+        , justifyContent spaceBetween
+        , height (pct 100)
+        , paddingRight (px 4)
+        , overflowX hidden
+        ]
+
+
+detailsLineStyles : Attribute msg
+detailsLineStyles =
+    css
+        [ marginTop (px 6)
+        , displayFlex
+        , alignItems center
+        ]
+
+
+ellipsisTextStyles : Css.Style
+ellipsisTextStyles =
+    batch
+        [ whiteSpace noWrap
+        , overflowX hidden
+        , textOverflow ellipsis
+        ]
+
+
+projectStyles : Attribute msg
+projectStyles =
+    css
+        [ fontSize (px 16)
+        , fontWeight bold
+        , color Colors.lightGray
+        , ellipsisTextStyles
+        ]
+
+
+infoIconStyles : Attribute msg
+infoIconStyles =
+    css
+        [ width (px 14)
+        , height (px 14)
+        , marginRight (px 4)
+        , color Colors.lightMediumGray
+        ]
+
+
+infoTextStyles : Attribute msg
+infoTextStyles =
+    css
+        [ color Colors.lightMediumGray
+        , fontSize (px 14)
+        , ellipsisTextStyles
+        ]
+
+
+buttonsStyles : Attribute msg
+buttonsStyles =
+    css
+        [ displayFlex
+        , flexDirection column
+        , justifyContent spaceBetween
+        , flexShrink (int 0)
         ]

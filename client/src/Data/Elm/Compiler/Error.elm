@@ -8,7 +8,7 @@ module Data.Elm.Compiler.Error
         , toLinterMessage
         )
 
-import Data.CodeMirror.LinterMessage as LinterMessage exposing (LinterMessage)
+import Ellie.Ui.CodeEditor as CodeEditor exposing (LinterMessage)
 import Extra.Markdown as Markdown
 import Json.Decode as Decode exposing (Decoder)
 import Json.Decode.Pipeline as Decode
@@ -27,10 +27,10 @@ toLinterMessage error =
     , severity =
         case error.level of
             "warning" ->
-                LinterMessage.Warning
+                CodeEditor.Warning
 
             _ ->
-                LinterMessage.Error
+                CodeEditor.Error
     }
 
 

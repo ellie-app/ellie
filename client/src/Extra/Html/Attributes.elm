@@ -1,7 +1,7 @@
 module Extra.Html.Attributes exposing (..)
 
-import Html exposing (Attribute)
-import Html.Attributes exposing (property)
+import Html.Styled exposing (Attribute)
+import Html.Styled.Attributes as Attributes exposing (property)
 import Json.Encode as Encode
 
 
@@ -25,4 +25,4 @@ none =
 
 style : String -> String -> Attribute msg
 style key value =
-    Html.Attributes.style [ ( key, value ) ]
+    Attributes.style [ ( key, value ) ]

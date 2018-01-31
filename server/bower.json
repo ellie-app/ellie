@@ -1,0 +1,30 @@
+{
+  "name": "server-purs",
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "output"
+  ],
+  "dependencies": {
+    "purescript-prelude": "3.1.1",
+    "purescript-console": "3.0.0",
+    "purescript-aff": "4.0.1",
+    "purescript-numbers": "5.0.0",
+    "purescript-foreign-generic": "^5.0.0",
+    "purescript-foreign": "^4.0.1",
+    "purescript-uuid": "^4.0.0",
+    "purescript-typelevel-prelude": "^2.6.0",
+    "purescript-io": "^5.0.0",
+    "purescript-generics-rep": "^5.4.0",
+    "purescript-signal": "^9.0.0",
+    "purescript-express": "^0.6.2",
+    "purescript-node-process": "^5.0.0",
+    "purescript-control": "^3.3.1",
+    "purescript-coroutines": "^4.0.0",
+    "purescript-aff-coroutines": "^6.0.0"
+  },
+  "devDependencies": {
+    "purescript-psci-support": "3.0.0"
+  }
+}

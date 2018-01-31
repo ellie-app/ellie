@@ -1,6 +1,6 @@
 module Pages.Editor.Flags exposing (Flags, decoder)
 
-import Data.Ellie.TermsVersion as TermsVersion exposing (TermsVersion)
+import Data.Jwt as Jwt exposing (Jwt)
 import Json.Decode as Decode exposing (Decoder)
 import Json.Decode.Pipeline as Decode
 import Window
@@ -8,10 +8,7 @@ import Window
 
 type alias Flags =
     { windowSize : Window.Size
-    , online : Bool
-    , vimMode : Bool
-    , latestTermsVersion : TermsVersion
-    , acceptedTermsVersion : Maybe TermsVersion
+    , token : Maybe Jwt
     }
 
 
@@ -19,10 +16,7 @@ decoder : Decoder Flags
 decoder =
     Decode.succeed Flags
         |> Decode.required "windowSize" windowSizeDecoder
-        |> Decode.required "online" Decode.bool
-        |> Decode.required "vimMode" Decode.bool
-        |> Decode.required "latestTermsVersion" TermsVersion.decoder
-        |> Decode.required "acceptedTermsVersion" (Decode.nullable TermsVersion.decoder)
+        |> Decode.required "token" (Decode.nullable Jwt.decoder)
 
 
 windowSizeDecoder : Decoder Window.Size

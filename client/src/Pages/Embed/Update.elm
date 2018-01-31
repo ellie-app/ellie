@@ -9,9 +9,7 @@ module Pages.Embed.Update
 import Data.Ellie.ApiError as ApiError exposing (ApiError)
 import Data.Ellie.Revision as Revision exposing (Revision)
 import Data.Ellie.RevisionId as RevisionId exposing (RevisionId)
-import Data.Elm.Compiler.Error as CompilerError
 import Ellie.Api as Api
-import Ellie.CodeMirror as CodeMirror
 import Navigation
 import Pages.Embed.Model as Model exposing (Model, Tab(..))
 import Pages.Embed.Routing as Routing exposing (Route(..))
@@ -51,16 +49,7 @@ update msg model =
 
         LoadRevisionCompleted (Ok revision) ->
             ( { model | revision = RemoteData.Success revision }
-            , Cmd.batch
-                [ CodeMirror.updateValue "elmEditor" revision.elmCode
-                , CodeMirror.updateValue "htmlEditor" revision.htmlCode
-                , case revision.snapshot of
-                    Revision.Errored compileErrors ->
-                        CodeMirror.updateLinter "elmEditor" <| List.map CompilerError.toLinterMessage compileErrors
-
-                    _ ->
-                        Cmd.none
-                ]
+            , Cmd.none
             )
 
         LoadRevisionCompleted (Err apiError) ->
@@ -95,29 +84,8 @@ initialize location =
     handleRouteChanged
         model.currentRoute
         ( model
-        , Cmd.batch
-            [ CodeMirror.setup "elmEditor"
-                { vimMode = False
-                , theme = "material"
-                , mode = "elm"
-                , initialValue = ""
-                , readOnly = True
-                , tabSize = 4
-                }
-            , CodeMirror.setup "htmlEditor"
-                { vimMode = False
-                , theme = "material"
-                , mode = "htmlmixed"
-                , initialValue = ""
-                , readOnly = True
-                , tabSize = 2
-                }
-            ]
+        , Cmd.none
         )
-
-
-
-------------------------
 
 
 loadRevision : RevisionId -> Cmd Msg

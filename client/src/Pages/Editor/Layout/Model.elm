@@ -1,4 +1,4 @@
-module Pages.Editor.Layout.Model exposing (DragTarget(..), EditorCollapse(..), Model, init, reset)
+module Pages.Editor.Layout.Model exposing (DragTarget(..), EditorCollapse(..), Model, model, reset)
 
 import Window exposing (Size)
 
@@ -27,8 +27,8 @@ type alias Model =
     }
 
 
-init : Size -> Model
-init windowSize =
+model : Size -> Model
+model windowSize =
     { resultSplit = 0.5
     , editorSplit = 0.7
     , editorCollapse = BothOpen
@@ -40,8 +40,8 @@ init windowSize =
 
 
 reset : Model -> Model
-reset model =
-    init model.windowSize
+reset m =
+    model m.windowSize
 
 
 htmlIsHidden : Model -> Bool

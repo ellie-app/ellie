@@ -1,6 +1,6 @@
 module Extra.Html exposing (maybe, none, viewIf, viewIfLazy)
 
-import Html exposing (Html)
+import Html.Styled as Html exposing (Html)
 
 
 none : Html msg

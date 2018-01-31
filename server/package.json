@@ -1,0 +1,29 @@
+{
+  "name": "server-purs",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "build": "pulp build -- --source-maps"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "aws-sdk": "2.175.0",
+    "bignum": "^0.12.5",
+    "bower": "^1.8.2",
+    "cookie-parser": "^1.4.3",
+    "express": "^4.16.2",
+    "jsonwebtoken": "^8.1.1",
+    "mkdirp": "0.5.1",
+    "pulp": "12.0.1",
+    "purescript": "0.11.7",
+    "redis-fast-driver": "^2.0.0",
+    "request": "^2.83.0",
+    "rimraf": "^2.6.2",
+    "tmp": "0.0.33",
+    "unzip": "^0.1.11",
+    "ws": "^4.0.0"
+  }
+}

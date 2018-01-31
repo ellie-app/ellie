@@ -6,6 +6,9 @@ module Pages.Editor.Header.View
         , view
         )
 
+import Colors
+import Css exposing (..)
+import Css.Foreign
 import Data.Ellie.RevisionId as RevisionId exposing (RevisionId)
 import Data.Ellie.TermsVersion as TermsVersion exposing (TermsVersion)
 import Ellie.Constants as Constants
@@ -15,13 +18,12 @@ import Ellie.Ui.CopyLink as CopyLink
 import Ellie.Ui.Icon as Icon
 import Ellie.Ui.Popout as Popout
 import Extra.Html as Html
-import Html exposing (Html, a, button, div, h1, header, span, text)
-import Html.Attributes exposing (href, tabindex, target, title)
+import Html.Styled exposing (Html, Attribute, a, button, div, h1, header, span, text)
+import Html.Styled.Attributes as Attributes exposing (css, href, tabindex, title)
 import Pages.Editor.Header.Model exposing (Model)
-import Pages.Editor.Header.Styles as Styles
 import Pages.Editor.Header.Update exposing (Msg(..))
-import Svg exposing (svg, use)
-import Svg.Attributes exposing (xlinkHref)
+import Svg.Styled exposing (svg, use)
+import Svg.Styled.Attributes as Svg exposing (xlinkHref)
 
 
 type SaveOption
@@ -82,7 +84,7 @@ embedLink revisionId =
 
 viewLogo : Html msg
 viewLogo =
-    svg [ Styles.logo ]
+    svg [ logoStyles ]
         [ use [ xlinkHref "#ellie-logo" ] [] ]
 
 
@@ -145,7 +147,7 @@ viewLeftSide config =
                     , checked = False
                     , id = "accept_terms"
                     , label =
-                        span [ Styles.termsLabel ]
+                        span [ termsLabelStyles ]
                             [ text "Please accept our "
                             , a [ href <| TermsVersion.link version ] [ text "Terms of Service" ]
                             , text " before saving."
@@ -160,7 +162,7 @@ viewLeftSide config =
                     , checked = True
                     , id = "accept_terms"
                     , label =
-                        span [ Styles.termsLabel ]
+                        span [ termsLabelStyles ]
                             [ text "Please accept our "
                             , a [ href <| TermsVersion.link version ] [ text "Terms of Service" ]
                             , text " before saving."
@@ -170,7 +172,7 @@ viewLeftSide config =
 
             Accepted ->
                 [ viewLogo
-                , div [ Styles.button ]
+                , div [ buttonStyles ]
                     [ Button.view
                         { style = Button.Link
                         , size = Button.Medium
@@ -181,9 +183,9 @@ viewLeftSide config =
                         , action = Button.click config.onCompile
                         }
                     ]
-                , div [ Styles.button ]
+                , div [ buttonStyles ]
                     [ viewSaveButton config ]
-                , div [ Styles.button ]
+                , div [ buttonStyles ]
                     [ Button.view
                         { style = Button.Link
                         , size = Button.Medium
@@ -194,7 +196,7 @@ viewLeftSide config =
                         , action = Button.click config.onFormat
                         }
                     ]
-                , div [ Styles.button ]
+                , div [ buttonStyles ]
                     [ Popout.view
                         { open = config.model.shareOpen
                         , disabled = config.revisionId == Nothing
@@ -204,21 +206,21 @@ viewLeftSide config =
                                 |> Maybe.map
                                     (\revisionId ->
                                         div []
-                                            [ div [ Styles.copyLinkContainer ]
+                                            [ div [ copyLinkContainerStyles ]
                                                 [ CopyLink.view
                                                     { id = "direct"
                                                     , url = directLink revisionId
                                                     , title = "Direct Link (Medium, Embed.ly)"
                                                     }
                                                 ]
-                                            , div [ Styles.copyLinkContainer ]
+                                            , div [ copyLinkContainerStyles ]
                                                 [ CopyLink.view
                                                     { id = "embed"
                                                     , url = embedLink revisionId
                                                     , title = "Embed Link"
                                                     }
                                                 ]
-                                            , div [ Styles.copyLinkContainer ]
+                                            , div [ copyLinkContainerStyles ]
                                                 [ CopyLink.view
                                                     { id = "iframe"
                                                     , url = iframe revisionId
@@ -248,9 +250,9 @@ viewLeftSide config =
 viewSocialLink : String -> String -> Icon.Icon -> Html msg
 viewSocialLink url description icon =
     a
-        [ Styles.socialLink
+        [ socialLinkStyles
         , href url
-        , target "_blank"
+        , Attributes.target "_blank"
         , title description
         ]
         [ Icon.view icon ]
@@ -265,7 +267,102 @@ viewRightSide =
 
 view : Config msg -> Html msg
 view config =
-    header [ Styles.header ]
-        [ div [ Styles.leftSide ] <| viewLeftSide config
-        , div [ Styles.rightSide ] <| viewRightSide
+    header [ headerStyles ]
+        [ div [ leftSideStyles ] <| viewLeftSide config
+        , div [ rightSideStyles ] <| viewRightSide
+        ]
+
+
+-- STYLES
+
+
+headerStyles : Attribute msg
+headerStyles =
+    css
+        [ width (pct 100)
+        , height (px 40)
+        , backgroundColor Colors.darkGray
+        , displayFlex
+        , alignItems center
+        , justifyContent spaceBetween
+        , Colors.boxShadow |> .bottom
+        , position relative
+        , zIndex (int 4)
+        , padding2 zero (px 16)
+        ]
+
+
+rightSideStyles : Attribute msg
+rightSideStyles =
+    css
+        [ displayFlex
+        , alignItems center
+        ]
+
+
+socialLinkStyles : Attribute msg
+socialLinkStyles =
+    css
+        [ width (px 20)
+        , height (px 20)
+        , color Colors.lightMediumGray
+        , marginRight (px 8)
+        , lastChild [ marginRight zero ]
+        , hover [ color Colors.lightGray ]
+        ]
+
+
+leftSideStyles : Attribute msg
+leftSideStyles =
+    css
+        [ displayFlex
+        , alignItems center
+        ]
+
+
+termsLabelStyles : Attribute msg
+termsLabelStyles =
+    css
+        [ color Colors.lightGray
+        , Css.Foreign.descendants
+            [ Css.Foreign.a
+                [ color Colors.pink
+                , textDecoration underline
+                ]
+            ]
+        ]
+
+
+headerGroupStyles : Attribute msg
+headerGroupStyles =
+    css
+        [ displayFlex
+        , alignItems center
+        ]
+
+
+logoStyles : Attribute msg
+logoStyles =
+    Svg.css
+        [ fill Colors.lightGray
+        , height (px 20)
+        , width (px 51)
+        , marginRight (px 24)
+        ]
+
+
+buttonStyles : Attribute msg
+buttonStyles =
+    css
+        [ marginRight (px 16)
+        , lastChild [ marginRight zero ]
+        , displayFlex
+        ]
+
+
+copyLinkContainerStyles : Attribute msg
+copyLinkContainerStyles =
+    css
+        [ marginBottom (px 8)
+        , lastChild [ marginBottom zero ]
         ]

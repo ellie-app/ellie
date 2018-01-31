@@ -1,8 +1,9 @@
 module Ellie.Ui.ProgressBar exposing (..)
 
-import Ellie.Ui.ProgressBar.Styles as Styles
-import Html exposing (Html, div)
-import Html.Attributes exposing (style)
+import Colors
+import Css exposing (..)
+import Html.Styled exposing (Html, Attribute, div)
+import Html.Styled.Attributes exposing (css, style)
 
 
 type Progress
@@ -12,8 +13,8 @@ type Progress
 
 viewIndeterminate : Html msg
 viewIndeterminate =
-    div [ Styles.outer ]
-        [ div [ Styles.innerIndeterminate ] []
+    div [ outerStyles ]
+        [ div [ innerIndeterminateStyles ] []
         ]
 
 
@@ -24,14 +25,42 @@ view progress =
             viewIndeterminate
 
         Percentage percentage ->
-            div [ Styles.outer ]
-                [ div
-                    [ Styles.innerPercentage
-                    , style
-                        [ ( "transform"
-                          , "scaleX(" ++ toString percentage ++ ")"
-                          )
-                        ]
-                    ]
-                    []
+            div [ outerStyles ]
+                [ div [ innerPercentageStyles percentage ] []
                 ]
+
+
+-- STYLES
+
+
+outerStyles : Attribute msg
+outerStyles =
+    css
+        [ width (pct 100)
+        , height (px 8)
+        , overflowX hidden
+        , backgroundColor Colors.mediumGray
+        ]
+
+
+innerIndeterminateStyles : Attribute msg
+innerIndeterminateStyles =
+    css
+        [ property "animation" "1.5s infinite ProgressBar-indeterminate"
+        , property "transform-origin" "left"
+        , height (px 8)
+        , width (pct 100)
+        , backgroundColor Colors.pink
+        ]
+
+
+innerPercentageStyles : Float -> Attribute msg
+innerPercentageStyles percentage =
+    css
+        [ property "transform-origin" "left"
+        , height (px 8)
+        , property "transition" "transform 150ms"
+        , width (pct 100)
+            , property "transform" <| "scaleX(" ++ toString percentage ++ ")"
+        , backgroundColor Colors.pink
+        ]

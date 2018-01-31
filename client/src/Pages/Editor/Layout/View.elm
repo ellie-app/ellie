@@ -1,14 +1,17 @@
 module Pages.Editor.Layout.View exposing (..)
 
+import Colors
+import Css exposing (..)
+import Css.Foreign
 import Ellie.Ui.Button as Button
 import Ellie.Ui.Icon as Icon
+import Extra.Css exposing (blur, filter)
 import Extra.Html as Html
 import Extra.Html.Attributes as Attributes exposing (style)
-import Html exposing (Html, aside, div, header, main_)
-import Html.Attributes exposing (id)
-import Html.Events exposing (onMouseDown)
+import Html.Styled exposing (Attribute, Html, aside, div, header, main_)
+import Html.Styled.Attributes exposing (css, id)
+import Html.Styled.Events exposing (onMouseDown)
 import Pages.Editor.Layout.Model as Model exposing (DragTarget(..), Model)
-import Pages.Editor.Layout.Styles as Styles
 import Pages.Editor.Layout.Update exposing (Msg(..))
 
 
@@ -20,9 +23,10 @@ type alias Config msg =
     , notifications : Html msg
     , model : Model
     , mapMsg : Msg -> msg
-    , elmId : String
-    , htmlId : String
+    , elmEditor : Html msg
+    , htmlEditor : Html msg
     , logs : Html msg
+    , styles : Html msg
     }
 
 
@@ -69,7 +73,7 @@ outputHeightCss model =
 
 viewCollapseButton : msg -> Bool -> String -> Html msg
 viewCollapseButton msg collapsed label =
-    div [ Styles.collapseButton ]
+    div [ collapseButtonStyles ]
         [ Button.view
             { label = label
             , disabled = False
@@ -89,20 +93,18 @@ viewCollapseButton msg collapsed label =
 viewEditors : Config msg -> Html msg
 viewEditors config =
     div
-        [ Styles.editorsContainer
+        [ editorsContainerStyles
         , style "width" <| numberToPercent config.model.resultSplit
         ]
         [ div
-            [ Styles.editorContainer
-            , Attributes.cond Styles.editorContainerCollapse <| config.model.editorCollapse == Model.JustHtmlOpen
-            , Attributes.cond Styles.editorContainerFull <| config.model.editorCollapse == Model.JustElmOpen
+            [ editorContainerStyles
+            , Attributes.cond editorContainerCollapseStyles <| config.model.editorCollapse == Model.JustHtmlOpen
+            , Attributes.cond editorContainerFullStyles <| config.model.editorCollapse == Model.JustElmOpen
             , style "height" <| elmHeightCss config.model
             ]
             [ div
-                [ id config.elmId
-                , Attributes.cond (style "display" "none") <| config.model.editorCollapse == Model.JustHtmlOpen
-                ]
-                []
+                [ Attributes.cond (style "display" "none") <| config.model.editorCollapse == Model.JustHtmlOpen ]
+                [ config.elmEditor ]
             , viewCollapseButton
                 (config.mapMsg <| ToggleEditorCollapse Model.JustHtmlOpen)
                 (config.model.editorCollapse == Model.JustHtmlOpen)
@@ -110,22 +112,20 @@ viewEditors config =
             ]
         , Html.viewIf (config.model.editorCollapse == Model.BothOpen) <|
             div
-                [ Styles.verticalResizeHandle
+                [ verticalResizeHandleStyles
                 , style "top" <| elmHeightCss config.model
                 , onMouseDown (config.mapMsg EditorDragStarted)
                 ]
                 []
         , div
-            [ Styles.editorContainer
-            , Attributes.cond Styles.editorContainerCollapse <| config.model.editorCollapse == Model.JustElmOpen
-            , Attributes.cond Styles.editorContainerFull <| config.model.editorCollapse == Model.JustHtmlOpen
+            [ editorContainerStyles
+            , Attributes.cond editorContainerCollapseStyles <| config.model.editorCollapse == Model.JustElmOpen
+            , Attributes.cond editorContainerFullStyles <| config.model.editorCollapse == Model.JustHtmlOpen
             , style "height" <| htmlHeightCss config.model
             ]
             [ div
-                [ id config.htmlId
-                , Attributes.cond (style "display" "none") <| config.model.editorCollapse == Model.JustElmOpen
-                ]
-                []
+                [ Attributes.cond (style "display" "none") <| config.model.editorCollapse == Model.JustElmOpen ]
+                [ config.htmlEditor ]
             , viewCollapseButton
                 (config.mapMsg <| ToggleEditorCollapse Model.JustElmOpen)
                 (config.model.editorCollapse == Model.JustElmOpen)
@@ -137,25 +137,25 @@ viewEditors config =
 viewOutputAndLogs : Config msg -> Html msg
 viewOutputAndLogs config =
     div
-        [ Styles.outputAndLogsContainer
+        [ outputAndLogsContainerStyles
         , style "width" <| numberToPercent (1 - config.model.resultSplit)
         ]
         [ div
             [ style "height" <| outputHeightCss config.model
-            , Styles.outputContainer
+            , outputContainerStyles
             ]
             [ config.output ]
         , Html.viewIf (not config.model.logsCollapsed) <|
             div
-                [ Styles.verticalResizeHandle
+                [ verticalResizeHandleStyles
                 , style "top" <| outputHeightCss config.model
                 , onMouseDown (config.mapMsg LogsDragStarted)
                 ]
                 []
         , div
             [ style "height" <| logsHeightCss config.model
-            , Styles.logsContainer
-            , Attributes.cond Styles.logsContainerCollapsed config.model.logsCollapsed
+            , logsContainerStyles
+            , Attributes.cond logsContainerCollapsedStyles config.model.logsCollapsed
             ]
             [ Html.viewIf (not config.model.logsCollapsed) <| config.logs
             , viewCollapseButton
@@ -169,35 +169,261 @@ viewOutputAndLogs config =
 view : Config msg -> Html msg
 view config =
     div
-        [ Styles.appContainer
-        , Attributes.cond Styles.resizeEw <|
+        [ appContainerStyles
+        , Attributes.cond resizeEwStyles <|
             config.model.dragTarget
                 == OutputHandle
-        , Attributes.cond Styles.resizeNs <|
+        , Attributes.cond resizeNsStyles <|
             (config.model.dragTarget == EditorsHandle)
                 || (config.model.dragTarget == LogsHandle)
         ]
-        [ div
-            [ Styles.appContainerInner
-            , Attributes.cond Styles.loadingRevision config.loading
+        [ config.styles
+        , div
+            [ appContainerInnerStyles
+            , Attributes.cond loadingRevisionStyles config.loading
             ]
-            [ header [ Styles.header ] [ config.header ]
-            , div [ Styles.mainContainer ]
-                [ aside [ Styles.sidebar ] [ config.sidebar ]
-                , main_ [ Styles.workArea ]
+            [ header [ headerStyles ] [ config.header ]
+            , div [ mainContainerStyles ]
+                [ aside [ sidebarStyles ] [ config.sidebar ]
+                , main_ [ workAreaStyles ]
                     [ viewEditors config
                     , div
-                        [ Styles.outputResizeHandle
+                        [ outputResizeHandleStyles
                         , style "left" <| numberToPercent config.model.resultSplit
                         , onMouseDown (config.mapMsg ResultDragStarted)
                         ]
                         []
                     , viewOutputAndLogs config
                     , div
-                        [ Styles.notifications ]
+                        [ notificationsStyles ]
                         [ config.notifications
                         ]
                     ]
                 ]
             ]
+        ]
+
+
+
+-- STYLES
+
+
+notificationsStyles : Attribute msg
+notificationsStyles =
+    css
+        [ position absolute
+        , bottom zero
+        , right zero
+        , width (px 400)
+        , zIndex (int 10)
+        , maxHeight (pct 100)
+        , overflowY auto
+        ]
+
+
+sidebarStyles : Attribute msg
+sidebarStyles =
+    css
+        [ width (px 240)
+        , height (pct 100)
+        , position relative
+        , zIndex (int 1)
+        , Colors.boxShadow |> .right
+        ]
+
+
+headerStyles : Attribute msg
+headerStyles =
+    css
+        [ height (px 40)
+        ]
+
+
+appContainerStyles : Attribute msg
+appContainerStyles =
+    css
+        [ width (pct 100)
+        , height (pct 100)
+        , displayFlex
+        , position relative
+        ]
+
+
+workAreaStyles : Attribute msg
+workAreaStyles =
+    css
+        [ width <| calc (pct 100) minus (px 240)
+        , height (pct 100)
+        , displayFlex
+        , position relative
+        ]
+
+
+mainContainerStyles : Attribute msg
+mainContainerStyles =
+    css
+        [ width (pct 100)
+        , height <| calc (pct 100) minus (px 40)
+        , displayFlex
+        , position relative
+        , zIndex (int 1)
+        ]
+
+
+appContainerInnerStyles : Attribute msg
+appContainerInnerStyles =
+    css
+        [ position relative
+        , width (pct 100)
+        , height (pct 100)
+        , property "transition" "filter 0.3s 0.2s"
+        ]
+
+
+loadingRevisionStyles : Attribute msg
+loadingRevisionStyles =
+    css
+        [ filter <| blur (px 30)
+        ]
+
+
+editorsContainerStyles : Attribute msg
+editorsContainerStyles =
+    css
+        [ displayFlex
+        , position relative
+        , zIndex (int 0)
+        , flexDirection column
+        , height (pct 100)
+        , width (pct 50)
+        , overflow hidden
+        ]
+
+
+editorContainerStyles : Attribute msg
+editorContainerStyles =
+    css
+        [ height (pct 50)
+        , position relative
+        , backgroundColor Colors.darkMediumGray
+        , firstChild
+            [ borderBottom3 (px 1) solid Colors.darkGray
+            ]
+        , lastChild
+            [ borderTop3 (px 1) solid Colors.darkGray
+            ]
+        ]
+
+
+editorContainerCollapseStyles : Attribute msg
+editorContainerCollapseStyles =
+    css
+        [ height (px 40)
+        ]
+
+
+editorContainerFullStyles : Attribute msg
+editorContainerFullStyles =
+    css
+        [ height <| calc (pct 100) minus (px 40)
+        ]
+
+
+outputAndLogsContainerStyles : Attribute msg
+outputAndLogsContainerStyles =
+    css
+        [ width (pct 50)
+        , height (pct 100)
+        , position relative
+        , zIndex (int 1)
+        , Colors.boxShadow |> .left
+        , overflow hidden
+        , displayFlex
+        , flexDirection column
+        ]
+
+
+outputContainerStyles : Attribute msg
+outputContainerStyles =
+    css
+        [ height (pct 100)
+        , flexShrink (int 1)
+        , position relative
+        , displayFlex
+        ]
+
+
+logsContainerStyles : Attribute msg
+logsContainerStyles =
+    css
+        [ position relative
+        , displayFlex
+        , borderTop3 (px 2) solid Colors.mediumGray
+        ]
+
+
+logsContainerCollapsedStyles : Attribute msg
+logsContainerCollapsedStyles =
+    css
+        [ height (px 40)
+        , flexShrink (int 0)
+        ]
+
+
+notificationsContainerStyles : Attribute msg
+notificationsContainerStyles =
+    css
+        [ position absolute
+        , right (px 16)
+        , top (px 16)
+        ]
+
+
+outputResizeHandleStyles : Attribute msg
+outputResizeHandleStyles =
+    css
+        [ position absolute
+        , width (px 6)
+        , height (pct 100)
+        , marginLeft (px -3)
+        , cursor ewResize
+        , zIndex (int 6)
+        ]
+
+
+verticalResizeHandleStyles : Attribute msg
+verticalResizeHandleStyles =
+    css
+        [ position absolute
+        , height (px 6)
+        , width (pct 100)
+        , marginTop (px -3)
+        , cursor nsResize
+        , zIndex (int 6)
+        ]
+
+
+resizeNsStyles : Attribute msg
+resizeNsStyles =
+    css
+        [ Css.Foreign.descendants [ Css.Foreign.everything [ cursor nsResize |> important ] ]
+        , cursor nsResize
+        ]
+
+
+resizeEwStyles : Attribute msg
+resizeEwStyles =
+    css
+        [ Css.Foreign.descendants [ Css.Foreign.everything [ cursor ewResize |> important ] ]
+        , cursor ewResize
+        ]
+
+
+collapseButtonStyles : Attribute msg
+collapseButtonStyles =
+    css
+        [ top (px 8)
+        , right (px 12)
+        , position absolute
+        , zIndex (int 2)
         ]

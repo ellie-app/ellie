@@ -1,10 +1,10 @@
-module Pages.Editor.Header.Model exposing (..)
+module Pages.Editor.Header.Model exposing (Model, model)
 
 
 type alias Model =
     { shareOpen : Bool }
 
 
-init : Model
-init =
+model : Model
+model =
     { shareOpen = False }
