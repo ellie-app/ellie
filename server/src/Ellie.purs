@@ -8,6 +8,7 @@ module Ellie
   ) where
 
 import Prelude
+
 import Control.Monad.Eff.Exception (Error)
 import Control.Monad.Eff.Ref (Ref)
 import Control.Monad.Error.Class (class MonadThrow)
@@ -18,18 +19,19 @@ import Control.Monad.Reader (ReaderT, class MonadReader, class MonadAsk)
 import Control.Monad.Reader as Reader
 import Data.Maybe (Maybe)
 import Data.Newtype (class Newtype, unwrap)
+import Ellie.Adapters.CdnAssets as CdnAssets
 import Ellie.Adapters.CloudRepo as CloudRepo
 import Ellie.Adapters.IndexSearch as IndexSearch
 import Ellie.Adapters.LocalPlatform as LocalPlatform
 import Ellie.Adapters.LocalRepo as LocalRepo
 import Ellie.Adapters.WebpackAssets as WebpackAssets
-import Ellie.Adapters.CdnAssets as CdnAssets
+import Ellie.Domain.Assets (class Assets)
 import Ellie.Domain.Platform (class Platform)
 import Ellie.Domain.RevisionRepo (class RevisionRepo)
 import Ellie.Domain.Search (class Search)
 import Ellie.Domain.UserRepo (class UserRepo)
-import Ellie.Domain.Assets (class Assets)
 import Ellie.Elm.Package (Package)
+import Ellie.Elm.Package.Searchable (Searchable(..))
 import System.Aws as Aws
 import System.Jwt (Secret)
 import System.Redis as Redis
@@ -38,7 +40,7 @@ import Type.Equality (class TypeEquals, to)
 
 
 type SharedEnv r =
-  { index ∷ Ref (Maybe (SearchIndex Package))
+  { index ∷ Ref (Maybe (SearchIndex Searchable))
   , jwtSecret ∷ Secret
   , assetBase ∷ String
   | r

@@ -17,11 +17,11 @@ module.exports = {
       'webpack-dev-server/client?http://localhost:1338/',
       path.join(__dirname, 'src/Pages/Editor/index.js')
     ],
-    embed: [
-      'es6-promise/auto',
-      'webpack-dev-server/client?http://localhost:1338/',
-      path.join(__dirname, 'src/Pages/Embed/index.js')
-    ]
+    // embed: [
+    //   'es6-promise/auto',
+    //   'webpack-dev-server/client?http://localhost:1338/',
+    //   path.join(__dirname, 'src/Pages/Embed/index.js')
+    // ]
   },
 
   output: {

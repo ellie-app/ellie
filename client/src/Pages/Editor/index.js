@@ -6,9 +6,7 @@ import fixHtml from './fixHtml'
 import CodeEditor from '../../Ellie/Ui/CodeEditor'
 import IconLoader from '../../Ellie/Ui/Icon'
 import OpbeatRunner from '../../Ellie/Opbeat'
-import LogsRunner from '../../Pages/Editor/Logs/Runner'
-import Layout from './Layout'
-import Outbound from '../../Ellie/Effect/Outbound'
+import Outbound from './Effects/Outbound'
 
 IconLoader.load()
 
@@ -33,18 +31,12 @@ CodeEditor
     const latestTermsVersion = JSON.parse(document.querySelector('meta[name=latest_terms_version]').content)
 
     const app = Elm.Pages.Editor.Main.fullscreen({
-      windowSize: {
-        width: window.innerWidth,
-        height: window.innerHeight
-      },
       token: localStorage.getItem('Pages.Editor.token')
     })
 
     Outbound.start(app)
 
-    // Layout.start(app)
     // OpbeatRunner.start(app)
-    // LogsRunner.start(app)
 
     // app.ports.pathChangedOut.subscribe(() => {
     //   previousLocation = window.location.pathname

@@ -6,32 +6,40 @@ import Css.Foreign
 import Ellie.Constants as Constants
 import Ellie.Ui.CodeEditor as CodeEditor
 import Ellie.Ui.SplitPane as SplitPane
-import Html.Styled as Html exposing (Attribute, Html, button, div, header, iframe, main_, span, text)
+import Html.Styled as Html exposing (Attribute, Html)
 import Html.Styled.Attributes exposing (css)
-import Pages.Editor.Model as Model exposing (Model)
-import Pages.Editor.Update as Update exposing (Msg(..))
-import Pages.Editor.Views.Loading as Loading
+import Pages.Editor.State.Actions as ActionsState
+import Pages.Editor.State.App as AppState exposing (Model(..))
+import Pages.Editor.State.Setup as SetupState
+import Pages.Editor.Views.Editors as EditorsView
+import Pages.Editor.Views.Packages as PackagesView
+import Pages.Editor.Views.Setup as SetupView
+import Pages.Editor.Views.Sidebar as SidebarView
+import Pages.Editor.Views.Working as WorkingView
 
 
-type ViewModel
-    = Loading Loading.Stage
-
-
-viewModel : Model -> ViewModel
-viewModel model =
-    case ( model.workspace, model.token ) of
-        ( _, Nothing ) ->
-            Loading Loading.Authenticating
-
-        _ ->
-            Loading Loading.CreatingWorkspace
-
-
-view : Model -> Html Msg
+view : Model -> Html AppState.Msg
 view model =
-    SplitPane.view
-        (CodeEditor.view [ CodeEditor.value "hi" ])
-        (CodeEditor.view [ CodeEditor.value "hello" ])
+    case model of
+        AppState.Initial _ _ ->
+            Html.text ""
+
+        AppState.Setup setupState ->
+            case setupState of
+                SetupState.Authenticating _ _ ->
+                    SetupView.view SetupView.Authenticating
+
+                SetupState.Attaching _ _ ->
+                    SetupView.view SetupView.Attaching
+
+                _ ->
+                    SetupView.view SetupView.Loading
+
+        AppState.Working workingState ->
+            Html.map AppState.WorkingMsg <| WorkingView.view workingState
+
+        AppState.Broken ->
+            Html.text "It broke"
 
 
 

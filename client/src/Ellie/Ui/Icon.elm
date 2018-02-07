@@ -1,7 +1,7 @@
 module Ellie.Ui.Icon exposing (Icon(..), view)
 
 import Css exposing (..)
-import Html.Styled exposing (Html, Attribute)
+import Html.Styled exposing (Attribute, Html)
 import Svg.Styled exposing (svg, use)
 import Svg.Styled.Attributes exposing (css, xlinkHref)
 
@@ -32,6 +32,10 @@ type Icon
     | GitHub
     | Trello
     | Console
+    | SmallLogo
+    | Help
+    | Slack
+    | Search
 
 
 view : Icon -> Html msg
@@ -44,6 +48,15 @@ view icon =
 toIdString : Icon -> String
 toIdString icon =
     case icon of
+        Search ->
+            "search"
+
+        Help ->
+            "help"
+
+        SmallLogo ->
+            "small-logo"
+
         Settings ->
             "settings"
 
@@ -118,6 +131,9 @@ toIdString icon =
 
         Console ->
             "console"
+
+        Slack ->
+            "slack"
 
 
 iconStyles : Attribute msg

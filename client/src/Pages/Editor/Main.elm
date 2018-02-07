@@ -1,26 +1,22 @@
 module Pages.Editor.Main exposing (main)
 
-import Ellie.Effect.Program as Program
-import Json.Decode as Decode exposing (Value)
+import Pages.Editor.Effects.Program as Program
 import Pages.Editor.Flags as Flags exposing (Flags)
-import Pages.Editor.Model as Model exposing (Model)
 import Pages.Editor.Route as Route
-import Pages.Editor.Update as Update exposing (Msg(..))
+import Pages.Editor.State.App as AppState
 import Pages.Editor.View as View
 
 
-main : Program Value Model Msg
+main : Program.EffectsProgram AppState.Model AppState.Msg
 main =
     Program.program
-        { subscriptions = Update.subscriptions
-        , update = Update.update
-        , start = AppStart
-        , pass = NoOp
-        , error = ErrorOccured
-        , flags = Flags.decoder
+        { subscriptions = AppState.subscriptions
+        , update = AppState.update
+        , init = AppState.init
         , view = View.view
+        , error = AppState.ErrorOccured
+        , flags = Flags.decoder
         , url = Route.parse
-        , route = RouteChanged
-        , model = Model.model
+        , route = AppState.RouteChanged
         , styles = View.styles
         }

@@ -76,6 +76,11 @@ setup user =
   { user, workspace: _ } <$> Platform.initialize
 
 
+acknowledge ∷ ∀ m. Applicative m ⇒ State → m (Response State Outbound)
+acknowledge state =
+  pure $ { state, message: Just $ WorkspaceAttached $ _.packages $ unwrap $ state.workspace }
+
+
 teardown ∷ ∀ m. Platform m ⇒ State → m Unit
 teardown state =
   Platform.destroy state.workspace
@@ -116,6 +121,7 @@ connection ∷
   Connection m (Entity User.Id User) State Inbound Outbound
 connection =
   { setup
+  , acknowledge
   , teardown
   , update
   , authenticate

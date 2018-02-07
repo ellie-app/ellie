@@ -1,6 +1,11 @@
 module Ellie.Constants exposing (..)
 
 
+iframeId : String
+iframeId =
+    "results_iframe"
+
+
 isProduction : Bool
 isProduction =
     "%ENV%" == "production"

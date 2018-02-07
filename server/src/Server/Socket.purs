@@ -47,6 +47,7 @@ type RawResponse =
 
 type RawConnection =
   { setup ∷ IoEffFn2 Foreign (IoEffFn2 Foreign Foreign)
+  , acknowledge ∷ IoEffFn2 Foreign (IoEffFn2 Foreign Foreign)
   , teardown ∷ IoEffFn2 Foreign (IoEffFn1 Foreign)
   , update ∷ IoEffFn3 Foreign String (IoEffFn2 Foreign Foreign)
   , authenticate ∷ IoEffFn2 Request (IoEffFn2 Foreign Foreign)
@@ -68,6 +69,7 @@ type Auth a =
 
 type Connection m auth state input output =
   { setup ∷ auth → m state
+  , acknowledge ∷ state → m (Response state output)
   , teardown ∷ state → m Unit
   , update ∷ state → input → m (Response state output)
   , authenticate ∷ Request → m (Maybe (Auth auth))
@@ -87,6 +89,25 @@ listen server path runner connection =
               (Either.either
                 (\error → void $ runEffFn2 callback (Foreign.toForeign error) (Foreign.toForeign undefined))
                 (\state → void $ runEffFn2 callback (Foreign.toForeign undefined) (Foreign.toForeign state))
+              )
+            # voidRight undefined
+    , acknowledge:
+        mkEffFn2 \state callback →
+          connection.acknowledge (Foreign.unsafeFromForeign state)
+            # runner
+            # IO.runIO
+            # Aff.runAff_
+              (Either.either
+                (\error → void $ runEffFn2 callback (Foreign.toForeign error) (Foreign.toForeign undefined))
+                (\result →
+                  void $ runEffFn2 callback
+                    (Foreign.toForeign undefined)
+                    (Foreign.toForeign
+                      { message: Maybe.maybe (Foreign.toForeign undefined) Foreign.encode result.message
+                      , state: Foreign.toForeign result.state
+                      }
+                    )
+                )
               )
             # voidRight undefined
     , teardown:

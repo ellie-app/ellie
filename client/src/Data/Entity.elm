@@ -3,6 +3,8 @@ module Data.Entity
         ( Entity(..)
         , decoder
         , encoder
+        , key
+        , record
         )
 
 {-| A representation of some data that is stored based on some unique ID.
@@ -27,6 +29,16 @@ import Json.Encode as Encode exposing (Value)
 
 type Entity k v
     = Entity k v
+
+
+key : Entity k v -> k
+key (Entity k _) =
+    k
+
+
+record : Entity k v -> v
+record (Entity _ v) =
+    v
 
 
 decoder : Decoder k -> Decoder v -> Decoder (Entity k v)

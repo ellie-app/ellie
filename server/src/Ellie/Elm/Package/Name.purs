@@ -8,6 +8,8 @@ import Data.Foreign.Class as Foreign
 import Data.Newtype (class Newtype)
 import Data.String (Pattern(..))
 import Data.String as String
+import Data.String.Class (class ToString)
+
 
 newtype Name =
   Name
@@ -21,6 +23,10 @@ derive instance newtypeName :: Newtype Name _
 
 instance showName :: Show Name where
   show (Name { user, project }) =
+    user <> "/" <> project
+
+instance toStringName ∷ ToString Name where
+  toString (Name { user, project }) =
     user <> "/" <> project
 
 instance decodeName :: Decode Name where

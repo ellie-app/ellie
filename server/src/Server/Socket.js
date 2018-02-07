@@ -44,8 +44,11 @@ exports._listen = function _listen(server, config) {
     }
   })
 
+  wss.on('error', onError)
+
   var connections = Object.create(null)
   wss.on('connection', function (ws, req) {
+    ws.on('error', onError)
     var id = req[identitySymbol].hash
     var auth = req[identitySymbol].value
     var connection
@@ -56,8 +59,12 @@ exports._listen = function _listen(server, config) {
       ws.__purs_connection = connection
       ws.on('pong', onPong)
       ws.on('close', onClose)
-      ws.on('message', onMessage)    
-      ws.on('error', onError)
+      ws.on('message', onMessage)
+      config.acknowledge(connection.state, function (error, result) {
+        if (error) throw error
+        connection.state = result.state
+        ws.send(JSON.stringify(result.message))
+      })
     } else {
       connection = { ws: ws, update: config.update, state: noState, status: OPEN }
       connections[id] = connection
@@ -67,8 +74,12 @@ exports._listen = function _listen(server, config) {
         connection.state = state
         ws.on('pong', onPong)
         ws.on('close', onClose)
-        ws.on('message', onMessage)    
-        ws.on('error', onError)
+        ws.on('message', onMessage)
+        config.acknowledge(state, function (error, result) {
+          if (error) throw error
+          connection.state = result.state
+          ws.send(JSON.stringify(result.message))
+        })
       })
     }
   })

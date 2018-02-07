@@ -152,6 +152,7 @@ const initialize = () => {
           readOnly: this._readOnly,
           mode: this._mode,
           value: this._value,
+          dragDrop: false,
           extraKeys: {
             Tab(cm) {
               let x = ""
@@ -201,16 +202,16 @@ const initialize = () => {
       _getCurrentToken() {
         const position = this._instance.getCursor()
         const line = position.line
-        let token = editor.getTokenAt(position)
+        let token = this._instance.getTokenAt(position)
         if (!token.type) {
-          token = editor.getTokenAt({ line: line, ch: position.ch + 1 })
+          token = this._instance.getTokenAt({ line: line, ch: position.ch + 1 })
         }
       
         if (token.type === 'variable') {
           return this._expandTokenLeft(line, token.start, token.string)
         }
         if (token.string === '.' || token.type === 'variable-2') {
-          return this._expandTokenRight(line, token.end, expandLeft(line, token.start, token.string));
+          return this._expandTokenRight(line, token.end, this._expandTokenLeft(line, token.start, token.string));
         }
         if (token.type === 'builtin') {
           return token.string
