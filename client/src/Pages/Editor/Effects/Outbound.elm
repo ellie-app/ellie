@@ -26,6 +26,7 @@ import Json.Encode as Encode exposing (Value)
 import Navigation
 import Pages.Editor.Effects.Error as Error exposing (Error)
 import Pages.Editor.Effects.State as State exposing (Msg(..), State)
+import Process
 import Task
 import WebSocket
 
@@ -44,12 +45,19 @@ type Outbound msg
     | SwitchToProgram
     | EnableNavigationCheck Bool
     | Batch (List (Outbound msg))
+    | Delay Float msg
     | None
 
 
 send : (Error -> msg) -> Outbound msg -> State msg -> ( State msg, Cmd (Msg msg) )
 send onError effect state =
     case effect of
+        Delay time callback ->
+            ( state
+            , Process.sleep time
+                |> Task.perform (\_ -> UserMsg callback)
+            )
+
         EnableNavigationCheck enabled ->
             ( state
             , genericUnion "EnableNavigationCheck" [ Encode.bool enabled ]
@@ -254,14 +262,17 @@ wrapUpdate onError userUpdate msg (( model, state ) as appState) =
 map : (a -> b) -> Outbound a -> Outbound b
 map f outbound =
     case outbound of
+        Delay time msg ->
+            Delay time (f msg)
+
         EnableNavigationCheck enabled ->
             EnableNavigationCheck enabled
 
         GetRevision id callback ->
             GetRevision id (callback >> f)
 
-        GetUser token callback ->
-            GetUser token (\a b -> f (callback a b))
+        GetUser maybeToken callback ->
+            GetUser maybeToken <| \a b -> f (callback a b)
 
         FormatElmCode input callback ->
             FormatElmCode input (callback >> f)

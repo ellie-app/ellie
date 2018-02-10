@@ -20,16 +20,21 @@ type alias Config msg =
     , onSearch : String -> msg
     , installedPackages : List Package
     , searchedPackages : Maybe (List Searchable)
+    , isLoading : Bool
     }
 
 
 view : Config msg -> Html msg
 view config =
     Html.div
-        [ css [ height (pct 100) ]
+        [ css
+            [ height (pct 100)
+            , displayFlex
+            , flexDirection column
+            ]
         ]
         [ viewHeader
-        , viewSearchInput config.query config.onSearch
+        , viewSearchInput config.isLoading config.query config.onSearch
         , config.searchedPackages
             |> Maybe.map viewSearchedPackages
             |> Maybe.withDefaultLazy (\() -> viewInstalledPackages config.installedPackages)
@@ -46,16 +51,18 @@ viewHeader =
             , padding (px 16)
             , textTransform uppercase
             , lineHeight (int 1)
+            , flexShrink (int 0)
             ]
         ]
         [ Html.text "Packages" ]
 
 
-viewSearchInput : String -> (String -> msg) -> Html msg
-viewSearchInput value onSearch =
+viewSearchInput : Bool -> String -> (String -> msg) -> Html msg
+viewSearchInput isLoading value onSearch =
     Html.div
         [ css
             [ padding4 zero (px 16) (px 16) (px 16)
+            , flexShrink (int 0)
             ]
         ]
         [ TextInput.view
@@ -63,15 +70,24 @@ viewSearchInput value onSearch =
             , value = value
             , clearable = True
             , onChange = onSearch
-            , icon = Just Icon.Search
+            , icon =
+                if isLoading then
+                    Just Icon.Loading
+                else
+                    Just Icon.Search
             }
         ]
 
 
 viewSearchedPackages : List Searchable -> Html msg
 viewSearchedPackages packages =
-    Html.div [] <|
-        List.map (.package >> viewPackage) packages
+    List.map (.package >> viewPackage) packages
+        |> Html.div
+            [ css
+                [ height (pct 100)
+                , overflowY auto
+                ]
+            ]
 
 
 viewInstalledPackages : List Package -> Html msg
@@ -113,20 +129,8 @@ viewPackage ( name, version ) =
                 ]
             ]
             []
-        , Html.div
-            [ css
-                [ padding2 zero (px 16)
-                , width (pct 100)
-                ]
-            ]
-            [ Html.div
-                [ css
-                    [ fontSize (px 24)
-                    , fontWeight bold
-                    , color Colors.lightGray
-                    , lineHeight (num 1.4)
-                    ]
-                ]
+        , Html.div [ infoContainerStyles ]
+            [ Html.div [ packageNameStyles ]
                 [ Html.text name.project ]
             , Html.div [ packageInfoStyles ] [ Html.text name.user ]
             , Html.div [ packageInfoStyles ] [ Html.text <| Version.toString version ]
@@ -142,9 +146,32 @@ viewPackage ( name, version ) =
         ]
 
 
+infoContainerStyles =
+    css
+        [ padding2 zero (px 16)
+        , width (pct 100)
+        , overflow hidden
+        ]
+
+
+packageNameStyles =
+    css
+        [ fontSize (px 24)
+        , fontWeight bold
+        , color Colors.lightGray
+        , lineHeight (num 1.4)
+        , textOverflow ellipsis
+        , whiteSpace noWrap
+        , overflow hidden
+        ]
+
+
 packageInfoStyles =
     css
         [ fontSize (px 18)
         , color Colors.lightMediumGray
         , lineHeight (num 1.2)
+        , textOverflow ellipsis
+        , whiteSpace noWrap
+        , overflow hidden
         ]

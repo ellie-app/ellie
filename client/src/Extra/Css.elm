@@ -1,6 +1,11 @@
-module Extra.Css exposing (backdropFilter, blur, filter, withAlpha)
+module Extra.Css exposing (backdropFilter, blur, filter, var, withAlpha)
 
 import Css exposing (..)
+
+
+var : String -> BasicProperty
+var value =
+    { initial | value = "var(" ++ value ++ ")" }
 
 
 type Filter units

@@ -30,12 +30,13 @@ type Icon
     | Document
     | Copy
     | GitHub
-    | Trello
+    | GithubProjects
     | Console
     | SmallLogo
     | Help
     | Slack
     | Search
+    | Loading
 
 
 view : Icon -> Html msg
@@ -48,6 +49,9 @@ view icon =
 toIdString : Icon -> String
 toIdString icon =
     case icon of
+        Loading ->
+            "loading"
+
         Search ->
             "search"
 
@@ -126,8 +130,8 @@ toIdString icon =
         GitHub ->
             "github"
 
-        Trello ->
-            "trello"
+        GithubProjects ->
+            "github-projects"
 
         Console ->
             "console"

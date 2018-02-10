@@ -3,6 +3,7 @@ module Ellie.Ui.SplitPane exposing (..)
 import Colors
 import Css exposing (..)
 import Css.Foreign
+import Ellie.Ui.Theme as Theme
 import Html.Styled as Html exposing (Attribute, Html, node)
 import Html.Styled.Attributes as Attributes exposing (css)
 import Json.Encode as Encode
@@ -59,10 +60,10 @@ horizontalStyles =
                 [ width (pct 50)
                 , height (pct 100)
                 , firstChild
-                    [ borderRight3 (px 1) solid Colors.mediumGray
+                    [ borderRight3 (px 1) solid Theme.draggableBorder
                     ]
                 , lastChild
-                    [ borderLeft3 (px 1) solid Colors.mediumGray
+                    [ borderLeft3 (px 1) solid Theme.draggableBorder
                     ]
                 ]
             , Css.Foreign.typeSelector "ellie-ui-split-pane-divider"
@@ -92,10 +93,10 @@ verticalStyles =
                 [ height (pct 50)
                 , width (pct 100)
                 , firstChild
-                    [ borderBottom3 (px 1) solid Colors.mediumGray
+                    [ borderBottom3 (px 1) solid Theme.draggableBorder
                     ]
                 , lastChild
-                    [ borderTop3 (px 1) solid Colors.mediumGray
+                    [ borderTop3 (px 1) solid Theme.draggableBorder
                     ]
                 ]
             , Css.Foreign.typeSelector "ellie-ui-split-pane-divider"

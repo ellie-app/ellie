@@ -11,6 +11,7 @@ import Data.Entity as Entity exposing (Entity(..))
 import Data.Jwt as Jwt exposing (Jwt)
 import Data.Transition as Transition exposing (Transition(..))
 import Ellie.Types.Revision as Revision exposing (Revision)
+import Ellie.Types.User as User exposing (User)
 import Ellie.Types.Workspace as Workspace exposing (Workspace)
 import Elm.Package as Package exposing (Package)
 import Pages.Editor.Effects.Inbound as Inbound exposing (Inbound)
@@ -51,10 +52,13 @@ setupToWorking :
     { token : Jwt
     , revision : Maybe (Entity Revision.Id Revision)
     , packages : List Package
+    , user : Entity User.Id User
     }
-    -> Model
-setupToWorking { token, revision, packages } =
-    Working <| Working.init token revision packages
+    -> ( Model, Outbound Msg )
+setupToWorking { token, revision, packages, user } =
+    Working.init token (Entity.record user) revision packages
+        |> Tuple.mapFirst Working
+        |> Tuple.mapSecond (Outbound.map WorkingMsg)
 
 
 type Msg
@@ -81,9 +85,14 @@ update msg_ model =
                     ( model, Outbound.none )
 
         ( Setup setupState, SetupMsg msg ) ->
-            Setup.update msg setupState
-                |> Tuple.mapFirst (Transition.fold Setup setupToWorking)
-                |> Tuple.mapSecond (Outbound.map SetupMsg)
+            case Setup.update msg setupState of
+                ( Transition.Step next, setupOutbound ) ->
+                    ( Setup next
+                    , Outbound.map SetupMsg setupOutbound
+                    )
+
+                ( Transition.Exit data, setupOutbound ) ->
+                    setupToWorking data
 
         ( Working workingState, WorkingMsg msg ) ->
             Working.update msg workingState

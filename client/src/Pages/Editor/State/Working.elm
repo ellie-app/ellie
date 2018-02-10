@@ -4,6 +4,8 @@ import Data.Entity as Entity exposing (Entity(..))
 import Data.Jwt exposing (Jwt)
 import Data.Replaceable as Replaceable exposing (Replaceable)
 import Ellie.Types.Revision as Revision exposing (Revision)
+import Ellie.Types.Settings as Settings exposing (Settings)
+import Ellie.Types.User as User exposing (User)
 import Elm.Package as Package exposing (Package)
 import Pages.Editor.Effects.Inbound as Inbound exposing (Inbound)
 import Pages.Editor.Effects.Outbound as Outbound exposing (Outbound)
@@ -19,19 +21,25 @@ type alias Model =
     , packages : List Package
     , revision : Replaceable Revision.Id Revision
     , actions : Actions.Model
+    , user : User
+    , animating : Bool
     }
 
 
-init : Jwt -> Maybe (Entity Revision.Id Revision) -> List Package -> Model
-init token revision defaultPackages =
-    { elmCode = revision |> Maybe.map (Entity.record >> .elmCode) |> Maybe.withDefault defaultElm
-    , htmlCode = revision |> Maybe.map (Entity.record >> .htmlCode) |> Maybe.withDefault defaultHtml
-    , packages = revision |> Maybe.map (Entity.record >> .packages) |> Maybe.withDefault defaultPackages
-    , token = token
-    , defaultPackages = defaultPackages
-    , revision = Replaceable.fromMaybe revision
-    , actions = Actions.Packages { query = "", searchedPackages = Nothing, awaitingSearch = False }
-    }
+init : Jwt -> User -> Maybe (Entity Revision.Id Revision) -> List Package -> ( Model, Outbound Msg )
+init token user revision defaultPackages =
+    ( { elmCode = revision |> Maybe.map (Entity.record >> .elmCode) |> Maybe.withDefault defaultElm
+      , htmlCode = revision |> Maybe.map (Entity.record >> .htmlCode) |> Maybe.withDefault defaultHtml
+      , packages = revision |> Maybe.map (Entity.record >> .packages) |> Maybe.withDefault defaultPackages
+      , token = token
+      , defaultPackages = defaultPackages
+      , revision = Replaceable.fromMaybe revision
+      , actions = Actions.Packages { query = "", searchedPackages = Nothing, awaitingSearch = False }
+      , animating = True
+      , user = user
+      }
+    , Outbound.Delay 1000 AnimationFinished
+    )
 
 
 defaultElm : String
@@ -85,11 +93,25 @@ type Msg
     | RouteChanged Route.Route
     | RevisionLoaded (Entity Revision.Id Revision)
     | ActionsMsg Actions.Msg
+    | AnimationFinished
+    | SettingsChanged Settings
+    | NoOp
 
 
 update : Msg -> Model -> ( Model, Outbound Msg )
-update msg model =
+update msg ({ user } as model) =
     case msg of
+        SettingsChanged settings ->
+            ( { model | user = { user | settings = settings } }
+            , Outbound.none
+            )
+
+        AnimationFinished ->
+            ( { model | animating = False }, Outbound.none )
+
+        NoOp ->
+            ( model, Outbound.none )
+
         ActionsMsg actionsMsg ->
             Actions.update actionsMsg model.actions
                 |> Tuple.mapFirst (\a -> { model | actions = a })
@@ -109,7 +131,7 @@ update msg model =
             case model.revision of
                 Replaceable.Loading rid ->
                     if rid == revisionId then
-                        ( init model.token (Just entity) model.defaultPackages
+                        ( Tuple.first <| init model.token model.user (Just entity) model.defaultPackages
                         , Outbound.none
                         )
                     else
@@ -117,7 +139,7 @@ update msg model =
 
                 Replaceable.Replacing rid _ ->
                     if rid == revisionId then
-                        ( init model.token (Just entity) model.defaultPackages
+                        ( Tuple.first <| init model.token model.user (Just entity) model.defaultPackages
                         , Outbound.none
                         )
                     else
@@ -165,7 +187,7 @@ update msg model =
                             ( model, Outbound.none )
 
                         _ ->
-                            ( init model.token Nothing model.defaultPackages
+                            ( Tuple.first <| init model.token model.user Nothing model.defaultPackages
                             , Outbound.none
                             )
 

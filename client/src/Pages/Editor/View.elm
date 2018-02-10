@@ -6,6 +6,7 @@ import Css.Foreign
 import Ellie.Constants as Constants
 import Ellie.Ui.CodeEditor as CodeEditor
 import Ellie.Ui.SplitPane as SplitPane
+import Ellie.Ui.Theme as Theme
 import Html.Styled as Html exposing (Attribute, Html)
 import Html.Styled.Attributes exposing (css)
 import Pages.Editor.State.Actions as ActionsState
@@ -29,7 +30,7 @@ view model =
                 SetupState.Authenticating _ _ ->
                     SetupView.view SetupView.Authenticating
 
-                SetupState.Attaching _ _ ->
+                SetupState.Attaching _ _ _ ->
                     SetupView.view SetupView.Attaching
 
                 _ ->
@@ -50,7 +51,7 @@ styles : List Css.Foreign.Snippet
 styles =
     [ Css.Foreign.html
         [ height (pct 100)
-        , backgroundColor Colors.darkGray
+        , backgroundColor Theme.secondaryBackground
         ]
     , Css.Foreign.body
         [ height (pct 100)
@@ -76,6 +77,7 @@ styles =
         , position relative
         , zIndex (int 1)
         ]
+    , Theme.darkStyles
     ]
 
 

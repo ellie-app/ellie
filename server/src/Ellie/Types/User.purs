@@ -18,9 +18,8 @@ import Data.Newtype (class Newtype)
 import Data.String.Class (class ToString)
 import Data.UniqueId (UniqueId(..))
 import Ellie.Types.ProjectId (ProjectId)
-
-
-instance identifiedByIdUser ∷ IdentifiedBy Id User
+import Ellie.Types.Settings (Settings)
+import Ellie.Types.Settings as Settings
 
 
 newtype Id
@@ -33,24 +32,28 @@ derive newtype instance encodeId ∷ Encode Id
 
 newtype User =
   User
-    { latestTermsVersion :: Maybe Int
-    , ownedProjects :: Array ProjectId
+    { latestTermsVersion ∷ Maybe Int
+    , ownedProjects ∷ Array ProjectId
+    , settings ∷ Settings
     }
 
-derive instance newtypeUser :: Newtype User _
+derive instance newtypeUser ∷ Newtype User _
+instance identifiedByIdUser ∷ IdentifiedBy Id User
 
-instance encodeUser :: Encode User where
+instance encodeUser ∷ Encode User where
   encode (User u) =
     Foreign.toForeign
       { latestTermsVersion: Foreign.encode (NullOrUndefined u.latestTermsVersion)
       , ownedProjects: Foreign.encode u.ownedProjects
+      , settings: Foreign.encode u.settings
       }
 
-instance decodeSession :: Decode User where
+instance decodeSession ∷ Decode User where
   decode json =
-    { latestTermsVersion: _, ownedProjects: _ }
+    { latestTermsVersion: _, ownedProjects: _, settings: _ }
       <$> (json ! "latestTermsVersion" >>= Foreign.decode <#> Foreign.unNullOrUndefined)
       <*> (json ! "ownedProjects" >>= Foreign.decode)
+      <*> (json ! "settings" >>= Foreign.decode)
       <#> User
 
 
@@ -59,4 +62,5 @@ default =
   User
     { latestTermsVersion: Nothing
     , ownedProjects: []
+    , settings: Settings.default
     }

@@ -16,6 +16,7 @@ type Stage
     = Authenticating
     | Attaching
     | Loading
+    | Opening
 
 
 view : Stage -> Html msg
@@ -31,29 +32,13 @@ view loadingStage =
             ]
         ]
         [ logo
-        , div
-            [ css
-                [ fontSize (px 32)
-                , padding2 (px 12) zero
-                , color Colors.lightGray
-                ]
-            ]
-            [ case loadingStage of
-                Authenticating ->
-                    text "Authenticating..."
-
-                Attaching ->
-                    text "Attaching to workspace..."
-
-                Loading ->
-                    text "Loading code..."
-            ]
         ]
 
 
 logo : Html msg
 logo =
-    Svg.svg []
+    Svg.svg
+        []
         [ Svg.defs []
             [ Svg.mask [ SvgAttributes.id "clip" ]
                 [ Svg.use

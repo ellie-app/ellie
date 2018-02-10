@@ -4,6 +4,7 @@ import Colors
 import Css exposing (..)
 import Css.Foreign
 import Ellie.Ui.Icon as Icon
+import Ellie.Ui.Theme as Theme
 import Extra.Html as Html
 import Extra.Maybe as Maybe
 import Html.Styled exposing (Attribute, Html, button, div, input)
@@ -55,12 +56,12 @@ iconStyles =
     css
         [ width (px 30)
         , height (px 22)
-        , color Colors.lightMediumGray
+        , color Theme.secondaryForeground
         , padding2 (px 3) (px 7)
         , position absolute
         , left (px 1)
         , top (px 5)
-        , borderRight3 (px 1) solid Colors.mediumGray
+        , borderRight3 (px 1) solid Theme.controlBorder
         ]
 
 
@@ -77,26 +78,27 @@ inputStyles : Bool -> Bool -> Attribute msg
 inputStyles hasIcon hasClearButton =
     css
         [ property "background" "none"
+        , fontFamily inherit
         , border zero
         , padding2 zero (px 8)
         , display block
-        , border3 (px 1) solid Colors.mediumGray
+        , border3 (px 1) solid Theme.controlBorder
         , width (pct 100)
         , fontSize (px 15)
         , lineHeight (num 1)
-        , color Colors.lightGray
+        , color Theme.primaryForeground
         , height (pct 100)
         , focus
-            [ border3 (px 1) solid Colors.pink
+            [ border3 (px 1) solid Theme.accent
             , Css.Foreign.adjacentSiblings
                 [ Css.Foreign.div
-                    [ borderRightColor Colors.pink
+                    [ borderRightColor Theme.accent
                     ]
                 ]
             ]
-        , pseudoElement "-ms-input-placeholder" [ color Colors.mediumGray ]
-        , pseudoElement "-webkit-input-placeholder" [ color Colors.mediumGray ]
-        , pseudoElement "-moz-placeholder" [ color Colors.mediumGray ]
+        , pseudoElement "-ms-input-placeholder" [ color Theme.secondaryForeground ]
+        , pseudoElement "-webkit-input-placeholder" [ color Theme.secondaryForeground ]
+        , pseudoElement "-moz-placeholder" [ color Theme.secondaryForeground ]
         , if hasIcon then
             batch [ paddingLeft (px 40) ]
           else
@@ -113,13 +115,13 @@ clearButtonStyles =
     css
         [ property "background" "none"
         , border zero
-        , color Colors.mediumGray
+        , color Theme.secondaryForeground
         , width (px 32)
         , height (px 32)
         , padding2 (px 10) (px 8)
         , cursor pointer
         , property "transition" "color 250ms"
-        , hover [ color Colors.lightMediumGray ]
+        , hover [ color Theme.primaryForeground ]
         , position absolute
         , right zero
         , top zero
