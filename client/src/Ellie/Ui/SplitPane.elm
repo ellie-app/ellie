@@ -6,6 +6,8 @@ import Css.Foreign
 import Ellie.Ui.Theme as Theme
 import Html.Styled as Html exposing (Attribute, Html, node)
 import Html.Styled.Attributes as Attributes exposing (css)
+import Html.Styled.Events as Events
+import Json.Decode as Decode
 import Json.Encode as Encode
 
 
@@ -16,27 +18,30 @@ type Direction
 
 type alias Config msg =
     { direction : Direction
-    , defaultRatio : Float
+    , ratio : Float
+    , onResize : Float -> msg
     , first : Html msg
     , second : Html msg
     }
 
 
 view : Config msg -> Html msg
-view { direction, defaultRatio, first, second } =
+view { direction, ratio, onResize, first, second } =
     let
         attrs =
             case direction of
                 Vertical ->
                     [ verticalStyles
                     , Attributes.property "isVertical" <| Encode.bool True
-                    , Attributes.property "defaultRatio" <| Encode.float defaultRatio
+                    , Attributes.property "ratio" <| Encode.float ratio
+                    , Events.on "resize" <| Decode.map onResize <| Decode.at [ "target", "ratio" ] Decode.float
                     ]
 
                 Horizontal ->
                     [ horizontalStyles
                     , Attributes.property "isVertical" <| Encode.bool False
-                    , Attributes.property "defaultRatio" <| Encode.float defaultRatio
+                    , Attributes.property "ratio" <| Encode.float ratio
+                    , Events.on "resize" <| Decode.map onResize <| Decode.at [ "target", "ratio" ] Decode.float
                     ]
     in
     Html.node "ellie-ui-split-pane-group"

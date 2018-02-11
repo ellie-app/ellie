@@ -12,19 +12,19 @@ type alias Config msg =
     , onElmChange : String -> msg
     , htmlCode : String
     , onHtmlChange : String -> msg
+    , ratio : Float
+    , onResize : Float -> msg
     }
 
 
 view : Config msg -> Html msg
-view { onElmChange, elmCode, onHtmlChange, htmlCode } =
+view { onElmChange, elmCode, onHtmlChange, htmlCode, ratio, onResize } =
     Html.node "ellie-editors"
-        [ css
-            [ display block
-            ]
-        ]
+        [ css [ display block ] ]
         [ SplitPane.view
             { direction = SplitPane.Vertical
-            , defaultRatio = 0.5
+            , ratio = ratio
+            , onResize = onResize
             , first =
                 CodeEditor.view
                     [ CodeEditor.value elmCode

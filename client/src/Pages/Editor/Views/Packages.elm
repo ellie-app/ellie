@@ -3,7 +3,6 @@ module Pages.Editor.Views.Packages exposing (..)
 import Colors
 import Css exposing (..)
 import Ellie.Ui.Icon as Icon
-import Ellie.Ui.Settings as Settings
 import Ellie.Ui.SplitPane as SplitPane
 import Ellie.Ui.TextInput as TextInput
 import Elm.Package as Package exposing (Package)
@@ -141,8 +140,7 @@ viewPackage ( name, version ) =
                 , alignSelf flexStart
                 ]
             ]
-            [ Settings.view { id = "settings-" ++ Name.toString name }
-            ]
+            []
         ]
 
 

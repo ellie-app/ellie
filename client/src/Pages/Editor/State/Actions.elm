@@ -11,12 +11,20 @@ type alias PackagesModel =
     }
 
 
+packages : Model
+packages =
+    Packages
+        { query = ""
+        , searchedPackages = Nothing
+        , awaitingSearch = False
+        }
+
+
 type Model
     = Hidden
     | Packages PackagesModel
     | Settings
     | Help
-    | About
 
 
 type Msg

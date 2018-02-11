@@ -23,6 +23,9 @@ type alias Model =
     , actions : Actions.Model
     , user : User
     , animating : Bool
+    , workbenchRatio : Float
+    , actionsRatio : Float
+    , editorsRatio : Float
     }
 
 
@@ -37,6 +40,9 @@ init token user revision defaultPackages =
       , actions = Actions.Packages { query = "", searchedPackages = Nothing, awaitingSearch = False }
       , animating = True
       , user = user
+      , workbenchRatio = 0.5
+      , actionsRatio = 0.3
+      , editorsRatio = 0.7
       }
     , Outbound.Delay 1000 AnimationFinished
     )
@@ -95,12 +101,36 @@ type Msg
     | ActionsMsg Actions.Msg
     | AnimationFinished
     | SettingsChanged Settings
+    | ActionPaneSelected Actions.Model
+    | WorkbenchResized Float
+    | ActionsResized Float
+    | EditorsResized Float
     | NoOp
 
 
 update : Msg -> Model -> ( Model, Outbound Msg )
 update msg ({ user } as model) =
     case msg of
+        WorkbenchResized ratio ->
+            ( { model | workbenchRatio = ratio }
+            , Outbound.none
+            )
+
+        ActionsResized ratio ->
+            ( { model | actionsRatio = ratio }
+            , Outbound.none
+            )
+
+        EditorsResized ratio ->
+            ( { model | editorsRatio = ratio }
+            , Outbound.none
+            )
+
+        ActionPaneSelected actions ->
+            ( { model | actions = actions }
+            , Outbound.none
+            )
+
         SettingsChanged settings ->
             ( { model | user = { user | settings = settings } }
             , Outbound.none

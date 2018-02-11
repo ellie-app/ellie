@@ -41,7 +41,7 @@ view model =
         , Html.div
             [ css [ displayFlex ]
             ]
-            [ SidebarView.view
+            [ SidebarView.view model.actions
             , case model.actions of
                 ActionsState.Hidden ->
                     viewWorkspace model
@@ -49,7 +49,8 @@ view model =
                 _ ->
                     SplitPane.view
                         { direction = SplitPane.Horizontal
-                        , defaultRatio = 0.3
+                        , ratio = model.actionsRatio
+                        , onResize = WorkingState.ActionsResized
                         , first =
                             case model.actions of
                                 ActionsState.Packages packagesModel ->
@@ -79,19 +80,24 @@ view model =
 
 viewWorkspace : WorkingState.Model -> Html WorkingState.Msg
 viewWorkspace model =
-    SplitPane.view
-        { direction = SplitPane.Horizontal
-        , defaultRatio = 0.5
-        , first =
-            EditorsView.view
-                { elmCode = model.elmCode
-                , onElmChange = WorkingState.ElmCodeChanged
-                , htmlCode = model.htmlCode
-                , onHtmlChange = WorkingState.HtmlCodeChanged
-                }
-        , second =
-            Html.div [] []
-        }
+    Html.div []
+        [ SplitPane.view
+            { direction = SplitPane.Horizontal
+            , ratio = model.workbenchRatio
+            , onResize = WorkingState.WorkbenchResized
+            , first =
+                EditorsView.view
+                    { elmCode = model.elmCode
+                    , onElmChange = WorkingState.ElmCodeChanged
+                    , htmlCode = model.htmlCode
+                    , onHtmlChange = WorkingState.HtmlCodeChanged
+                    , ratio = model.editorsRatio
+                    , onResize = WorkingState.EditorsResized
+                    }
+            , second =
+                Html.div [] []
+            }
+        ]
 
 
 viewStyles model =

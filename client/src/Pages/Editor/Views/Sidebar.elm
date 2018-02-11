@@ -6,10 +6,13 @@ import Ellie.Ui.Icon as Icon
 import Ellie.Ui.Theme as Theme
 import Html.Styled as Html exposing (Html)
 import Html.Styled.Attributes as Attributes exposing (css)
+import Html.Styled.Events exposing (onClick)
+import Pages.Editor.State.Actions as Actions
+import Pages.Editor.State.Working as WorkingState
 
 
-view : Html msg
-view =
+view : Actions.Model -> Html WorkingState.Msg
+view current =
     Html.node "ellie-sidebar"
         [ css
             [ displayFlex
@@ -23,9 +26,9 @@ view =
         ]
         [ Html.div []
             [ viewLogo
-            , viewIconButton Icon.Package
-            , viewIconButton Icon.Settings
-            , viewIconButton Icon.Help
+            , viewIconButton Icon.Package Actions.packages current
+            , viewIconButton Icon.Settings Actions.Settings current
+            , viewIconButton Icon.Help Actions.Help current
             ]
         , Html.div []
             [ viewIconLink Icon.Slack "https://elmlang.slack.com/#ellie"
@@ -49,8 +52,23 @@ viewLogo =
         ]
 
 
-viewIconButton : Icon.Icon -> Html msg
-viewIconButton icon =
+viewIconButton : Icon.Icon -> Actions.Model -> Actions.Model -> Html WorkingState.Msg
+viewIconButton icon default current =
+    let
+        ( nextModel, active ) =
+            case ( default, current ) of
+                ( Actions.Settings, Actions.Settings ) ->
+                    ( Actions.Hidden, True )
+
+                ( Actions.Packages _, Actions.Packages _ ) ->
+                    ( Actions.Hidden, True )
+
+                ( Actions.Help, Actions.Help ) ->
+                    ( Actions.Hidden, True )
+
+                _ ->
+                    ( default, False )
+    in
     Html.button
         [ css
             [ backgroundColor transparent
@@ -59,10 +77,18 @@ viewIconButton icon =
             , padding2 (px 12) (px 16)
             , width (px 58)
             , height (px 50)
-            , color Theme.primaryForeground
             , display block
             , cursor pointer
+            , color <|
+                if active then
+                    Theme.primaryForeground
+                else
+                    Theme.secondaryForeground
+            , hover
+                [ color Theme.primaryForeground
+                ]
             ]
+        , onClick <| WorkingState.ActionPaneSelected nextModel
         ]
         [ Icon.view icon
         ]
