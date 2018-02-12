@@ -65,8 +65,10 @@ view model =
 
                                 ActionsState.Settings ->
                                     SettingsView.view
-                                        { onChange = WorkingState.SettingsChanged
+                                        { onSettingsChange = WorkingState.SettingsChanged
                                         , settings = model.user.settings
+                                        , onProjectNameChange = WorkingState.ChangedProjectName
+                                        , projectName = model.projectName
                                         }
 
                                 _ ->

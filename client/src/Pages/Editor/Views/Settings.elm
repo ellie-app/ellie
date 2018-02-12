@@ -19,7 +19,9 @@ import Html.Styled.Attributes exposing (css, src)
 
 type alias Config msg =
     { settings : Settings
-    , onChange : Settings -> msg
+    , projectName : String
+    , onSettingsChange : Settings -> msg
+    , onProjectNameChange : String -> msg
     }
 
 
@@ -41,7 +43,8 @@ view config =
         , Html.div
             [ css [ padding (px 8) ]
             ]
-            [ viewVimMode config
+            [ viewProjectName config
+            , viewVimMode config
             , viewFontFamily config
             , viewFontSize config
             , viewTheme config
@@ -49,8 +52,29 @@ view config =
         ]
 
 
+viewProjectName : Config msg -> Html msg
+viewProjectName { projectName, onProjectNameChange } =
+    Html.div [ settingContainerStyles ]
+        [ Html.div [ settingHeaderStyles ] [ Html.text "Project Name" ]
+        , Html.div [ settingDescriptionStyles ] [ Html.text "Give your project a name" ]
+        , Html.div [ settingControlStyles ]
+            [ Html.div
+                [ css [ backgroundColor Theme.secondaryBackground ]
+                ]
+                [ TextInput.view
+                    { placeholder = "Untitled"
+                    , value = projectName
+                    , clearable = False
+                    , icon = Nothing
+                    , onChange = onProjectNameChange
+                    }
+                ]
+            ]
+        ]
+
+
 viewVimMode : Config msg -> Html msg
-viewVimMode { settings, onChange } =
+viewVimMode { settings, onSettingsChange } =
     Html.div [ settingContainerStyles ]
         [ Html.div [ settingHeaderStyles ] [ Html.text "Vim Mode" ]
         , Html.div [ settingDescriptionStyles ] [ Html.text "Use vim key bindings in the text editors" ]
@@ -59,14 +83,14 @@ viewVimMode { settings, onChange } =
                 { id = "settings-vim-mode"
                 , checked = settings.vimMode
                 , label = Html.span [ settingControlLabelStyles ] [ Html.text "Enabled" ]
-                , onChange = \vimMode -> onChange { settings | vimMode = vimMode }
+                , onChange = \vimMode -> onSettingsChange { settings | vimMode = vimMode }
                 }
             ]
         ]
 
 
 viewFontFamily : Config msg -> Html msg
-viewFontFamily { settings, onChange } =
+viewFontFamily { settings, onSettingsChange } =
     Html.div [ settingContainerStyles ]
         [ Html.div [ settingHeaderStyles ] [ Html.text "Editor Font Family" ]
         , Html.div [ settingDescriptionStyles ] [ Html.text "Choose any installed font to use in the editors" ]
@@ -82,7 +106,7 @@ viewFontFamily { settings, onChange } =
                     , value = settings.fontFamily
                     , clearable = False
                     , icon = Nothing
-                    , onChange = \fontFamily -> onChange { settings | fontFamily = fontFamily }
+                    , onChange = \fontFamily -> onSettingsChange { settings | fontFamily = fontFamily }
                     }
                 ]
             ]
@@ -90,7 +114,7 @@ viewFontFamily { settings, onChange } =
 
 
 viewFontSize : Config msg -> Html msg
-viewFontSize { settings, onChange } =
+viewFontSize { settings, onSettingsChange } =
     Html.div [ settingContainerStyles ]
         [ Html.div [ settingHeaderStyles ] [ Html.text "Editor Font Size" ]
         , Html.div [ settingDescriptionStyles ] [ Html.text "The size of the text in the code editors" ]
@@ -103,7 +127,7 @@ viewFontSize { settings, onChange } =
                     , value = settings.fontSize
                     , clearable = False
                     , icon = Nothing
-                    , onChange = \fontSize -> onChange { settings | fontSize = fontSize }
+                    , onChange = \fontSize -> onSettingsChange { settings | fontSize = fontSize }
                     }
                 ]
             ]
@@ -111,7 +135,7 @@ viewFontSize { settings, onChange } =
 
 
 viewTheme : Config msg -> Html msg
-viewTheme { settings, onChange } =
+viewTheme { settings, onSettingsChange } =
     Html.div [ settingContainerStyles ]
         [ Html.div [ settingHeaderStyles ] [ Html.text "Color Theme" ]
         , Html.div [ settingDescriptionStyles ] [ Html.text "Choose a dark or light theme for Ellie" ]
@@ -129,7 +153,7 @@ viewTheme { settings, onChange } =
                             True
                 , onChange =
                     \on ->
-                        onChange
+                        onSettingsChange
                             { settings
                                 | theme =
                                     if on then

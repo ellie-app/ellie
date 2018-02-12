@@ -16,9 +16,10 @@ import Pages.Editor.State.Actions as Actions
 type alias Model =
     { elmCode : String
     , htmlCode : String
+    , packages : List Package
+    , projectName : String
     , token : Jwt
     , defaultPackages : List Package
-    , packages : List Package
     , revision : Replaceable Revision.Id Revision
     , actions : Actions.Model
     , user : User
@@ -34,6 +35,7 @@ init token user revision defaultPackages =
     ( { elmCode = revision |> Maybe.map (Entity.record >> .elmCode) |> Maybe.withDefault defaultElm
       , htmlCode = revision |> Maybe.map (Entity.record >> .htmlCode) |> Maybe.withDefault defaultHtml
       , packages = revision |> Maybe.map (Entity.record >> .packages) |> Maybe.withDefault defaultPackages
+      , projectName = ""
       , token = token
       , defaultPackages = defaultPackages
       , revision = Replaceable.fromMaybe revision
@@ -105,12 +107,18 @@ type Msg
     | WorkbenchResized Float
     | ActionsResized Float
     | EditorsResized Float
+    | ChangedProjectName String
     | NoOp
 
 
 update : Msg -> Model -> ( Model, Outbound Msg )
 update msg ({ user } as model) =
     case msg of
+        ChangedProjectName projectName ->
+            ( { model | projectName = projectName }
+            , Outbound.none
+            )
+
         WorkbenchResized ratio ->
             ( { model | workbenchRatio = ratio }
             , Outbound.none
