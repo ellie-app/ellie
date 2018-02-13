@@ -43,7 +43,7 @@ init token user revision defaultPackages =
       , animating = True
       , user = user
       , workbenchRatio = 0.5
-      , actionsRatio = 0.3
+      , actionsRatio = 0.2
       , editorsRatio = 0.7
       }
     , Outbound.Delay 1000 AnimationFinished

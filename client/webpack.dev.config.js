@@ -6,11 +6,7 @@ const StringReplacePlugin = require('string-replace-webpack-plugin')
 module.exports = {
   cache: true,
   target: 'web',
-
-  externals: {
-    'fs': '__fileSystem'
-  },
-
+  devtool: 'inline-source-map',
   entry: {
     editor: [
       'es6-promise/auto',

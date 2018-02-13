@@ -5,6 +5,7 @@ exports._parseRequest = function (helpers) {
       method: helpers.parseMethod(req.method),
       headers: req.headers,
       params: req.params,
+      body: req.body,
       vault: {}
     }
   }

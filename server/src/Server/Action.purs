@@ -7,6 +7,8 @@ module Server.Action
   , setStatus
   , setHeader
   , setStringBody
+  , getBody
+  , getHeader
   , getParam
   ) where
 
@@ -15,6 +17,7 @@ import Prelude
 
 import Control.Monad.Aff.Class (liftAff) as Aff
 import Control.Monad.Aff.Unsafe (unsafeCoerceAff) as Aff
+import Control.Monad.Except as Except
 import Control.Monad.IO (IO)
 import Control.Monad.Reader (ReaderT)
 import Control.Monad.Reader as Reader
@@ -22,8 +25,11 @@ import Control.Monad.State (StateT)
 import Control.Monad.State as State
 import Control.Monad.Trans.Class (class MonadTrans, lift)
 import Data.Array ((:))
+import Data.Either (Either)
 import Data.Foldable (for_)
-import Data.Foreign (Foreign)
+import Data.Foreign (Foreign, MultipleErrors)
+import Data.Foreign.Class (class Decode)
+import Data.Foreign.Class (decode) as Foreign
 import Data.Int as Int
 import Data.Maybe (Maybe(..))
 import Data.Maybe as Maybe
@@ -69,6 +75,7 @@ type Request =
   , url ∷ Url
   , params :: StrMap String
   , headers ∷ StrMap String
+  , body ∷ Foreign
   , vault ∷ StrMap Foreign
   }
 
@@ -140,6 +147,12 @@ instance isParamInt ∷ IsParam Int where
   fromParam = Int.fromString
 
 
+getHeader ∷ ∀ m. Monad m ⇒ String → ActionT m (Maybe String)
+getHeader key =
+  ActionT $ Reader.asks \request →
+    StrMap.lookup key request.headers
+
+
 getParam ∷ ∀ m a. IsParam a ⇒ Monad m ⇒ String → ActionT m (Maybe a)
 getParam key =
   ActionT $ Reader.asks \request →
@@ -147,6 +160,14 @@ getParam key =
     in case inParams of
       Just value → Just value
       Nothing → Query.get key (Url.query request.url) >>= fromParam
+
+
+getBody ∷ ∀ m a. Monad m ⇒ Decode a ⇒ ActionT m (Either MultipleErrors a)
+getBody =
+  ActionT $ Reader.asks \request →
+    request.body
+      # Foreign.decode
+      # Except.runExcept
 
 
 setStatus ∷ ∀ m. Monad m ⇒ Int → ActionT m Unit

@@ -87,7 +87,6 @@ customElements.define('ellie-ui-split-pane-group', class extends HTMLElement {
 
   connectedCallback() {
     this.children[1].addEventListener('mousedown', this.onDividerMouseDown)
-    this._ratio = this._defaultRatio
     this.reflow()
   }
 

@@ -1,8 +1,8 @@
 module Ellie.Api where
 
 import Prelude
-
 import Control.Monad.Trans.Class (lift)
+import Data.Either (Either(..))
 import Data.Entity (Entity)
 import Data.Entity as Entity
 import Data.Foreign (toForeign) as Foreign
@@ -11,8 +11,8 @@ import Data.Foreign.Generic (encodeJSON) as Foreign
 import Data.Maybe (Maybe(..))
 import Data.Maybe as Maybe
 import Data.String (Pattern(..), Replacement(..))
-import Data.String as String
-import Data.TemplateString.Unsafe as String
+import Data.String (replace) as String
+import Data.TemplateString.Unsafe (template) as String
 import Data.Url as Url
 import Ellie.Domain.Assets (class Assets)
 import Ellie.Domain.Assets as Assets
@@ -22,13 +22,13 @@ import Ellie.Domain.Search (class Search)
 import Ellie.Domain.Search as Search
 import Ellie.Domain.UserRepo (class UserRepo)
 import Ellie.Domain.UserRepo as UserRepo
-import Ellie.Types.Revision (Revision)
 import Ellie.Types.Revision as Revision
 import Ellie.Types.TermsVersion as TermsVersion
-import Ellie.Types.User (User)
+import Ellie.Types.User (User(..))
 import Ellie.Types.User as User
 import Server.Action (ActionT)
 import Server.Action as Action
+import System.Jwt (Jwt(..))
 
 
 getRevision ∷ ∀ m. Monad m ⇒ RevisionRepo m ⇒ ActionT m Unit
@@ -93,6 +93,35 @@ me = do
   Action.setStringBody
     $ Foreign.encodeJSON
     $ Foreign.toForeign { token: Foreign.encode token, user: Foreign.encode user }
+
+
+saveSettings ∷ ∀ m. Monad m ⇒ UserRepo m ⇒ ActionT m Unit
+saveSettings = do
+  maybeUser ← authorize
+  case maybeUser of
+    Nothing → Action.setStatus 401
+    Just entity → do
+      let userId = Entity.key entity
+      let (User user) = Entity.record entity
+      eitherSettings ← Action.getBody
+      case eitherSettings of
+        Left errors → Action.setStatus 400
+        Right settings → do
+          let newUser = User $ user { settings = settings }
+          lift $ UserRepo.save userId newUser
+          Action.setStatus 204
+  where
+    authorize ∷ ActionT m (Maybe (Entity User.Id User))
+    authorize = do
+      maybeToken ← Action.getHeader "Authorization"
+      case maybeToken of
+        Nothing → pure Nothing
+        Just tokenHeader → do
+          let token = String.replace (Pattern "Bearer") (Replacement "") tokenHeader
+          maybeUserId ← lift $ UserRepo.verify (Jwt token)
+          case maybeUserId of
+            Nothing → pure Nothing
+            Just userId → lift $ UserRepo.retrieve userId
 
 
 newUi ∷ ∀ m. Monad m ⇒ Assets m ⇒ UserRepo m ⇒ ActionT m Unit

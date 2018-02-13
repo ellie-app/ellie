@@ -82,24 +82,22 @@ view model =
 
 viewWorkspace : WorkingState.Model -> Html WorkingState.Msg
 viewWorkspace model =
-    Html.div []
-        [ SplitPane.view
-            { direction = SplitPane.Horizontal
-            , ratio = model.workbenchRatio
-            , onResize = WorkingState.WorkbenchResized
-            , first =
-                EditorsView.view
-                    { elmCode = model.elmCode
-                    , onElmChange = WorkingState.ElmCodeChanged
-                    , htmlCode = model.htmlCode
-                    , onHtmlChange = WorkingState.HtmlCodeChanged
-                    , ratio = model.editorsRatio
-                    , onResize = WorkingState.EditorsResized
-                    }
-            , second =
-                Html.div [] []
-            }
-        ]
+    SplitPane.view
+        { direction = SplitPane.Horizontal
+        , ratio = model.workbenchRatio
+        , onResize = WorkingState.WorkbenchResized
+        , first =
+            EditorsView.view
+                { elmCode = model.elmCode
+                , onElmChange = WorkingState.ElmCodeChanged
+                , htmlCode = model.htmlCode
+                , onHtmlChange = WorkingState.HtmlCodeChanged
+                , ratio = model.editorsRatio
+                , onResize = WorkingState.EditorsResized
+                }
+        , second =
+            Html.div [] []
+        }
 
 
 viewStyles model =
