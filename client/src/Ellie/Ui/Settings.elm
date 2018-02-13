@@ -5,42 +5,82 @@ import Css exposing (..)
 import Css.Foreign
 import Ellie.Ui.Icon as Icon
 import Ellie.Ui.Theme as Theme
-import Html.Styled as Html exposing (Attribute, Html, button, div, node, text)
-import Html.Styled.Attributes as Attributes exposing (css)
+import Html.Styled as Html exposing (Attribute, Html, a, button, div, node, text)
+import Html.Styled.Attributes as Attributes exposing (css, href)
 import Html.Styled.Events as Events
 import Json.Decode as Decode
 import Json.Encode as Encode
 
 
-type alias Action msg =
-    { label : String
-    , onClick : msg
-    }
+type Action msg
+    = Button String msg
+    | Link String String
+
+
+button : String -> msg -> Action msg
+button =
+    Button
+
+
+link : String -> String -> Action msg
+link =
+    Link
 
 
 viewAction : Action msg -> Html msg
-viewAction { label, onClick } =
-    button
-        [ css
-            [ color (hex "#000")
-            , fontFamilies [ "-apple-system", "BlinkMacSystemFont", "Segoe UI", "Roboto", "Helvetica", "Arial", "sans-serif" ]
-            , outline zero
-            , property "background" "none"
-            , border zero
-            , fontSize (px 14)
-            , lineHeight (px 16)
-            , padding4 (px 1.5) (px 34) (px 1.5) (px 20)
-            , display block
-            , cursor pointer
-            , property "user-select" "none"
-            , hover
-                [ backgroundColor (hex "#727378")
-                , color (hex "#fff")
+viewAction action =
+    case action of
+        Button label onClick ->
+            Html.button
+                [ css
+                    [ color (hex "#000")
+                    , fontFamilies [ "-apple-system", "BlinkMacSystemFont", "Segoe UI", "Roboto", "Helvetica", "Arial", "sans-serif" ]
+                    , outline zero
+                    , property "background" "none"
+                    , border zero
+                    , fontSize (px 14)
+                    , lineHeight (px 16)
+                    , padding4 (px 1.5) (px 34) (px 1.5) (px 20)
+                    , display block
+                    , cursor pointer
+                    , property "user-select" "none"
+                    , width (pct 100)
+                    , textAlign left
+                    , hover
+                        [ backgroundColor (hex "#727378")
+                        , color (hex "#fff")
+                        ]
+                    ]
+                , Events.onClick onClick
                 ]
-            ]
-        , Events.onClick onClick
-        ]
-        [ text label ]
+                [ text label ]
+
+        Link label url ->
+            a
+                [ css
+                    [ color (hex "#000")
+                    , fontFamilies [ "-apple-system", "BlinkMacSystemFont", "Segoe UI", "Roboto", "Helvetica", "Arial", "sans-serif" ]
+                    , outline zero
+                    , property "background" "none"
+                    , border zero
+                    , fontSize (px 14)
+                    , lineHeight (px 16)
+                    , padding4 (px 1.5) (px 34) (px 1.5) (px 20)
+                    , display block
+                    , cursor pointer
+                    , property "user-select" "none"
+                    , whiteSpace noWrap
+                    , textDecoration none
+                    , width (pct 100)
+                    , hover
+                        [ backgroundColor (hex "#727378")
+                        , color (hex "#fff")
+                        ]
+                    ]
+                , Attributes.href url
+                , Attributes.target "_blank"
+                ]
+                [ text label ]
 
 
 view : List (Action msg) -> Html msg

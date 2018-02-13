@@ -118,10 +118,11 @@ viewInstalledPackages onUninstall packages =
 
 
 viewInstalledPackage : (Package -> msg) -> Package -> Html msg
-viewInstalledPackage onUninstall package =
+viewInstalledPackage onUninstall (( name, version ) as package) =
     viewPackage package <|
         Settings.view
-            [ { label = "Uninstall", onClick = onUninstall package }
+            [ Settings.button "Uninstall" (onUninstall package)
+            , Settings.link "View Docs" ("http://package.elm-lang.org/packages/" ++ name.user ++ "/" ++ name.project ++ "/" ++ Version.toString version)
             ]
 
 

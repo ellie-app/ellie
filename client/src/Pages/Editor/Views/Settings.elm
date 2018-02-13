@@ -47,7 +47,6 @@ view config =
             , viewVimMode config
             , viewFontFamily config
             , viewFontSize config
-            , viewTheme config
             ]
         ]
 
@@ -134,38 +133,6 @@ viewFontSize { settings, onSettingsChange } =
         ]
 
 
-viewTheme : Config msg -> Html msg
-viewTheme { settings, onSettingsChange } =
-    Html.div [ settingContainerStyles ]
-        [ Html.div [ settingHeaderStyles ] [ Html.text "Color Theme" ]
-        , Html.div [ settingDescriptionStyles ] [ Html.text "Choose a dark or light theme for Ellie" ]
-        , Html.div [ settingControlStyles ]
-            [ Switch.view
-                { id = "settings-theme"
-                , onLabel = "Light"
-                , offLabel = "Dark"
-                , on =
-                    case settings.theme of
-                        Settings.Dark ->
-                            False
-
-                        Settings.Light ->
-                            True
-                , onChange =
-                    \on ->
-                        onSettingsChange
-                            { settings
-                                | theme =
-                                    if on then
-                                        Settings.Light
-                                    else
-                                        Settings.Dark
-                            }
-                }
-            ]
-        ]
-
-
 
 -- STYLES
 
@@ -177,6 +144,7 @@ settingContainerStyles =
         , padding (px 16)
         , marginBottom (px 8)
         , overflow hidden
+        , property "user-select" "none"
         ]
 
 

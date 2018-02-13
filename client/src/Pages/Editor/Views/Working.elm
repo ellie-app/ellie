@@ -104,13 +104,7 @@ viewWorkspace model =
 
 viewStyles model =
     Css.Foreign.global
-        [ case model.user.settings.theme of
-            Settings.Light ->
-                Theme.lightStyles
-
-            Settings.Dark ->
-                Theme.darkStyles
-        , Css.Foreign.selector ":root"
+        [ Css.Foreign.selector ":root"
             [ property "--editor-font-size" model.user.settings.fontSize
             , property "--editor-font-family" model.user.settings.fontFamily
             ]

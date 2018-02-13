@@ -26,7 +26,7 @@ customElements.define('ellie-ui-settings-container', class extends HTMLElement {
   _onDocumentClick(event) {
     if (!this._isOpen) return
     if (this.contains(event.target)) {
-      if (event.target.tagName === 'BUTTON') this._close()
+      if (event.target.tagName === 'BUTTON' || event.target.tagName === 'A') this._close()
       return
     }
     this._close()
