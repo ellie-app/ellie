@@ -110,7 +110,7 @@ subscriptions state =
             Inbound.map SetupMsg <| Setup.subscriptions setupState
 
         Working workingState ->
-            Working.subscriptions workingState
+            Inbound.map WorkingMsg <| Working.subscriptions workingState
 
         _ ->
             Inbound.none

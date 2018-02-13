@@ -6,10 +6,12 @@ import Css.Foreign
 import Ellie.Ui.Icon as Icon
 import Ellie.Ui.Theme as Theme
 import Extra.Html as Html
+import Extra.Html.Attributes as Attributes
 import Extra.Maybe as Maybe
 import Html.Styled exposing (Attribute, Html, button, div, input)
 import Html.Styled.Attributes exposing (attribute, css, placeholder, type_, value)
-import Html.Styled.Events exposing (onClick, onInput)
+import Html.Styled.Events as Events exposing (onClick, onInput)
+import Json.Decode as Decode
 
 
 type alias Config msg =
@@ -21,6 +23,21 @@ type alias Config msg =
     }
 
 
+clearOnEscape : (String -> msg) -> Attribute msg
+clearOnEscape onChange =
+    Events.onWithOptions "keydown"
+        { preventDefault = True, stopPropagation = True }
+        (Events.keyCode
+            |> Decode.andThen
+                (\keycode ->
+                    if keycode == 27 then
+                        Decode.succeed <| onChange ""
+                    else
+                        Decode.fail ""
+                )
+        )
+
+
 view : Config msg -> Html msg
 view config =
     div
@@ -30,6 +47,10 @@ view config =
             , placeholder config.placeholder
             , value config.value
             , onInput config.onChange
+            , if config.clearable then
+                clearOnEscape config.onChange
+              else
+                Attributes.none
             , inputStyles
                 (Maybe.isJust config.icon)
                 (config.value /= "" && config.clearable)

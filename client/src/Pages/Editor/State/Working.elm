@@ -43,8 +43,8 @@ init token user revision defaultPackages =
       , animating = True
       , user = user
       , workbenchRatio = 0.5
-      , actionsRatio = 0.2
-      , editorsRatio = 0.7
+      , actionsRatio = 0.25
+      , editorsRatio = 0.75
       }
     , Outbound.Delay 1000 AnimationFinished
     )
@@ -108,12 +108,24 @@ type Msg
     | ActionsResized Float
     | EditorsResized Float
     | ChangedProjectName String
+    | PackageInstalled Package
+    | PackageUninstalled Package
     | NoOp
 
 
 update : Msg -> Model -> ( Model, Outbound Msg )
 update msg ({ user } as model) =
     case msg of
+        PackageInstalled package ->
+            ( { model | packages = model.packages ++ [ package ] }
+            , Outbound.none
+            )
+
+        PackageUninstalled package ->
+            ( { model | packages = List.filter ((/=) package) model.packages }
+            , Outbound.none
+            )
+
         ChangedProjectName projectName ->
             ( { model | projectName = projectName }
             , Outbound.none
@@ -242,6 +254,9 @@ update msg ({ user } as model) =
                             )
 
 
-subscriptions : Model -> Inbound msg
+subscriptions : Model -> Inbound Msg
 subscriptions model =
-    Inbound.KeepWorkspaceOpen model.token
+    Inbound.batch
+        [ Inbound.KeepWorkspaceOpen model.token
+        , Inbound.map ActionsMsg <| Actions.subscriptions model.actions
+        ]

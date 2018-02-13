@@ -54,14 +54,15 @@ view model =
                         , first =
                             case model.actions of
                                 ActionsState.Packages packagesModel ->
-                                    Html.map WorkingState.ActionsMsg <|
-                                        PackagesView.view
-                                            { query = packagesModel.query
-                                            , onSearch = ActionsState.UserTypedInPackageSearch
-                                            , installedPackages = model.packages
-                                            , searchedPackages = packagesModel.searchedPackages
-                                            , isLoading = packagesModel.awaitingSearch
-                                            }
+                                    PackagesView.view
+                                        { query = packagesModel.query
+                                        , onSearch = WorkingState.ActionsMsg << ActionsState.UserTypedInPackageSearch
+                                        , installedPackages = model.packages
+                                        , searchedPackages = packagesModel.searchedPackages
+                                        , isLoading = packagesModel.awaitingSearch
+                                        , onUninstall = WorkingState.PackageUninstalled
+                                        , onInstall = WorkingState.PackageInstalled
+                                        }
 
                                 ActionsState.Settings ->
                                     SettingsView.view

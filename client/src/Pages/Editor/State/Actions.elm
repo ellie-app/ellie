@@ -1,6 +1,7 @@
 module Pages.Editor.State.Actions exposing (..)
 
 import Elm.Package.Searchable as Searchable exposing (Searchable)
+import Pages.Editor.Effects.Inbound as Inbound exposing (Inbound)
 import Pages.Editor.Effects.Outbound as Outbound exposing (Outbound)
 
 
@@ -59,3 +60,8 @@ update msg model =
 
         _ ->
             ( model, Outbound.none )
+
+
+subscriptions : Model -> Inbound Msg
+subscriptions model =
+    Inbound.none

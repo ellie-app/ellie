@@ -15,6 +15,7 @@ import Elm.Package as Package exposing (Package)
 import Extra.Result as Result
 import Json.Decode as Decode exposing (Decoder)
 import Json.Encode as Encode exposing (Value)
+import Keyboard
 import Pages.Editor.Effects.Error exposing (Error)
 import Pages.Editor.Effects.State exposing (Msg(..), State)
 import WebSocket
@@ -27,12 +28,22 @@ type Inbound msg
     | KeepWorkspaceOpen Jwt
     | LogReceived (Log -> msg)
     | Batch (List (Inbound msg))
+    | EscapePressed msg
     | None
 
 
 listen : (Error -> msg) -> Inbound msg -> Sub (Msg msg)
 listen onError inbound =
-    case Debug.log "Inbound Effect" inbound of
+    case inbound of
+        EscapePressed next ->
+            Keyboard.ups
+                (\keycode ->
+                    if keycode == 27 then
+                        UserMsg next
+                    else
+                        NoOp
+                )
+
         LogReceived callback ->
             pagesEditorEffectsInbound <|
                 \{ tag, data } ->
@@ -149,6 +160,9 @@ wrapSubs onError userSub ( model, state ) =
 map : (a -> b) -> Inbound a -> Inbound b
 map f inbound =
     case inbound of
+        EscapePressed next ->
+            EscapePressed (f next)
+
         LogReceived callback ->
             LogReceived (callback >> f)
 

@@ -1,6 +1,7 @@
 import 'es6-promise/auto'
 import './Main.css'
 import '../../Ellie/Ui/SplitPane'
+import '../../Ellie/Ui/Settings'
 import fixHtml from './fixHtml'
 import CodeEditor from '../../Ellie/Ui/CodeEditor'
 import IconLoader from '../../Ellie/Ui/Icon'

@@ -2,7 +2,9 @@ module Pages.Editor.Views.Packages exposing (..)
 
 import Colors
 import Css exposing (..)
+import Ellie.Ui.Button as Button
 import Ellie.Ui.Icon as Icon
+import Ellie.Ui.Settings as Settings
 import Ellie.Ui.SplitPane as SplitPane
 import Ellie.Ui.TextInput as TextInput
 import Elm.Package as Package exposing (Package)
@@ -20,6 +22,8 @@ type alias Config msg =
     , installedPackages : List Package
     , searchedPackages : Maybe (List Searchable)
     , isLoading : Bool
+    , onUninstall : Package -> msg
+    , onInstall : Package -> msg
     }
 
 
@@ -35,8 +39,13 @@ view config =
         [ viewHeader
         , viewSearchInput config.isLoading config.query config.onSearch
         , config.searchedPackages
-            |> Maybe.map viewSearchedPackages
-            |> Maybe.withDefaultLazy (\() -> viewInstalledPackages config.installedPackages)
+            |> Maybe.map (viewSearchedPackages config.onInstall config.onUninstall config.installedPackages)
+            |> Maybe.withDefaultLazy
+                (\() ->
+                    viewInstalledPackages
+                        config.onUninstall
+                        config.installedPackages
+                )
         ]
 
 
@@ -78,9 +87,9 @@ viewSearchInput isLoading value onSearch =
         ]
 
 
-viewSearchedPackages : List Searchable -> Html msg
-viewSearchedPackages packages =
-    List.map (.package >> viewPackage) packages
+viewSearchedPackages : (Package -> msg) -> (Package -> msg) -> List Package -> List Searchable -> Html msg
+viewSearchedPackages onInstall onUninstall installed packages =
+    List.map (.package >> viewSearchedPackage onInstall onUninstall installed) packages
         |> Html.div
             [ css
                 [ height (pct 100)
@@ -89,8 +98,8 @@ viewSearchedPackages packages =
             ]
 
 
-viewInstalledPackages : List Package -> Html msg
-viewInstalledPackages packages =
+viewInstalledPackages : (Package -> msg) -> List Package -> Html msg
+viewInstalledPackages onUninstall packages =
     Html.div
         []
         [ Html.div
@@ -104,12 +113,37 @@ viewInstalledPackages packages =
                 ]
             ]
             [ Html.text "Installed" ]
-        , Html.div [] <| List.map viewPackage packages
+        , Html.div [] <| List.map (viewInstalledPackage onUninstall) packages
         ]
 
 
-viewPackage : Package -> Html msg
-viewPackage ( name, version ) =
+viewInstalledPackage : (Package -> msg) -> Package -> Html msg
+viewInstalledPackage onUninstall package =
+    viewPackage package <|
+        Settings.view
+            [ { label = "Uninstall", onClick = onUninstall package }
+            ]
+
+
+viewSearchedPackage : (Package -> msg) -> (Package -> msg) -> List Package -> Package -> Html msg
+viewSearchedPackage onInstall onUninstall installed package =
+    if List.member package installed then
+        viewInstalledPackage onUninstall package
+    else
+        viewPackage package <|
+            Button.view
+                { size = Button.Medium
+                , style = Button.Primary
+                , icon = Nothing
+                , label = "Install"
+                , disabled = False
+                , action = Button.click <| onInstall package
+                , attributes = []
+                }
+
+
+viewPackage : Package -> Html msg -> Html msg
+viewPackage ( name, version ) action =
     Html.div
         [ css
             [ displayFlex
@@ -140,7 +174,8 @@ viewPackage ( name, version ) =
                 , alignSelf flexStart
                 ]
             ]
-            []
+            [ action
+            ]
         ]
 
 
