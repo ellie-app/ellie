@@ -1,6 +1,7 @@
 module Ellie.Api where
 
 import Prelude
+
 import Control.Monad.Trans.Class (lift)
 import Data.Either (Either(..))
 import Data.Entity (Entity)
@@ -11,7 +12,7 @@ import Data.Foreign.Generic (encodeJSON) as Foreign
 import Data.Maybe (Maybe(..))
 import Data.Maybe as Maybe
 import Data.String (Pattern(..), Replacement(..))
-import Data.String (replace) as String
+import Data.String (replace, stripPrefix) as String
 import Data.TemplateString.Unsafe (template) as String
 import Data.Url as Url
 import Ellie.Domain.Assets (class Assets)
@@ -113,11 +114,11 @@ saveSettings = do
   where
     authorize ∷ ActionT m (Maybe (Entity User.Id User))
     authorize = do
-      maybeToken ← Action.getHeader "Authorization"
+      maybeTokenHeader ← Action.getHeader "Authorization"
+      let maybeToken = maybeTokenHeader >>= String.stripPrefix (Pattern "Bearer ")
       case maybeToken of
         Nothing → pure Nothing
-        Just tokenHeader → do
-          let token = String.replace (Pattern "Bearer") (Replacement "") tokenHeader
+        Just token → do
           maybeUserId ← lift $ UserRepo.verify (Jwt token)
           case maybeUserId of
             Nothing → pure Nothing

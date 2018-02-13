@@ -141,7 +141,7 @@ update msg ({ user } as model) =
 
         SettingsChanged settings ->
             ( { model | user = { user | settings = settings } }
-            , Outbound.none
+            , Outbound.SaveSettings model.token settings
             )
 
         AnimationFinished ->

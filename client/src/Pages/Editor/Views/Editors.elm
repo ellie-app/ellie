@@ -14,11 +14,12 @@ type alias Config msg =
     , onHtmlChange : String -> msg
     , ratio : Float
     , onResize : Float -> msg
+    , vimMode : Bool
     }
 
 
 view : Config msg -> Html msg
-view { onElmChange, elmCode, onHtmlChange, htmlCode, ratio, onResize } =
+view { onElmChange, elmCode, onHtmlChange, htmlCode, ratio, onResize, vimMode } =
     Html.node "ellie-editors"
         [ css [ display block ] ]
         [ SplitPane.view
@@ -31,6 +32,7 @@ view { onElmChange, elmCode, onHtmlChange, htmlCode, ratio, onResize } =
                     , CodeEditor.onChange onElmChange
                     , CodeEditor.mode "elm"
                     , CodeEditor.tabSize 4
+                    , CodeEditor.vim vimMode
                     ]
             , second =
                 CodeEditor.view
@@ -38,6 +40,7 @@ view { onElmChange, elmCode, onHtmlChange, htmlCode, ratio, onResize } =
                     , CodeEditor.onChange onHtmlChange
                     , CodeEditor.mode "htmlmixed"
                     , CodeEditor.tabSize 2
+                    , CodeEditor.vim vimMode
                     ]
             }
         ]

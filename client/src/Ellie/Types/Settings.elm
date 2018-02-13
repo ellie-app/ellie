@@ -2,6 +2,7 @@ module Ellie.Types.Settings exposing (..)
 
 import Json.Decode as Decode exposing (Decoder)
 import Json.Decode.Pipeline as Decode
+import Json.Encode as Encode exposing (Value)
 
 
 type Theme
@@ -41,3 +42,23 @@ decoder =
         |> Decode.required "fontFamily" Decode.string
         |> Decode.required "theme" themeDecoder
         |> Decode.required "vimMode" Decode.bool
+
+
+themeEncoder : Theme -> Value
+themeEncoder theme =
+    case theme of
+        Dark ->
+            Encode.string "Dark"
+
+        Light ->
+            Encode.string "Light"
+
+
+encoder : Settings -> Value
+encoder settings =
+    Encode.object
+        [ ( "fontSize", Encode.string settings.fontSize )
+        , ( "fontFamily", Encode.string settings.fontFamily )
+        , ( "vimMode", Encode.bool settings.vimMode )
+        , ( "theme", themeEncoder settings.theme )
+        ]

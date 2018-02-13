@@ -34,6 +34,7 @@ import Data.Int as Int
 import Data.Maybe (Maybe(..))
 import Data.Maybe as Maybe
 import Data.Newtype (class Newtype, unwrap)
+import Data.String as String
 import Data.StrMap (StrMap)
 import Data.StrMap as StrMap
 import Data.Url (Url)
@@ -133,7 +134,7 @@ makeHandler runner (ActionT action) = do
   for_ response.headers \{ key, value } →
     Response.setResponseHeader key value
   case response.content of
-    ContentEmpty -> pure unit
+    ContentEmpty -> Response.end
     ContentString str -> Response.send str  
 
 
@@ -150,7 +151,7 @@ instance isParamInt ∷ IsParam Int where
 getHeader ∷ ∀ m. Monad m ⇒ String → ActionT m (Maybe String)
 getHeader key =
   ActionT $ Reader.asks \request →
-    StrMap.lookup key request.headers
+    StrMap.lookup (String.toLower key) request.headers
 
 
 getParam ∷ ∀ m a. IsParam a ⇒ Monad m ⇒ String → ActionT m (Maybe a)

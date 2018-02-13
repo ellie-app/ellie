@@ -14,13 +14,14 @@ import Data.Jwt as Jwt exposing (Jwt)
 import Debounce
 import Ellie.Constants as Constants
 import Ellie.Types.Revision as Revision exposing (Revision)
+import Ellie.Types.Settings as Settings exposing (Settings)
 import Ellie.Types.User as User exposing (User)
-import Elm.Package as Package exposing (Package)
 import Elm.Package.Searchable as Searchable exposing (Searchable)
 import Extra.Result as Result
 import Extra.String as String
 import Http
-import HttpBuilder exposing (get, post, withCredentials, withExpect, withHeader, withQueryParams, withStringBody)
+import Http.Extra as Http
+import HttpBuilder exposing (get, post, withCredentials, withExpect, withHeader, withJsonBody, withQueryParams, withStringBody)
 import Json.Decode as Decode exposing (Decoder)
 import Json.Encode as Encode exposing (Value)
 import Navigation
@@ -34,6 +35,7 @@ import WebSocket
 type Outbound msg
     = GetRevision Revision.Id (Entity Revision.Id Revision -> msg)
     | GetUser (Maybe Jwt) (Jwt -> Entity User.Id User -> msg)
+    | SaveSettings Jwt Settings
     | SaveToken Jwt
     | FormatElmCode String (String -> msg)
     | CompileElmCode Jwt String
@@ -52,6 +54,23 @@ type Outbound msg
 send : (Error -> msg) -> Outbound msg -> State msg -> ( State msg, Cmd (Msg msg) )
 send onError effect state =
     case effect of
+        SaveSettings token settings ->
+            state.saveSettingsId
+                |> Maybe.map Process.kill
+                |> Maybe.withDefault (Task.succeed ())
+                |> Task.andThen
+                    (\_ ->
+                        post "/private-api/me/settings"
+                            |> withHeader "Authorization" ("Bearer " ++ Jwt.toString token)
+                            |> withExpect Http.expectNoContent
+                            |> withJsonBody (Settings.encoder settings)
+                            |> HttpBuilder.toTask
+                            |> Process.spawn
+                    )
+                |> Task.perform SaveSettingsSpawned
+                |> (\cmd -> Debounce.push debounceSaveSettingsConfig cmd state.debounceSaveSettings)
+                |> Tuple.mapFirst (\d -> { state | debounceSaveSettings = d })
+
         Delay time callback ->
             ( state
             , Process.sleep time
@@ -70,7 +89,7 @@ send onError effect state =
                 |> withExpect (Http.expectJson (Decode.list Searchable.decoder))
                 |> HttpBuilder.send (Result.mapError Error.fromHttp >> Result.fold callback onError)
                 |> Cmd.map UserMsg
-                |> (\cmd -> Debounce.push debounceConfig cmd state.debouncePackageSearch)
+                |> (\cmd -> Debounce.push debouncePackageSearchConfig cmd state.debouncePackageSearch)
                 |> Tuple.mapFirst (\d -> { state | debouncePackageSearch = d })
 
         GetRevision id callback ->
@@ -217,10 +236,17 @@ wrapInit onError userInit flags route =
     ( ( model, state ), cmd )
 
 
-debounceConfig : Debounce.Config (Msg msg)
-debounceConfig =
+debouncePackageSearchConfig : Debounce.Config (Msg msg)
+debouncePackageSearchConfig =
     { strategy = Debounce.later 1000
     , transform = DebouncePackageSearch
+    }
+
+
+debounceSaveSettingsConfig : Debounce.Config (Msg msg)
+debounceSaveSettingsConfig =
+    { strategy = Debounce.later 1000
+    , transform = DebounceSaveSettings
     }
 
 
@@ -246,12 +272,30 @@ wrapUpdate onError userUpdate msg (( model, state ) as appState) =
             let
                 ( debounce, cmd ) =
                     Debounce.update
-                        debounceConfig
+                        debouncePackageSearchConfig
                         (Debounce.takeLast identity)
                         msg
                         state.debouncePackageSearch
             in
             ( ( model, { state | debouncePackageSearch = debounce } )
+            , cmd
+            )
+
+        SaveSettingsSpawned pid ->
+            ( ( model, { state | saveSettingsId = Just pid } )
+            , Cmd.none
+            )
+
+        DebounceSaveSettings msg ->
+            let
+                ( debounce, cmd ) =
+                    Debounce.update
+                        debounceSaveSettingsConfig
+                        (Debounce.takeLast identity)
+                        msg
+                        state.debounceSaveSettings
+            in
+            ( ( model, { state | debounceSaveSettings = debounce } )
             , cmd
             )
 
@@ -262,6 +306,9 @@ wrapUpdate onError userUpdate msg (( model, state ) as appState) =
 map : (a -> b) -> Outbound a -> Outbound b
 map f outbound =
     case outbound of
+        SaveSettings token settings ->
+            SaveSettings token settings
+
         Delay time msg ->
             Delay time (f msg)
 

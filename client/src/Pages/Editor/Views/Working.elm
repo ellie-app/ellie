@@ -94,6 +94,7 @@ viewWorkspace model =
                 , onHtmlChange = WorkingState.HtmlCodeChanged
                 , ratio = model.editorsRatio
                 , onResize = WorkingState.EditorsResized
+                , vimMode = model.user.settings.vimMode
                 }
         , second =
             Html.div [] []
