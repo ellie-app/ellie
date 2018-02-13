@@ -73,6 +73,8 @@ customElements.define('ellie-ui-split-pane-group', class extends HTMLElement {
 
   onDocumentMouseUp() {
     this.style.cursor = null
+    this.style.userSelect = null
+    this.children[0].style.pointerEvents = this.children[2].style.pointerEvents = null
     this._dragging = false
     document.removeEventListener('mousemove', this.onDocumentMouseMove)
     document.removeEventListener('mouseup', this.onDocumentMouseUp)
@@ -80,6 +82,8 @@ customElements.define('ellie-ui-split-pane-group', class extends HTMLElement {
 
   onDividerMouseDown() {
     this.style.cursor = this._isVertical ? 'ns-resize' : 'ew-resize'
+    this.style.userSelect = 'none'
+    this.children[0].style.pointerEvents = this.children[2].style.pointerEvents = 'none'
     this._dragging = true
     document.addEventListener('mousemove', this.onDocumentMouseMove)
     document.addEventListener('mouseup', this.onDocumentMouseUp)
