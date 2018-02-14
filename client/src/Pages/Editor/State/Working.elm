@@ -43,7 +43,7 @@ init token user revision defaultPackages =
       , animating = True
       , user = user
       , workbenchRatio = 0.5
-      , actionsRatio = 0.25
+      , actionsRatio = 0.1
       , editorsRatio = 0.75
       }
     , Outbound.Delay 1000 AnimationFinished
@@ -110,12 +110,33 @@ type Msg
     | ChangedProjectName String
     | PackageInstalled Package
     | PackageUninstalled Package
+    | FormatRequested
+    | FormatCompleted String
+    | CollapseHtml
     | NoOp
 
 
 update : Msg -> Model -> ( Model, Outbound Msg )
 update msg ({ user } as model) =
     case msg of
+        FormatRequested ->
+            ( model
+            , Outbound.FormatElmCode model.elmCode FormatCompleted
+            )
+
+        FormatCompleted code ->
+            ( { model | elmCode = code }
+            , Outbound.none
+            )
+
+        CollapseHtml ->
+            ( if model.editorsRatio == 1 then
+                { model | editorsRatio = 0.75 }
+              else
+                { model | editorsRatio = 1 }
+            , Outbound.none
+            )
+
         PackageInstalled package ->
             ( { model | packages = model.packages ++ [ package ] }
             , Outbound.none

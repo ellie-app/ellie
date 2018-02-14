@@ -2,13 +2,16 @@ module Ellie.Api where
 
 import Prelude
 
+import Control.Monad.Except (runExcept) as Except
 import Control.Monad.Trans.Class (lift)
 import Data.Either (Either(..))
 import Data.Entity (Entity)
 import Data.Entity as Entity
+import Data.Foreign (Foreign, MultipleErrors)
 import Data.Foreign (toForeign) as Foreign
-import Data.Foreign.Class (encode) as Foreign
+import Data.Foreign.Class (decode, encode) as Foreign
 import Data.Foreign.Generic (encodeJSON) as Foreign
+import Data.Foreign.Index ((!))
 import Data.Maybe (Maybe(..))
 import Data.Maybe as Maybe
 import Data.String (Pattern(..), Replacement(..))
@@ -17,6 +20,8 @@ import Data.TemplateString.Unsafe (template) as String
 import Data.Url as Url
 import Ellie.Domain.Assets (class Assets)
 import Ellie.Domain.Assets as Assets
+import Ellie.Domain.Platform (class Platform)
+import Ellie.Domain.Platform as Platform
 import Ellie.Domain.RevisionRepo (class RevisionRepo)
 import Ellie.Domain.RevisionRepo as RevisionRepo
 import Ellie.Domain.Search (class Search)
@@ -30,6 +35,7 @@ import Ellie.Types.User as User
 import Server.Action (ActionT)
 import Server.Action as Action
 import System.Jwt (Jwt(..))
+import Debug as Debug
 
 
 getRevision ∷ ∀ m. Monad m ⇒ RevisionRepo m ⇒ ActionT m Unit
@@ -49,9 +55,9 @@ getRevision = do
         Just entity → do
           Action.setStatus 200
           Action.setStringBody $ Foreign.encodeJSON entity
-        Nothing ->
+        Nothing →
           Action.setStatus 404
-    Nothing ->
+    Nothing →
       Action.setStatus 400
 
 
@@ -86,7 +92,7 @@ me = do
       Just entity → do
         token ← lift $ UserRepo.sign (Entity.key entity)
         pure { token, user: entity }
-      Nothing -> do
+      Nothing → do
         entity ← lift $ UserRepo.create
         token ← lift $ UserRepo.sign (Entity.key entity)
         pure { token, user: entity }
@@ -123,6 +129,26 @@ saveSettings = do
           case maybeUserId of
             Nothing → pure Nothing
             Just userId → lift $ UserRepo.retrieve userId
+
+
+formatCode ∷ ∀ m. Monad m ⇒ Platform m ⇒ ActionT m Unit
+formatCode = do
+  (rawBody ∷ Either MultipleErrors Foreign) ← Action.getBody
+  let code = rawBody >>= \body → Except.runExcept (body ! "code" >>= Foreign.decode)
+  case code of
+    Left errors →
+      Action.setStatus 400
+    Right code → do
+      result ← lift $ Platform.format code
+      case result of
+        Left message → do
+          Action.setStatus 400
+          Action.setHeader "Content-Type" "application/json"
+          Action.setStringBody $ Foreign.encodeJSON $ Foreign.toForeign { error: message }
+        Right code → do
+          Action.setStatus 200
+          Action.setHeader "Content-Type" "application/json"
+          Action.setStringBody $ Foreign.encodeJSON $ Foreign.toForeign { code }
 
 
 newUi ∷ ∀ m. Monad m ⇒ Assets m ⇒ UserRepo m ⇒ ActionT m Unit

@@ -3,6 +3,7 @@ var spawn = require('cross-spawn');
 function runProcess(command, args, options, callback) {
   try {
     var process = spawn(command, args, options)
+    if (options.input) process.stdin.end(options.input)
     var stdout = '', stderr = ''
     process.stdout.on('data', function (data) { stdout += data })
     process.stderr.on('data', function (data) { stderr += data })
@@ -67,6 +68,23 @@ exports._compile = function _compile(inputs) {
       'elm-make',
       args,
       { cwd: root, env: process.env },
+      function (error, result) {
+        if (error) fail(error)
+        else if (result.code === 0) succeed(helpers.right(result.stdout))
+        else succeed(helpers.left(result.stderr))
+      }
+    )
+  }
+}
+
+exports._format = function _format(inputs) {
+  var code = inputs.code
+  var helpers = inputs.helpers
+  return function _formatAff(fail, succeed) {
+    runProcess(
+      'elm-format',
+      ['--stdin'],
+      { env: process.env, input: code },
       function (error, result) {
         if (error) fail(error)
         else if (result.code === 0) succeed(helpers.right(result.stdout))

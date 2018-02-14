@@ -16,6 +16,7 @@
     "bower": "^1.8.2",
     "cookie-parser": "^1.4.3",
     "elasticlunr": "^0.9.5",
+    "elm-format": "^0.6.1-alpha",
     "express": "^4.16.2",
     "jsonwebtoken": "^8.1.1",
     "mkdirp": "0.5.1",

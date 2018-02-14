@@ -57,7 +57,7 @@ newtype ProdEnv =
       )
     )
 
-derive instance newtypeProdEnv :: Newtype ProdEnv _
+derive instance newtypeProdEnv ∷ Newtype ProdEnv _
 
 
 newtype DevEnv =
@@ -67,23 +67,23 @@ newtype DevEnv =
       )
     )
 
-derive instance newtypeDevEnv :: Newtype DevEnv _
+derive instance newtypeDevEnv ∷ Newtype DevEnv _
 
 
 newtype EllieM r a =
   EllieM (ReaderT r IO a)
 
-derive instance newtypeAppM :: Newtype (EllieM r a) _
-derive newtype instance functorAppM :: Functor (EllieM r)
-derive newtype instance applyAppM :: Apply (EllieM r)
-derive newtype instance applicativeAppM :: Applicative (EllieM r)
-derive newtype instance bindAppM :: Bind (EllieM r)
-derive newtype instance monadAppM :: Monad (EllieM r)
-derive newtype instance monadIOAppM :: MonadIO (EllieM r)
-derive newtype instance monadAskAppM :: MonadAsk r (EllieM r)
-derive newtype instance monadReaderAppM :: MonadReader r (EllieM r)
-derive newtype instance monadThrowAppM :: MonadThrow Error (EllieM r)
-derive newtype instance monadErrorAppM :: MonadError Error (EllieM r)
+derive instance newtypeAppM ∷ Newtype (EllieM r a) _
+derive newtype instance functorAppM ∷ Functor (EllieM r)
+derive newtype instance applyAppM ∷ Apply (EllieM r)
+derive newtype instance applicativeAppM ∷ Applicative (EllieM r)
+derive newtype instance bindAppM ∷ Bind (EllieM r)
+derive newtype instance monadAppM ∷ Monad (EllieM r)
+derive newtype instance monadIOAppM ∷ MonadIO (EllieM r)
+derive newtype instance monadAskAppM ∷ MonadAsk r (EllieM r)
+derive newtype instance monadReaderAppM ∷ MonadReader r (EllieM r)
+derive newtype instance monadThrowAppM ∷ MonadThrow Error (EllieM r)
+derive newtype instance monadErrorAppM ∷ MonadError Error (EllieM r)
 
 instance revisionRepoEllieMProdEnv ∷ RevisionRepo (EllieM ProdEnv) where
   retrieve rid = Reader.asks unwrap >>= CloudRepo.getRevision rid
@@ -116,6 +116,7 @@ instance platformEllieM ∷ Platform (EllieM e) where
   initialize = LocalPlatform.initialize
   destroy = LocalPlatform.destroy
   compile = LocalPlatform.compile
+  format = LocalPlatform.format
 
 instance assetsEllieMProdEnv ∷ Assets (EllieM ProdEnv) where
   assetUrl relative = Reader.asks unwrap <#> CdnAssets.assetUrl relative
@@ -124,11 +125,11 @@ instance assetsEllieMDevEnv ∷ Assets (EllieM DevEnv) where
   assetUrl relative = Reader.asks unwrap <#> WebpackAssets.assetUrl relative
 
 
-runEllieM :: ∀ r a. r -> EllieM r a -> IO a
+runEllieM ∷ ∀ r a. r → EllieM r a → IO a
 runEllieM env (EllieM reader) =
   Reader.runReaderT reader env
 
 
-class (Monad m, UserRepo m, RevisionRepo m, Search m, Assets m) ⇐ Ellie m
+class (Monad m, UserRepo m, RevisionRepo m, Search m, Platform m, Assets m) ⇐ Ellie m
 instance ellieEllieMDevEnv ∷ Ellie (EllieM DevEnv)
 instance ellieEllieMProdEnv ∷ Ellie (EllieM ProdEnv)

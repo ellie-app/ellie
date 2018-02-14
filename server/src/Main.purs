@@ -44,9 +44,9 @@ routes makeHandler = do
   Express.get  "/private-api/revision/:projectId/:revisionNumber" $ makeHandler Api.getRevision
   Express.post "/private-api/workspaces"                          $ makeHandler Api.createToken
   Express.get  "/private-api/packages/search"                     $ makeHandler Api.searchPackages
+  Express.post "/private-api/format"                              $ makeHandler Api.formatCode
   Express.post "/private-api/me"                                  $ makeHandler Api.me
   Express.post "/private-api/me/settings"                         $ makeHandler Api.saveSettings
-
 
 setup ∷ IO Server
 setup = do
@@ -54,12 +54,12 @@ setup = do
   index ← Eff.liftEff $ Ref.newRef Nothing
   let jwtSecret = Secret "abc123"
   let env = DevEnv { index, jwtSecret, assetBase: "", webpackHost: "localhost:1338" }
-  server ← Eff.liftEff $ Express.listenHttp (routes (Action.makeHandler (Ellie.runEllieM env))) port (\_ -> pure unit)
+  server ← Eff.liftEff $ Express.listenHttp (routes (Action.makeHandler (Ellie.runEllieM env))) port (\_ → pure unit)
   _ ← Socket.listen server "/workspace" (Ellie.runEllieM env) BuildManager.connection
   pure server
 
 
-main :: Eff (infinity :: INFINITY) Unit
+main ∷ Eff (infinity ∷ INFINITY) Unit
 main = IO.runIOSync $ IO.launchIO $ do
-  server <- setup
+  server ← setup
   pure unit

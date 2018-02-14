@@ -19,36 +19,42 @@ type Direction
 type alias Config msg =
     { direction : Direction
     , ratio : Float
+    , originalRatio : Float
     , onResize : Float -> msg
     , first : Html msg
     , second : Html msg
+    , minSize : Int
     }
 
 
 view : Config msg -> Html msg
-view { direction, ratio, onResize, first, second } =
+view config =
     let
         attrs =
-            case direction of
+            case config.direction of
                 Vertical ->
                     [ verticalStyles
                     , Attributes.property "isVertical" <| Encode.bool True
-                    , Attributes.property "ratio" <| Encode.float ratio
-                    , Events.on "resize" <| Decode.map onResize <| Decode.at [ "target", "ratio" ] Decode.float
+                    , Attributes.property "ratio" <| Encode.float config.ratio
+                    , Attributes.property "minSize" <| Encode.int config.minSize
+                    , Attributes.property "originalRatio" <| Encode.float config.originalRatio
+                    , Events.on "resize" <| Decode.map config.onResize <| Decode.at [ "target", "ratio" ] Decode.float
                     ]
 
                 Horizontal ->
                     [ horizontalStyles
                     , Attributes.property "isVertical" <| Encode.bool False
-                    , Attributes.property "ratio" <| Encode.float ratio
-                    , Events.on "resize" <| Decode.map onResize <| Decode.at [ "target", "ratio" ] Decode.float
+                    , Attributes.property "ratio" <| Encode.float config.ratio
+                    , Attributes.property "minSize" <| Encode.int config.minSize
+                    , Attributes.property "originalRatio" <| Encode.float config.originalRatio
+                    , Events.on "resize" <| Decode.map config.onResize <| Decode.at [ "target", "ratio" ] Decode.float
                     ]
     in
     Html.node "ellie-ui-split-pane-group"
         attrs
-        [ Html.node "ellie-ui-split-pane-panel" [] [ first ]
+        [ Html.node "ellie-ui-split-pane-panel" [] [ config.first ]
         , Html.node "ellie-ui-split-pane-divider" [] []
-        , Html.node "ellie-ui-split-pane-panel" [] [ second ]
+        , Html.node "ellie-ui-split-pane-panel" [] [ config.second ]
         ]
 
 

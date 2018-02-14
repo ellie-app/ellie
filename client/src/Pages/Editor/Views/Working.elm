@@ -50,7 +50,9 @@ view model =
                     SplitPane.view
                         { direction = SplitPane.Horizontal
                         , ratio = model.actionsRatio
+                        , originalRatio = 0.1
                         , onResize = WorkingState.ActionsResized
+                        , minSize = 300
                         , first =
                             case model.actions of
                                 ActionsState.Packages packagesModel ->
@@ -86,7 +88,9 @@ viewWorkspace model =
     SplitPane.view
         { direction = SplitPane.Horizontal
         , ratio = model.workbenchRatio
+        , originalRatio = 0.5
         , onResize = WorkingState.WorkbenchResized
+        , minSize = 24
         , first =
             EditorsView.view
                 { elmCode = model.elmCode
@@ -96,6 +100,8 @@ viewWorkspace model =
                 , ratio = model.editorsRatio
                 , onResize = WorkingState.EditorsResized
                 , vimMode = model.user.settings.vimMode
+                , onFormat = WorkingState.FormatRequested
+                , onCollapse = WorkingState.CollapseHtml
                 }
         , second =
             Html.div [] []

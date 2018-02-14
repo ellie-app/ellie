@@ -2,6 +2,7 @@ module Ellie.Adapters.LocalPlatform
   ( initialize
   , destroy
   , compile
+  , format
   ) where
 
 import Prelude
@@ -37,29 +38,29 @@ import Ellie.Types.Workspace (Workspace(..))
 import System.Elm as Elm
 import System.FileSystem as FileSystem
 
-initialize :: ∀ m. MonadIO m => MonadThrow Error m ⇒ m Workspace
+initialize ∷ ∀ m. MonadIO m ⇒ MonadThrow Error m ⇒ m Workspace
 initialize = IO.liftIO do
-  root <- FileSystem.createTemporaryDirectory
+  root ← FileSystem.createTemporaryDirectory
   Eff.liftEff $ Console.log $ "Initializing workspace at location " <> root
   root
     # Elm.init
     >>= Either.either (error >>> throwError) pure
     # void
-  rawDescription <-
+  rawDescription ←
     FileSystem.read $ root </> "elm-package.json"
-  (Description description) <-
+  (Description description) ←
     rawDescription
       # Foreign.decodeJSON
       # Except.runExcept
       # Either.either (renderDecodeError >>> throwError) pure
   pure $ Workspace { location: root, packages: description.dependencies }
   where
-    renderDecodeError :: MultipleErrors -> Error
+    renderDecodeError ∷ MultipleErrors → Error
     renderDecodeError e =
       error $ "Corrupted description: " <> show e
 
 
-destroy :: ∀ m. MonadIO m => Workspace → m Unit
+destroy ∷ ∀ m. MonadIO m ⇒ Workspace → m Unit
 destroy (Workspace workspace) = IO.liftIO do
   Eff.liftEff $ Console.log $ "Destroying workspace at location " <> workspace.location
   FileSystem.remove workspace.location
@@ -107,6 +108,11 @@ compile elm html (Workspace workspace) = IO.liftIO do
         # FilePath.joinParts
         # (_ <.> "elm")
     
-    renderDecodeError :: MultipleErrors -> Error
+    renderDecodeError ∷ MultipleErrors → Error
     renderDecodeError _ =
       error "Unparseable compiler result"
+
+
+format ∷ ∀ m. MonadIO m ⇒ String → m (Either String String)
+format code =
+  IO.liftIO $ Elm.format code

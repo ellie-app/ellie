@@ -121,10 +121,10 @@ send onError effect state =
 
         FormatElmCode code callback ->
             ( state
-            , post (Constants.apiBase ++ "/format")
-                |> withHeader "Accept" "application/elm"
-                |> withExpect Http.expectString
-                |> withStringBody "application/elm" code
+            , post "/private-api/format"
+                |> withHeader "Accept" "application/json"
+                |> withJsonBody (Encode.object [ ( "code", Encode.string code ) ])
+                |> withExpect (Http.expectJson (Decode.field "code" Decode.string))
                 |> HttpBuilder.send (Result.mapError Error.fromHttp >> Result.fold callback onError)
                 |> Cmd.map UserMsg
             )
