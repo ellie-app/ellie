@@ -32,7 +32,7 @@ unattr (Attr a) =
 
 value : String -> Attribute msg
 value =
-    Encode.string >> property "value" >> Attr
+    Encode.string >> property "editorValue" >> Attr
 
 
 mode : String -> Attribute msg
@@ -62,7 +62,7 @@ linterMessages messages =
 
 onChange : (String -> msg) -> Attribute msg
 onChange tagger =
-    Attr <| on "change" (Decode.map tagger Events.targetValue)
+    Attr <| on "change" (Decode.map tagger (Decode.at [ "target", "editorValue" ] Decode.string))
 
 
 view : List (Attribute msg) -> Html msg

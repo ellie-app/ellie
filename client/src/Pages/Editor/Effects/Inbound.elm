@@ -12,6 +12,8 @@ import Ellie.Constants as Constants
 import Ellie.Types.Log as Log exposing (Log)
 import Elm.Compiler.Error as CompilerError
 import Elm.Package as Package exposing (Package)
+import Extra.Json.Decode as Decode
+import Extra.Json.Encode as Encode
 import Extra.Result as Result
 import Json.Decode as Decode exposing (Decoder)
 import Json.Encode as Encode exposing (Value)
@@ -61,23 +63,26 @@ listen onError inbound =
             WebSocket.keepAlive (Constants.workspaceUrl ++ "?token=" ++ Jwt.toString token)
 
         CompileFinished token callback ->
-            Sub.none
+            WebSocket.listen
+                (Constants.workspaceUrl ++ "?token=" ++ Jwt.toString token)
+                (\data ->
+                    data
+                        |> Decode.decodeString
+                            (Decode.genericUnion1
+                                identity
+                                "CompileSucceeded"
+                                (Decode.list CompilerError.decoder)
+                            )
+                        |> Result.fold callback onError
+                        |> UserMsg
+                )
 
-        -- WebSocket.listen
-        --     (Constants.workspaceUrl ++ "?token=" ++ Jwt.toString token)
-        --     (\data ->
-        --         data
-        --             |> Decode.decodeString (decodeEither Decode.string (Decode.list CompilerError.decoder))
-        --             |> Result.andThen identity
-        --             |> Result.fold callback (always noOp)
-        --     )
         WorkspaceAttached token callback ->
             WebSocket.listen
                 (Constants.workspaceUrl ++ "?token=" ++ Jwt.toString token)
                 (\data ->
                     data
-                        |> Debug.log "d"
-                        |> Decode.decodeString (genericUnion1 identity "WorkspaceAttached" (Decode.list Package.decoder))
+                        |> Decode.decodeString (Decode.genericUnion1 identity "WorkspaceAttached" (Decode.list Package.decoder))
                         |> Result.fold callback onError
                         |> UserMsg
                 )
@@ -100,35 +105,6 @@ listen onError inbound =
 
         None ->
             Sub.none
-
-
-genericUnion1 : (a -> b) -> String -> Decoder a -> Decoder b
-genericUnion1 constructor tag a =
-    Decode.field "tag" Decode.string
-        |> Decode.andThen
-            (\actualTag ->
-                if actualTag == tag then
-                    Decode.map constructor <| Decode.field "contents" a
-                else
-                    Decode.fail <| "Expected constructor \"" ++ tag ++ "\". Got \"" ++ actualTag ++ "\"."
-            )
-
-
-decodeEither : Decoder x -> Decoder a -> Decoder (Result x a)
-decodeEither x a =
-    Decode.field "tag" Decode.string
-        |> Decode.andThen
-            (\tag ->
-                case tag of
-                    "Left" ->
-                        x |> Decode.index 0 |> Decode.field "contents" |> Decode.map Err
-
-                    "Right" ->
-                        a |> Decode.index 0 |> Decode.field "contents" |> Decode.map Ok
-
-                    _ ->
-                        Decode.fail <| "Expecting an Either, got " ++ tag
-            )
 
 
 

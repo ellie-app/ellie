@@ -5,6 +5,8 @@ import Ellie.Ui.CodeEditor as CodeEditor
 import Ellie.Ui.Icon as Icon
 import Ellie.Ui.SplitPane as SplitPane
 import Ellie.Ui.Theme as Theme
+import Elm.Compiler.Error as Error exposing (Error)
+import Extra.Markdown as Markdown
 import Html.Styled as Html exposing (Attribute, Html, button, div, text)
 import Html.Styled.Attributes exposing (css)
 import Html.Styled.Events exposing (onClick)
@@ -20,11 +22,31 @@ type alias Config msg =
     , vimMode : Bool
     , onFormat : msg
     , onCollapse : msg
+    , elmErrors : List Error
+    }
+
+
+errorToLinterMessage : Error -> CodeEditor.LinterMessage
+errorToLinterMessage error =
+    let
+        region =
+            Maybe.withDefault error.region error.subregion
+    in
+    { from = { line = region.start.line - 1, column = region.start.column - 1 }
+    , to = { line = region.end.line - 1, column = region.end.column - 1 }
+    , message = Markdown.toString <| error.overview ++ "\n\n" ++ error.details
+    , severity =
+        case error.level of
+            "warning" ->
+                CodeEditor.Warning
+
+            _ ->
+                CodeEditor.Error
     }
 
 
 view : Config msg -> Html msg
-view { onElmChange, elmCode, onHtmlChange, htmlCode, ratio, onResize, vimMode, onFormat, onCollapse } =
+view { onElmChange, elmCode, onHtmlChange, htmlCode, ratio, onResize, vimMode, onFormat, onCollapse, elmErrors } =
     Html.node "ellie-editors"
         [ css [ display block ] ]
         [ SplitPane.view
@@ -43,6 +65,7 @@ view { onElmChange, elmCode, onHtmlChange, htmlCode, ratio, onResize, vimMode, o
                             , CodeEditor.mode "elm"
                             , CodeEditor.tabSize 4
                             , CodeEditor.vim vimMode
+                            , CodeEditor.linterMessages <| List.map errorToLinterMessage elmErrors
                             ]
                         ]
                     ]

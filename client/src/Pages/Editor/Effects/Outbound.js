@@ -6,18 +6,18 @@ const start = (app) => {
   app.ports.pagesEditorEffectsOutbound.subscribe(({ tag, contents }) => {
     switch (tag) {
       case 'SaveToken':
-        const [token] = contents
+        const token = contents
         localStorage.setItem('Pages.Editor.token', token)
         break
 
       case 'ReloadIframe':
-        const [iframeId] = contents
+        const iframeId = contents
         const iframe = document.getElementById(iframeId)
         if (iframe) iframe.src = iframe.src
         break
 
       case 'EnableNavigationCheck':
-        const [enabled] = contents
+        const enabled = contents
         if (enabled) window.addEventListener('beforeunload', preventNavigation)
         else window.removeEventListener('beforeunload', preventNavigation)
         break

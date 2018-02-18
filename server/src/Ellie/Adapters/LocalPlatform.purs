@@ -69,12 +69,18 @@ destroy (Workspace workspace) = IO.liftIO do
 
 compile ∷ ∀ m. MonadIO m ⇒ MonadThrow Error m ⇒ String → String → Workspace → m (Array Compiler.Error)
 compile elm html (Workspace workspace) = IO.liftIO do
-  let elmPath = "src" </> parseElmPath elm
+  let elmPath = parseElmPath elm
   let htmlPath = "index.html"
-  FileSystem.write elmPath elm
-  FileSystem.write htmlPath html
-  stdinOrStdout ← Elm.compile workspace.location elmPath false
-  case stdinOrStdout of
+  FileSystem.write (workspace.location </> elmPath) elm
+  FileSystem.write (workspace.location </> htmlPath) html
+  stderrOrStdout ←
+    Elm.compile
+      { root: workspace.location
+      , entry: elmPath
+      , debug: false
+      , output: "build.js"
+      }
+  case stderrOrStdout of
     Left message →
       throwError $ error message
     Right text →
@@ -82,13 +88,13 @@ compile elm html (Workspace workspace) = IO.liftIO do
         lines = String.split (Pattern "\n") text
         firstLine = Maybe.fromMaybe "" $ Array.head lines
       in
-      if String.indexOf (Pattern "Successfully generated") firstLine == Just 0 then
+      if String.contains (Pattern "Successfully generated") firstLine then
+        pure []
+      else
         firstLine
           # Foreign.decodeJSON
           # Except.runExcept
           # Either.either (renderDecodeError >>> throwError) pure
-      else
-        pure []
   where
     elmModuleRegex ∷ Regex
     elmModuleRegex =

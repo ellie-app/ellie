@@ -73,15 +73,6 @@ searchPackages = do
       Action.setStatus 400
 
 
-createToken ∷ ∀ m. Monad m ⇒ UserRepo m ⇒ ActionT m Unit
-createToken = do
-  userEntity ← lift $ UserRepo.create
-  token ← lift $ UserRepo.sign $ Entity.key userEntity
-  let response = { token: Foreign.encode token }
-  Action.setStatus 204
-  Action.setStringBody $ Foreign.encodeJSON token
-
-
 me ∷ ∀ m. Monad m ⇒ UserRepo m ⇒ ActionT m Unit
 me = do
   maybeToken ← Action.getParam "token"

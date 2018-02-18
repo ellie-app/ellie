@@ -15,3 +15,23 @@ maybeNull encoder value =
     value
         |> Maybe.map encoder
         |> Maybe.withDefault Encode.null
+
+
+genericUnion : String -> List Value -> Value
+genericUnion tag contents =
+    case contents of
+        [] ->
+            Encode.object
+                [ ( "tag", Encode.string tag ) ]
+
+        entry :: [] ->
+            Encode.object
+                [ ( "tag", Encode.string tag )
+                , ( "contents", entry )
+                ]
+
+        _ ->
+            Encode.object
+                [ ( "tag", Encode.string tag )
+                , ( "contents", Encode.list contents )
+                ]

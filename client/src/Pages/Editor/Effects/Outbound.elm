@@ -16,7 +16,9 @@ import Ellie.Constants as Constants
 import Ellie.Types.Revision as Revision exposing (Revision)
 import Ellie.Types.Settings as Settings exposing (Settings)
 import Ellie.Types.User as User exposing (User)
+import Elm.Package as Package exposing (Package)
 import Elm.Package.Searchable as Searchable exposing (Searchable)
+import Extra.Json.Encode as Encode
 import Extra.Result as Result
 import Extra.String as String
 import Http
@@ -38,7 +40,7 @@ type Outbound msg
     | SaveSettings Jwt Settings
     | SaveToken Jwt
     | FormatElmCode String (String -> msg)
-    | CompileElmCode Jwt String
+    | Compile Jwt String String (List Package)
     | ReloadIframe Bool
     | Redirect String
     | AttachToWorkspace Jwt
@@ -79,7 +81,8 @@ send onError effect state =
 
         EnableNavigationCheck enabled ->
             ( state
-            , genericUnion "EnableNavigationCheck" [ Encode.bool enabled ]
+            , Encode.genericUnion "EnableNavigationCheck"
+                [ Encode.bool enabled ]
                 |> pagesEditorEffectsOutbound
             )
 
@@ -103,7 +106,8 @@ send onError effect state =
 
         SaveToken token ->
             ( state
-            , genericUnion "SaveToken" [ Encode.string (Jwt.toString token) ]
+            , Encode.genericUnion "SaveToken"
+                [ Encode.string (Jwt.toString token) ]
                 |> pagesEditorEffectsOutbound
             )
 
@@ -129,11 +133,12 @@ send onError effect state =
                 |> Cmd.map UserMsg
             )
 
-        CompileElmCode token code ->
+        Compile token elm html packages ->
             ( state
-            , Encode.object
-                [ ( "tag", Encode.string "CompileRequested" )
-                , ( "contents", Encode.list [ Encode.string code ] )
+            , Encode.genericUnion "CompileRequested"
+                [ Encode.string elm
+                , Encode.string html
+                , Encode.list <| List.map Package.encoder packages
                 ]
                 |> Encode.encode 0
                 |> WebSocket.send (Constants.workspaceUrl ++ "?token=" ++ Jwt.toString token)
@@ -142,7 +147,7 @@ send onError effect state =
         ReloadIframe debugger ->
             ( state
             , [ Encode.bool debugger ]
-                |> genericUnion "ReloadIframe"
+                |> Encode.genericUnion "ReloadIframe"
                 |> pagesEditorEffectsOutbound
             )
 
@@ -153,20 +158,20 @@ send onError effect state =
 
         AttachToWorkspace token ->
             ( state
-            , genericUnion "AttachToWorkspace" []
+            , Encode.genericUnion "AttachToWorkspace" []
                 |> Encode.encode 0
                 |> WebSocket.send (Constants.workspaceUrl ++ "?token=" ++ Jwt.toString token)
             )
 
         SwitchToDebugger ->
             ( state
-            , genericUnion "SwitchToDebugger" []
+            , Encode.genericUnion "SwitchToDebugger" []
                 |> pagesEditorEffectsOutbound
             )
 
         SwitchToProgram ->
             ( state
-            , genericUnion "SwitchToProgram" []
+            , Encode.genericUnion "SwitchToProgram" []
                 |> pagesEditorEffectsOutbound
             )
 
@@ -185,14 +190,6 @@ send onError effect state =
 
         None ->
             ( state, Cmd.none )
-
-
-genericUnion : String -> List Value -> Value
-genericUnion tag contents =
-    Encode.object
-        [ ( "tag", Encode.string tag )
-        , ( "contents", Encode.list contents )
-        ]
 
 
 getUserDecoder : Decoder ( Jwt, Entity User.Id User )
@@ -330,8 +327,8 @@ map f outbound =
         SearchPackages query callback ->
             SearchPackages query (callback >> f)
 
-        CompileElmCode token input ->
-            CompileElmCode token input
+        Compile token elm html packages ->
+            Compile token elm html packages
 
         ReloadIframe debugger ->
             ReloadIframe debugger

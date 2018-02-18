@@ -73,10 +73,10 @@ const initialize = () => {
         }
       }
 
-      get value() {
+      get editorValue() {
         return this._value
       }
-      set value(value) {
+      set editorValue(value) {
         if (value !== null && value !== this._value) {
           this._value = value
           if (!this._instance) return
@@ -251,7 +251,7 @@ const initialize = () => {
           return {
             from: message.from,
             to: message.to,
-            message: linterFormatDiv.innerText,
+            message: this._linterFormatDiv.innerText,
             severity: message.severity
           }
         })

@@ -36,7 +36,7 @@ import Debug as Debug
 
 data Inbound
   = AttachToWorkspace
-  | CompileRequested { html ∷ String, elm ∷ String, packages ∷ Array Package }
+  | CompileRequested String String (Array Package)
 
 derive instance genericInbound ∷ Generic Inbound _
 instance decodeMsg ∷ Decode Inbound where decode = Foreign.genericDecode Foreign.defaultOptions
@@ -52,8 +52,8 @@ instance encodeOutbound ∷ Encode Outbound where encode = Foreign.genericEncode
 
 
 type State =
-  { user :: Entity User.Id User
-  , workspace :: Workspace
+  { user ∷ Entity User.Id User
+  , workspace ∷ Workspace
   }
 
 
@@ -98,17 +98,20 @@ update state inbound =
         , state
         }
 
-    CompileRequested { html, elm, packages } → do
-      let updatedWorkspace = over Workspace (_ { packages = packages }) state.workspace
-      
-      failureOrErrors ← try $ Platform.compile elm html updatedWorkspace
-      
+    CompileRequested elm html packages → do
+      let
+        updatedWorkspace =
+          over Workspace (_ { packages = packages }) state.workspace
+
+      failureOrErrors ←
+        try $ Platform.compile elm html updatedWorkspace
+
       let
         message =
           case failureOrErrors of
             Left failure → CompileFailed $ Exception.message failure
             Right errors → CompileSucceeded errors
-      
+
       pure
         { message: Just message
         , state: state { workspace = updatedWorkspace }

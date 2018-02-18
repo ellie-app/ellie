@@ -3,12 +3,11 @@ module Pages.Editor.Views.Working exposing (view)
 import Colors
 import Css exposing (..)
 import Css.Foreign
-import Ellie.Types.Settings as Settings
 import Ellie.Ui.SplitPane as SplitPane
-import Ellie.Ui.Theme as Theme
 import Extra.Html as Html
 import Html.Styled as Html exposing (Attribute, Html)
 import Html.Styled.Attributes exposing (css)
+import Html.Styled.Events as Events
 import Pages.Editor.State.Actions as ActionsState
 import Pages.Editor.State.Working as WorkingState
 import Pages.Editor.Views.Editors as EditorsView
@@ -102,9 +101,16 @@ viewWorkspace model =
                 , vimMode = model.user.settings.vimMode
                 , onFormat = WorkingState.FormatRequested
                 , onCollapse = WorkingState.CollapseHtml
+                , elmErrors = model.currentErrors
                 }
         , second =
-            Html.div [] []
+            Html.div []
+                [ Html.button
+                    [ Events.onClick WorkingState.CompileRequested
+                    ]
+                    [ Html.text "Compile"
+                    ]
+                ]
         }
 
 

@@ -24,7 +24,7 @@ import Ellie.Elm.Package (Package(..))
 
 foreign import _init ∷ ∀ e. { helpers ∷ FfiHelpers, root ∷ FilePath } → EffFnAff (elm ∷ INFINITY | e) (Either String String)
 foreign import _install ∷ ∀ e. { helpers ∷ FfiHelpers, root ∷ FilePath, name ∷ Foreign, version ∷ Foreign } → EffFnAff (elm ∷ INFINITY | e) (Either String String)
-foreign import _compile ∷ ∀ e. { helpers ∷ FfiHelpers, root ∷ FilePath, entry ∷ FilePath, debug ∷ Boolean } → EffFnAff (elm ∷ INFINITY | e) (Either String String)
+foreign import _compile ∷ ∀ e. { helpers ∷ FfiHelpers, root ∷ FilePath, entry ∷ FilePath, output ∷ FilePath, debug ∷ Boolean } → EffFnAff (elm ∷ INFINITY | e) (Either String String)
 foreign import _format ∷ ∀ e. { helpers ∷ FfiHelpers, code ∷ String } → EffFnAff (elm ∷ INFINITY | e) (Either String String)
 
 
@@ -58,9 +58,15 @@ install root (Package p) =
         }
 
 
-compile ∷ FilePath → FilePath → Boolean → IO (Either String String)
-compile root entry debug =
-  Aff.liftAff $ Aff.fromEffFnAff $ _compile { helpers, root, entry, debug }
+compile ∷
+  { root ∷ FilePath
+  , entry ∷ FilePath
+  , output ∷ FilePath
+  , debug ∷ Boolean
+  }
+  → IO (Either String String)
+compile { root, entry, debug, output } =
+  Aff.liftAff $ Aff.fromEffFnAff $ _compile { helpers, root, output, entry, debug }
 
 
 format ∷ String → IO (Either String String)

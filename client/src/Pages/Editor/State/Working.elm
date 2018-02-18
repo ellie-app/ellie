@@ -6,11 +6,19 @@ import Data.Replaceable as Replaceable exposing (Replaceable)
 import Ellie.Types.Revision as Revision exposing (Revision)
 import Ellie.Types.Settings as Settings exposing (Settings)
 import Ellie.Types.User as User exposing (User)
+import Elm.Compiler.Error as Error exposing (Error)
 import Elm.Package as Package exposing (Package)
 import Pages.Editor.Effects.Inbound as Inbound exposing (Inbound)
 import Pages.Editor.Effects.Outbound as Outbound exposing (Outbound)
 import Pages.Editor.Route as Route
 import Pages.Editor.State.Actions as Actions
+
+
+type Compilation
+    = Ready
+    | Compiling
+    | FinishedWithErrors (List Error)
+    | Succeeded
 
 
 type alias Model =
@@ -23,6 +31,8 @@ type alias Model =
     , revision : Replaceable Revision.Id Revision
     , actions : Actions.Model
     , user : User
+    , compilation : Compilation
+    , currentErrors : List Error
     , animating : Bool
     , workbenchRatio : Float
     , actionsRatio : Float
@@ -40,6 +50,8 @@ init token user revision defaultPackages =
       , defaultPackages = defaultPackages
       , revision = Replaceable.fromMaybe revision
       , actions = Actions.Packages { query = "", searchedPackages = Nothing, awaitingSearch = False }
+      , compilation = Ready
+      , currentErrors = []
       , animating = True
       , user = user
       , workbenchRatio = 0.5
@@ -113,12 +125,19 @@ type Msg
     | FormatRequested
     | FormatCompleted String
     | CollapseHtml
+    | CompileRequested
+    | CompileFinished (List Error)
     | NoOp
 
 
 update : Msg -> Model -> ( Model, Outbound Msg )
 update msg ({ user } as model) =
     case msg of
+        CompileRequested ->
+            ( model
+            , Outbound.Compile model.token model.elmCode model.htmlCode model.packages
+            )
+
         FormatRequested ->
             ( model
             , Outbound.FormatElmCode model.elmCode FormatCompleted
@@ -196,6 +215,11 @@ update msg ({ user } as model) =
         HtmlCodeChanged code ->
             ( { model | htmlCode = code }
             , Outbound.EnableNavigationCheck <| shouldCheckNavigation model
+            )
+
+        CompileFinished errors ->
+            ( { model | currentErrors = errors }
+            , Outbound.none
             )
 
         RevisionLoaded ((Entity revisionId _) as entity) ->
@@ -280,4 +304,5 @@ subscriptions model =
     Inbound.batch
         [ Inbound.KeepWorkspaceOpen model.token
         , Inbound.map ActionsMsg <| Actions.subscriptions model.actions
+        , Inbound.CompileFinished model.token CompileFinished
         ]

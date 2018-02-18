@@ -42,11 +42,11 @@ routes makeHandler = do
   Express.get  "/"                                                $ makeHandler Api.newUi
   Express.get  "/new"                                             $ makeHandler Api.newUi
   Express.get  "/private-api/revision/:projectId/:revisionNumber" $ makeHandler Api.getRevision
-  Express.post "/private-api/workspaces"                          $ makeHandler Api.createToken
   Express.get  "/private-api/packages/search"                     $ makeHandler Api.searchPackages
   Express.post "/private-api/format"                              $ makeHandler Api.formatCode
   Express.post "/private-api/me"                                  $ makeHandler Api.me
   Express.post "/private-api/me/settings"                         $ makeHandler Api.saveSettings
+
 
 setup ∷ IO Server
 setup = do

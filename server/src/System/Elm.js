@@ -59,10 +59,11 @@ exports._compile = function _compile(inputs) {
     var entry = inputs.entry
     var output = inputs.output
     var root = inputs.root
+    var helpers = inputs.helpers
 
     var args = debug ?
-      [ entry, '--output', output, '--debug', '--yes' ] :
-      [ entry, '--output', output, '--yes' ]
+      [ entry, '--output', output, '--debug', '--yes', '--report', 'json' ] :
+      [ entry, '--output', output, '--yes', '--report', 'json' ]
 
     runProcess(
       'elm-make',
@@ -71,6 +72,7 @@ exports._compile = function _compile(inputs) {
       function (error, result) {
         if (error) fail(error)
         else if (result.code === 0) succeed(helpers.right(result.stdout))
+        else if (result.stdout) succeed(helpers.right(result.stdout))
         else succeed(helpers.left(result.stderr))
       }
     )
