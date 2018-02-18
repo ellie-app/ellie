@@ -7,6 +7,7 @@ import CodeEditor from '../../Ellie/Ui/CodeEditor'
 import IconLoader from '../../Ellie/Ui/Icon'
 import OpbeatRunner from '../../Ellie/Opbeat'
 import Outbound from './Effects/Outbound'
+import Inbound from './Effects/Inbound'
 import './Views/Setup.css'
 
 IconLoader.load()
@@ -35,6 +36,7 @@ CodeEditor
       token: localStorage.getItem('Pages.Editor.token')
     })
 
+    Inbound.start(app)
     Outbound.start(app)
 
     // OpbeatRunner.start(app)

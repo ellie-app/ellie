@@ -37,6 +37,7 @@ type Icon
     | Slack
     | Search
     | Loading
+    | Socket
 
 
 view : Icon -> Html msg
@@ -138,6 +139,9 @@ toIdString icon =
 
         Slack ->
             "slack"
+
+        Socket ->
+            "socket"
 
 
 iconStyles : Attribute msg

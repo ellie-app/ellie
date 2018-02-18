@@ -47,6 +47,16 @@ secondaryForeground =
     var "--theme-color-foreground-secondary"
 
 
+connectionStatusConnected : BasicProperty
+connectionStatusConnected =
+    var "--theme-color-connection-status-connected"
+
+
+connectionStatusDisconnected : BasicProperty
+connectionStatusDisconnected =
+    var "--theme-color-connection-status-disconnected"
+
+
 darkStyles : Css.Foreign.Snippet
 darkStyles =
     Css.Foreign.selector ":root"
@@ -58,6 +68,8 @@ darkStyles =
         , property "--theme-color-background-secondary" darkGray.value
         , property "--theme-color-foreground-primary" lightGray.value
         , property "--theme-color-foreground-secondary" lightMediumGray.value
+        , property "--theme-color-connection-status-connected" green.value
+        , property "--theme-color-connection-status-disconnected" red.value
         ]
 
 

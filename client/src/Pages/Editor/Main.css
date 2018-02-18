@@ -54,3 +54,9 @@
 .elm-overlay {
   z-index: 20;
 }
+
+
+.elm-mini-controls {
+  left: 6px !important;
+  right: unset !important;
+}

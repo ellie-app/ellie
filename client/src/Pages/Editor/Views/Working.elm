@@ -15,6 +15,7 @@ import Pages.Editor.Views.Packages as PackagesView
 import Pages.Editor.Views.Settings as SettingsView
 import Pages.Editor.Views.Setup as SetupView
 import Pages.Editor.Views.Sidebar as SidebarView
+import Pages.Editor.Views.StatusBar as StatusBarView
 
 
 view : WorkingState.Model -> Html WorkingState.Msg
@@ -41,43 +42,53 @@ view model =
             [ css [ displayFlex ]
             ]
             [ SidebarView.view model.actions
-            , case model.actions of
-                ActionsState.Hidden ->
-                    viewWorkspace model
+            , Html.div
+                [ css
+                    [ displayFlex
+                    , flexDirection column
+                    , height (pct 100)
+                    , width (pct 100)
+                    ]
+                ]
+                [ case model.actions of
+                    ActionsState.Hidden ->
+                        viewWorkspace model
 
-                _ ->
-                    SplitPane.view
-                        { direction = SplitPane.Horizontal
-                        , ratio = model.actionsRatio
-                        , originalRatio = 0.1
-                        , onResize = WorkingState.ActionsResized
-                        , minSize = 300
-                        , first =
-                            case model.actions of
-                                ActionsState.Packages packagesModel ->
-                                    PackagesView.view
-                                        { query = packagesModel.query
-                                        , onSearch = WorkingState.ActionsMsg << ActionsState.UserTypedInPackageSearch
-                                        , installedPackages = model.packages
-                                        , searchedPackages = packagesModel.searchedPackages
-                                        , isLoading = packagesModel.awaitingSearch
-                                        , onUninstall = WorkingState.PackageUninstalled
-                                        , onInstall = WorkingState.PackageInstalled
-                                        }
+                    _ ->
+                        SplitPane.view
+                            { direction = SplitPane.Horizontal
+                            , ratio = model.actionsRatio
+                            , originalRatio = 0.1
+                            , onResize = WorkingState.ActionsResized
+                            , minSize = 300
+                            , first =
+                                case model.actions of
+                                    ActionsState.Packages packagesModel ->
+                                        PackagesView.view
+                                            { query = packagesModel.query
+                                            , onSearch = WorkingState.ActionsMsg << ActionsState.UserTypedInPackageSearch
+                                            , installedPackages = model.packages
+                                            , searchedPackages = packagesModel.searchedPackages
+                                            , isLoading = packagesModel.awaitingSearch
+                                            , onUninstall = WorkingState.PackageUninstalled
+                                            , onInstall = WorkingState.PackageInstalled
+                                            }
 
-                                ActionsState.Settings ->
-                                    SettingsView.view
-                                        { onSettingsChange = WorkingState.SettingsChanged
-                                        , settings = model.user.settings
-                                        , onProjectNameChange = WorkingState.ChangedProjectName
-                                        , projectName = model.projectName
-                                        }
+                                    ActionsState.Settings ->
+                                        SettingsView.view
+                                            { onSettingsChange = WorkingState.SettingsChanged
+                                            , settings = model.user.settings
+                                            , onProjectNameChange = WorkingState.ChangedProjectName
+                                            , projectName = model.projectName
+                                            }
 
-                                _ ->
-                                    Html.text ""
-                        , second =
-                            viewWorkspace model
-                        }
+                                    _ ->
+                                        Html.text ""
+                            , second =
+                                viewWorkspace model
+                            }
+                , StatusBarView.view { connected = model.connected }
+                ]
             ]
         ]
 

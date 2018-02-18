@@ -31,12 +31,31 @@ type Inbound msg
     | LogReceived (Log -> msg)
     | Batch (List (Inbound msg))
     | EscapePressed msg
+    | WorkspaceDetached Jwt msg
     | None
 
 
 listen : (Error -> msg) -> Inbound msg -> Sub (Msg msg)
 listen onError inbound =
     case inbound of
+        WorkspaceDetached token next ->
+            pagesEditorEffectsInbound <|
+                \{ tag, data } ->
+                    case tag of
+                        "SocketClosed" ->
+                            case Decode.decodeValue Decode.string data of
+                                Ok url ->
+                                    if url == (Constants.workspaceUrl ++ "?token=" ++ Jwt.toString token) then
+                                        UserMsg next
+                                    else
+                                        NoOp
+
+                                Err message ->
+                                    UserMsg (onError message)
+
+                        _ ->
+                            NoOp
+
         EscapePressed next ->
             Keyboard.ups
                 (\keycode ->
@@ -136,6 +155,9 @@ wrapSubs onError userSub ( model, state ) =
 map : (a -> b) -> Inbound a -> Inbound b
 map f inbound =
     case inbound of
+        WorkspaceDetached token next ->
+            WorkspaceDetached token (f next)
+
         EscapePressed next ->
             EscapePressed (f next)
 

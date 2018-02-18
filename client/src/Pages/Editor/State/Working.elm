@@ -33,6 +33,7 @@ type alias Model =
     , user : User
     , compilation : Compilation
     , currentErrors : List Error
+    , connected : Bool
     , animating : Bool
     , workbenchRatio : Float
     , actionsRatio : Float
@@ -52,6 +53,7 @@ init token user revision defaultPackages =
       , actions = Actions.Packages { query = "", searchedPackages = Nothing, awaitingSearch = False }
       , compilation = Ready
       , currentErrors = []
+      , connected = True
       , animating = True
       , user = user
       , workbenchRatio = 0.5
@@ -127,12 +129,18 @@ type Msg
     | CollapseHtml
     | CompileRequested
     | CompileFinished (List Error)
+    | OnlineStatusChanged Bool
     | NoOp
 
 
 update : Msg -> Model -> ( Model, Outbound Msg )
 update msg ({ user } as model) =
     case msg of
+        OnlineStatusChanged connected ->
+            ( { model | connected = connected }
+            , Outbound.none
+            )
+
         CompileRequested ->
             ( model
             , Outbound.Compile model.token model.elmCode model.htmlCode model.packages
@@ -305,4 +313,8 @@ subscriptions model =
         [ Inbound.KeepWorkspaceOpen model.token
         , Inbound.map ActionsMsg <| Actions.subscriptions model.actions
         , Inbound.CompileFinished model.token CompileFinished
+        , if model.connected then
+            Inbound.WorkspaceDetached model.token (OnlineStatusChanged False)
+          else
+            Inbound.WorkspaceAttached model.token (\_ -> OnlineStatusChanged True)
         ]
