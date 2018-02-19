@@ -119,11 +119,30 @@ viewInstalledPackages onUninstall packages =
 
 viewInstalledPackage : (Package -> msg) -> Package -> Html msg
 viewInstalledPackage onUninstall (( name, version ) as package) =
-    viewPackage package <|
-        Settings.view
-            [ Settings.button "Uninstall" (onUninstall package)
-            , Settings.link "View Docs" ("http://package.elm-lang.org/packages/" ++ name.user ++ "/" ++ name.project ++ "/" ++ Version.toString version)
-            ]
+    viewPackage package
+        [ Button.view
+            { icon = Just Icon.Trash
+            , label = "Uninstall"
+            , disabled = False
+            , action = Button.click <| onUninstall package
+            }
+        , Button.view
+            { icon = Just Icon.Document
+            , label = "View Docs"
+            , disabled = False
+            , action =
+                Button.link
+                    { external = True
+                    , href =
+                        "http://package.elm-lang.org/packages/"
+                            ++ name.user
+                            ++ "/"
+                            ++ name.project
+                            ++ "/"
+                            ++ Version.toString version
+                    }
+            }
+        ]
 
 
 viewSearchedPackage : (Package -> msg) -> (Package -> msg) -> List Package -> Package -> Html msg
@@ -131,20 +150,18 @@ viewSearchedPackage onInstall onUninstall installed package =
     if List.member package installed then
         viewInstalledPackage onUninstall package
     else
-        viewPackage package <|
-            Button.view
-                { size = Button.Medium
-                , style = Button.Primary
-                , icon = Nothing
+        viewPackage package
+            [ Button.view
+                { icon = Just Icon.Install
                 , label = "Install"
                 , disabled = False
                 , action = Button.click <| onInstall package
-                , attributes = []
                 }
+            ]
 
 
-viewPackage : Package -> Html msg -> Html msg
-viewPackage ( name, version ) action =
+viewPackage : Package -> List (Html msg) -> Html msg
+viewPackage ( name, version ) actions =
     Html.div
         [ css
             [ displayFlex
@@ -173,10 +190,21 @@ viewPackage ( name, version ) action =
             [ css
                 [ flexShrink (int 0)
                 , alignSelf flexStart
+                , displayFlex
+                , flexDirection column
+                , alignItems center
                 ]
             ]
-            [ action
-            ]
+            (List.map viewAction actions)
+        ]
+
+
+viewAction : Html msg -> Html msg
+viewAction action =
+    Html.div
+        [ css [ paddingBottom (px 8) ]
+        ]
+        [ action
         ]
 
 

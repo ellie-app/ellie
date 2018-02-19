@@ -36,7 +36,12 @@ program config =
     Navigation.programWithFlags (config.url >> config.route >> UserMsg)
         { view =
             \( model, _ ) ->
-                Html.toUnstyled <| Html.div [] [ styles, Html.map UserMsg <| config.view model ]
+                Html.toUnstyled <|
+                    Html.div []
+                        [ styles
+                        , Html.map UserMsg <| config.view model
+                        , Html.node "ellie-ui-portal" [] []
+                        ]
         , init =
             Outbound.wrapInit config.error <|
                 \flags location ->

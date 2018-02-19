@@ -8,7 +8,7 @@ import Ellie.Ui.Theme as Theme
 import Elm.Compiler.Error as Error exposing (Error)
 import Extra.Markdown as Markdown
 import Html.Styled as Html exposing (Attribute, Html, button, div, text)
-import Html.Styled.Attributes exposing (css)
+import Html.Styled.Attributes as Attributes exposing (css)
 import Html.Styled.Events exposing (onClick)
 
 
@@ -57,7 +57,7 @@ view { onElmChange, elmCode, onHtmlChange, htmlCode, ratio, onResize, vimMode, o
             , minSize = 24
             , first =
                 div [ containerStyles ]
-                    [ viewEditorHeader "Elm" onFormat <| Icon.view Icon.Format
+                    [ viewEditorHeader "Elm" "Format Elm Code (⇧⌥F)" onFormat <| Icon.view Icon.Format
                     , div [ editorStyles ]
                         [ CodeEditor.view
                             [ CodeEditor.value elmCode
@@ -71,7 +71,7 @@ view { onElmChange, elmCode, onHtmlChange, htmlCode, ratio, onResize, vimMode, o
                     ]
             , second =
                 div [ containerStyles ]
-                    [ viewEditorHeader "HTML" onCollapse <|
+                    [ viewEditorHeader "HTML" "Collapse HTML Editor" onCollapse <|
                         if ratio == 1 then
                             div [ css [ transform (rotate (deg 180)) ] ] [ Icon.view Icon.Chevron ]
                         else
@@ -111,8 +111,8 @@ containerStyles =
         ]
 
 
-viewEditorHeader : String -> msg -> Html msg -> Html msg
-viewEditorHeader name msg icon =
+viewEditorHeader : String -> String -> msg -> Html msg -> Html msg
+viewEditorHeader name tooltip msg icon =
     div
         [ css
             [ backgroundColor Theme.secondaryBackground
@@ -149,11 +149,11 @@ viewEditorHeader name msg icon =
                     [ color Theme.primaryForeground
                     ]
                 , active
-                    [ color Theme.secondaryForeground
+                    [ transform <| scale 1.2
                     ]
                 ]
             , onClick msg
+            , Attributes.title tooltip
             ]
-            [ icon
-            ]
+            [ icon ]
         ]

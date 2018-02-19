@@ -9,7 +9,7 @@ import Extra.Html as Html
 import Extra.Html.Attributes as Attributes
 import Extra.Maybe as Maybe
 import Html.Styled exposing (Attribute, Html, button, div, input)
-import Html.Styled.Attributes exposing (attribute, css, placeholder, type_, value)
+import Html.Styled.Attributes exposing (attribute, css, placeholder, tabindex, type_, value)
 import Html.Styled.Events as Events exposing (onClick, onInput)
 import Json.Decode as Decode
 
@@ -63,6 +63,7 @@ view config =
             button
                 [ clearButtonStyles
                 , onClick <| config.onChange ""
+                , tabindex -1
                 ]
                 [ Icon.view Icon.Close ]
         ]

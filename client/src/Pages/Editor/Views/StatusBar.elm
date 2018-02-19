@@ -38,6 +38,7 @@ view config =
                     else
                         Theme.connectionStatusDisconnected
                 ]
+            , Attributes.title "Server connection status"
             ]
             [ Icon.view Icon.Socket
             ]

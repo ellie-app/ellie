@@ -1,23 +1,13 @@
-module Ellie.Ui.Button exposing (Action, Config, Size(..), Style(..), click, link, none, view)
+module Ellie.Ui.Button exposing (Action, Config, click, link, none, view)
 
-import Colors
 import Css exposing (..)
+import Css.Foreign
 import Ellie.Ui.Icon as Icon
+import Ellie.Ui.Theme as Theme
 import Extra.Html.Attributes as Attributes
-import Html.Styled exposing (Html, Attribute, a, button, div, text)
+import Html.Styled exposing (Attribute, Html, a, button, div, text)
 import Html.Styled.Attributes as Attributes exposing (css, href)
 import Html.Styled.Events exposing (onClick)
-
-
-type Size
-    = Small
-    | Medium
-
-
-type Style
-    = Primary
-    | Accent
-    | Link
 
 
 type Action msg
@@ -42,13 +32,10 @@ none =
 
 
 type alias Config msg =
-    { size : Size
-    , style : Style
-    , icon : Maybe Icon.Icon
+    { icon : Maybe Icon.Icon
     , label : String
     , disabled : Bool
     , action : Action msg
-    , attributes : List (Attribute msg)
     }
 
 
@@ -59,11 +46,11 @@ view config =
             case config.action of
                 Click msg ->
                     \attrs ->
-                        button (attrs ++ config.attributes ++ [ onClick msg ])
+                        button (attrs ++ [ onClick msg ])
 
                 Anchor external url ->
                     \attrs ->
-                        a (attrs ++ config.attributes ++ [ href url, Attributes.cond (Attributes.target "_blank") external ])
+                        a (attrs ++ [ href url, Attributes.cond (Attributes.target "_blank") external ])
 
                 None ->
                     a
@@ -72,119 +59,77 @@ view config =
         [ buttonStyles config
         , Attributes.disabled config.disabled
         ]
-        [ div [ innerStyles ]
+        [ div
+            [ css
+                [ displayFlex
+                , alignItems center
+                ]
+            ]
             [ case config.icon of
                 Just icon ->
                     div
-                        [ iconStyles config.size ]
+                        [ css
+                            [ width (px 19)
+                            , height (px 18)
+                            , padding2 (px 2) (px 4)
+                            , paddingLeft zero
+                            , borderRight3 (px 1) solid Theme.buttonBorder
+                            , marginRight (px 4)
+                            ]
+                        , Attributes.attribute "data-ellie-ui-button-icon" ""
+                        ]
                         [ Icon.view icon ]
 
                 Nothing ->
                     text ""
-            , div [] [ text config.label ]
+            , div
+                [ css [ padding2 (px 2) zero ] ]
+                [ text config.label ]
             ]
         ]
 
 
+
 -- Styles
+
 
 buttonStyles : Config msg -> Attribute msg
 buttonStyles config =
     css
-        [ border zero
-        , fontFamily inherit
+        [ fontFamily inherit
+        , fontSize (px 14)
+        , textTransform uppercase
         , cursor pointer
         , textDecoration Css.none
         , property "user-select" "none"
+        , backgroundColor Theme.buttonBackground
+        , color Theme.primaryForeground
+        , border3 (px 1) solid Theme.buttonBorder
+        , padding2 (px 2) (px 4)
+        , lineHeight (num 1)
+        , transform Css.none
+        , display inlineBlock
+        , outline zero
+        , focus
+            [ borderColor Theme.accent
+            , Css.Foreign.descendants
+                [ Css.Foreign.selector "[data-ellie-ui-button-icon]"
+                    [ borderColor Theme.accent
+                    ]
+                ]
+            ]
+        , active
+            [ transform <| scale 1.1
+            ]
         , disabled
             [ opacity (num 0.6)
             , cursor notAllowed
             ]
         , batch <|
             if config.disabled then
-                [ hover [ color Colors.lightMediumGray |> important ]
+                [ opacity (num 0.6)
                 , cursor notAllowed
                 ]
             else
                 []
-        , batch <|
-            case config.style of
-                Primary ->
-                    [ backgroundColor Colors.mediumGray
-                    , color Colors.lightGray
-                    , backgroundShared
-                    ]
-
-                Accent ->
-                    [ backgroundColor Colors.pink
-                    , color Colors.lightGray
-                    , backgroundShared
-                    ]
-
-                Link ->
-                    [ color Colors.lightMediumGray
-                    , padding zero |> important
-                    , property "background" "none"
-                    , fontWeight bold
-                    , property "transition" "color 150ms"
-                    , hover [ color Colors.lightGray ]
-                    , disabled [ color Colors.lightMediumGray ]
-                    ]
-        , batch <|
-            case config.size of
-                Small ->
-                    [ fontSize (px 12)
-                    , padding2 (px 2) (px 4)
-                    ]
-                
-                Medium ->
-                    [ fontSize (px 15)
-                    , padding2 (px 8) (px 12)
-                    ]
-        ]
-
-    
-backgroundShared : Css.Style
-backgroundShared =
-    batch
-        [ borderRadius (px 2)
-        , .bottom Colors.boxShadow
-        , property "transition" "transform 150ms, box-shadow 150ms, background-color 150ms"
-        , hover
-            [ property "transform" "translateY(-1px)"
-            , .bottomHover Colors.boxShadow
-            ]
-        , active
-            [ property "transform" "none"
-            ]
-        , disabled
-            [ property "transform" "none"
-            , boxShadow Css.none
-            , backgroundColor Colors.mediumGray
-            ]
-        ]
-
-
-iconStyles : Size -> Attribute msg
-iconStyles size =
-    case size of
-        Medium ->
-            css
-                [ height (px 16)
-                , width (px 16)
-                , marginRight (px 6)
-                ]
-        Small ->
-            css
-                [ height (px 12)
-                , width (px 12)
-                , marginRight (px 2)
-                ]
-
-
-innerStyles : Attribute msg
-innerStyles =
-    css
-        [ displayFlex
-        , alignItems center
         ]

@@ -26,9 +26,9 @@ view current =
         ]
         [ Html.div []
             [ viewLogo
-            , viewIconButton Icon.Package Actions.packages current
-            , viewIconButton Icon.Settings Actions.Settings current
-            , viewIconButton Icon.Help Actions.Help current
+            , viewIconButton Icon.Package "Package Manager (⇧⌘X)" Actions.packages current
+            , viewIconButton Icon.Settings "Settings (⌘,)" Actions.Settings current
+            , viewIconButton Icon.Help "Help (⇧⌘H)" Actions.Help current
             ]
         , Html.div []
             [ viewIconLink Icon.Slack "https://elmlang.slack.com/#ellie"
@@ -52,10 +52,10 @@ viewLogo =
         ]
 
 
-viewIconButton : Icon.Icon -> Actions.Model -> Actions.Model -> Html WorkingState.Msg
-viewIconButton icon default current =
+viewIconButton : Icon.Icon -> String -> Actions.Model -> Actions.Model -> Html WorkingState.Msg
+viewIconButton icon tooltip default current =
     let
-        ( nextModel, active ) =
+        ( nextModel, isActive ) =
             case ( default, current ) of
                 ( Actions.Settings, Actions.Settings ) ->
                     ( Actions.Hidden, True )
@@ -80,15 +80,17 @@ viewIconButton icon default current =
             , display block
             , cursor pointer
             , color <|
-                if active then
+                if isActive then
                     Theme.primaryForeground
                 else
                     Theme.secondaryForeground
             , hover
-                [ color Theme.primaryForeground
-                ]
+                [ color Theme.primaryForeground ]
+            , active
+                [ transform <| scale 1.1 ]
             ]
         , onClick <| WorkingState.ActionPaneSelected nextModel
+        , Attributes.title tooltip
         ]
         [ Icon.view icon
         ]

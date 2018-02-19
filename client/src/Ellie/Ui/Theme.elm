@@ -57,6 +57,16 @@ connectionStatusDisconnected =
     var "--theme-color-connection-status-disconnected"
 
 
+buttonBorder : BasicProperty
+buttonBorder =
+    var "--theme-color-button-border"
+
+
+buttonBackground : BasicProperty
+buttonBackground =
+    var "--theme-color-button-background"
+
+
 darkStyles : Css.Foreign.Snippet
 darkStyles =
     Css.Foreign.selector ":root"
@@ -70,6 +80,8 @@ darkStyles =
         , property "--theme-color-foreground-secondary" lightMediumGray.value
         , property "--theme-color-connection-status-connected" green.value
         , property "--theme-color-connection-status-disconnected" red.value
+        , property "--theme-color-button-border" "#3F3F3F"
+        , property "--theme-color-button-background" "#525252"
         ]
 
 

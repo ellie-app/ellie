@@ -3,6 +3,8 @@ module Pages.Editor.Views.Working exposing (view)
 import Colors
 import Css exposing (..)
 import Css.Foreign
+import Ellie.Ui.Button as Button
+import Ellie.Ui.Icon as Icon
 import Ellie.Ui.SplitPane as SplitPane
 import Extra.Html as Html
 import Html.Styled as Html exposing (Attribute, Html)
@@ -116,11 +118,12 @@ viewWorkspace model =
                 }
         , second =
             Html.div []
-                [ Html.button
-                    [ Events.onClick WorkingState.CompileRequested
-                    ]
-                    [ Html.text "Compile"
-                    ]
+                [ Button.view
+                    { icon = Just Icon.Play
+                    , label = "Compile"
+                    , disabled = False
+                    , action = Button.click WorkingState.CompileRequested
+                    }
                 ]
         }
 
