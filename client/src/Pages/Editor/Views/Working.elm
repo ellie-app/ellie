@@ -18,6 +18,7 @@ import Pages.Editor.Views.Settings as SettingsView
 import Pages.Editor.Views.Setup as SetupView
 import Pages.Editor.Views.Sidebar as SidebarView
 import Pages.Editor.Views.StatusBar as StatusBarView
+import Pages.Editor.Views.Workbench as WorkbenchView
 
 
 view : WorkingState.Model -> Html WorkingState.Msg
@@ -89,7 +90,28 @@ view model =
                             , second =
                                 viewWorkspace model
                             }
-                , StatusBarView.view { connected = model.connected }
+                , StatusBarView.view
+                    { connected = model.connected
+                    , compileStatus =
+                        case model.compilation of
+                            WorkingState.Ready ->
+                                "Ready"
+
+                            WorkingState.Compiling ->
+                                "Compiling..."
+
+                            WorkingState.FinishedWithErrors errors ->
+                                toString (List.length errors)
+                                    ++ " compiler error"
+                                    ++ (if List.length errors > 1 then
+                                            "s"
+                                        else
+                                            ""
+                                       )
+
+                            WorkingState.Succeeded ->
+                                "Success"
+                    }
                 ]
             ]
         ]
@@ -117,14 +139,13 @@ viewWorkspace model =
                 , elmErrors = model.currentErrors
                 }
         , second =
-            Html.div []
-                [ Button.view
-                    { icon = Just Icon.Play
-                    , label = "Compile"
-                    , disabled = False
-                    , action = Button.click WorkingState.CompileRequested
-                    }
-                ]
+            WorkbenchView.view
+                { onCompile = WorkingState.CompileRequested
+                , onSelectPane = WorkingState.WorkbenchPaneSelected
+                , compilation = model.compilation
+                , pane = model.workbenchPane
+                , token = model.token
+                }
         }
 
 

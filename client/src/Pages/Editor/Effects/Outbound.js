@@ -21,6 +21,22 @@ const start = (app) => {
         if (enabled) window.addEventListener('beforeunload', preventNavigation)
         else window.removeEventListener('beforeunload', preventNavigation)
         break
+      
+      case 'SwitchToDebugger':
+        requestAnimationFrame(() => {
+          const iframe = document.getElementById('workbenchIframe')
+          if (!iframe) return
+          iframe.contentWindow.postMessage({ tag: 'SwitchToDebugger' }, window.location.origin)
+        })
+        break
+
+      case 'SwitchToProgram':
+        requestAnimationFrame(() => {
+          const iframe = document.getElementById('workbenchIframe')
+          if (!iframe) return
+          iframe.contentWindow.postMessage({ tag: 'SwitchToProgram' }, window.location.origin)
+        })
+        break
 
       default:
         break

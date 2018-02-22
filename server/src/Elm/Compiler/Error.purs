@@ -1,7 +1,7 @@
-module Ellie.Elm.Compiler.Error
-  ( Error
-  , Location
-  , Region
+module Elm.Compiler.Error
+  ( Error(..)
+  , Location(..)
+  , Region(..)
   ) where
 
 import Prelude
@@ -12,6 +12,7 @@ import Data.Foreign.Class (decode, encode) as Foreign
 import Data.Foreign.Index ((!))
 import Data.Foreign.NullOrUndefined (readNullOrUndefined, unNullOrUndefined) as Foreign
 import Data.Maybe (Maybe)
+import Data.Newtype (class Newtype)
 import Data.Nullable as Nullable
 
 newtype Location =
@@ -62,6 +63,8 @@ newtype Error =
     , region ∷ Region
     , level ∷ String
     }
+
+derive instance newtypeError ∷ Newtype Error _
 
 instance decodeError ∷ Decode Error where
   decode object =

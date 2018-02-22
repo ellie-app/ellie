@@ -1,7 +1,8 @@
-module Ellie.Elm.Package.Constraint
+module Elm.Package.Constraint
     ( Constraint
     , isSatisfied
     , lowestVersion
+    , forVersion
     ) where
 
 import Prelude
@@ -18,10 +19,10 @@ import Data.Maybe (Maybe(..))
 import Data.String (Pattern(..))
 import Data.String as String
 import Data.Tuple (Tuple(..))
-import Ellie.Elm.Package.Version (Version(..))
+import Elm.Package.Version (Version(..))
 
 
-break :: (Char -> Boolean) -> String -> Tuple String String
+break ∷ (Char → Boolean) → String → Tuple String String
 break breakOn input =
   Tuple
     (String.takeWhile (breakOn >>> not) input)
@@ -32,7 +33,7 @@ data Op
   = Less
   | LessOrEqual
 
-opToString :: Op -> String
+opToString ∷ Op → String
 opToString Less = "<"
 opToString LessOrEqual = "<="
 
@@ -40,13 +41,13 @@ opToString LessOrEqual = "<="
 data Constraint
     = Range Version Op Op Version
 
-instance showConstraint :: Show Constraint where
+instance showConstraint ∷ Show Constraint where
   show (Range v o o' v') = show v <> " " <> opToString o <> " v " <> opToString o' <> " " <> show v'
 
-instance encodeConstraint :: Encode Constraint where
+instance encodeConstraint ∷ Encode Constraint where
   encode constraint = do
     case constraint of
-      Range (Version lower) lowerOp upperOp (Version upper) ->
+      Range (Version lower) lowerOp upperOp (Version upper) →
         Foreign.encode $
           String.joinWith " "
             [ show lower.major <> "." <> show lower.minor <> "." <> show lower.patch
@@ -56,7 +57,7 @@ instance encodeConstraint :: Encode Constraint where
             , show upper.major <> "." <> show upper.minor <> "." <> show upper.patch
             ]
 
-instance decodeConstraint :: Decode Constraint where
+instance decodeConstraint ∷ Decode Constraint where
   decode input = do
     string ← Foreign.decode input
     case String.split (Pattern " ") string of
@@ -70,7 +71,7 @@ instance decodeConstraint :: Decode Constraint where
         Foreign.fail $ Foreign.ForeignError "Expecting a constraint in the format 1.0.0 <= v < 2.0.0"
 
     where
-      takeOp :: String -> F Op
+      takeOp ∷ String → F Op
       takeOp "<" = pure Less
       takeOp "<=" = pure LessOrEqual
       takeOp _ = Foreign.fail $ Foreign.ForeignError "Expecting a constraint in the format 1.0.0 <= v < 2.0.0"
@@ -79,7 +80,7 @@ instance decodeConstraint :: Decode Constraint where
 lowestVersion ∷ Constraint → Version
 lowestVersion (Range v _ _ _) = v
 
-forVersion :: Version -> Constraint
+forVersion ∷ Version → Constraint
 forVersion version@(Version v) =
   Range
     version
@@ -89,29 +90,29 @@ forVersion version@(Version v) =
 
 
 
-isSatisfied :: Constraint -> Version -> Boolean
+isSatisfied ∷ Constraint → Version → Boolean
 isSatisfied constraint version =
   case constraint of
-    Range lower lowerOp upperOp upper ->
+    Range lower lowerOp upperOp upper →
         isLess lowerOp lower version
           &&
         isLess upperOp version upper
 
 
-isLess :: ∀ a. (Ord a) => Op -> (a -> a -> Boolean)
+isLess ∷ ∀ a. (Ord a) ⇒ Op → (a → a → Boolean)
 isLess op =
   case op of
-    Less ->
+    Less →
       (<)
 
-    LessOrEqual ->
+    LessOrEqual →
       (<=)
 
 
-check :: Constraint -> Version -> Ordering
+check ∷ Constraint → Version → Ordering
 check constraint version =
   case constraint of
-    Range lower lowerOp upperOp upper ->
+    Range lower lowerOp upperOp upper →
       if not (isLess lowerOp lower version) then
         LT
 

@@ -1,4 +1,4 @@
-module Ellie.Elm.Package.Searchable where
+module Elm.Package.Searchable where
 
 import Prelude
 
@@ -9,10 +9,10 @@ import Data.Indexable (class Indexable)
 import Data.Maybe as Maybe
 import Data.Newtype (unwrap)
 import Data.String.Class as String
-import Ellie.Elm.Package (Package(..))
-import Ellie.Elm.Package.Name (Name(..))
-import Ellie.Elm.Package.Version (Version)
-import Ellie.Elm.Package.Version as Version
+import Elm.Package (Package(..))
+import Elm.Package.Name (Name(..))
+import Elm.Package.Version (Version)
+import Elm.Package.Version as Version
 
 
 newtype Searchable =

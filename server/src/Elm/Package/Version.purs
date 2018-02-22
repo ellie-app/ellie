@@ -1,4 +1,4 @@
-module Ellie.Elm.Package.Version where
+module Elm.Package.Version where
 
 import Prelude
 
@@ -15,15 +15,15 @@ import Data.Traversable (traverse)
 
 newtype Version =
   Version
-    { major :: Int
-    , minor :: Int
-    , patch :: Int
+    { major ∷ Int
+    , minor ∷ Int
+    , patch ∷ Int
     }
 
-derive instance eqVersion :: Eq Version
-derive instance ordVersion :: Ord Version
+derive instance eqVersion ∷ Eq Version
+derive instance ordVersion ∷ Ord Version
 
-instance showVersion :: Show Version where
+instance showVersion ∷ Show Version where
   show (Version { major, minor, patch }) =
     show major <> "." <> show minor <> "." <> show patch
 
@@ -35,22 +35,22 @@ instance fromStringVersion ∷ FromString Version where
   fromString string =
     let maybeInts = traverse String.fromString $ String.split (Pattern ".") string
     in case maybeInts of
-      Just [major, minor, patch] ->
+      Just [major, minor, patch] →
         Just $ Version { major, minor, patch }
-      _ ->
+      _ →
         Nothing
 
-instance decodeVersion :: Decode Version where
+instance decodeVersion ∷ Decode Version where
   decode input = do
-    string <- Foreign.decode input
+    string ← Foreign.decode input
     let maybeInts = traverse Int.fromString $ String.split (Pattern ".") string
     case maybeInts of
-      Just [major, minor, patch] ->
+      Just [major, minor, patch] →
         pure $ Version { major, minor, patch }
-      _ ->
+      _ →
         Foreign.fail $ Foreign.ForeignError $ "Expected version in format MAJOR.MINOR.PATCH. Got " <> string
 
-instance encodeVersion :: Encode Version where
+instance encodeVersion ∷ Encode Version where
   encode (Version { major, minor, patch }) =
     Foreign.encode $ show major <> "." <> show minor <> "." <> show patch
 

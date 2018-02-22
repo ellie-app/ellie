@@ -1,4 +1,4 @@
-module Ellie.Elm.Package.Name where
+module Elm.Package.Name where
 
 import Prelude
 
@@ -11,17 +11,27 @@ import Data.String as String
 import Data.String.Class (class ToString)
 
 
+isCore ∷ Name → Boolean
+isCore (Name { user, project }) =
+  user == "elm-lang" && project == "core"
+
+
+isHtml ∷ Name → Boolean
+isHtml (Name { user, project }) =
+  user == "elm-lang" && project == "html"
+
+
 newtype Name =
   Name
-    { user :: String
-    , project :: String
+    { user ∷ String
+    , project ∷ String
     }
 
-derive instance eqName :: Eq Name
-derive instance ordName :: Ord Name
-derive instance newtypeName :: Newtype Name _
+derive instance eqName ∷ Eq Name
+derive instance ordName ∷ Ord Name
+derive instance newtypeName ∷ Newtype Name _
 
-instance showName :: Show Name where
+instance showName ∷ Show Name where
   show (Name { user, project }) =
     user <> "/" <> project
 
@@ -29,14 +39,14 @@ instance toStringName ∷ ToString Name where
   toString (Name { user, project }) =
     user <> "/" <> project
 
-instance decodeName :: Decode Name where
+instance decodeName ∷ Decode Name where
   decode value = do
-    string <- Foreign.decode value
+    string ← Foreign.decode value
     case String.split (Pattern "/") string of
-      [user, project] ->
+      [user, project] →
         pure $ Name { user, project }
-      _ ->
+      _ →
         Foreign.fail $ Foreign.ForeignError "Package name must be in the format user/project"
 
-instance encodeName :: Encode Name where
+instance encodeName ∷ Encode Name where
   encode = show >>> Foreign.encode

@@ -1,18 +1,10 @@
 module Pages.Editor.Views.Settings exposing (Config, view)
 
-import Colors
 import Css exposing (..)
 import Ellie.Types.Settings as Settings exposing (Settings)
 import Ellie.Ui.Checkbox as Checkbox
-import Ellie.Ui.Icon as Icon
-import Ellie.Ui.Switch as Switch
 import Ellie.Ui.TextInput as TextInput
 import Ellie.Ui.Theme as Theme
-import Elm.Package as Package exposing (Package)
-import Elm.Package.Name as Name
-import Elm.Package.Searchable as Searchable exposing (Searchable)
-import Elm.Package.Version as Version
-import Extra.Maybe as Maybe
 import Html.Styled as Html exposing (Attribute, Html)
 import Html.Styled.Attributes exposing (css, src)
 
@@ -65,6 +57,7 @@ viewProjectName { projectName, onProjectNameChange } =
                     , value = projectName
                     , clearable = False
                     , icon = Nothing
+                    , autofocus = False
                     , onChange = onProjectNameChange
                     }
                 ]
@@ -105,6 +98,7 @@ viewFontFamily { settings, onSettingsChange } =
                     , value = settings.fontFamily
                     , clearable = False
                     , icon = Nothing
+                    , autofocus = False
                     , onChange = \fontFamily -> onSettingsChange { settings | fontFamily = fontFamily }
                     }
                 ]
@@ -126,6 +120,7 @@ viewFontSize { settings, onSettingsChange } =
                     , value = settings.fontSize
                     , clearable = False
                     , icon = Nothing
+                    , autofocus = False
                     , onChange = \fontSize -> onSettingsChange { settings | fontSize = fontSize }
                     }
                 ]

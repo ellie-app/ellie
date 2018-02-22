@@ -17,6 +17,7 @@ import Control.Monad.IO (IO)
 import Control.Monad.IO.Class (class MonadIO)
 import Control.Monad.Reader (ReaderT, class MonadReader, class MonadAsk)
 import Control.Monad.Reader as Reader
+import Data.Map (Map)
 import Data.Maybe (Maybe)
 import Data.Newtype (class Newtype, unwrap)
 import Ellie.Adapters.CdnAssets as CdnAssets
@@ -30,9 +31,11 @@ import Ellie.Domain.Platform (class Platform)
 import Ellie.Domain.RevisionRepo (class RevisionRepo)
 import Ellie.Domain.Search (class Search)
 import Ellie.Domain.UserRepo (class UserRepo)
-import Ellie.Elm.Package (Package)
-import Ellie.Elm.Package.Searchable (Searchable(..))
+import Ellie.Types.User as User
+import Elm.Package (Package)
+import Elm.Package.Searchable (Searchable)
 import System.Aws as Aws
+import System.Cache (Cache)
 import System.Jwt (Secret)
 import System.Redis as Redis
 import System.SearchIndex (SearchIndex)
@@ -43,6 +46,8 @@ type SharedEnv r =
   { index ∷ Ref (Maybe (SearchIndex Searchable))
   , jwtSecret ∷ Secret
   , assetBase ∷ String
+  , defaultPackages ∷ Cache (Array Package)
+  , userWorkspaces ∷ Ref (Map User.Id LocalPlatform.Workspace)
   | r
   }
 
@@ -112,11 +117,12 @@ instance userRepoEllieMDevEnv ∷ UserRepo (EllieM DevEnv) where
 instance searchEllieM ∷ (Newtype e a, TypeEquals a (SharedEnv e0)) ⇒ Search (EllieM e) where
   search query = Reader.asks (unwrap >>> to) >>= IndexSearch.search query
 
-instance platformEllieM ∷ Platform (EllieM e) where
-  initialize = LocalPlatform.initialize
-  destroy = LocalPlatform.destroy
-  compile = LocalPlatform.compile
+instance platformEllieM ∷ (Newtype e a, TypeEquals a (SharedEnv e0)) ⇒ Platform (EllieM e) where
+  initialize userId = Reader.asks (unwrap >>> to) >>= LocalPlatform.initialize userId
+  destroy userId = Reader.asks (unwrap >>> to) >>= LocalPlatform.destroy userId
+  compile elm html packages userId = Reader.asks (unwrap >>> to) >>= LocalPlatform.compile elm html packages userId
   format = LocalPlatform.format
+  result userId = Reader.asks (unwrap >>> to) >>= LocalPlatform.result userId
 
 instance assetsEllieMProdEnv ∷ Assets (EllieM ProdEnv) where
   assetUrl relative = Reader.asks unwrap <#> CdnAssets.assetUrl relative

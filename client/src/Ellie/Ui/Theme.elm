@@ -67,6 +67,16 @@ buttonBackground =
     var "--theme-color-button-background"
 
 
+editorHeaderBackground : BasicProperty
+editorHeaderBackground =
+    var "--theme-color-editor-header-background"
+
+
+workbenchWatermark : BasicProperty
+workbenchWatermark =
+    var "--theme-color-workbench-watermark"
+
+
 darkStyles : Css.Foreign.Snippet
 darkStyles =
     Css.Foreign.selector ":root"
@@ -82,6 +92,8 @@ darkStyles =
         , property "--theme-color-connection-status-disconnected" red.value
         , property "--theme-color-button-border" "#3F3F3F"
         , property "--theme-color-button-background" "#525252"
+        , property "--theme-color-editor-header-background" "#222222"
+        , property "--theme-color-workbench-watermark" "#252525"
         ]
 
 

@@ -1,6 +1,5 @@
 module Ellie.Ui.TextInput exposing (view)
 
-import Colors
 import Css exposing (..)
 import Css.Foreign
 import Ellie.Ui.Icon as Icon
@@ -9,7 +8,7 @@ import Extra.Html as Html
 import Extra.Html.Attributes as Attributes
 import Extra.Maybe as Maybe
 import Html.Styled exposing (Attribute, Html, button, div, input)
-import Html.Styled.Attributes exposing (attribute, css, placeholder, tabindex, type_, value)
+import Html.Styled.Attributes exposing (attribute, autofocus, css, placeholder, tabindex, type_, value)
 import Html.Styled.Events as Events exposing (onClick, onInput)
 import Json.Decode as Decode
 
@@ -20,6 +19,7 @@ type alias Config msg =
     , clearable : Bool
     , icon : Maybe Icon.Icon
     , onChange : String -> msg
+    , autofocus : Bool
     }
 
 
@@ -47,6 +47,7 @@ view config =
             , placeholder config.placeholder
             , value config.value
             , onInput config.onChange
+            , autofocus config.autofocus
             , if config.clearable then
                 clearOnEscape config.onChange
               else

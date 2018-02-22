@@ -33,26 +33,6 @@ exports._init = function _init(inputs) {
   }
 }
 
-exports._install = function _install(inputs) {
-  return function _installAff(fail, succeed) {
-    var root = inputs.root
-    var name = inputs.name
-    var version = inputs.version
-    var helpers = inputs.helpers
-
-    runProcess(
-      'elm-package',
-      ['install', name, version, '--yes'],
-      { cwd: root, env: process.env },
-      function (error, result) {
-        if (error) fail(error)
-        else if (result.code === 0) succeed(helpers.right(result.stdout))
-        else succeed(helpers.left(result.stderr))
-      }
-    )
-  }
-}
-
 exports._compile = function _compile(inputs) {
   return function _compileAff(fail, succeed) {
     var debug = inputs.debug
@@ -70,10 +50,11 @@ exports._compile = function _compile(inputs) {
       args,
       { cwd: root, env: process.env },
       function (error, result) {
+        console.log(result.stdout)
+        console.log(result.stderr)
         if (error) fail(error)
-        else if (result.code === 0) succeed(helpers.right(result.stdout))
-        else if (result.stdout) succeed(helpers.right(result.stdout))
-        else succeed(helpers.left(result.stderr))
+        else if (result.stderr) succeed(helpers.left(result.stderr))
+        else succeed(helpers.right(result.stdout))
       }
     )
   }

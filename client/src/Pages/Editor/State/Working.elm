@@ -21,6 +21,11 @@ type Compilation
     | Succeeded
 
 
+type WorkbenchPane
+    = Output
+    | Debug
+
+
 type alias Model =
     { elmCode : String
     , htmlCode : String
@@ -33,6 +38,7 @@ type alias Model =
     , user : User
     , compilation : Compilation
     , currentErrors : List Error
+    , workbenchPane : Maybe WorkbenchPane
     , connected : Bool
     , animating : Bool
     , workbenchRatio : Float
@@ -50,9 +56,10 @@ init token user revision defaultPackages =
       , token = token
       , defaultPackages = defaultPackages
       , revision = Replaceable.fromMaybe revision
-      , actions = Actions.Packages { query = "", searchedPackages = Nothing, awaitingSearch = False }
+      , actions = Actions.Hidden
       , compilation = Ready
       , currentErrors = []
+      , workbenchPane = Nothing
       , connected = True
       , animating = True
       , user = user
@@ -110,25 +117,30 @@ shouldCheckNavigation model =
 
 
 type Msg
-    = ElmCodeChanged String
+    = -- Editor stuff
+      ElmCodeChanged String
     | HtmlCodeChanged String
-    | RouteChanged Route.Route
-    | RevisionLoaded (Entity Revision.Id Revision)
-    | ActionsMsg Actions.Msg
-    | AnimationFinished
-    | SettingsChanged Settings
-    | ActionPaneSelected Actions.Model
-    | WorkbenchResized Float
-    | ActionsResized Float
-    | EditorsResized Float
-    | ChangedProjectName String
-    | PackageInstalled Package
-    | PackageUninstalled Package
     | FormatRequested
     | FormatCompleted String
     | CollapseHtml
+    | EditorsResized Float
+      -- Action stuff
+    | ActionsResized Float
+    | SettingsChanged Settings
+    | ChangedProjectName String
+    | PackageInstalled Package
+    | PackageUninstalled Package
+    | ActionPaneSelected Actions.Model
+    | ActionsMsg Actions.Msg
+      -- Workbench stuff
     | CompileRequested
     | CompileFinished (List Error)
+    | WorkbenchResized Float
+    | WorkbenchPaneSelected WorkbenchPane
+      -- Global stuff
+    | RouteChanged Route.Route
+    | RevisionLoaded (Entity Revision.Id Revision)
+    | AnimationFinished
     | OnlineStatusChanged Bool
     | NoOp
 
@@ -136,14 +148,45 @@ type Msg
 update : Msg -> Model -> ( Model, Outbound Msg )
 update msg ({ user } as model) =
     case msg of
+        WorkbenchPaneSelected pane ->
+            ( { model | workbenchPane = Just pane }
+            , case pane of
+                Output ->
+                    Outbound.SwitchToProgram
+
+                Debug ->
+                    Outbound.SwitchToDebugger
+            )
+
         OnlineStatusChanged connected ->
             ( { model | connected = connected }
             , Outbound.none
             )
 
         CompileRequested ->
-            ( model
+            ( { model | compilation = Compiling }
             , Outbound.Compile model.token model.elmCode model.htmlCode model.packages
+            )
+
+        CompileFinished errors ->
+            ( { model
+                | currentErrors = errors
+                , compilation =
+                    if List.isEmpty errors then
+                        Succeeded
+                    else
+                        FinishedWithErrors errors
+                , workbenchPane =
+                    model.workbenchPane
+                        |> Maybe.withDefault Output
+                        |> Just
+              }
+            , case errors of
+                [] ->
+                    Outbound.none
+
+                _ ->
+                    Outbound.ReloadIframe False
             )
 
         FormatRequested ->
@@ -223,11 +266,6 @@ update msg ({ user } as model) =
         HtmlCodeChanged code ->
             ( { model | htmlCode = code }
             , Outbound.EnableNavigationCheck <| shouldCheckNavigation model
-            )
-
-        CompileFinished errors ->
-            ( { model | currentErrors = errors }
-            , Outbound.none
             )
 
         RevisionLoaded ((Entity revisionId _) as entity) ->

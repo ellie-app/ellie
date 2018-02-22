@@ -4,11 +4,8 @@ import Colors
 import Css exposing (..)
 import Ellie.Ui.Button as Button
 import Ellie.Ui.Icon as Icon
-import Ellie.Ui.Settings as Settings
-import Ellie.Ui.SplitPane as SplitPane
 import Ellie.Ui.TextInput as TextInput
 import Elm.Package as Package exposing (Package)
-import Elm.Package.Name as Name
 import Elm.Package.Searchable as Searchable exposing (Searchable)
 import Elm.Package.Version as Version
 import Extra.Maybe as Maybe
@@ -78,6 +75,7 @@ viewSearchInput isLoading value onSearch =
             , value = value
             , clearable = True
             , onChange = onSearch
+            , autofocus = True
             , icon =
                 if isLoading then
                     Just Icon.Loading
@@ -208,6 +206,7 @@ viewAction action =
         ]
 
 
+infoContainerStyles : Html.Attribute msg
 infoContainerStyles =
     css
         [ padding2 zero (px 16)
@@ -216,6 +215,7 @@ infoContainerStyles =
         ]
 
 
+packageNameStyles : Html.Attribute msg
 packageNameStyles =
     css
         [ fontSize (px 24)
@@ -228,6 +228,7 @@ packageNameStyles =
         ]
 
 
+packageInfoStyles : Html.Attribute msg
 packageInfoStyles =
     css
         [ fontSize (px 18)

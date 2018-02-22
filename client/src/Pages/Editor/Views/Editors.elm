@@ -115,7 +115,7 @@ viewEditorHeader : String -> String -> msg -> Html msg -> Html msg
 viewEditorHeader name tooltip msg icon =
     div
         [ css
-            [ backgroundColor Theme.secondaryBackground
+            [ backgroundColor Theme.editorHeaderBackground
             , displayFlex
             , justifyContent spaceBetween
             , alignItems center

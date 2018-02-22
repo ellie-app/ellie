@@ -18,8 +18,10 @@
     "elasticlunr": "^0.9.5",
     "elm-format": "^0.6.1-alpha",
     "express": "^4.16.2",
+    "jsdom": "^11.6.2",
     "jsonwebtoken": "^8.1.1",
     "mkdirp": "0.5.1",
+    "murmurhash3js": "^3.0.1",
     "pulp": "12.0.1",
     "purescript": "0.11.7",
     "redis-fast-driver": "^2.0.0",
@@ -28,6 +30,7 @@
     "search-index": "^0.15.0",
     "tmp": "0.0.33",
     "unzip": "^0.1.11",
-    "ws": "^4.0.0"
+    "ws": "^4.0.0",
+    "xmldom": "^0.1.27"
   }
 }

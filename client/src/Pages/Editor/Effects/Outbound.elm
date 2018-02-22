@@ -43,7 +43,6 @@ type Outbound msg
     | Compile Jwt String String (List Package)
     | ReloadIframe Bool
     | Redirect String
-    | AttachToWorkspace Jwt
     | SearchPackages String (List Searchable -> msg)
     | SwitchToDebugger
     | SwitchToProgram
@@ -154,13 +153,6 @@ send onError effect state =
         Redirect url ->
             ( state
             , Navigation.modifyUrl url
-            )
-
-        AttachToWorkspace token ->
-            ( state
-            , Encode.genericUnion "AttachToWorkspace" []
-                |> Encode.encode 0
-                |> WebSocket.send (Constants.workspaceUrl ++ "?token=" ++ Jwt.toString token)
             )
 
         SwitchToDebugger ->
@@ -335,9 +327,6 @@ map f outbound =
 
         Redirect url ->
             Redirect url
-
-        AttachToWorkspace token ->
-            AttachToWorkspace token
 
         SwitchToDebugger ->
             SwitchToDebugger

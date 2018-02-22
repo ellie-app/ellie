@@ -7,6 +7,7 @@ module Server.Action
   , setStatus
   , setHeader
   , setStringBody
+  , setFileBody
   , getBody
   , getHeader
   , getParam
@@ -26,13 +27,13 @@ import Control.Monad.State as State
 import Control.Monad.Trans.Class (class MonadTrans, lift)
 import Data.Array ((:))
 import Data.Either (Either)
+import Data.FilePath (FilePath)
 import Data.Foldable (for_)
 import Data.Foreign (Foreign, MultipleErrors)
 import Data.Foreign.Class (class Decode)
 import Data.Foreign.Class (decode) as Foreign
 import Data.Int as Int
 import Data.Maybe (Maybe(..))
-import Data.Maybe as Maybe
 import Data.Newtype (class Newtype, unwrap)
 import Data.String as String
 import Data.StrMap (StrMap)
@@ -43,17 +44,17 @@ import Data.Url.Query as Query
 import Node.Express.Handler (Handler, HandlerM(..))
 import Node.Express.Response as Response
 import Node.Express.Types as Express
-
+import Debug as Debug
 
 foreign import _parseRequest ∷
   { parseMethod ∷ String → Method
-  , parseUrl ∷ String -> Url
+  , parseUrl ∷ String → Url
   }
   → Express.Request
   → Request
 
 
-parseMethod :: String -> Method
+parseMethod ∷ String → Method
 parseMethod "GET" = Get
 parseMethod "PUT" = Put
 parseMethod "POST" = Post
@@ -74,7 +75,7 @@ data Method
 type Request =
   { method ∷ Method
   , url ∷ Url
-  , params :: StrMap String
+  , params ∷ StrMap String
   , headers ∷ StrMap String
   , body ∷ Foreign
   , vault ∷ StrMap Foreign
@@ -84,6 +85,7 @@ type Request =
 data Content
   = ContentEmpty
   | ContentString String
+  | ContentFile FilePath
 
 
 type Response =
@@ -114,14 +116,15 @@ derive newtype instance monadActionT ∷ Monad m ⇒ Monad (ActionT m)
 instance monadTransActionT ∷ MonadTrans ActionT where
   lift = lift >>> lift >>> ActionT
 
+
 getRequest ∷ ∀ e. HandlerM e Request
 getRequest = HandlerM \req _ _ →
   pure $ _parseRequest { parseMethod, parseUrl: Url.parse } req
 
 
-makeHandler ∷ ∀ m e. Monad m ⇒ (m ~> IO) -> ActionT m Unit → Handler e
+makeHandler ∷ ∀ m e. Monad m ⇒ (m ~> IO) → ActionT m Unit → Handler e
 makeHandler runner (ActionT action) = do
-  request <- getRequest
+  request ← getRequest
   response ←
     action
       # flip Reader.runReaderT request
@@ -134,8 +137,10 @@ makeHandler runner (ActionT action) = do
   for_ response.headers \{ key, value } →
     Response.setResponseHeader key value
   case response.content of
-    ContentEmpty -> Response.end
-    ContentString str -> Response.send str  
+    ContentEmpty → Response.end
+    ContentString str → Response.send str
+    ContentFile path → Response.sendFileExt path {} (\_ → pure unit)
+  
 
 
 class IsParam a where
@@ -184,3 +189,8 @@ setHeader key value =
 setStringBody ∷ ∀ m. Monad m ⇒ String → ActionT m Unit
 setStringBody content =
   ActionT $ State.modify (_ { content = ContentString content })
+
+
+setFileBody ∷ ∀ m. Monad m ⇒ FilePath → ActionT m Unit
+setFileBody path =
+  ActionT $ State.modify (_ { content = ContentFile path })

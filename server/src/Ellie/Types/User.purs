@@ -16,7 +16,7 @@ import Data.Foreign.NullOrUndefined (unNullOrUndefined) as Foreign
 import Data.Maybe (Maybe(..))
 import Data.Newtype (class Newtype)
 import Data.String.Class (class ToString)
-import Data.UniqueId (UniqueId(..))
+import Data.UniqueId (UniqueId)
 import Ellie.Types.ProjectId (ProjectId)
 import Ellie.Types.Settings (Settings)
 import Ellie.Types.Settings as Settings
@@ -28,7 +28,9 @@ newtype Id
 derive instance newtypeId ∷ Newtype Id _
 derive newtype instance toStringId ∷ ToString Id
 derive newtype instance encodeId ∷ Encode Id
-
+derive newtype instance eqId ∷ Eq Id
+derive newtype instance ordId ∷ Ord Id
+derive newtype instance showId ∷ Show Id
 
 newtype User =
   User
@@ -57,7 +59,7 @@ instance decodeSession ∷ Decode User where
       <#> User
 
 
-default :: User
+default ∷ User
 default =
   User
     { latestTermsVersion: Nothing

@@ -39,41 +39,40 @@ type Msg
     | UserSelectedPane Pane
 
 
-update : Msg -> Model -> ( Model, List (Outbound Msg) )
+update : Msg -> Model -> ( Model, Outbound Msg )
 update msg model =
     case msg of
         LogReceived log ->
             ( { model | logs = BoundedDeque.pushFront log model.logs }
-            , []
+            , Outbound.none
             )
 
         UserPressedReloadIframe ->
             ( model
-            , [ Outbound.ReloadIframe (model.pane == Debug) ]
+            , Outbound.ReloadIframe (model.pane == Debug)
             )
 
         UserPressedClearLogs ->
             ( { model | logs = BoundedDeque.empty 100 }
-            , []
+            , Outbound.none
             )
 
         UserSelectedPane Debug ->
             ( { model | pane = Debug }
-            , [ Outbound.SwitchToDebugger ]
+            , Outbound.SwitchToDebugger
             )
 
         UserSelectedPane Output ->
             ( { model | pane = Output }
-            , [ Outbound.SwitchToProgram ]
+            , Outbound.SwitchToProgram
             )
 
         UserSelectedPane pane ->
             ( { model | pane = pane }
-            , []
+            , Outbound.none
             )
 
 
-subscriptions : Model -> List (Inbound Msg)
+subscriptions : Model -> Inbound Msg
 subscriptions model =
-    [ Inbound.LogReceived LogReceived
-    ]
+    Inbound.LogReceived LogReceived

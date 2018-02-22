@@ -10,6 +10,7 @@ import Html.Styled.Events exposing (onClick)
 
 type alias Config =
     { connected : Bool
+    , compileStatus : String
     }
 
 
@@ -29,6 +30,15 @@ view config =
             ]
         ]
         [ Html.div
+            [ css
+                [ color Theme.primaryForeground
+                , fontSize (px 16)
+                , paddingRight (px 16)
+                ]
+            ]
+            [ Html.text config.compileStatus
+            ]
+        , Html.div
             [ css
                 [ width (px 20)
                 , height (px 20)

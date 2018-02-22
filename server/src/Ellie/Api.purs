@@ -14,8 +14,8 @@ import Data.Foreign.Generic (encodeJSON) as Foreign
 import Data.Foreign.Index ((!))
 import Data.Maybe (Maybe(..))
 import Data.Maybe as Maybe
-import Data.String (Pattern(..), Replacement(..))
-import Data.String (replace, stripPrefix) as String
+import Data.String (Pattern(Pattern))
+import Data.String (stripPrefix) as String
 import Data.TemplateString.Unsafe (template) as String
 import Data.Url as Url
 import Ellie.Domain.Assets (class Assets)
@@ -142,6 +142,20 @@ formatCode = do
           Action.setStringBody $ Foreign.encodeJSON $ Foreign.toForeign { code }
 
 
+result ∷ ∀ m. Monad m ⇒ UserRepo m ⇒ Platform m ⇒ ActionT m Unit
+result = do
+  maybeUser ← authorizeParam 
+  case maybeUser of
+    Nothing → Action.setStatus 401
+    Just entity → do
+      { javascript, html } ← lift $ Platform.result $ Entity.key entity
+      format ← Action.getParam "format"
+      case (Debug.log format) of
+        Just "javascript" → Action.setFileBody javascript
+        Just "html" → Action.setFileBody html
+        _ → Action.setStatus 404
+
+
 newUi ∷ ∀ m. Monad m ⇒ Assets m ⇒ UserRepo m ⇒ ActionT m Unit
 newUi = do
   Action.setStatus 200
@@ -186,3 +200,15 @@ newUi = do
           <*> (Url.href <$> Assets.assetUrl "images/favicon.ico")
           <*> (Url.href <$> Assets.assetUrl "images/logo.png")
       pure $ String.template htmlTemplate parameters
+
+
+authorizeParam ∷ ∀ m. Monad m ⇒ UserRepo m ⇒ ActionT m (Maybe (Entity User.Id User))
+authorizeParam = do
+  maybeToken ← Action.getParam "token"
+  case maybeToken of
+    Nothing → pure Nothing
+    Just token → do
+      maybeUserId ← lift $ UserRepo.verify (Jwt token)
+      case maybeUserId of
+        Nothing → pure Nothing
+        Just userId → lift $ UserRepo.retrieve userId

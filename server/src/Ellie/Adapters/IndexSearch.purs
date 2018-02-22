@@ -28,31 +28,31 @@ import Data.String as String
 import Data.String.Class (toString) as String
 import Data.Traversable (maximum, traverse)
 import Debug as Debug
-import Ellie.Elm.Package (Package(..))
-import Ellie.Elm.Package.Name (Name)
-import Ellie.Elm.Package.Searchable (Searchable(..))
-import Ellie.Elm.Package.Version (Version)
-import Ellie.Elm.Package.Version as Version
+import Elm.Package (Package(..))
+import Elm.Package.Name (Name)
+import Elm.Package.Searchable (Searchable(..))
+import Elm.Package.Version (Version)
+import Elm.Package.Version as Version
 import System.Http as Http
 import System.SearchIndex (SearchIndex)
 import System.SearchIndex as SearchIndex
 
 
 type Env r =
-  { index :: Ref (Maybe (SearchIndex Searchable))
+  { index ∷ Ref (Maybe (SearchIndex Searchable))
   | r
   }
 
 
-search :: ∀ m r. MonadIO m => MonadThrow Error m => String -> Env r -> m (Array Searchable)
+search ∷ ∀ m r. MonadIO m ⇒ MonadThrow Error m => String → Env r -> m (Array Searchable)
 search query env = IO.liftIO do
-  maybeIndex <-
+  maybeIndex ←
     Eff.liftEff $ Ref.readRef env.index
-  index <-
+  index ←
     case maybeIndex of
-      Just i -> pure i
+      Just i → pure i
       Nothing -> do
-        rawPackageData <-
+        rawPackageData ←
           Http.get "http://package.elm-lang.org/all-packages"
         rawNewPackageNames ←
           Http.get "http://package.elm-lang.org/new-packages"
@@ -60,26 +60,26 @@ search query env = IO.liftIO do
           rawNewPackageNames
             # Foreign.decode
             # Except.runExcept
-            # lmap (\me -> error $ String.joinWith "\n" $ Array.fromFoldable $ map Foreign.renderForeignError me)
+            # lmap (\me → error $ String.joinWith "\n" $ Array.fromFoldable $ map Foreign.renderForeignError me)
             # Either.either throwError pure
         let newPackageNames = Set.fromFoldable newPackageNamesArray
-        nameAndVersions <-
+        nameAndVersions ←
           rawPackageData
             # decodeNameAndVersions
             # Except.runExcept
-            # lmap (\me -> error $ String.joinWith "\n" $ Array.fromFoldable $ map Foreign.renderForeignError me)
+            # lmap (\me → error $ String.joinWith "\n" $ Array.fromFoldable $ map Foreign.renderForeignError me)
             # Either.either throwError pure
-        newIndex <-
+        newIndex ←
           SearchIndex.create
         nameAndVersions
           # map toSearchable
-          # Array.filter (\(Searchable s) -> Set.member (s.package # unwrap # _.name) newPackageNames)
+          # Array.filter (\(Searchable s) → Set.member (s.package # unwrap # _.name) newPackageNames)
           # SearchIndex.add newIndex
         Eff.liftEff $ Ref.writeRef env.index (Just newIndex)
         pure newIndex
   SearchIndex.search index query 20
   where
-    toSearchable ∷ { description ∷ String, name ∷ Name, versions ∷ Array Version } -> Searchable
+    toSearchable ∷ { description ∷ String, name ∷ Name, versions ∷ Array Version } → Searchable
     toSearchable { name, description, versions } =
       Searchable
         { package:
@@ -90,15 +90,13 @@ search query env = IO.liftIO do
         , description
         }
 
-    decodeNameAndVersion :: Foreign -> F { description ∷ String, name ∷ Name, versions ∷ Array Version }
+    decodeNameAndVersion ∷ Foreign → F { description ∷ String, name ∷ Name, versions ∷ Array Version }
     decodeNameAndVersion object = do
       { name: _, versions: _, description: _ }
         <$> (object ! "name" >>= Foreign.decode)
         <*> (object ! "versions" >>= Foreign.decode)
         <*> (object ! "summary" >>= Foreign.decode)
 
-    decodeNameAndVersions :: Foreign -> F (Array { description ∷ String, name :: Name, versions :: Array Version })
+    decodeNameAndVersions ∷ Foreign → F (Array { description ∷ String, name :: Name, versions :: Array Version })
     decodeNameAndVersions array =
       Foreign.readArray array >>= traverse decodeNameAndVersion
-    
-

@@ -1,16 +1,13 @@
-module System.Time
-    ( TIME
-    , now
-    ) where
+module System.Time where
 
 import Prelude
 import Control.Monad.Eff (kind Effect, Eff)
 
-foreign import data TIME :: Effect
-foreign import _now :: ∀ e x. Eff (time :: TIME | e) Int
+foreign import data TIME ∷ Effect
+foreign import _now ∷ ∀ e x. Eff (time ∷ TIME | e) Int
 
 
-now :: ∀ e x. Eff (time :: TIME | e) Int
+now ∷ ∀ e x. Eff (time ∷ TIME | e) Int
 now = _now
 
 

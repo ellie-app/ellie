@@ -4,9 +4,7 @@ module Ellie.Domain.Search
   ) where
 
 
-import Ellie.Elm.Package.Searchable (Searchable)
+import Elm.Package.Searchable (Searchable)
 
 class Search m where
-  search :: String -> m (Array Searchable)
-
-
+  search ∷ String → m (Array Searchable)
