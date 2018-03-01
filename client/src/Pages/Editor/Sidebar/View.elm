@@ -191,7 +191,7 @@ viewAbout config () =
             , text "."
             ]
         , p [ Styles.aboutCopyright ]
-            [ text "© 2017 Luke Westby" ]
+            [ text "© 2018 Luke Westby" ]
         ]
 
 

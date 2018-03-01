@@ -1,4 +1,4 @@
-Copyright 2017 Luke Westby
+Copyright 2018 Luke Westby
 
 Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
 
