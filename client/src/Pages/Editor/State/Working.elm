@@ -1,5 +1,6 @@
 module Pages.Editor.State.Working exposing (..)
 
+import BoundedDeque exposing (BoundedDeque)
 import Data.Entity as Entity exposing (Entity(..))
 import Data.Jwt exposing (Jwt)
 import Data.Replaceable as Replaceable exposing (Replaceable)
@@ -8,22 +9,31 @@ import Ellie.Types.Settings as Settings exposing (Settings)
 import Ellie.Types.User as User exposing (User)
 import Elm.Compiler.Error as Error exposing (Error)
 import Elm.Package as Package exposing (Package)
+import Pages.Editor.Effects.Exception as Exception exposing (Exception)
 import Pages.Editor.Effects.Inbound as Inbound exposing (Inbound)
 import Pages.Editor.Effects.Outbound as Outbound exposing (Outbound)
 import Pages.Editor.Route as Route
 import Pages.Editor.State.Actions as Actions
+import Pages.Editor.Types.Example as Example exposing (Example)
+import Pages.Editor.Types.Log as Log exposing (Log)
 
 
-type Compilation
+type Workbench
     = Ready
-    | Compiling
-    | FinishedWithErrors (List Error)
-    | Succeeded
+    | FinishedWithErrors { errors : List Error, pane : ErrorsPane }
+    | Finished { logs : BoundedDeque Log, pane : SuccessPane, logSearch : String }
 
 
-type WorkbenchPane
-    = Output
-    | Debug
+type ErrorsPane
+    = ErrorsList
+    | ErrorsShare
+
+
+type SuccessPane
+    = SuccessOutput
+    | SuccessLogs
+    | SuccessDebug
+    | SuccessShare
 
 
 type alias Model =
@@ -32,82 +42,60 @@ type alias Model =
     , packages : List Package
     , projectName : String
     , token : Jwt
+    , activeExample : Example
     , defaultPackages : List Package
     , revision : Replaceable Revision.Id Revision
     , actions : Actions.Model
     , user : User
-    , compilation : Compilation
-    , currentErrors : List Error
-    , workbenchPane : Maybe WorkbenchPane
+    , workbench : Workbench
+    , compiling : Bool
     , connected : Bool
     , animating : Bool
     , workbenchRatio : Float
-    , actionsRatio : Float
     , editorsRatio : Float
+    , exceptions : List Exception
     }
 
 
 init : Jwt -> User -> Maybe (Entity Revision.Id Revision) -> List Package -> ( Model, Outbound Msg )
 init token user revision defaultPackages =
-    ( { elmCode = revision |> Maybe.map (Entity.record >> .elmCode) |> Maybe.withDefault defaultElm
-      , htmlCode = revision |> Maybe.map (Entity.record >> .htmlCode) |> Maybe.withDefault defaultHtml
-      , packages = revision |> Maybe.map (Entity.record >> .packages) |> Maybe.withDefault defaultPackages
+    ( { elmCode =
+            revision
+                |> Maybe.map (Entity.record >> .elmCode)
+                |> Maybe.withDefault (.elm Example.helloWorld)
+      , htmlCode =
+            revision
+                |> Maybe.map (Entity.record >> .htmlCode)
+                |> Maybe.withDefault (.html Example.helloWorld)
+      , packages =
+            revision
+                |> Maybe.map (Entity.record >> .packages)
+                |> Maybe.withDefault defaultPackages
+      , activeExample = Example.helloWorld
       , projectName = ""
       , token = token
       , defaultPackages = defaultPackages
       , revision = Replaceable.fromMaybe revision
       , actions = Actions.Hidden
-      , compilation = Ready
-      , currentErrors = []
-      , workbenchPane = Nothing
+      , workbench = Ready
+      , compiling = False
       , connected = True
       , animating = True
       , user = user
       , workbenchRatio = 0.5
-      , actionsRatio = 0.1
       , editorsRatio = 0.75
+      , exceptions = []
       }
     , Outbound.Delay 1000 AnimationFinished
     )
-
-
-defaultElm : String
-defaultElm =
-    """module Main exposing (main)
-
-import Html exposing (Html, text)
-
-
-main : Html msg
-main =
-    text "Hello, World!"
-"""
-
-
-defaultHtml : String
-defaultHtml =
-    """<html>
-<head>
-  <style>
-    /* you can style your program here */
-  </style>
-</head>
-<body>
-  <script>
-    var app = Elm.Main.fullscreen()
-    // you can use ports and stuff here
-  </script>
-</body>
-</html>
-"""
 
 
 shouldCheckNavigation : Model -> Bool
 shouldCheckNavigation model =
     case Replaceable.toMaybe model.revision of
         Nothing ->
-            (model.elmCode /= defaultElm)
-                || (model.htmlCode /= defaultHtml)
+            (model.elmCode /= model.activeExample.elm)
+                || (model.htmlCode /= model.activeExample.html)
                 || (model.packages /= model.defaultPackages)
 
         Just (Entity _ revision) ->
@@ -124,8 +112,8 @@ type Msg
     | FormatCompleted String
     | CollapseHtml
     | EditorsResized Float
+    | ExampleSelected Example
       -- Action stuff
-    | ActionsResized Float
     | SettingsChanged Settings
     | ChangedProjectName String
     | PackageInstalled Package
@@ -134,9 +122,17 @@ type Msg
     | ActionsMsg Actions.Msg
       -- Workbench stuff
     | CompileRequested
+    | ExpandWorkbench
     | CompileFinished (List Error)
     | WorkbenchResized Float
-    | WorkbenchPaneSelected WorkbenchPane
+    | ErrorsPaneSelected ErrorsPane
+    | SuccessPaneSelected SuccessPane
+    | IframeReloadClicked
+    | ClearLogsClicked
+    | LogReceived Log
+    | LogSearchChanged String
+      -- Exception Stuff
+    | ExceptionReceived Exception
       -- Global stuff
     | RouteChanged Route.Route
     | RevisionLoaded (Entity Revision.Id Revision)
@@ -148,46 +144,149 @@ type Msg
 update : Msg -> Model -> ( Model, Outbound Msg )
 update msg ({ user } as model) =
     case msg of
-        WorkbenchPaneSelected pane ->
-            ( { model | workbenchPane = Just pane }
-            , case pane of
-                Output ->
-                    Outbound.SwitchToProgram
-
-                Debug ->
-                    Outbound.SwitchToDebugger
-            )
-
-        OnlineStatusChanged connected ->
-            ( { model | connected = connected }
+        ExceptionReceived exception ->
+            ( { model | exceptions = exception :: model.exceptions }
             , Outbound.none
             )
 
+        ErrorsPaneSelected pane ->
+            case model.workbench of
+                FinishedWithErrors state ->
+                    ( { model | workbench = FinishedWithErrors { state | pane = pane } }
+                    , Outbound.none
+                    )
+
+                _ ->
+                    ( model, Outbound.none )
+
+        SuccessPaneSelected pane ->
+            case model.workbench of
+                Finished state ->
+                    ( { model | workbench = Finished { state | pane = pane } }
+                    , case pane of
+                        SuccessOutput ->
+                            Outbound.SwitchToProgram
+
+                        SuccessDebug ->
+                            Outbound.SwitchToDebugger
+
+                        _ ->
+                            Outbound.none
+                    )
+
+                _ ->
+                    ( model, Outbound.none )
+
+        ExpandWorkbench ->
+            if model.workbenchRatio < 0.05 then
+                ( { model | workbenchRatio = 0.5 }
+                , Outbound.none
+                )
+            else
+                ( { model | workbenchRatio = 0 }
+                , Outbound.none
+                )
+
+        LogSearchChanged logSearch ->
+            case model.workbench of
+                Finished state ->
+                    ( { model | workbench = Finished { state | logSearch = logSearch } }
+                    , Outbound.none
+                    )
+
+                _ ->
+                    ( model, Outbound.none )
+
+        LogReceived log ->
+            case model.workbench of
+                Finished state ->
+                    ( { model
+                        | workbench =
+                            Finished
+                                { state
+                                    | logs = BoundedDeque.pushFront log state.logs
+                                    , logSearch = ""
+                                }
+                      }
+                    , Outbound.none
+                    )
+
+                _ ->
+                    ( model, Outbound.none )
+
+        ClearLogsClicked ->
+            case model.workbench of
+                Finished state ->
+                    ( { model
+                        | workbench =
+                            Finished
+                                { state
+                                    | logs = BoundedDeque.empty 50
+                                    , logSearch = ""
+                                }
+                      }
+                    , Outbound.none
+                    )
+
+                _ ->
+                    ( model, Outbound.none )
+
+        IframeReloadClicked ->
+            ( model
+            , Outbound.ReloadIframe
+            )
+
         CompileRequested ->
-            ( { model | compilation = Compiling }
+            ( { model | compiling = True }
             , Outbound.Compile model.token model.elmCode model.htmlCode model.packages
             )
 
         CompileFinished errors ->
-            ( { model
-                | currentErrors = errors
-                , compilation =
-                    if List.isEmpty errors then
-                        Succeeded
-                    else
-                        FinishedWithErrors errors
-                , workbenchPane =
-                    model.workbenchPane
-                        |> Maybe.withDefault Output
-                        |> Just
-              }
-            , case errors of
-                [] ->
-                    Outbound.none
+            case ( model.compiling, errors, model.workbench ) of
+                ( True, [], Finished state ) ->
+                    ( { model
+                        | compiling = False
+                        , workbench =
+                            Finished
+                                { state
+                                    | logs = BoundedDeque.empty 50
+                                    , logSearch = ""
+                                }
+                      }
+                    , Outbound.ReloadIframe
+                    )
+
+                ( True, [], _ ) ->
+                    ( { model
+                        | compiling = False
+                        , workbench =
+                            Finished
+                                { logs = BoundedDeque.empty 50
+                                , pane = SuccessOutput
+                                , logSearch = ""
+                                }
+                      }
+                    , Outbound.none
+                    )
+
+                ( True, nonEmpty, FinishedWithErrors state ) ->
+                    ( { model
+                        | compiling = False
+                        , workbench = FinishedWithErrors { state | errors = nonEmpty }
+                      }
+                    , Outbound.none
+                    )
+
+                ( True, nonEmpty, _ ) ->
+                    ( { model
+                        | compiling = False
+                        , workbench = FinishedWithErrors { errors = nonEmpty, pane = ErrorsList }
+                      }
+                    , Outbound.none
+                    )
 
                 _ ->
-                    Outbound.ReloadIframe False
-            )
+                    ( model, Outbound.none )
 
         FormatRequested ->
             ( model
@@ -205,6 +304,19 @@ update msg ({ user } as model) =
               else
                 { model | editorsRatio = 1 }
             , Outbound.none
+            )
+
+        ExampleSelected example ->
+            let
+                nextModel =
+                    { model
+                        | activeExample = example
+                        , elmCode = example.elm
+                        , htmlCode = example.html
+                    }
+            in
+            ( nextModel
+            , Outbound.EnableNavigationCheck <| shouldCheckNavigation nextModel
             )
 
         PackageInstalled package ->
@@ -227,11 +339,6 @@ update msg ({ user } as model) =
             , Outbound.none
             )
 
-        ActionsResized ratio ->
-            ( { model | actionsRatio = ratio }
-            , Outbound.none
-            )
-
         EditorsResized ratio ->
             ( { model | editorsRatio = ratio }
             , Outbound.none
@@ -249,6 +356,11 @@ update msg ({ user } as model) =
 
         AnimationFinished ->
             ( { model | animating = False }, Outbound.none )
+
+        OnlineStatusChanged connected ->
+            ( { model | connected = connected }
+            , Outbound.none
+            )
 
         NoOp ->
             ( model, Outbound.none )
@@ -348,8 +460,7 @@ update msg ({ user } as model) =
 subscriptions : Model -> Inbound Msg
 subscriptions model =
     Inbound.batch
-        [ Inbound.KeepWorkspaceOpen model.token
-        , Inbound.map ActionsMsg <| Actions.subscriptions model.actions
+        [ Inbound.map ActionsMsg <| Actions.subscriptions model.actions
         , Inbound.CompileFinished model.token CompileFinished
         , if model.connected then
             Inbound.WorkspaceDetached model.token (OnlineStatusChanged False)

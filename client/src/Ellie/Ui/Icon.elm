@@ -38,6 +38,8 @@ type Icon
     | Search
     | Loading
     | Socket
+    | Reload
+    | More
 
 
 view : Icon -> Html msg
@@ -50,6 +52,12 @@ view icon =
 toIdString : Icon -> String
 toIdString icon =
     case icon of
+        More ->
+            "more"
+
+        Reload ->
+            "reload"
+
         Loading ->
             "loading"
 

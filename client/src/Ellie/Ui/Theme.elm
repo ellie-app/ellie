@@ -77,6 +77,21 @@ workbenchWatermark =
     var "--theme-color-workbench-watermark"
 
 
+tabActiveBorder : BasicProperty
+tabActiveBorder =
+    var "--theme-color-tab-active-border"
+
+
+tabForeground : BasicProperty
+tabForeground =
+    var "--theme-color-tab-foreground"
+
+
+editorFontFamily : BasicProperty
+editorFontFamily =
+    var "--theme-font-family-editor"
+
+
 darkStyles : Css.Foreign.Snippet
 darkStyles =
     Css.Foreign.selector ":root"
@@ -94,6 +109,9 @@ darkStyles =
         , property "--theme-color-button-background" "#525252"
         , property "--theme-color-editor-header-background" "#222222"
         , property "--theme-color-workbench-watermark" "#252525"
+        , property "--theme-color-tab-active-border" "#525252"
+        , property "--theme-color-tab-foreground" "#DDDDDD"
+        , property "--theme-font-family-editor" "monospace"
         ]
 
 

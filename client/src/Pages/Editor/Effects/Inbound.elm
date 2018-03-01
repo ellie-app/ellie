@@ -9,16 +9,13 @@ port module Pages.Editor.Effects.Inbound
 
 import Data.Jwt as Jwt exposing (Jwt)
 import Ellie.Constants as Constants
-import Ellie.Types.Log as Log exposing (Log)
 import Elm.Compiler.Error as CompilerError
 import Elm.Package as Package exposing (Package)
-import Extra.Json.Decode as Decode
-import Extra.Json.Encode as Encode
 import Extra.Result as Result
 import Json.Decode as Decode exposing (Decoder)
 import Json.Encode as Encode exposing (Value)
 import Keyboard
-import Pages.Editor.Effects.Error exposing (Error)
+import Pages.Editor.Effects.Exception as Exception exposing (Exception(..))
 import Pages.Editor.Effects.State exposing (Msg(..), State)
 import WebSocket
 
@@ -28,33 +25,26 @@ type Inbound msg
     | OutputThrewException (String -> msg)
     | WorkspaceAttached Jwt (List Package -> msg)
     | KeepWorkspaceOpen Jwt
-    | LogReceived (Log -> msg)
-    | Batch (List (Inbound msg))
     | EscapePressed msg
     | WorkspaceDetached Jwt msg
+    | Batch (List (Inbound msg))
     | None
 
 
-listen : (Error -> msg) -> Inbound msg -> Sub (Msg msg)
-listen onError inbound =
+listen : Inbound msg -> Sub (Msg msg)
+listen inbound =
     case inbound of
         WorkspaceDetached token next ->
-            pagesEditorEffectsInbound <|
-                \{ tag, data } ->
-                    case tag of
-                        "SocketClosed" ->
-                            case Decode.decodeValue Decode.string data of
-                                Ok url ->
-                                    if url == (Constants.workspaceUrl ++ "?token=" ++ Jwt.toString token) then
-                                        UserMsg next
-                                    else
-                                        NoOp
-
-                                Err message ->
-                                    UserMsg (onError message)
-
-                        _ ->
+            Decode.string
+                |> Decode.map
+                    (\url ->
+                        if url == (Constants.workspaceUrl ++ "?token=" ++ Jwt.toString token) then
+                            UserMsg next
+                        else
                             NoOp
+                    )
+                |> portDecoder "SocketClosed"
+                |> pagesEditorEffectsInbound
 
         EscapePressed next ->
             Keyboard.ups
@@ -65,62 +55,29 @@ listen onError inbound =
                         NoOp
                 )
 
-        LogReceived callback ->
-            pagesEditorEffectsInbound <|
-                \{ tag, data } ->
-                    case tag of
-                        "LogReceived" ->
-                            data
-                                |> Decode.decodeValue Log.decoder
-                                |> Result.fold callback onError
-                                |> UserMsg
-
-                        _ ->
-                            NoOp
-
         KeepWorkspaceOpen token ->
             WebSocket.keepAlive (Constants.workspaceUrl ++ "?token=" ++ Jwt.toString token)
 
         CompileFinished token callback ->
-            WebSocket.listen
-                (Constants.workspaceUrl ++ "?token=" ++ Jwt.toString token)
-                (\data ->
-                    data
-                        |> Decode.decodeString
-                            (Decode.genericUnion1
-                                identity
-                                "CompileSucceeded"
-                                (Decode.list CompilerError.decoder)
-                            )
-                        |> Result.fold callback onError
-                        |> UserMsg
-                )
+            Decode.list CompilerError.decoder
+                |> Decode.map (callback >> UserMsg)
+                |> socketDecoder "CompileFinished"
+                |> WebSocket.listen (Constants.workspaceUrl ++ "?token=" ++ Jwt.toString token)
 
         WorkspaceAttached token callback ->
-            WebSocket.listen
-                (Constants.workspaceUrl ++ "?token=" ++ Jwt.toString token)
-                (\data ->
-                    data
-                        |> Decode.decodeString (Decode.genericUnion1 identity "WorkspaceAttached" (Decode.list Package.decoder))
-                        |> Result.fold callback onError
-                        |> UserMsg
-                )
+            Decode.list Package.decoder
+                |> Decode.map (callback >> UserMsg)
+                |> socketDecoder "WorkspaceAttached"
+                |> WebSocket.listen (Constants.workspaceUrl ++ "?token=" ++ Jwt.toString token)
 
         OutputThrewException callback ->
-            pagesEditorEffectsInbound <|
-                \{ tag, data } ->
-                    case tag of
-                        "OutputThrewException" ->
-                            data
-                                |> Decode.decodeValue Decode.string
-                                |> Result.fold callback onError
-                                |> UserMsg
-
-                        _ ->
-                            NoOp
+            Decode.string
+                |> Decode.map (callback >> UserMsg)
+                |> portDecoder "OutputThrewException"
+                |> pagesEditorEffectsInbound
 
         Batch inbounds ->
-            Sub.batch <| List.map (listen onError) inbounds
+            Sub.batch <| List.map listen inbounds
 
         None ->
             Sub.none
@@ -130,7 +87,49 @@ listen onError inbound =
 --
 
 
-port pagesEditorEffectsInbound : ({ tag : String, data : Value } -> msg) -> Sub msg
+socketDecoder : String -> Decoder (Msg msg) -> String -> Msg msg
+socketDecoder topic decoder message =
+    let
+        messageDecoder =
+            Decode.field "topic" Decode.string
+                |> Decode.andThen
+                    (\realTopic ->
+                        if realTopic == topic then
+                            Decode.oneOf
+                                [ Decode.field "contents" decoder
+                                , Decode.map ExceptionOccured <| Decode.field "exception" Exception.decoder
+                                ]
+                        else
+                            Decode.succeed NoOp
+                    )
+    in
+    message
+        |> Decode.decodeString messageDecoder
+        |> Result.fold identity (ClientDecoderFailure >> ExceptionOccured)
+
+
+portDecoder : String -> Decoder (Msg msg) -> Value -> Msg msg
+portDecoder topic decoder message =
+    let
+        decoder =
+            Decode.field "topic" Decode.string
+                |> Decode.andThen
+                    (\realTopic ->
+                        if realTopic == topic then
+                            Decode.oneOf
+                                [ Decode.map ExceptionOccured <| Decode.field "exception" Exception.decoder
+                                , Decode.field "contents" decoder
+                                ]
+                        else
+                            Decode.succeed NoOp
+                    )
+    in
+    message
+        |> Decode.decodeValue decoder
+        |> Result.fold identity (ClientDecoderFailure >> ExceptionOccured)
+
+
+port pagesEditorEffectsInbound : (Value -> msg) -> Sub msg
 
 
 batch : List (Inbound msg) -> Inbound msg
@@ -144,12 +143,11 @@ none =
 
 
 wrapSubs :
-    (Error -> msg)
-    -> (model -> Inbound msg)
+    (model -> Inbound msg)
     -> ( model, State msg )
     -> Sub (Msg msg)
-wrapSubs onError userSub ( model, state ) =
-    listen onError <| userSub model
+wrapSubs userSub ( model, state ) =
+    listen <| userSub model
 
 
 map : (a -> b) -> Inbound a -> Inbound b
@@ -160,9 +158,6 @@ map f inbound =
 
         EscapePressed next ->
             EscapePressed (f next)
-
-        LogReceived callback ->
-            LogReceived (callback >> f)
 
         CompileFinished token callback ->
             CompileFinished token (callback >> f)

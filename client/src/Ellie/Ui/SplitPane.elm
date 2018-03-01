@@ -66,6 +66,7 @@ horizontalStyles =
         , position relative
         , width (pct 100)
         , height (pct 100)
+        , overflow hidden
         , Css.Foreign.children
             [ Css.Foreign.typeSelector "ellie-ui-split-pane-panel"
                 [ width (pct 50)
@@ -99,6 +100,7 @@ verticalStyles =
         , position relative
         , width (pct 100)
         , height (pct 100)
+        , overflow hidden
         , Css.Foreign.children
             [ Css.Foreign.typeSelector "ellie-ui-split-pane-panel"
                 [ height (pct 50)

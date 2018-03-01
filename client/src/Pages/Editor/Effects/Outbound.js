@@ -11,31 +11,16 @@ const start = (app) => {
         break
 
       case 'ReloadIframe':
-        const iframeId = contents
-        const iframe = document.getElementById(iframeId)
-        if (iframe) iframe.src = iframe.src
+        requestAnimationFrame(() => {
+          const output = document.querySelector('ellie-pages-editor-views-output')
+          if (output) output.reload()
+        })
         break
 
       case 'EnableNavigationCheck':
         const enabled = contents
         if (enabled) window.addEventListener('beforeunload', preventNavigation)
         else window.removeEventListener('beforeunload', preventNavigation)
-        break
-      
-      case 'SwitchToDebugger':
-        requestAnimationFrame(() => {
-          const iframe = document.getElementById('workbenchIframe')
-          if (!iframe) return
-          iframe.contentWindow.postMessage({ tag: 'SwitchToDebugger' }, window.location.origin)
-        })
-        break
-
-      case 'SwitchToProgram':
-        requestAnimationFrame(() => {
-          const iframe = document.getElementById('workbenchIframe')
-          if (!iframe) return
-          iframe.contentWindow.postMessage({ tag: 'SwitchToProgram' }, window.location.origin)
-        })
         break
 
       default:

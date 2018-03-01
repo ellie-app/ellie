@@ -7,8 +7,8 @@ const start = (app) => {
       super(...args)
       this.addEventListener('close', () => {
         app.ports.pagesEditorEffectsInbound.send({
-          tag: 'SocketClosed',
-          data: this.url
+          topic: 'SocketClosed',
+          contents: this.url
         })
       })
     }

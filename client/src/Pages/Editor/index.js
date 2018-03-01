@@ -1,13 +1,14 @@
 import 'es6-promise/auto'
 import './Main.css'
 import '../../Ellie/Ui/SplitPane'
-import '../../Ellie/Ui/Settings'
 import '../../Ellie/Ui/Icon'
+import '../../Ellie/Ui/Menu'
 import CodeEditor from '../../Ellie/Ui/CodeEditor'
 import OpbeatRunner from '../../Ellie/Opbeat'
 import Outbound from './Effects/Outbound'
 import Inbound from './Effects/Inbound'
 import './Views/Setup.css'
+import './Views/Output'
 
 
 CodeEditor

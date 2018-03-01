@@ -14,6 +14,7 @@ import Data.Transition as Transition
 import Ellie.Types.Revision as Revision exposing (Revision)
 import Ellie.Types.User as User exposing (User)
 import Elm.Package exposing (Package)
+import Pages.Editor.Effects.Exception as Exception exposing (Exception(..))
 import Pages.Editor.Effects.Inbound as Inbound exposing (Inbound)
 import Pages.Editor.Effects.Outbound as Outbound exposing (Outbound)
 import Pages.Editor.Route as Route exposing (Route(..))
@@ -23,7 +24,7 @@ type Model
     = Authenticating (Maybe Jwt) (Maybe Revision.Id)
     | Attaching Jwt (Entity User.Id User) (Maybe Revision.Id)
     | Loading Jwt (Entity User.Id User) Revision.Id (List Package)
-    | Failure String
+    | Failure Exception
 
 
 type alias Transition =
@@ -47,6 +48,7 @@ type Msg
     | UserPrepared Jwt (Entity User.Id User)
     | WorkspaceAttached (List Package)
     | RevisionLoaded (Entity Revision.Id Revision)
+    | ExceptionOccured Exception
 
 
 update : Msg -> Model -> ( Transition, Outbound Msg )
@@ -81,6 +83,11 @@ update msg state =
                 UserPrepared newToken user ->
                     ( Transition.step <| Attaching newToken user revisionId
                     , Outbound.SaveToken newToken
+                    )
+
+                ExceptionOccured exception ->
+                    ( Transition.step <| Failure exception
+                    , Outbound.none
                     )
 
                 _ ->
@@ -126,6 +133,11 @@ update msg state =
                             , Outbound.none
                             )
 
+                ExceptionOccured exception ->
+                    ( Transition.step <| Failure exception
+                    , Outbound.none
+                    )
+
                 _ ->
                     ( Transition.step <| Attaching token user revisionId, Outbound.none )
 
@@ -156,6 +168,11 @@ update msg state =
                 RevisionLoaded ((Entity rid revision) as entity) ->
                     ( Transition.exit { token = token, user = user, revision = Just entity, packages = packages }
                     , Outbound.GetRevision rid RevisionLoaded
+                    )
+
+                ExceptionOccured exception ->
+                    ( Transition.step <| Failure exception
+                    , Outbound.none
                     )
 
                 _ ->

@@ -3,13 +3,15 @@ module Pages.Editor.Views.Editors exposing (..)
 import Css exposing (..)
 import Ellie.Ui.CodeEditor as CodeEditor
 import Ellie.Ui.Icon as Icon
+import Ellie.Ui.Menu as Menu
 import Ellie.Ui.SplitPane as SplitPane
 import Ellie.Ui.Theme as Theme
 import Elm.Compiler.Error as Error exposing (Error)
 import Extra.Markdown as Markdown
-import Html.Styled as Html exposing (Attribute, Html, button, div, text)
+import Html.Styled as Html exposing (Attribute, Html)
 import Html.Styled.Attributes as Attributes exposing (css)
-import Html.Styled.Events exposing (onClick)
+import Html.Styled.Events as Events
+import Pages.Editor.Types.Example as Example exposing (Example)
 
 
 type alias Config msg =
@@ -17,8 +19,9 @@ type alias Config msg =
     , onElmChange : String -> msg
     , htmlCode : String
     , onHtmlChange : String -> msg
-    , ratio : Float
     , onResize : Float -> msg
+    , onExampleSelect : Example -> msg
+    , ratio : Float
     , vimMode : Bool
     , onFormat : msg
     , onCollapse : msg
@@ -46,43 +49,49 @@ errorToLinterMessage error =
 
 
 view : Config msg -> Html msg
-view { onElmChange, elmCode, onHtmlChange, htmlCode, ratio, onResize, vimMode, onFormat, onCollapse, elmErrors } =
+view config =
     Html.node "ellie-editors"
-        [ css [ display block ] ]
+        [ css
+            [ display block
+            , height (pct 100)
+            ]
+        ]
         [ SplitPane.view
             { direction = SplitPane.Vertical
-            , ratio = ratio
+            , ratio = config.ratio
             , originalRatio = 0.75
-            , onResize = onResize
+            , onResize = config.onResize
             , minSize = 24
             , first =
-                div [ containerStyles ]
-                    [ viewEditorHeader "Elm" "Format Elm Code (⇧⌥F)" onFormat <| Icon.view Icon.Format
-                    , div [ editorStyles ]
+                Html.div [ containerStyles ]
+                    [ viewEditorHeader config "Elm" "Format Elm Code (⇧⌥F)" config.onFormat <| Icon.view Icon.Format
+                    , Html.div [ editorStyles ]
                         [ CodeEditor.view
-                            [ CodeEditor.value elmCode
-                            , CodeEditor.onChange onElmChange
+                            [ CodeEditor.value config.elmCode
+                            , CodeEditor.onChange config.onElmChange
                             , CodeEditor.mode "elm"
                             , CodeEditor.tabSize 4
-                            , CodeEditor.vim vimMode
-                            , CodeEditor.linterMessages <| List.map errorToLinterMessage elmErrors
+                            , CodeEditor.vim config.vimMode
+                            , CodeEditor.linterMessages <| List.map errorToLinterMessage config.elmErrors
                             ]
                         ]
                     ]
             , second =
-                div [ containerStyles ]
-                    [ viewEditorHeader "HTML" "Collapse HTML Editor" onCollapse <|
-                        if ratio == 1 then
-                            div [ css [ transform (rotate (deg 180)) ] ] [ Icon.view Icon.Chevron ]
+                Html.div [ containerStyles ]
+                    [ viewEditorHeader config "HTML" "Collapse HTML Editor" config.onCollapse <|
+                        if config.ratio == 1 then
+                            Html.div
+                                [ css [ transform (rotate (deg 180)) ] ]
+                                [ Icon.view Icon.Chevron ]
                         else
                             Icon.view Icon.Chevron
-                    , div [ editorStyles ]
+                    , Html.div [ editorStyles ]
                         [ CodeEditor.view
-                            [ CodeEditor.value htmlCode
-                            , CodeEditor.onChange onHtmlChange
+                            [ CodeEditor.value config.htmlCode
+                            , CodeEditor.onChange config.onHtmlChange
                             , CodeEditor.mode "htmlmixed"
                             , CodeEditor.tabSize 2
-                            , CodeEditor.vim vimMode
+                            , CodeEditor.vim config.vimMode
                             ]
                         ]
                     ]
@@ -111,9 +120,9 @@ containerStyles =
         ]
 
 
-viewEditorHeader : String -> String -> msg -> Html msg -> Html msg
-viewEditorHeader name tooltip msg icon =
-    div
+viewEditorHeader : Config msg -> String -> String -> msg -> Html msg -> Html msg
+viewEditorHeader config name tooltip msg icon =
+    Html.div
         [ css
             [ backgroundColor Theme.editorHeaderBackground
             , displayFlex
@@ -124,7 +133,7 @@ viewEditorHeader name tooltip msg icon =
             , flexShrink (int 0)
             ]
         ]
-        [ div
+        [ Html.div
             [ css
                 [ fontSize (px 14)
                 , lineHeight (num 1)
@@ -133,27 +142,47 @@ viewEditorHeader name tooltip msg icon =
                 , color Theme.primaryForeground
                 ]
             ]
-            [ text name ]
-        , button
+            [ Html.text name ]
+        , Html.div
             [ css
-                [ property "background" "none"
-                , border zero
-                , outline zero
-                , display block
-                , width (px 24)
-                , height (px 24)
-                , padding (px 6)
-                , color Theme.secondaryForeground
-                , cursor pointer
-                , hover
-                    [ color Theme.primaryForeground
-                    ]
-                , active
-                    [ transform <| scale 1.2
+                [ displayFlex
+                , alignItems center
+                , justifyContent flexEnd
+                ]
+            ]
+            [ Html.div
+                [ css
+                    [ width (px 24)
+                    , height (px 24)
+                    , position relative
                     ]
                 ]
-            , onClick msg
-            , Attributes.title tooltip
+                [ Menu.view
+                    { icon = Icon.More
+                    , items = List.map (\e -> { label = e.label, onSelect = config.onExampleSelect e }) Example.all
+                    }
+                ]
+            , Html.button
+                [ css
+                    [ property "background" "none"
+                    , border zero
+                    , outline zero
+                    , display block
+                    , width (px 24)
+                    , height (px 24)
+                    , padding (px 6)
+                    , color Theme.secondaryForeground
+                    , cursor pointer
+                    , hover
+                        [ color Theme.primaryForeground
+                        ]
+                    , active
+                        [ transform <| scale 1.2
+                        ]
+                    ]
+                , Events.onClick msg
+                , Attributes.title tooltip
+                ]
+                [ icon ]
             ]
-            [ icon ]
         ]

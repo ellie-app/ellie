@@ -1,4 +1,3 @@
-require('dotenv').config({ path: '../.env' })
 const path = require('path')
 const webpack = require('webpack')
 const StringReplacePlugin = require('string-replace-webpack-plugin')

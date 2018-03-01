@@ -27,7 +27,7 @@ import HttpBuilder exposing (get, post, withCredentials, withExpect, withHeader,
 import Json.Decode as Decode exposing (Decoder)
 import Json.Encode as Encode exposing (Value)
 import Navigation
-import Pages.Editor.Effects.Error as Error exposing (Error)
+import Pages.Editor.Effects.Exception as Exception exposing (Exception(..))
 import Pages.Editor.Effects.State as State exposing (Msg(..), State)
 import Process
 import Task
@@ -41,7 +41,7 @@ type Outbound msg
     | SaveToken Jwt
     | FormatElmCode String (String -> msg)
     | Compile Jwt String String (List Package)
-    | ReloadIframe Bool
+    | ReloadIframe
     | Redirect String
     | SearchPackages String (List Searchable -> msg)
     | SwitchToDebugger
@@ -52,7 +52,7 @@ type Outbound msg
     | None
 
 
-send : (Error -> msg) -> Outbound msg -> State msg -> ( State msg, Cmd (Msg msg) )
+send : (Exception -> msg) -> Outbound msg -> State msg -> ( State msg, Cmd (Msg msg) )
 send onError effect state =
     case effect of
         SaveSettings token settings ->
@@ -89,7 +89,7 @@ send onError effect state =
             get "/private-api/packages/search"
                 |> withQueryParams [ ( "query", query ) ]
                 |> withExpect (Http.expectJson (Decode.list Searchable.decoder))
-                |> HttpBuilder.send (Result.mapError Error.fromHttp >> Result.fold callback onError)
+                |> HttpBuilder.send (Result.mapError Exception.fromHttp >> Result.fold callback onError)
                 |> Cmd.map UserMsg
                 |> (\cmd -> Debounce.push debouncePackageSearchConfig cmd state.debouncePackageSearch)
                 |> Tuple.mapFirst (\d -> { state | debouncePackageSearch = d })
@@ -99,7 +99,7 @@ send onError effect state =
             , get (Constants.apiBase ++ "/revisions/" ++ id.projectId ++ "/" ++ String.fromInt id.revisionNumber)
                 |> withHeader "Accept" "application/json"
                 |> withExpect (Http.expectJson (Entity.decoder Revision.idDecoder Revision.decoder))
-                |> HttpBuilder.send (Result.mapError Error.fromHttp >> Result.fold callback onError)
+                |> HttpBuilder.send (Result.mapError Exception.fromHttp >> Result.fold callback onError)
                 |> Cmd.map UserMsg
             )
 
@@ -118,7 +118,7 @@ send onError effect state =
                 |> post
                 |> withHeader "Accept" "application/json"
                 |> withExpect (Http.expectJson getUserDecoder)
-                |> HttpBuilder.send (Result.mapError Error.fromHttp >> Result.fold (uncurry callback) onError)
+                |> HttpBuilder.send (Result.mapError Exception.fromHttp >> Result.fold (uncurry callback) onError)
                 |> Cmd.map UserMsg
             )
 
@@ -128,7 +128,7 @@ send onError effect state =
                 |> withHeader "Accept" "application/json"
                 |> withJsonBody (Encode.object [ ( "code", Encode.string code ) ])
                 |> withExpect (Http.expectJson (Decode.field "code" Decode.string))
-                |> HttpBuilder.send (Result.mapError Error.fromHttp >> Result.fold callback onError)
+                |> HttpBuilder.send (Result.mapError Exception.fromHttp >> Result.fold callback onError)
                 |> Cmd.map UserMsg
             )
 
@@ -143,10 +143,9 @@ send onError effect state =
                 |> WebSocket.send (Constants.workspaceUrl ++ "?token=" ++ Jwt.toString token)
             )
 
-        ReloadIframe debugger ->
+        ReloadIframe ->
             ( state
-            , [ Encode.bool debugger ]
-                |> Encode.genericUnion "ReloadIframe"
+            , Encode.genericUnion "ReloadIframe" []
                 |> pagesEditorEffectsOutbound
             )
 
@@ -209,7 +208,7 @@ none =
 
 
 wrapInit :
-    (Error -> msg)
+    (Exception -> msg)
     -> (flags -> route -> ( model, Outbound msg ))
     -> flags
     -> route
@@ -240,7 +239,7 @@ debounceSaveSettingsConfig =
 
 
 wrapUpdate :
-    (Error -> msg)
+    (Exception -> msg)
     -> (msg -> model -> ( model, Outbound msg ))
     -> Msg msg
     -> ( model, State msg )
@@ -288,6 +287,16 @@ wrapUpdate onError userUpdate msg (( model, state ) as appState) =
             , cmd
             )
 
+        ExceptionOccured exception ->
+            let
+                ( nextModel, outbound ) =
+                    userUpdate (onError exception) model
+
+                ( nextState, cmd ) =
+                    send onError outbound state
+            in
+            ( ( nextModel, nextState ), cmd )
+
         NoOp ->
             ( appState, Cmd.none )
 
@@ -322,8 +331,8 @@ map f outbound =
         Compile token elm html packages ->
             Compile token elm html packages
 
-        ReloadIframe debugger ->
-            ReloadIframe debugger
+        ReloadIframe ->
+            ReloadIframe
 
         Redirect url ->
             Redirect url

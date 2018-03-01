@@ -2,6 +2,7 @@ module Pages.Editor.Effects.State exposing (..)
 
 import Debounce exposing (Debounce)
 import Ellie.Types.User exposing (User)
+import Pages.Editor.Effects.Exception exposing (Exception)
 import Process
 
 
@@ -10,6 +11,7 @@ type Msg msg
     | DebouncePackageSearch Debounce.Msg
     | SaveSettingsSpawned Process.Id
     | DebounceSaveSettings Debounce.Msg
+    | ExceptionOccured Exception
     | NoOp
 
 

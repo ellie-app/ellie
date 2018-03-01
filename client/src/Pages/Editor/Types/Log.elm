@@ -1,11 +1,11 @@
-module Ellie.Types.Log exposing (Log, decoder)
+module Pages.Editor.Types.Log exposing (Log, decoder)
 
 import Json.Decode as Decode exposing (Decoder)
 import Json.Decode.Pipeline as Decode
 
 
 type alias Log =
-    { tag : String
+    { label : String
     , body : String
     }
 
@@ -13,5 +13,5 @@ type alias Log =
 decoder : Decoder Log
 decoder =
     Decode.decode Log
-        |> Decode.required "tag" Decode.string
+        |> Decode.required "label" Decode.string
         |> Decode.required "body" Decode.string

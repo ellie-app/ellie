@@ -14,14 +14,14 @@ import Control.Monad.Eff.Class (liftEff) as Eff
 import Control.Monad.Eff.Exception (Error, error)
 import Control.Monad.Eff.Ref (Ref)
 import Control.Monad.Eff.Ref as Ref
-import Control.Monad.Error.Class (class MonadThrow, throwError)
+import Control.Monad.Error.Class (class MonadThrow, throwError, try)
 import Control.Monad.Except (runExcept) as Except
 import Control.Monad.IO (IO)
 import Control.Monad.IO.Class (class MonadIO)
 import Control.Monad.IO.Class (liftIO) as IO
 import Data.Array as Array
 import Data.Bifunctor (lmap)
-import Data.Either (Either)
+import Data.Either (Either(..))
 import Data.Either as Either
 import Data.FilePath (FilePath, (</>), (<.>))
 import Data.FilePath as FilePath
@@ -46,13 +46,12 @@ import Data.String.Regex (match) as Regex
 import Data.String.Regex.Flags (noFlags) as Regex
 import Data.String.Regex.Unsafe (unsafeRegex) as Regex
 import Data.Traversable (traverse)
-import Debug as Debug
 import Ellie.Types.User as User
 import Elm.Compiler.Error as Compiler
 import Elm.Package (Package(..))
-import Elm.Package.Name (Name)
+import Elm.Package.Name (Name(..))
 import Elm.Package.Name as Name
-import Elm.Package.Version (Version)
+import Elm.Package.Version (Version(..))
 import Elm.Package.Version as Version
 import System.Cache (Cache)
 import System.Cache as Cache
@@ -62,7 +61,6 @@ import System.Elm as Elm
 import System.FileSystem as FileSystem
 import System.Http as Http
 import System.Random as Random
-import Type.Equality (class TypeEquals, to)
 
 
 type Workspace =
@@ -88,22 +86,35 @@ type Env r =
   }
 
 
+hardcodedDefaults ∷ Array Package
+hardcodedDefaults =
+  [ Package { name: Name { user: "elm-lang", project: "core" }, version: Version { major: 5, minor: 1, patch: 1 } }
+  , Package { name: Name { user: "elm-lang", project: "html" }, version: Version { major: 2, minor: 0, patch: 0 } }
+  ]
+
+
 reloadDefaultPackages ∷ IO (Array Package)
 reloadDefaultPackages = do
-  rawPackageData ←
-    Http.get "http://package.elm-lang.org/all-packages"
+  remoteOrError ←
+    try do
+      rawPackageData ←
+        Http.get "http://package.elm-lang.org/all-packages"
 
-  packageData ←
-    rawPackageData
-      # decodeNameAndVersions
-      # Except.runExcept
-      # lmap (\me → error $ String.joinWith "\n" $ Array.fromFoldable $ map Foreign.renderForeignError me)
-      # Either.either throwError pure
-  
-  packageData
-    # Array.filter (\p → Name.isCore p.name || Name.isHtml p.name)
-    # map (\p → Package { name: p.name, version: Maybe.fromMaybe Version.zero $ maximum p.versions })
-    # pure
+      packageData ←
+        rawPackageData
+          # decodeNameAndVersions
+          # Except.runExcept
+          # lmap (\me → error $ String.joinWith "\n" $ Array.fromFoldable $ map Foreign.renderForeignError me)
+          # Either.either throwError pure
+      
+      packageData
+        # Array.filter (\p → Name.isCore p.name || Name.isHtml p.name)
+        # map (\p → Package { name: p.name, version: Maybe.fromMaybe Version.zero $ maximum p.versions })
+        # pure
+
+  case remoteOrError of
+    Left _ → pure hardcodedDefaults
+    Right remote → pure remote
   where
     decodeNameAndVersion ∷ Foreign → F { name ∷ Name, versions ∷ Array Version }
     decodeNameAndVersion object = do
@@ -279,8 +290,8 @@ fixHtml input = do
   Dom.setTextContent writeElmScript script
   
   body ← Dom.body document
-  Dom.prepend hacksScript body
   Dom.prepend script body
+  Dom.prepend hacksScript body
   
   documentElement ← Dom.documentElement document
   Dom.getOuterHtml documentElement
@@ -310,17 +321,26 @@ writeElmScript =
 openingHacksScript ∷ String
 openingHacksScript =
   """(function () {
+  var parent = window.parent
+  delete window.parent
 
-  var bodyDiv = document.createElement('div')
-  var oldBody = document.body
-  Object.defineProperty(document, 'body', {
-    get: function () { return bodyDiv },
-    set: function (a) { bodyDiv = a }
-  })
-  oldBody.append(bodyDiv)
+  // LOGS
 
-  var debuggerOpen = false
-  var debuggerIframe = null
+  var oldLog = console.log
+  console.log = function () {
+    var firstArg = arguments[0]
+    if (arguments.length === 1 && typeof firstArg === 'string' && firstArg.indexOf(': ') !== -1) {
+      var split = firstArg.split(': ')
+      var label = split[0]
+      var body = split.slice(1).join(': ')
+      parent.postMessage({ tag: 'LogReceived', contents: { label: label, body: body } }, origin)
+    }
+    oldLog.apply(this, arguments)
+  }
+
+  // DEBUGGER
+
+  var debuggerWindowProxy = null
   window.open = function () {
     var iframe = document.createElement('iframe')
     iframe.style.zIndex = 999999999
@@ -330,17 +350,15 @@ openingHacksScript =
     iframe.style.top = 0
     iframe.style.left = 0
     iframe.style.border = 0
-    oldBody.appendChild(iframe)
+    document.body.appendChild(iframe)
     var onClose = function () {}
-    debuggerIframe = iframe
-    return Object.defineProperties({}, {
+    debuggerWindowProxy = Object.defineProperties({}, {
       document: {
         get: function () { return iframe.contentDocument }
       },
       close: {
         value: function () {
-          oldBody.removeChild(iframe)
-          debuggerIframe = null
+          document.body.removeChild(iframe)
           onClose()
         }
       },
@@ -350,26 +368,24 @@ openingHacksScript =
         }
       }
     })
+    return debuggerWindowProxy
   }
+  var styles = document.createElement('style')
+  styles.textContent = [
+    '.elm-mini-controls {',
+    '  display: none !important;',
+    '}'
+  ].join('\n')
+  document.head.appendChild(styles)
   window.addEventListener('message', function (event) {
     switch(event.data.tag) {
       case 'SwitchToDebugger':
-        if (!debuggerIframe) {
-          var button = document.querySelector('.elm-mini-controls-button')
-          if (button) button.click()
-        }
-        if (!debuggerOpen && debuggerIframe) {
-          debuggerIframe.style.display = 'block'
-        }
-        debuggerOpen = true
+        var button = document.querySelector('.elm-mini-controls-button')
+        if (button) button.click()
         break
 
-      
       case 'SwitchToProgram':
-        if (debuggerOpen && debuggerIframe) {
-          debuggerIframe.style.display = 'none'
-        }
-        debuggerOpen = false
+        if (debuggerWindowProxy) debuggerWindowProxy.close()
         break
     } 
   })

@@ -56,7 +56,7 @@ styles =
     , Css.Foreign.body
         [ height (pct 100)
         , margin zero
-        , fontFamilies [ Constants.sansFont ]
+        , fontFamilies [ "-apple-system", "BlinkMacSystemFont", "Segoe UI", "Roboto", "Helvetica", "Arial", "sans-serif" ]
         , property "-webkit-font-smoothing" "antialiased"
         ]
     , Css.Foreign.everything

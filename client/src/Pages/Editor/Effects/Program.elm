@@ -1,10 +1,12 @@
 module Pages.Editor.Effects.Program exposing (..)
 
+import Css exposing (..)
 import Css.Foreign
 import Html.Styled as Html exposing (Html)
-import Json.Decode as Decode exposing (Decoder, Value)
+import Html.Styled.Attributes exposing (css)
+import Json.Decode as Decode exposing (Decoder)
 import Navigation
-import Pages.Editor.Effects.Error exposing (Error)
+import Pages.Editor.Effects.Exception exposing (Exception)
 import Pages.Editor.Effects.Inbound as Inbound exposing (Inbound)
 import Pages.Editor.Effects.Outbound as Outbound exposing (Outbound)
 import Pages.Editor.Effects.State as State exposing (Msg(..), State)
@@ -15,7 +17,7 @@ type alias ProgramConfig route flags msg model =
     , update : msg -> model -> ( model, Outbound msg )
     , init : flags -> route -> ( model, Outbound msg )
     , view : model -> Html msg
-    , error : Error -> msg
+    , error : Exception -> msg
     , flags : Decoder flags
     , url : Navigation.Location -> route
     , route : route -> msg
@@ -24,7 +26,7 @@ type alias ProgramConfig route flags msg model =
 
 
 type alias EffectsProgram model msg =
-    Program Value ( model, State msg ) (Msg msg)
+    Program Decode.Value ( model, State msg ) (Msg msg)
 
 
 program : ProgramConfig route flags msg model -> EffectsProgram model msg
@@ -37,7 +39,11 @@ program config =
         { view =
             \( model, _ ) ->
                 Html.toUnstyled <|
-                    Html.div []
+                    Html.div
+                        [ css
+                            [ height (pct 100)
+                            ]
+                        ]
                         [ styles
                         , Html.map UserMsg <| config.view model
                         , Html.node "ellie-ui-portal" [] []
@@ -51,6 +57,6 @@ program config =
 
                         Err message ->
                             Debug.crash "bad flags"
-        , subscriptions = Inbound.wrapSubs config.error config.subscriptions
+        , subscriptions = Inbound.wrapSubs config.subscriptions
         , update = Outbound.wrapUpdate config.error config.update
         }

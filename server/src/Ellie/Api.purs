@@ -164,6 +164,7 @@ newUi = do
     htmlTemplate ∷ String
     htmlTemplate =
         """
+        <!DOCTYPE html>
         <html>
           <head>
             <meta charset="utf-8" />
@@ -184,7 +185,6 @@ newUi = do
             <meta name="accepted_terms_version" content="1" />
             <script src="https://cdnjs.cloudflare.com/ajax/libs/custom-elements/1.0.8/custom-elements.min.js"></script>
             <script async src="${javascript}"></script>
-            <link href="https://fonts.googleapis.com/css?family=Quicksand" rel="stylesheet" />
           </head>
           <body>
           </body>

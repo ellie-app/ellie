@@ -14,6 +14,7 @@ import Ellie.Types.Revision as Revision exposing (Revision)
 import Ellie.Types.User as User exposing (User)
 import Ellie.Types.Workspace as Workspace exposing (Workspace)
 import Elm.Package as Package exposing (Package)
+import Pages.Editor.Effects.Exception as Exception exposing (Exception)
 import Pages.Editor.Effects.Inbound as Inbound exposing (Inbound)
 import Pages.Editor.Effects.Outbound as Outbound exposing (Outbound)
 import Pages.Editor.Flags as Flags exposing (Flags)
@@ -67,7 +68,7 @@ type Msg
     | RouteChanged Route
     | SetupMsg Setup.Msg
     | WorkingMsg Working.Msg
-    | ErrorOccured String
+    | ExceptionOccurred Exception
 
 
 update : Msg -> Model -> ( Model, Outbound Msg )
