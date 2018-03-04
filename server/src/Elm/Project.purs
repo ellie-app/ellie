@@ -79,7 +79,7 @@ instance decodeProject ∷ Decode Project where
               (\(Tuple k v) →
                   { name: _, version: _ }
                     <$> Foreign.decode (Foreign.toForeign k)
-                    <*> (Foreign.decode v <#> Constraint.lowestVersion)
+                    <*> Foreign.decode v
                     <#> Package
               )
           <#> Set.fromFoldable

@@ -24,17 +24,15 @@ view config =
             [ css
                 [ margin zero
                 , padding (px 16)
-                , paddingBottom (px 8)
                 , fontSize (px 14)
                 , fontWeight bold
                 , textTransform uppercase
                 , color Theme.primaryForeground
+                , lineHeight (num 1)
                 ]
             ]
             [ Html.text "Settings" ]
-        , Html.div
-            [ css [ padding (px 8) ]
-            ]
+        , Html.div []
             [ viewProjectName config
             , viewVimMode config
             , viewFontFamily config
@@ -137,7 +135,7 @@ settingContainerStyles =
     css
         [ backgroundColor Theme.primaryBackground
         , padding (px 16)
-        , marginBottom (px 8)
+        , marginBottom (px 2)
         , overflow hidden
         , property "user-select" "none"
         ]

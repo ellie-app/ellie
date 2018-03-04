@@ -41,6 +41,7 @@ type Icon
     | Reload
     | More
     | Zip
+    | Success
 
 
 view : Icon -> Html msg
@@ -53,6 +54,9 @@ view icon =
 toIdString : Icon -> String
 toIdString icon =
     case icon of
+        Success ->
+            "success"
+
         Zip ->
             "zip"
 

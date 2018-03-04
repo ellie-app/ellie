@@ -92,6 +92,11 @@ editorFontFamily =
     var "--theme-font-family-editor"
 
 
+success : BasicProperty
+success =
+    var "--theme-color-success"
+
+
 darkStyles : Css.Foreign.Snippet
 darkStyles =
     Css.Foreign.selector ":root"
@@ -112,6 +117,7 @@ darkStyles =
         , property "--theme-color-tab-active-border" "#525252"
         , property "--theme-color-tab-foreground" "#DDDDDD"
         , property "--theme-font-family-editor" "monospace"
+        , property "--theme-color-success" green.value
         ]
 
 
