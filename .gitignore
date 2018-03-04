@@ -16,3 +16,4 @@ bower_components/
 .psc-package/
 .vscode/
 bin/
+*.code-workspace
