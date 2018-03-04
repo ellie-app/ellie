@@ -49,13 +49,14 @@ module.exports = {
         loader: 'style-loader!css-loader',
       },
       {
-        test:    /\.elm$/,
+        test: /\.elm$/,
         exclude: [/elm-stuff/, /node_modules/],
-        loaders:  [
+        loaders: [
           StringReplacePlugin.replace({
             replacements: [
               { pattern: /\%CDN_BASE\%/g, replacement: () => 'https://s3.us-east-2.amazonaws.com/development-cdn.ellie-app.com' },
               { pattern: /\%SERVER_ORIGIN\%/g, replacement: () => 'http://localhost:1337' },
+              { pattern: /\%PACKAGE_SITE\%/g, replacement: () => process.env.PACKAGE_SITE },
               { pattern: /\%ENV\%/g, replacement: () => 'development' },
             ]
           }),

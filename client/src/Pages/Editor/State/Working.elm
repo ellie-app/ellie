@@ -48,6 +48,7 @@ type alias Model =
     , actions : Actions.Model
     , user : User
     , workbench : Workbench
+    , creatingGist : Bool
     , compiling : Bool
     , connected : Bool
     , animating : Bool
@@ -78,6 +79,7 @@ init token user revision defaultPackages =
       , revision = Replaceable.fromMaybe revision
       , actions = Actions.Hidden
       , workbench = Ready
+      , creatingGist = False
       , compiling = False
       , connected = True
       , animating = True
@@ -131,6 +133,9 @@ type Msg
     | ClearLogsClicked
     | LogReceived Log
     | LogSearchChanged String
+    | CreateGistRequested
+    | CreateGistComplete String
+    | DownloadZip
       -- Exception Stuff
     | ExceptionReceived Exception
       -- Global stuff
@@ -144,6 +149,39 @@ type Msg
 update : Msg -> Model -> ( Model, Outbound Msg )
 update msg ({ user } as model) =
     case msg of
+        DownloadZip ->
+            ( model
+            , Outbound.DownloadZip
+                { elm = model.elmCode
+                , html = model.htmlCode
+                , project =
+                    { sourceDirs = []
+                    , deps = model.packages
+                    , elm = { major = 0, minor = 19, patch = 0 }
+                    }
+                }
+            )
+
+        CreateGistRequested ->
+            ( { model | creatingGist = True }
+            , Outbound.CreateGist
+                { title = model.projectName
+                , elm = model.elmCode
+                , html = model.htmlCode
+                , project =
+                    { sourceDirs = []
+                    , deps = model.packages
+                    , elm = { major = 0, minor = 19, patch = 0 }
+                    }
+                }
+                CreateGistComplete
+            )
+
+        CreateGistComplete url ->
+            ( { model | creatingGist = False }
+            , Outbound.OpenInNewTab url
+            )
+
         ExceptionReceived exception ->
             ( { model | exceptions = exception :: model.exceptions }
             , Outbound.none

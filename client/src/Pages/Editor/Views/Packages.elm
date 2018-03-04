@@ -2,6 +2,7 @@ module Pages.Editor.Views.Packages exposing (..)
 
 import Colors
 import Css exposing (..)
+import Ellie.Constants as Constants
 import Ellie.Ui.Button as Button
 import Ellie.Ui.Icon as Icon
 import Ellie.Ui.TextInput as TextInput
@@ -132,7 +133,8 @@ viewInstalledPackage onUninstall (( name, version ) as package) =
                 Button.link
                     { external = True
                     , href =
-                        "http://package.elm-lang.org/packages/"
+                        Constants.packageSite
+                            ++ "/packages/"
                             ++ name.user
                             ++ "/"
                             ++ name.project

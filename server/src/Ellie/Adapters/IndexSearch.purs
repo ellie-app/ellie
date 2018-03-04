@@ -40,29 +40,21 @@ import System.SearchIndex as SearchIndex
 
 type Env r =
   { index ∷ Ref (Maybe (SearchIndex Searchable))
+  , packageSite ∷ String
   | r
   }
 
 
-search ∷ ∀ m r. MonadIO m ⇒ MonadThrow Error m => String → Env r -> m (Array Searchable)
+search ∷ ∀ m r. MonadIO m ⇒ MonadThrow Error m ⇒ String → Env r → m (Array Searchable)
 search query env = IO.liftIO do
   maybeIndex ←
     Eff.liftEff $ Ref.readRef env.index
   index ←
     case maybeIndex of
       Just i → pure i
-      Nothing -> do
+      Nothing → do
         rawPackageData ←
-          Http.get "http://package.elm-lang.org/all-packages"
-        rawNewPackageNames ←
-          Http.get "http://package.elm-lang.org/new-packages"
-        (newPackageNamesArray ∷ Array Name) ←
-          rawNewPackageNames
-            # Foreign.decode
-            # Except.runExcept
-            # lmap (\me → error $ String.joinWith "\n" $ Array.fromFoldable $ map Foreign.renderForeignError me)
-            # Either.either throwError pure
-        let newPackageNames = Set.fromFoldable newPackageNamesArray
+          Http.get $ env.packageSite <> "/search.json"
         nameAndVersions ←
           rawPackageData
             # decodeNameAndVersions
@@ -73,7 +65,6 @@ search query env = IO.liftIO do
           SearchIndex.create
         nameAndVersions
           # map toSearchable
-          # Array.filter (\(Searchable s) → Set.member (s.package # unwrap # _.name) newPackageNames)
           # SearchIndex.add newIndex
         Eff.liftEff $ Ref.writeRef env.index (Just newIndex)
         pure newIndex
@@ -97,6 +88,6 @@ search query env = IO.liftIO do
         <*> (object ! "versions" >>= Foreign.decode)
         <*> (object ! "summary" >>= Foreign.decode)
 
-    decodeNameAndVersions ∷ Foreign → F (Array { description ∷ String, name :: Name, versions :: Array Version })
+    decodeNameAndVersions ∷ Foreign → F (Array { description ∷ String, name ∷ Name, versions ∷ Array Version })
     decodeNameAndVersions array =
       Foreign.readArray array >>= traverse decodeNameAndVersion

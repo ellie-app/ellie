@@ -82,23 +82,25 @@ instance showWorkspaceNt ∷ Show WorkspaceNt where
 type Env r =
   { defaultPackages ∷ Cache (Array Package)
   , userWorkspaces ∷ Ref (Map User.Id Workspace)
+  , packageSite ∷ String
   | r
   }
 
 
 hardcodedDefaults ∷ Array Package
 hardcodedDefaults =
-  [ Package { name: Name { user: "elm-lang", project: "core" }, version: Version { major: 5, minor: 1, patch: 1 } }
-  , Package { name: Name { user: "elm-lang", project: "html" }, version: Version { major: 2, minor: 0, patch: 0 } }
+  [ Package { name: Name.core, version: Version { major: 6, minor: 0, patch: 0 } }
+  , Package { name: Name.html, version: Version { major: 3, minor: 0, patch: 0 } }
+  , Package { name: Name.browser, version: Version { major: 1, minor: 0, patch: 0 } }
   ]
 
 
-reloadDefaultPackages ∷ IO (Array Package)
-reloadDefaultPackages = do
+reloadDefaultPackages ∷ ∀ r. Env r → IO (Array Package)
+reloadDefaultPackages env = do
   remoteOrError ←
     try do
       rawPackageData ←
-        Http.get "http://package.elm-lang.org/all-packages"
+        Http.get $ env.packageSite <> "/search.json"
 
       packageData ←
         rawPackageData
@@ -108,7 +110,7 @@ reloadDefaultPackages = do
           # Either.either throwError pure
       
       packageData
-        # Array.filter (\p → Name.isCore p.name || Name.isHtml p.name)
+        # Array.filter (\p → Name.isCore p.name || Name.isHtml p.name || Name.isBrowser p.name)
         # map (\p → Package { name: p.name, version: Maybe.fromMaybe Version.zero $ maximum p.versions })
         # pure
 
@@ -147,7 +149,7 @@ result userId env = IO.liftIO do
 
 initialize ∷ ∀ r m. MonadIO m ⇒ MonadThrow Error m ⇒ User.Id → Env r → m (Set Package)
 initialize userId env = IO.liftIO do
-  defaults ← Cache.read reloadDefaultPackages env.defaultPackages
+  defaults ← Cache.read (reloadDefaultPackages env) env.defaultPackages
   let defaultsSet = Set.fromFoldable defaults
   workspaces ← Eff.liftEff $ Ref.readRef env.userWorkspaces
   case Map.lookup userId workspaces of
@@ -168,7 +170,7 @@ initialize userId env = IO.liftIO do
       pure defaultsSet
     Nothing → do
       root ← FileSystem.createTemporaryDirectory
-      void $ Elm.init root >>= Either.either (error >>> throwError) pure
+      Elm.init root
       Eff.liftEff $ Ref.modifyRef env.userWorkspaces \workspaces →
         let
           workspace =
@@ -195,60 +197,59 @@ destroy userId env = IO.liftIO do
 
 
 compile ∷ ∀ m r. MonadIO m ⇒ MonadThrow Error m ⇒ String → String → Array Package → User.Id → Env r → m (Array Compiler.Error)
-compile elm html packages userId env =
-  IO.liftIO do
-    workspaces ← Eff.liftEff $ Ref.readRef env.userWorkspaces
-    
-    workspace ←
-      workspaces
-        # Map.lookup userId
-        # map pure
-        # Maybe.fromMaybe (throwError (error "trying to compile without a workspace"))
+compile elm html packages userId env = IO.liftIO do
+  workspaces ← Eff.liftEff $ Ref.readRef env.userWorkspaces
+  
+  workspace ←
+    workspaces
+      # Map.lookup userId
+      # map pure
+      # Maybe.fromMaybe (throwError (error "trying to compile without a workspace"))
 
-    let packagesSet = Set.fromFoldable packages
-    let newElmHash = Murmur.hash elm
-    let newHtmlHash = Murmur.hash html
-    let elmChanged = newElmHash /= workspace.elmHash
-    let htmlChanged = newHtmlHash /= workspace.htmlHash
-    let packagesChanged = packagesSet /= workspace.packages
-    let needsCompile = packagesChanged || elmChanged
-    let elmPath = parseElmPath elm
-    let htmlPath = "index.html"
+  let packagesSet = Set.fromFoldable packages
+  let newElmHash = Murmur.hash elm
+  let newHtmlHash = Murmur.hash html
+  let elmChanged = newElmHash /= workspace.elmHash
+  let htmlChanged = newHtmlHash /= workspace.htmlHash
+  let packagesChanged = packagesSet /= workspace.packages
+  let needsCompile = packagesChanged || elmChanged
+  let elmPath = parseElmPath elm
+  let htmlPath = "index.html"
 
-    if packagesChanged
-      then Elm.install workspace.location packagesSet
-      else pure unit
+  if packagesChanged
+    then Elm.install workspace.location packagesSet
+    else pure unit
 
-    if elmChanged
+  if elmChanged
+    then do
+      FileSystem.write (workspace.location </> elmPath) elm
+    else
+      pure unit
+
+  newErrors ←
+    if needsCompile
       then do
-        FileSystem.write (workspace.location </> elmPath) elm
-      else
-        pure unit
+        errors ← Elm.compile { root: workspace.location, entry: elmPath, output: "build.js", debug: true }
+        pure $ Array.filter (unwrap >>> _.level >>> (/=) "warning") errors
+      else pure workspace.currentErrors
+  
+  if htmlChanged
+    then do
+      fixed ← fixHtml html
+      FileSystem.write (workspace.location </> htmlPath) fixed
+    else pure unit
 
-    newErrors ←
-      if needsCompile
-        then do
-          errors ← Elm.compile { root: workspace.location, entry: elmPath, output: "build.js", debug: true }
-          pure $ Array.filter (unwrap >>> _.level >>> (/=) "warning") errors
-        else pure workspace.currentErrors
-    
-    if htmlChanged
-      then do
-        fixed ← fixHtml html
-        FileSystem.write (workspace.location </> htmlPath) fixed
-      else pure unit
-
-    let
-      updatedWorkspace =
-        workspace
-          { elmHash = newElmHash
-          , htmlHash = newHtmlHash
-          , currentErrors = newErrors 
-          , packages = packagesSet
-          }
-    
-    Eff.liftEff $ Ref.modifyRef env.userWorkspaces (Map.insert userId updatedWorkspace)
-    pure newErrors
+  let
+    updatedWorkspace =
+      workspace
+        { elmHash = newElmHash
+        , htmlHash = newHtmlHash
+        , currentErrors = newErrors 
+        , packages = packagesSet
+        }
+  
+  Eff.liftEff $ Ref.modifyRef env.userWorkspaces (Map.insert userId updatedWorkspace)
+  pure newErrors
   where
     elmModuleRegex ∷ Regex
     elmModuleRegex =

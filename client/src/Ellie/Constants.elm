@@ -1,6 +1,11 @@
 module Ellie.Constants exposing (..)
 
 
+packageSite : String
+packageSite =
+    "%PACKAGE_SITE%"
+
+
 iframeId : String
 iframeId =
     "results_iframe"

@@ -1,4 +1,6 @@
-var spawn = require('cross-spawn');
+var path = require('path')
+var spawn = require('cross-spawn')
+var binPath = path.resolve(__dirname, '../../../bin', 'elm')
 
 function runProcess(command, args, options, callback) {
   try {
@@ -15,19 +17,31 @@ function runProcess(command, args, options, callback) {
   }
 }
 
-exports._init = function _init(inputs) {
-  return function _initAff(fail, succeed) {
-    var root = inputs.root
-    var helpers = inputs.helpers
-
+exports._installByName = function _installByName(inputs) {
+  return function _installByNameAff(fail, succeed) {
     runProcess(
-      'elm-package',
-      ['install', '--yes'],
-      { cwd: root, env: process.env },
+      binPath,
+      ['install', inputs.name],
+      { cwd: inputs.root, env: process.env },
       function (error, result) {
         if (error) fail(error)
-        else if (result.code === 0) succeed(helpers.right(result.stdout))
-        else succeed(helpers.left(result.stderr))
+        else if (result.stderr) fail(Error(result.stderr))
+        else succeed(inputs.helpers.unit)
+      }
+    )
+  }
+}
+
+exports._reinstall = function _reinstall(inputs) {
+  return function _reinstallAff(fail, succeed) {
+    runProcess(
+      binPath,
+      ['install'],
+      { cwd: inputs.root, env: process.env },
+      function (error, result) {
+        if (error) fail(error)
+        else if (result.stderr) fail(Error(result.stderr))
+        else succeed(inputs.helpers.unit)
       }
     )
   }
@@ -42,16 +56,14 @@ exports._compile = function _compile(inputs) {
     var helpers = inputs.helpers
 
     var args = debug ?
-      [ entry, '--output', output, '--debug', '--yes', '--report', 'json' ] :
-      [ entry, '--output', output, '--yes', '--report', 'json' ]
+      ['make', entry, '--output', output, '--debug'] :
+      ['make', entry, '--output', output]
 
     runProcess(
-      'elm-make',
+      binPath,
       args,
       { cwd: root, env: process.env },
       function (error, result) {
-        console.log(result.stdout)
-        console.log(result.stderr)
         if (error) fail(error)
         else if (result.stderr) succeed(helpers.left(result.stderr))
         else succeed(helpers.right(result.stdout))

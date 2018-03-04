@@ -5,6 +5,10 @@ const start = (app) => {
 
   app.ports.pagesEditorEffectsOutbound.subscribe(({ tag, contents }) => {
     switch (tag) {
+      case 'OpenInNewTab':
+        window.open(contents, '_blank')
+        break
+
       case 'SaveToken':
         const token = contents
         localStorage.setItem('Pages.Editor.token', token)
@@ -21,6 +25,24 @@ const start = (app) => {
         const enabled = contents
         if (enabled) window.addEventListener('beforeunload', preventNavigation)
         else window.removeEventListener('beforeunload', preventNavigation)
+        break
+
+      case 'DownloadZip':
+        const [project, elm, html] = contents
+        import('jszip').then(JSZip => {
+          const zip = new JSZip()
+          zip.file('Main.elm', elm)
+          zip.file('index.html', html)
+          zip.file('elm.json', project)
+          zip.generateAsync({ type: 'blob' }).then(blob => {
+            const url = URL.createObjectURL(blob)
+            const a = document.createElement('a')
+            a.href = url
+            a.download = 'ellie.zip'
+            a.click()
+            URL.revokeObjectURL(url)
+          })
+        })
         break
 
       default:

@@ -40,6 +40,7 @@ type Icon
     | Socket
     | Reload
     | More
+    | Zip
 
 
 view : Icon -> Html msg
@@ -52,6 +53,9 @@ view icon =
 toIdString : Icon -> String
 toIdString icon =
     case icon of
+        Zip ->
+            "zip"
+
         More ->
             "more"
 

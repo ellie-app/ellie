@@ -31,6 +31,7 @@ import Data.Maybe (Maybe(..))
 import Data.Maybe as Maybe
 import Data.Newtype (unwrap)
 import Data.Set (Set)
+import Data.Set as Set
 import Data.StrMap (StrMap)
 import Data.StrMap as StrMap
 import Data.String (Pattern(..))
@@ -40,17 +41,23 @@ import Data.Traversable (traverse)
 import Elm.Compiler.Error as Compiler
 import Elm.Package (Package(..))
 import Elm.Package.Description (Description(..))
+import Elm.Package.Name (Name)
+import Elm.Package.Name as Name
+import Elm.Project (Project(..))
+import Elm.Project as Project
 import System.FileSystem as FileSystem
 
 
-foreign import _init ∷ ∀ e. { helpers ∷ FfiHelpers, root ∷ FilePath } → EffFnAff (elm ∷ INFINITY | e) (Either String String)
+foreign import _installByName ∷ ∀ e. { helpers ∷ FfiHelpers, root ∷ FilePath, name ∷ String } → EffFnAff (elm ∷ INFINITY | e) Unit
 foreign import _compile ∷ ∀ e. { helpers ∷ FfiHelpers, root ∷ FilePath, entry ∷ FilePath, output ∷ FilePath, debug ∷ Boolean } → EffFnAff (elm ∷ INFINITY | e) (Either String String)
 foreign import _format ∷ ∀ e. { helpers ∷ FfiHelpers, code ∷ String } → EffFnAff (elm ∷ INFINITY | e) (Either String String)
+foreign import _reinstall ∷ ∀ e. { helpers ∷ FfiHelpers, root ∷ FilePath } → EffFnAff (elm ∷ INFINITY | e) Unit
 
 
 type FfiHelpers =
   { left ∷ ∀ x a. x → Either x a
   , right ∷ ∀ x a. a → Either x a
+  , unit ∷ Unit
   }
 
 
@@ -58,21 +65,31 @@ helpers ∷ FfiHelpers
 helpers =
   { left: Left
   , right: Right
+  , unit: unit
   }
 
 
-init ∷ FilePath → IO (Either String String)
-init root =
-  Aff.liftAff $ Aff.fromEffFnAff $ _init { helpers, root }
+installByName ∷ FilePath → Name → IO Unit
+installByName root name =
+  Aff.liftAff $ Aff.fromEffFnAff $ _installByName { helpers, root, name: String.toString name }
+
+
+init ∷ FilePath → IO Unit
+init root = do
+  FileSystem.write (root </> "elm.json") $ Foreign.encodeJSON Project.default
+  FileSystem.createDirectory (root </> "src")
+  installByName root Name.core
+  installByName root Name.browser
+  installByName root Name.html
 
 
 install ∷ FilePath → Set Package → IO Unit
 install root packages = do
-  (Description d) ← readDescription root
-  if packages /= d.dependencies
+  (Project p) ← readProject root
+  if packages /= p.deps
     then do
-      let updated = d { dependencies = packages }
-      writeDescription root (Description updated)
+      let updated = p { deps = packages, transDeps = Set.empty }
+      writeProject root (Project updated)
       FileSystem.remove (root </> "elm-stuff" </> "exact-dependencies.json")
     else
       pure unit
@@ -129,24 +146,19 @@ format code =
 dependencies ∷ FilePath → IO (Set Package)
 dependencies root =
   root
-    # readDescription
-    <#> (unwrap >>> _.dependencies)
+    # readProject
+    <#> (unwrap >>> _.deps)
 
 
-deleteExactDeps ∷ FilePath → IO Unit
-deleteExactDeps root =
-  FileSystem.remove (root </> "elm-stuff" </> "exact-dependencies.json")
-
-
-readDescription ∷ FilePath → IO Description
-readDescription root = do
-  rawDescription ← FileSystem.read (root </> "elm-package.json")
-  rawDescription
+readProject ∷ FilePath → IO Project
+readProject root = do
+  rawProject ← FileSystem.read (root </> "elm.json")
+  rawProject
     # Foreign.decodeJSON
     # Except.runExcept
-    # Either.either ((\e → error $ "Corrupted description: " <> show e) >>> Except.throwError) pure
+    # Either.either ((\e → error $ "Corrupted project: " <> show e) >>> Except.throwError) pure
 
 
-writeDescription ∷ FilePath → Description → IO Unit
-writeDescription root description =
-  FileSystem.write (root </> "elm-package.json") $ Foreign.encodeJSON description
+writeProject ∷ FilePath → Project → IO Unit
+writeProject root project =
+  FileSystem.write (root </> "elm.json") $ Foreign.encodeJSON project

@@ -56,11 +56,12 @@ routes makeHandler = do
 setup ∷ IO Server
 setup = do
   port ← Maybe.fromMaybe 1337 <$> (_ >>= Int.fromString) <$> (Eff.liftEff (Process.lookupEnv "PORT"))
+  packageSite ← Maybe.fromMaybe "http://package.elm-lang.org" <$> Eff.liftEff (Process.lookupEnv "PACKAGE_SITE")
   index ← Eff.liftEff $ Ref.newRef Nothing
   defaultPackages ← Cache.create (15 * Time.minutes)
   userWorkspaces ← Eff.liftEff $ Ref.newRef Map.empty
   let jwtSecret = Secret "abc123"
-  let env = DevEnv { defaultPackages, userWorkspaces, index, jwtSecret, assetBase: "", webpackHost: "localhost:1338" }
+  let env = DevEnv { packageSite, defaultPackages, userWorkspaces, index, jwtSecret, assetBase: "", webpackHost: "localhost:1338" }
   server ← Eff.liftEff $ Express.listenHttp (routes (Action.makeHandler (Ellie.runEllieM env))) port (\_ → pure unit)
   _ ← Socket.listen server "/workspace" $ BuildManager.connection (Ellie.runEllieM env)
   pure server

@@ -18,6 +18,7 @@ import Ellie.Types.Settings as Settings exposing (Settings)
 import Ellie.Types.User as User exposing (User)
 import Elm.Package as Package exposing (Package)
 import Elm.Package.Searchable as Searchable exposing (Searchable)
+import Elm.Project as Project exposing (Project)
 import Extra.Json.Encode as Encode
 import Extra.Result as Result
 import Extra.String as String
@@ -34,6 +35,18 @@ import Task
 import WebSocket
 
 
+type alias Url =
+    String
+
+
+type alias ElmSource =
+    String
+
+
+type alias HtmlSource =
+    String
+
+
 type Outbound msg
     = GetRevision Revision.Id (Entity Revision.Id Revision -> msg)
     | GetUser (Maybe Jwt) (Jwt -> Entity User.Id User -> msg)
@@ -47,6 +60,9 @@ type Outbound msg
     | SwitchToDebugger
     | SwitchToProgram
     | EnableNavigationCheck Bool
+    | CreateGist { title : String, project : Project, elm : ElmSource, html : HtmlSource } (Url -> msg)
+    | DownloadZip { project : Project, elm : ElmSource, html : HtmlSource }
+    | OpenInNewTab Url
     | Batch (List (Outbound msg))
     | Delay Float msg
     | None
@@ -55,6 +71,52 @@ type Outbound msg
 send : (Exception -> msg) -> Outbound msg -> State msg -> ( State msg, Cmd (Msg msg) )
 send onError effect state =
     case effect of
+        DownloadZip { project, elm, html } ->
+            ( state
+            , Encode.genericUnion "DownloadZip"
+                [ Encode.string <| Encode.encode 2 (Project.encoder project)
+                , Encode.string elm
+                , Encode.string html
+                ]
+                |> pagesEditorEffectsOutbound
+            )
+
+        OpenInNewTab url ->
+            ( state
+            , Encode.genericUnion "OpenInNewTab"
+                [ Encode.string url ]
+                |> pagesEditorEffectsOutbound
+            )
+
+        CreateGist stuff callback ->
+            let
+                body =
+                    Encode.object
+                        [ ( "description", Encode.string stuff.title )
+                        , ( "public", Encode.bool False )
+                        , ( "files"
+                          , Encode.object
+                                [ ( "elm.json"
+                                  , Encode.object [ ( "content", Encode.string <| Encode.encode 2 (Project.encoder stuff.project) ) ]
+                                  )
+                                , ( "Main.elm"
+                                  , Encode.object [ ( "content", Encode.string stuff.elm ) ]
+                                  )
+                                , ( "index.html"
+                                  , Encode.object [ ( "content", Encode.string stuff.html ) ]
+                                  )
+                                ]
+                          )
+                        ]
+            in
+            ( state
+            , post "https://api.github.com/gists"
+                |> withJsonBody body
+                |> withExpect (Http.expectJson (Decode.field "html_url" Decode.string))
+                |> HttpBuilder.send (Result.mapError Exception.fromHttp >> Result.fold callback onError)
+                |> Cmd.map UserMsg
+            )
+
         SaveSettings token settings ->
             state.saveSettingsId
                 |> Maybe.map Process.kill
@@ -304,6 +366,15 @@ wrapUpdate onError userUpdate msg (( model, state ) as appState) =
 map : (a -> b) -> Outbound a -> Outbound b
 map f outbound =
     case outbound of
+        DownloadZip stuff ->
+            DownloadZip stuff
+
+        OpenInNewTab url ->
+            OpenInNewTab url
+
+        CreateGist stuff callback ->
+            CreateGist stuff (callback >> f)
+
         SaveSettings token settings ->
             SaveSettings token settings
 

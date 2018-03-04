@@ -15,6 +15,7 @@ import Html.Styled.Keyed as Keyed
 import Pages.Editor.State.Working exposing (ErrorsPane(..), SuccessPane(..), Workbench(..))
 import Pages.Editor.Types.Log as Log exposing (Log)
 import Pages.Editor.Views.Output as Output
+import Pages.Editor.Views.Share as Share
 
 
 type alias Config msg =
@@ -22,6 +23,8 @@ type alias Config msg =
     , onExpand : msg
     , onIframeReload : msg
     , onClearLogs : msg
+    , onCreateGist : msg
+    , onDownloadZip : msg
     , onLogSearchChanged : String -> msg
     , onLogReceived : Log -> msg
     , onSelectErrorsPane : ErrorsPane -> msg
@@ -86,6 +89,12 @@ viewContent config =
                     , case pane of
                         SuccessLogs ->
                             viewLogs logSearch logs config
+
+                        SuccessShare ->
+                            Share.view
+                                { onCreateGist = config.onCreateGist
+                                , onDownloadZip = config.onDownloadZip
+                                }
 
                         _ ->
                             Html.text ""
@@ -183,6 +192,7 @@ viewFinishedHeader pane config =
             [ ( config.onSelectSuccessPane SuccessOutput, "Output", pane == SuccessOutput )
             , ( config.onSelectSuccessPane SuccessDebug, "Debug", pane == SuccessDebug )
             , ( config.onSelectSuccessPane SuccessLogs, "Logs", pane == SuccessLogs )
+            , ( config.onSelectSuccessPane SuccessShare, "Share", pane == SuccessShare )
             ]
         ]
 

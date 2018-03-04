@@ -8,27 +8,9 @@ type alias Example =
     }
 
 
-defaultHtml : String
-defaultHtml =
-    """<html>
-<head>
-  <style>
-    /* you can style your program here */
-  </style>
-</head>
-<body>
-  <script>
-    var app = Elm.Main.fullscreen()
-    // you can use ports and stuff here
-  </script>
-</body>
-</html>
-"""
-
-
 helloWorld : Example
 helloWorld =
-    { label = "Hello World"
+    { label = "Hello World (Static Page)"
     , elm = """module Main exposing (main)
 
 import Html exposing (Html, text)
@@ -38,16 +20,43 @@ main : Html msg
 main =
     text <| Debug.log "hi" "Hello, World!"
 """
-    , html = defaultHtml
+    , html = """<html>
+<head>
+  <style>
+    /* you can style your program here */
+  </style>
+</head>
+<body>
+  <script>
+    var app = Elm.Main.staticPage(document.body)
+    // you can use ports and stuff here
+  </script>
+</body>
+</html>
+"""
     }
 
 
 counter : Example
 counter =
-    { label = "Counter (Beginner Program)"
-    , html = defaultHtml
+    { label = "Counter (Sandbox)"
+    , html = """<html>
+<head>
+  <style>
+    /* you can style your program here */
+  </style>
+</head>
+<body>
+  <script>
+    var app = Elm.Main.embed(document.body)
+    // you can use ports and stuff here
+  </script>
+</body>
+</html>
+"""
     , elm = """module Main exposing (main)
 
+import Browser
 import Html exposing (Html, text, button, div)
 import Html.Events exposing (onClick)
 
@@ -56,8 +65,8 @@ type alias Model =
     { count : Int }
 
 
-model : Model
-model =
+initialModel : Model
+initialModel =
     { count = 0 }
 
 
@@ -80,15 +89,15 @@ view : Model -> Html Msg
 view model =
     div []
         [ button [ onClick Increment ] [ text "+1" ]
-        , div [] [ text <| toString model.count ]
+        , div [] [ text <| String.fromInt model.count ]
         , button [ onClick Decrement ] [ text "-1" ]
         ]
 
 
-main : Program Never Model Msg
+main : Program () Model Msg
 main =
-    Html.beginnerProgram
-        { model = model
+    Browser.sandbox
+        { init = initialModel
         , view = view
         , update = update
         }

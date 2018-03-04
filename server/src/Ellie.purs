@@ -48,6 +48,7 @@ type SharedEnv r =
   , assetBase ∷ String
   , defaultPackages ∷ Cache (Array Package)
   , userWorkspaces ∷ Ref (Map User.Id LocalPlatform.Workspace)
+  , packageSite ∷ String
   | r
   }
 

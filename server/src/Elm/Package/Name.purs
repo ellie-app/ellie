@@ -11,6 +11,21 @@ import Data.String as String
 import Data.String.Class (class ToString)
 
 
+core ∷ Name
+core =
+  Name { user: "elm-lang", project: "core" }
+
+
+html ∷ Name
+html =
+  Name { user: "elm-lang", project: "html" }
+
+
+browser ∷ Name
+browser =
+  Name { user: "elm-lang", project: "browser" }
+
+
 isCore ∷ Name → Boolean
 isCore (Name { user, project }) =
   user == "elm-lang" && project == "core"
@@ -19,6 +34,11 @@ isCore (Name { user, project }) =
 isHtml ∷ Name → Boolean
 isHtml (Name { user, project }) =
   user == "elm-lang" && project == "html"
+
+
+isBrowser ∷ Name → Boolean
+isBrowser name =
+  name == browser
 
 
 newtype Name =
