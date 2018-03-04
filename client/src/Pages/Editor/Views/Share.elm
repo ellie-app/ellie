@@ -28,14 +28,28 @@ view config =
             ]
         ]
         [ Html.div []
-            [ Html.h3 [] [ Html.text "Export" ]
-            , Html.div []
-                [ Button.view
-                    { icon = Just Icon.GitHub
-                    , label = "Create Gist"
-                    , disabled = False
-                    , action = Button.click config.onCreateGist
-                    }
+            [ Html.div
+                [ css
+                    [ fontSize (px 14)
+                    , color Theme.primaryForeground
+                    , fontWeight bold
+                    , lineHeight (num 1)
+                    , paddingBottom (px 8)
+                    , textTransform uppercase
+                    ]
+                ]
+                [ Html.text "Export" ]
+            , Html.div
+                [ css [ displayFlex ] ]
+                [ Html.div
+                    [ css [ paddingRight (px 16) ] ]
+                    [ Button.view
+                        { icon = Just Icon.GitHub
+                        , label = "Create Gist"
+                        , disabled = False
+                        , action = Button.click config.onCreateGist
+                        }
+                    ]
                 , Button.view
                     { icon = Just Icon.Zip
                     , label = "Download Zip"

@@ -81,7 +81,7 @@ view config =
                     [ viewEditorHeader config "HTML" "Collapse HTML Editor" config.onCollapse <|
                         if config.ratio == 1 then
                             Html.div
-                                [ css [ transform (rotate (deg 180)) ] ]
+                                [ css [ height (pct 100), transform (rotate (deg 180)) ] ]
                                 [ Icon.view Icon.Chevron ]
                         else
                             Icon.view Icon.Chevron

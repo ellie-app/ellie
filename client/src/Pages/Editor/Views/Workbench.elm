@@ -142,10 +142,13 @@ viewFinishedHeader pane config =
                 ]
             ]
             [ Html.div
-                [ if config.maximized then
-                    css [ transform <| rotate (deg -90) ]
-                  else
-                    css [ transform <| rotate (deg 90) ]
+                [ css
+                    [ height (pct 100)
+                    , if config.maximized then
+                        transform <| rotate (deg -90)
+                      else
+                        transform <| rotate (deg 90)
+                    ]
                 ]
                 [ Icon.view Icon.Chevron ]
             ]
