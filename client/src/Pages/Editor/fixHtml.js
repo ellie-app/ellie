@@ -91,7 +91,8 @@ export default ({ htmlCode, embedApi, sourceScript }) => {
 
       const div = doc.createElement('div')
       div.innerHTML = sourceScript
-      doc.body.prepend(div.children[0])
+      const firstChild = doc.body.children[0]
+      doc.body.insertBefore(div.children[0], firstChild)
       var blob = new Blob([doc.documentElement.outerHTML], { type: 'text/html' })
       resolve(URL.createObjectURL(blob))
     } catch (error) {
