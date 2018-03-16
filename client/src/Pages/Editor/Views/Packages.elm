@@ -220,7 +220,7 @@ infoContainerStyles =
 packageNameStyles : Html.Attribute msg
 packageNameStyles =
     css
-        [ fontSize (px 24)
+        [ fontSize (px 20)
         , fontWeight bold
         , color Colors.lightGray
         , lineHeight (num 1.4)

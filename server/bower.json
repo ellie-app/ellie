@@ -13,7 +13,6 @@
     "purescript-numbers": "5.0.0",
     "purescript-foreign-generic": "5.0.0",
     "purescript-foreign": "4.0.1",
-    "purescript-uuid": "4.0.0",
     "purescript-typelevel-prelude": "2.6.0",
     "purescript-io": "5.0.0",
     "purescript-generics-rep": "5.4.0",
@@ -22,8 +21,7 @@
     "purescript-control": "3.3.1",
     "purescript-sets": "3.1.0",
     "purescript-random": "3.0.0",
-    "purescript-template-strings": "4.0.0",
-    "purescript-node-postgres": "4.1.0"
+    "purescript-template-strings": "4.0.0"
   },
   "devDependencies": {
     "purescript-psci-support": "3.0.0"

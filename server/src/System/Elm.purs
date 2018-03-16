@@ -9,40 +9,30 @@ module System.Elm
 
 import Prelude
 
-import Control.Monad.Aff.Class as Aff
+import Control.Monad.Aff.Class (liftAff) as Aff
 import Control.Monad.Aff.Compat (EffFnAff)
 import Control.Monad.Aff.Compat (fromEffFnAff) as Aff
 import Control.Monad.Eff.Exception (error)
-import Control.Monad.Error.Class (throwError)
 import Control.Monad.Except as Except
 import Control.Monad.IO (IO)
-import Control.Monad.IO as IO
 import Control.Monad.IO.Effect (INFINITY)
-import Control.Monad.IO.Effect as Control.Monad.IO.Effect
-import Data.Array ((:))
 import Data.Array as Array
 import Data.Either (Either(..))
 import Data.Either as Either
 import Data.FilePath (FilePath, (</>))
-import Data.Foreign (Foreign, MultipleErrors)
-import Data.Foreign.Class (encode, decode) as Foreign
-import Data.Foreign.Generic (encodeJSON, decodeJSON) as Foreign
+import Data.Json as Json
 import Data.Maybe (Maybe(..))
-import Data.Maybe as Maybe
 import Data.Newtype (unwrap)
 import Data.Set (Set)
 import Data.Set as Set
-import Data.StrMap (StrMap)
-import Data.StrMap as StrMap
 import Data.String (Pattern(..))
-import Data.String as String
+import Data.String (charAt, split) as String
 import Data.String.Class (toString) as String
 import Data.Traversable (traverse)
 import Elm.Compiler.Error as Compiler
-import Elm.Package (Package(..))
-import Elm.Package.Description (Description(..))
-import Elm.Package.Name (Name)
-import Elm.Package.Name as Name
+import Elm.Name (Name)
+import Elm.Name as Name
+import Elm.Package (Package)
 import Elm.Project (Project(..))
 import Elm.Project as Project
 import System.FileSystem as FileSystem
@@ -76,7 +66,7 @@ installByName root name =
 
 init ∷ FilePath → IO Unit
 init root = do
-  FileSystem.write (root </> "elm.json") $ Foreign.encodeJSON Project.default
+  FileSystem.write (root </> "elm.json") $ Project.default
   FileSystem.createDirectory (root </> "src")
   installByName root Name.core
   installByName root Name.browser
@@ -113,7 +103,6 @@ compile { root, entry, debug, output } = do
             , overview: ""
             , details: message
             , level: "error"
-            , subregion: Nothing
             , region:
                 Compiler.Region
                   { start: Compiler.Location { line: 1, column: 1 }
@@ -129,9 +118,9 @@ compile { root, entry, debug, output } = do
           (\line →
             if String.charAt 0 line == Just '[' && String.charAt 1 line == Just '{' then
               line
-                # Foreign.decodeJSON
-                # Except.runExcept
-                # Either.either (\_ → throwError $ error "Unparseable compiler result") pure
+                # Json.parse
+                >>= Json.decodeArray Compiler.decode
+                # Either.either (String.toString >>> error >>> Except.throwError) pure
             else
               pure []     
           )
@@ -154,11 +143,10 @@ readProject ∷ FilePath → IO Project
 readProject root = do
   rawProject ← FileSystem.read (root </> "elm.json")
   rawProject
-    # Foreign.decodeJSON
-    # Except.runExcept
-    # Either.either ((\e → error $ "Corrupted project: " <> show e) >>> Except.throwError) pure
+    # FileSystem.fromFile
+    # Either.either ((\e → error $ "Corrupted project: " <> e) >>> Except.throwError) pure
 
 
 writeProject ∷ FilePath → Project → IO Unit
 writeProject root project =
-  FileSystem.write (root </> "elm.json") $ Foreign.encodeJSON project
+  FileSystem.write (root </> "elm.json") $ FileSystem.toFile project

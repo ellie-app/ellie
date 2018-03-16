@@ -21,10 +21,9 @@ import Data.Map (Map)
 import Data.Maybe (Maybe)
 import Data.Newtype (class Newtype, unwrap)
 import Ellie.Adapters.CdnAssets as CdnAssets
-import Ellie.Adapters.CloudRepo as CloudRepo
 import Ellie.Adapters.IndexSearch as IndexSearch
 import Ellie.Adapters.LocalPlatform as LocalPlatform
-import Ellie.Adapters.LocalRepo as LocalRepo
+import Ellie.Adapters.DatabaseRepo as DatabaseRepo
 import Ellie.Adapters.WebpackAssets as WebpackAssets
 import Ellie.Domain.Assets (class Assets)
 import Ellie.Domain.Platform (class Platform)
@@ -40,7 +39,7 @@ import System.Jwt (Secret)
 import System.Redis as Redis
 import System.SearchIndex (SearchIndex)
 import Type.Equality (class TypeEquals, to)
-
+import System.Postgres as Postgres
 
 type SharedEnv r =
   { index ∷ Ref (Maybe (SearchIndex Searchable))
@@ -49,6 +48,7 @@ type SharedEnv r =
   , defaultPackages ∷ Cache (Array Package)
   , userWorkspaces ∷ Ref (Map User.Id LocalPlatform.Workspace)
   , packageSite ∷ String
+  , postgresClient ∷ Postgres.Client
   | r
   }
 
@@ -91,29 +91,17 @@ derive newtype instance monadReaderAppM ∷ MonadReader r (EllieM r)
 derive newtype instance monadThrowAppM ∷ MonadThrow Error (EllieM r)
 derive newtype instance monadErrorAppM ∷ MonadError Error (EllieM r)
 
-instance revisionRepoEllieMProdEnv ∷ RevisionRepo (EllieM ProdEnv) where
-  retrieve rid = Reader.asks unwrap >>= CloudRepo.getRevision rid
-  exists rid = Reader.asks unwrap >>= CloudRepo.revisionExists rid
-  save rid revision = Reader.asks unwrap >>= CloudRepo.saveRevision rid revision
+instance revisionRepoEllieMProdEnv ∷ (Newtype e a, TypeEquals a (SharedEnv e0)) ⇒ RevisionRepo (EllieM e) where
+  retrieve rid = Reader.asks (unwrap >>> to) >>= DatabaseRepo.getRevision rid
+  exists rid = Reader.asks (unwrap >>> to) >>= DatabaseRepo.revisionExists rid
+  save rid revision = Reader.asks (unwrap >>> to) >>= DatabaseRepo.saveRevision rid revision
 
-instance revisionRepoEllieMDevEnv ∷ RevisionRepo (EllieM DevEnv) where
-  retrieve rid = LocalRepo.getRevision rid
-  exists rid = LocalRepo.revisionExists rid
-  save rid revision = LocalRepo.saveRevision rid revision
-
-instance userRepoEllieMProdEnv ∷ UserRepo (EllieM ProdEnv) where
-  retrieve uid = Reader.asks unwrap >>= CloudRepo.getUser uid
-  create = Reader.asks unwrap >>= CloudRepo.createUser
-  save uid user = Reader.asks unwrap >>= CloudRepo.saveUser uid user
-  verify jwt = Reader.asks unwrap >>= CloudRepo.verifyUser jwt
-  sign uid = Reader.asks unwrap >>= CloudRepo.signUser uid
-
-instance userRepoEllieMDevEnv ∷ UserRepo (EllieM DevEnv) where
-  retrieve uid = LocalRepo.getUser uid
-  create = LocalRepo.createUser
-  save uid user = LocalRepo.saveUser uid user
-  verify jwt = Reader.asks unwrap >>= LocalRepo.verifyUser jwt
-  sign uid = Reader.asks unwrap >>= LocalRepo.signUser uid
+instance userRepoEllieM ∷ (Newtype e a, TypeEquals a (SharedEnv e0)) ⇒ UserRepo (EllieM e) where
+  retrieve uid = Reader.asks (unwrap >>> to) >>= DatabaseRepo.getUser uid
+  create = Reader.asks (unwrap >>> to) >>= DatabaseRepo.createUser
+  save uid user = Reader.asks (unwrap >>> to) >>= DatabaseRepo.saveUser uid user
+  verify jwt = Reader.asks (unwrap >>> to) >>= DatabaseRepo.verifyUser jwt
+  sign uid = Reader.asks (unwrap >>> to) >>= DatabaseRepo.signUser uid
 
 instance searchEllieM ∷ (Newtype e a, TypeEquals a (SharedEnv e0)) ⇒ Search (EllieM e) where
   search query = Reader.asks (unwrap >>> to) >>= IndexSearch.search query

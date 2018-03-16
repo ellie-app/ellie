@@ -15,7 +15,6 @@ import Control.Monad.Eff.Exception (Error, error)
 import Control.Monad.Eff.Ref (Ref)
 import Control.Monad.Eff.Ref as Ref
 import Control.Monad.Error.Class (class MonadThrow, throwError, try)
-import Control.Monad.Except (runExcept) as Except
 import Control.Monad.IO (IO)
 import Control.Monad.IO.Class (class MonadIO)
 import Control.Monad.IO.Class (liftIO) as IO
@@ -26,10 +25,8 @@ import Data.Either as Either
 import Data.FilePath (FilePath, (</>), (<.>))
 import Data.FilePath as FilePath
 import Data.Foldable (for_, maximum)
-import Data.Foreign (F, Foreign)
-import Data.Foreign (readArray, renderForeignError) as Foreign
-import Data.Foreign.Class (decode) as Foreign
-import Data.Foreign.Index ((!))
+import Data.Json (Json)
+import Data.Json as Json
 import Data.Map (Map)
 import Data.Map as Map
 import Data.Maybe (Maybe(..))
@@ -38,21 +35,20 @@ import Data.Newtype (unwrap)
 import Data.Set (Set)
 import Data.Set as Set
 import Data.String (Pattern(Pattern))
-import Data.String (joinWith, null, split, trim) as String
-import Data.String.Class (toString) as String
+import Data.String (null, split, trim) as String
+import Data.String.Class (toString, fromString) as String
 import Data.String.Murmur as Murmur
 import Data.String.Regex (Regex)
 import Data.String.Regex (match) as Regex
 import Data.String.Regex.Flags (noFlags) as Regex
 import Data.String.Regex.Unsafe (unsafeRegex) as Regex
-import Data.Traversable (traverse)
 import Ellie.Types.User as User
 import Elm.Compiler.Error as Compiler
+import Elm.Name (Name)
+import Elm.Name as Name
 import Elm.Package (Package(..))
-import Elm.Package.Name (Name(..))
-import Elm.Package.Name as Name
-import Elm.Package.Version (Version(..))
-import Elm.Package.Version as Version
+import Elm.Version (Version(..))
+import Elm.Version as Version
 import System.Cache (Cache)
 import System.Cache as Cache
 import System.Dom (Document)
@@ -105,8 +101,7 @@ reloadDefaultPackages env = do
       packageData ←
         rawPackageData
           # decodeNameAndVersions
-          # Except.runExcept
-          # lmap (\me → error $ String.joinWith "\n" $ Array.fromFoldable $ map Foreign.renderForeignError me)
+          # lmap (String.toString >>> error)
           # Either.either throwError pure
       
       packageData
@@ -118,15 +113,17 @@ reloadDefaultPackages env = do
     Left _ → pure hardcodedDefaults
     Right remote → pure remote
   where
-    decodeNameAndVersion ∷ Foreign → F { name ∷ Name, versions ∷ Array Version }
-    decodeNameAndVersion object = do
+    decodeNameAndVersion ∷ Json → Either Json.Error { name ∷ Name, versions ∷ Array Version }
+    decodeNameAndVersion value = do
       { name: _, versions: _ }
-        <$> (object ! "name" >>= Foreign.decode)
-        <*> (object ! "versions" >>= Foreign.decode)
+        <$> Json.decodeAtField "name" value
+            (\v → Json.decodeString v >>= (String.fromString >>> Either.note (Json.Failure "Expecting a name USER/PROJECT" v)))
+        <*> Json.decodeAtField "versions" value
+            (\v → Json.decodeArray (\v' → Json.decodeString v' >>= (String.fromString >>> Either.note (Json.Failure "Expecting a version MAJOR.MINOR.PATCH" v'))) v)
 
-    decodeNameAndVersions ∷ Foreign → F (Array { name ∷ Name, versions ∷ Array Version })
+    decodeNameAndVersions ∷ Json → Either Json.Error (Array { name ∷ Name, versions ∷ Array Version })
     decodeNameAndVersions array =
-      Foreign.readArray array >>= traverse decodeNameAndVersion
+      Json.decodeArray decodeNameAndVersion array
 
 
 format ∷ ∀ m. MonadIO m ⇒ String → m (Either String String)

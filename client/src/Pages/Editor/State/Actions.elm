@@ -30,7 +30,7 @@ type Model
 
 type Msg
     = UserTypedInPackageSearch String
-    | SearchedPackagesReceived (List Searchable)
+    | SearchedPackagesReceived (Maybe (List Searchable))
 
 
 update : Msg -> Model -> ( Model, Outbound Msg )
@@ -52,7 +52,7 @@ update msg model =
 
         ( Packages packagesModel, SearchedPackagesReceived packages ) ->
             if packagesModel.awaitingSearch then
-                ( Packages { packagesModel | searchedPackages = Just packages, awaitingSearch = False }
+                ( Packages { packagesModel | searchedPackages = packages, awaitingSearch = False }
                 , Outbound.none
                 )
             else

@@ -12,6 +12,7 @@ type Msg msg
     | SaveSettingsSpawned Process.Id
     | DebounceSaveSettings Debounce.Msg
     | ExceptionOccured Exception
+    | Multiple (List (Msg msg))
     | NoOp
 
 

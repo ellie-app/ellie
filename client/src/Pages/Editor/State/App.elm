@@ -100,6 +100,11 @@ update msg_ model =
                 |> Tuple.mapFirst Working
                 |> Tuple.mapSecond (Outbound.map WorkingMsg)
 
+        ( Working workingState, ExceptionOccurred exception ) ->
+            Working.update (Working.ExceptionReceived exception) workingState
+                |> Tuple.mapFirst Working
+                |> Tuple.mapSecond (Outbound.map WorkingMsg)
+
         _ ->
             ( model, Outbound.none )
 

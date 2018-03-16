@@ -42,6 +42,10 @@ type Icon
     | More
     | Zip
     | Success
+    | Failure
+    | Warning
+    | CloseAll
+    | Notification
 
 
 view : Icon -> Html msg
@@ -54,6 +58,18 @@ view icon =
 toIdString : Icon -> String
 toIdString icon =
     case icon of
+        Notification ->
+            "notification"
+
+        CloseAll ->
+            "close-all"
+
+        Failure ->
+            "failure"
+
+        Warning ->
+            "warning"
+
         Success ->
             "success"
 

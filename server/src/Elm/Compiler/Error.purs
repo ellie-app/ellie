@@ -2,18 +2,19 @@ module Elm.Compiler.Error
   ( Error(..)
   , Location(..)
   , Region(..)
+  , encode
+  , decode
   ) where
 
 import Prelude
 
-import Data.Foreign (toForeign) as Foreign
-import Data.Foreign.Class (class Decode, class Encode)
-import Data.Foreign.Class (decode, encode) as Foreign
-import Data.Foreign.Index ((!))
-import Data.Foreign.NullOrUndefined (readNullOrUndefined, unNullOrUndefined) as Foreign
+import Data.Either (Either)
 import Data.Maybe (Maybe)
 import Data.Newtype (class Newtype)
-import Data.Nullable as Nullable
+import Data.Json (Json)
+import Data.Json as Json
+import Control.Alt ((<|>))
+
 
 newtype Location =
   Location
@@ -21,16 +22,19 @@ newtype Location =
     , column ∷ Int
     }
 
-instance decodeLocation ∷ Decode Location where
-  decode object =
-    { line: _, column: _ }
-      <$> (object ! "line" >>= Foreign.decode)
-      <*> (object ! "column" >>= Foreign.decode)
-      <#> Location
+decodeLocation ∷ Json → Either Json.Error Location
+decodeLocation value =
+  { line: _, column: _ }
+    <$> Json.decodeAtField "line" value Json.decodeInt
+    <*> Json.decodeAtField "column" value Json.decodeInt
+    <#> Location
 
-instance encodeLocation ∷ Encode Location where
-  encode (Location location) =
-    Foreign.toForeign location
+encodeLocation ∷ Location → Json
+encodeLocation (Location location) =
+  Json.encodeObject
+    [ { key: "line", value: Json.encodeInt location.line }
+    , { key: "column", value: Json.encodeInt location.column }
+    ]
 
 
 newtype Region =
@@ -39,19 +43,19 @@ newtype Region =
     , end ∷ Location
     }
 
-instance decodeRegion ∷ Decode Region where
-  decode object =
-    { start: _, end: _ }
-      <$> (object ! "start" >>= Foreign.decode)
-      <*> (object ! "end" >>= Foreign.decode)
-      <#> Region
+decodeRegion ∷ Json → Either Json.Error Region
+decodeRegion value =
+  { start: _, end: _ }
+    <$> Json.decodeAtField "start" value decodeLocation
+    <*> Json.decodeAtField "end" value decodeLocation
+    <#> Region
 
-instance encodeRegion ∷ Encode Region where
-  encode (Region { start, end }) =
-    Foreign.toForeign
-      { start: Foreign.encode start
-      , end: Foreign.encode end
-      }
+encodeRegion ∷ Region → Json
+encodeRegion (Region { start, end }) =
+    Json.encodeObject
+      [ { key: "start", value: encodeLocation start }
+      , { key: "end", value: encodeLocation end }
+      ]
 
 
 newtype Error =
@@ -59,31 +63,28 @@ newtype Error =
     { tag ∷ String
     , overview ∷ String
     , details ∷ String
-    , subregion ∷ Maybe Region
     , region ∷ Region
     , level ∷ String
     }
 
 derive instance newtypeError ∷ Newtype Error _
 
-instance decodeError ∷ Decode Error where
-  decode object =
-    { tag: _, overview: _, details: _, subregion: _, region: _, level: _ }
-      <$> (object ! "tag" >>= Foreign.decode)
-      <*> (object ! "overview" >>= Foreign.decode)
-      <*> (object ! "details" >>= Foreign.decode)
-      <*> (object ! "subregion" >>= Foreign.readNullOrUndefined Foreign.decode <#> Foreign.unNullOrUndefined)
-      <*> (object ! "region" >>= Foreign.decode)
-      <*> (object ! "type" >>= Foreign.decode)
-      <#> Error
+decode ∷ Json → Either Json.Error Error
+decode value =
+  { tag: _, overview: _, details: _, region: _, level: _ }
+    <$> Json.decodeAtField "tag" value Json.decodeString
+    <*> Json.decodeAtField "overview" value Json.decodeString
+    <*> Json.decodeAtField "details" value Json.decodeString
+    <*> (Json.decodeAtField "subregion" value decodeRegion <|> Json.decodeAtField "region" value decodeRegion)
+    <*> Json.decodeAtField "type" value Json.decodeString
+    <#> Error
 
-instance encodeError ∷ Encode Error where
-  encode (Error error) =
-    Foreign.toForeign
-      { tag: error.tag
-      , overview: error.overview
-      , details: error.details
-      , subregion: Nullable.toNullable $ map Foreign.encode error.subregion
-      , region: Foreign.encode error.region
-      , "type": error.level
-      }
+encode ∷ Error → Json
+encode (Error error) =
+  Json.encodeObject
+    [ { key: "tag", value: Json.encodeString error.tag }
+    , { key: "overview", value: Json.encodeString error.overview }
+    , { key: "details",  value: Json.encodeString error.details }
+    , { key: "region", value: encodeRegion error.region }
+    , { key: "type",  value: Json.encodeString error.level }
+    ]

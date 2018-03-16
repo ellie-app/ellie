@@ -29,6 +29,9 @@
     "request": "2.83.0",
     "rimraf": "2.6.2",
     "tmp": "0.0.33",
+    "uuid": "^3.2.1",
+    "uuid-encoder": "^1.1.0",
+    "uuid-validate": "0.0.2",
     "ws": "4.0.0"
   }
 }

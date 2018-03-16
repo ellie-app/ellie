@@ -3,6 +3,9 @@ module Server.Action
   , Method(..)
   , class IsParam
   , fromParam
+  , class IsBody
+  , toBody
+  , fromBody
   , makeHandler
   , setStatus
   , setHeader
@@ -16,9 +19,9 @@ module Server.Action
 
 import Prelude
 
+import Control.Alt ((<|>))
 import Control.Monad.Aff.Class (liftAff) as Aff
 import Control.Monad.Aff.Unsafe (unsafeCoerceAff) as Aff
-import Control.Monad.Except as Except
 import Control.Monad.IO (IO)
 import Control.Monad.Reader (ReaderT)
 import Control.Monad.Reader as Reader
@@ -26,25 +29,28 @@ import Control.Monad.State (StateT)
 import Control.Monad.State as State
 import Control.Monad.Trans.Class (class MonadTrans, lift)
 import Data.Array ((:))
-import Data.Either (Either)
+import Data.Either (Either(..))
+import Data.Entity (Entity, class IdentifiedBy)
+import Data.Entity as Entity
 import Data.FilePath (FilePath)
 import Data.Foldable (for_)
-import Data.Foreign (Foreign, MultipleErrors)
-import Data.Foreign.Class (class Decode)
-import Data.Foreign.Class (decode) as Foreign
 import Data.Int as Int
+import Data.Json (Json)
+import Data.Json as Json
 import Data.Maybe (Maybe(..))
 import Data.Newtype (class Newtype, unwrap)
-import Data.String as String
 import Data.StrMap (StrMap)
 import Data.StrMap as StrMap
+import Data.String as String
 import Data.Url (Url)
 import Data.Url as Url
 import Data.Url.Query as Query
+import Data.Uuid (Uuid)
+import Data.Uuid as Uuid
 import Node.Express.Handler (Handler, HandlerM(..))
 import Node.Express.Response as Response
 import Node.Express.Types as Express
-import Debug as Debug
+
 
 foreign import _parseRequest ∷
   { parseMethod ∷ String → Method
@@ -77,8 +83,8 @@ type Request =
   , url ∷ Url
   , params ∷ StrMap String
   , headers ∷ StrMap String
-  , body ∷ Foreign
-  , vault ∷ StrMap Foreign
+  , body ∷ Json
+  , vault ∷ StrMap Json
   }
 
 
@@ -152,6 +158,61 @@ instance isParamString ∷ IsParam String where
 instance isParamInt ∷ IsParam Int where
   fromParam = Int.fromString
 
+instance isParamUuid ∷ IsParam Uuid where
+  fromParam = Uuid.decode
+
+
+class IsBody a where
+  toBody ∷ a → Json
+  fromBody ∷ Json → Either Json.Error a
+
+instance isBodyJson ∷ IsBody Json where
+  toBody = id
+  fromBody = Right
+
+instance isBodyInt ∷ IsBody Int where
+  toBody = Json.encodeInt
+  fromBody = Json.decodeInt
+
+instance isBodyNumber ∷ IsBody Number where
+  toBody = Json.encodeNumber
+  fromBody = Json.decodeNumber
+
+instance isBodyString ∷ IsBody String where
+  toBody = Json.encodeString
+  fromBody = Json.decodeString
+
+instance isBodyBoolean ∷ IsBody Boolean where
+  toBody = Json.encodeBoolean
+  fromBody = Json.decodeBoolean
+
+instance isBodyUuid ∷ IsBody Uuid where
+  toBody = Uuid.encode >>> Json.encodeString
+  fromBody value =
+    Json.decodeString value >>= \s →
+      case Uuid.fromString s of
+        Just u → Right u
+        Nothing → Left $ Json.Failure "Expecting a UUID" value
+
+instance isBodyMaybe ∷ IsBody a ⇒ IsBody (Maybe a) where
+  toBody (Just a) = toBody a
+  toBody Nothing = Json.encodeNull
+  fromBody value = (Just <$> fromBody value) <|> (Json.decodeNull Nothing value)
+
+instance isBodyArray ∷ IsBody a ⇒ IsBody (Array a) where
+  toBody = Json.encodeArray toBody
+  fromBody = Json.decodeArray fromBody
+
+instance isBodyEntity ∷ (IsBody k, IsBody r, IdentifiedBy k r) ⇒ IsBody (Entity k r) where
+  toBody entity =
+    Json.encodeObject
+      [ { key: "key", value: toBody $ Entity.key entity }
+      , { key: "record", value: toBody $ Entity.record entity }
+      ]
+  fromBody value =
+    Entity.entity
+      <$> fromBody value
+      <*> fromBody value
 
 getHeader ∷ ∀ m. Monad m ⇒ String → ActionT m (Maybe String)
 getHeader key =
@@ -168,12 +229,10 @@ getParam key =
       Nothing → Query.get key (Url.query request.url) >>= fromParam
 
 
-getBody ∷ ∀ m a. Monad m ⇒ Decode a ⇒ ActionT m (Either MultipleErrors a)
+getBody ∷ ∀ m a. Monad m ⇒ IsBody a ⇒ ActionT m (Either Json.Error a)
 getBody =
   ActionT $ Reader.asks \request →
-    request.body
-      # Foreign.decode
-      # Except.runExcept
+    fromBody request.body
 
 
 setStatus ∷ ∀ m. Monad m ⇒ Int → ActionT m Unit

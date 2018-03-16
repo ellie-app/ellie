@@ -2,18 +2,14 @@ module Ellie.Api where
 
 import Prelude
 
-import Control.Monad.Except (runExcept) as Except
+import Control.Monad.Except (ExceptT(..), runExceptT)
+import Control.Monad.Maybe.Trans (MaybeT(..), runMaybeT)
 import Control.Monad.Trans.Class (lift)
 import Data.Either (Either(..))
 import Data.Entity (Entity)
 import Data.Entity as Entity
-import Data.Foreign (Foreign, MultipleErrors)
-import Data.Foreign (toForeign) as Foreign
-import Data.Foreign.Class (decode, encode) as Foreign
-import Data.Foreign.Generic (encodeJSON) as Foreign
-import Data.Foreign.Index ((!))
+import Data.Json as Json
 import Data.Maybe (Maybe(..))
-import Data.Maybe as Maybe
 import Data.String (Pattern(Pattern))
 import Data.String (stripPrefix) as String
 import Data.TemplateString.Unsafe (template) as String
@@ -35,7 +31,21 @@ import Ellie.Types.User as User
 import Server.Action (ActionT)
 import Server.Action as Action
 import System.Jwt (Jwt(..))
-import Debug as Debug
+
+
+authorize ∷ ∀ m. Monad m ⇒ UserRepo m ⇒ ActionT m (Maybe (Entity User.Id User))
+authorize = runMaybeT do
+  tokenHeader ← MaybeT $ Action.getHeader "Authorization"
+  token ← MaybeT $ pure $ String.stripPrefix (Pattern "Bearer ") tokenHeader
+  userId ← MaybeT $ lift $ UserRepo.verify (Jwt token)
+  MaybeT $ lift $ UserRepo.retrieve userId
+
+
+authorizeParam ∷ ∀ m. Monad m ⇒ UserRepo m ⇒ ActionT m (Maybe (Entity User.Id User))
+authorizeParam = runMaybeT $ do
+  token ← MaybeT $ Action.getParam "token"
+  userId ← MaybeT $ lift $ UserRepo.verify (Jwt token)
+  MaybeT $ lift $ UserRepo.retrieve userId
 
 
 getRevision ∷ ∀ m. Monad m ⇒ RevisionRepo m ⇒ ActionT m Unit
@@ -54,7 +64,7 @@ getRevision = do
       case maybeRevision of
         Just entity → do
           Action.setStatus 200
-          Action.setStringBody $ Foreign.encodeJSON entity
+          Action.setStringBody $ Json.stringify $ Action.toBody entity
         Nothing →
           Action.setStatus 404
     Nothing →
@@ -68,36 +78,53 @@ searchPackages = do
     Just query → do
       packages ← lift $ Search.search query
       Action.setStatus 200
-      Action.setStringBody $ Foreign.encodeJSON packages
+      Action.setStringBody $ Json.stringify $ Action.toBody packages
     Nothing →
       Action.setStatus 400
 
 
-me ∷ ∀ m. Monad m ⇒ UserRepo m ⇒ ActionT m Unit
-me = do
-  maybeToken ← Action.getParam "token"
-  maybeUserId ← Maybe.maybe (pure Nothing) (lift <<< UserRepo.verify) maybeToken
-  maybeUserEntity ← Maybe.maybe (pure Nothing) (lift <<< UserRepo.retrieve) maybeUserId
-  { token, user } ←
-    case maybeUserEntity of
-      Just entity → do
-        token ← lift $ UserRepo.sign (Entity.key entity)
-        pure { token, user: entity }
-      Nothing → do
-        entity ← lift $ UserRepo.create
-        token ← lift $ UserRepo.sign (Entity.key entity)
-        pure { token, user: entity }
+verify ∷ ∀ m. Monad m ⇒ UserRepo m ⇒ ActionT m Unit
+verify = do
+  user ← 
+    authorize >>= case _ of
+      Just user → pure user
+      Nothing → lift $ UserRepo.create
+  token ←
+    lift $ UserRepo.sign (Entity.key user)
   Action.setStatus 201
   Action.setStringBody
-    $ Foreign.encodeJSON
-    $ Foreign.toForeign { token: Foreign.encode token, user: Foreign.encode user }
+    $ Json.stringify
+    $ Json.encodeObject
+        [ { key: "token", value: Action.toBody token }
+        , { key: "user", value: Action.toBody user }
+        ]
+
+
+acceptTerms ∷ ∀ m. Monad m ⇒ UserRepo m ⇒ ActionT m Unit
+acceptTerms = do
+  authorize >>= case _ of
+    Nothing →
+      Action.setStatus 401
+    Just entity → do
+      termsVersionOrError ← runExceptT do
+        body ← ExceptT Action.getBody
+        ExceptT $ pure $ Json.decodeAtField "termsVersion" body Action.fromBody
+      case termsVersionOrError of
+        Left error →
+          Action.setStatus 400
+        Right termsVersion → do
+          let (User user) = Entity.record entity
+          let userId = Entity.key entity
+          let updated = User $ user { termsVersion = Just termsVersion }
+          lift $ UserRepo.save userId updated
+          Action.setStatus 204
 
 
 saveSettings ∷ ∀ m. Monad m ⇒ UserRepo m ⇒ ActionT m Unit
 saveSettings = do
-  maybeUser ← authorize
-  case maybeUser of
-    Nothing → Action.setStatus 401
+  authorize >>= case _ of
+    Nothing →
+      Action.setStatus 401
     Just entity → do
       let userId = Entity.key entity
       let (User user) = Entity.record entity
@@ -108,24 +135,12 @@ saveSettings = do
           let newUser = User $ user { settings = settings }
           lift $ UserRepo.save userId newUser
           Action.setStatus 204
-  where
-    authorize ∷ ActionT m (Maybe (Entity User.Id User))
-    authorize = do
-      maybeTokenHeader ← Action.getHeader "Authorization"
-      let maybeToken = maybeTokenHeader >>= String.stripPrefix (Pattern "Bearer ")
-      case maybeToken of
-        Nothing → pure Nothing
-        Just token → do
-          maybeUserId ← lift $ UserRepo.verify (Jwt token)
-          case maybeUserId of
-            Nothing → pure Nothing
-            Just userId → lift $ UserRepo.retrieve userId
 
 
 formatCode ∷ ∀ m. Monad m ⇒ Platform m ⇒ ActionT m Unit
 formatCode = do
-  (rawBody ∷ Either MultipleErrors Foreign) ← Action.getBody
-  let code = rawBody >>= \body → Except.runExcept (body ! "code" >>= Foreign.decode)
+  body ← Action.getBody
+  let code = body >>= \body → (Json.decodeAtField "code" body Json.decodeString)
   case code of
     Left errors →
       Action.setStatus 400
@@ -135,11 +150,15 @@ formatCode = do
         Left message → do
           Action.setStatus 400
           Action.setHeader "Content-Type" "application/json"
-          Action.setStringBody $ Foreign.encodeJSON $ Foreign.toForeign { error: message }
+          Action.setStringBody
+            $ Json.stringify
+            $ Json.encodeObject [ { key: "error", value: Json.encodeString message } ]
         Right code → do
           Action.setStatus 200
           Action.setHeader "Content-Type" "application/json"
-          Action.setStringBody $ Foreign.encodeJSON $ Foreign.toForeign { code }
+          Action.setStringBody
+            $ Json.stringify
+            $ Json.encodeObject [ { key: "code", value: Json.encodeString code } ]
 
 
 result ∷ ∀ m. Monad m ⇒ UserRepo m ⇒ Platform m ⇒ ActionT m Unit
@@ -150,7 +169,7 @@ result = do
     Just entity → do
       { javascript, html } ← lift $ Platform.result $ Entity.key entity
       format ← Action.getParam "format"
-      case (Debug.log format) of
+      case format of
         Just "javascript" → Action.setFileBody javascript
         Just "html" → Action.setFileBody html
         _ → Action.setStatus 404
@@ -200,15 +219,3 @@ newUi = do
           <*> (Url.href <$> Assets.assetUrl "images/favicon.ico")
           <*> (Url.href <$> Assets.assetUrl "images/logo.png")
       pure $ String.template htmlTemplate parameters
-
-
-authorizeParam ∷ ∀ m. Monad m ⇒ UserRepo m ⇒ ActionT m (Maybe (Entity User.Id User))
-authorizeParam = do
-  maybeToken ← Action.getParam "token"
-  case maybeToken of
-    Nothing → pure Nothing
-    Just token → do
-      maybeUserId ← lift $ UserRepo.verify (Jwt token)
-      case maybeUserId of
-        Nothing → pure Nothing
-        Just userId → lift $ UserRepo.retrieve userId

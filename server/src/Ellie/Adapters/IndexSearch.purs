@@ -10,32 +10,26 @@ import Control.Monad.Eff.Exception (error, Error)
 import Control.Monad.Eff.Ref (Ref)
 import Control.Monad.Eff.Ref as Ref
 import Control.Monad.Error.Class (class MonadThrow, throwError)
-import Control.Monad.Except as Except
 import Control.Monad.IO.Class (class MonadIO)
 import Control.Monad.IO.Class (liftIO) as IO
-import Data.Array as Array
 import Data.Bifunctor (lmap)
+import Data.Either (Either)
 import Data.Either (either) as Either
-import Data.Foreign (Foreign, F)
-import Data.Foreign (readArray, renderForeignError) as Foreign
-import Data.Foreign.Class (decode) as Foreign
-import Data.Foreign.Index ((!))
+import Data.Json (Json)
+import Data.Json (Error, decodeArray, decodeAtField) as Json
 import Data.Maybe (Maybe(..))
 import Data.Maybe as Maybe
-import Data.Newtype (unwrap)
-import Data.Set as Set
-import Data.String as String
 import Data.String.Class (toString) as String
-import Data.Traversable (maximum, traverse)
-import Debug as Debug
+import Data.Traversable (maximum)
+import Elm.Name (Name)
 import Elm.Package (Package(..))
-import Elm.Package.Name (Name)
 import Elm.Package.Searchable (Searchable(..))
-import Elm.Package.Version (Version)
-import Elm.Package.Version as Version
+import Elm.Version (Version)
+import Elm.Version as Version
 import System.Http as Http
 import System.SearchIndex (SearchIndex)
 import System.SearchIndex as SearchIndex
+import Server.Action as Action
 
 
 type Env r =
@@ -58,8 +52,7 @@ search query env = IO.liftIO do
         nameAndVersions ←
           rawPackageData
             # decodeNameAndVersions
-            # Except.runExcept
-            # lmap (\me → error $ String.joinWith "\n" $ Array.fromFoldable $ map Foreign.renderForeignError me)
+            # lmap (String.toString >>> error)
             # Either.either throwError pure
         newIndex ←
           SearchIndex.create
@@ -81,13 +74,13 @@ search query env = IO.liftIO do
         , description
         }
 
-    decodeNameAndVersion ∷ Foreign → F { description ∷ String, name ∷ Name, versions ∷ Array Version }
-    decodeNameAndVersion object = do
+    decodeNameAndVersion ∷ Json → Either Json.Error { description ∷ String, name ∷ Name, versions ∷ Array Version }
+    decodeNameAndVersion value = do
       { name: _, versions: _, description: _ }
-        <$> (object ! "name" >>= Foreign.decode)
-        <*> (object ! "versions" >>= Foreign.decode)
-        <*> (object ! "summary" >>= Foreign.decode)
+        <$> Json.decodeAtField "name" value Action.fromBody
+        <*> Json.decodeAtField "versions" value Action.fromBody
+        <*> Json.decodeAtField "summary" value Action.fromBody
 
-    decodeNameAndVersions ∷ Foreign → F (Array { description ∷ String, name ∷ Name, versions ∷ Array Version })
+    decodeNameAndVersions ∷ Json → Either Json.Error (Array { description ∷ String, name ∷ Name, versions ∷ Array Version })
     decodeNameAndVersions array =
-      Foreign.readArray array >>= traverse decodeNameAndVersion
+      Json.decodeArray decodeNameAndVersion array

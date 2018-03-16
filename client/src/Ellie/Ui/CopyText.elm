@@ -26,6 +26,7 @@ view contents =
                 , fontSize (px 14)
                 , width (pct 100)
                 , padding (px 12)
+                , property "word-break" "break-word"
                 ]
             ]
             [ Html.text contents

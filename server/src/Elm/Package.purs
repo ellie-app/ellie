@@ -1,18 +1,27 @@
-module Elm.Package where
+module Elm.Package
+  ( Package(..)
+  -- eqPackage
+  -- ordPackage
+  -- newtypePackage
+  -- showPackage
+  -- toStringPackage
+  -- fromJsonPackage
+  -- toJsonPackage
+  -- toFieldPackage
+  ) where
 
 import Prelude
 
-import Data.Foreign as Foreign
-import Data.Foreign.Class (class Encode, class Decode)
-import Data.Foreign.Class as Foreign
-import Data.Indexable (class Indexable)
-import Data.Maybe as Maybe
-import Data.Newtype (class Newtype, unwrap)
+import Data.Json as Json
+import Data.Newtype (class Newtype)
 import Data.String.Class (class ToString)
 import Data.String.Class (toString) as String
-import Elm.Package.Name (Name(..))
-import Elm.Package.Version (Version(..))
-import Elm.Package.Version as Version
+import Elm.Name (Name(..))
+import Elm.Version (Version)
+import Server.Action (class IsBody)
+import Server.Action as Action
+import System.Postgres (class ToValue, class FromResult)
+import System.Postgres as Postgres
 
 
 newtype Package =
@@ -33,21 +42,28 @@ instance toStringPackage ∷ ToString Package where
   toString (Package { name, version }) =
     String.toString name <> "@" <> String.toString version
 
-instance decodePackage ∷ Decode Package where
-  decode json = do
-    array ← Foreign.decode json
-    case array of
-      [name, version] →
-        { name: _, version: _ }
-          <$> Foreign.decode name
-          <*> Foreign.decode version
-          <#> Package
-      _ →
-        Foreign.fail $ Foreign.ForeignError "Expected an array with 2 elements"
+instance fromResultPackage ∷ FromResult Package where
+  fromResult value =
+    { name: _, version: _ }
+      <$> Json.decodeAtField "name" value Postgres.fromResult
+      <*> Json.decodeAtField "version" value Postgres.fromResult
+      <#> Package
 
-instance encodePackage ∷ Encode Package where
-  encode (Package p) =
-    Foreign.encode
-      [ Foreign.encode p.name
-      , Foreign.encode p.version
+instance toValuePackage ∷ ToValue Package where
+  toValue (Package p) =
+    Json.encodeObject
+      [ { key: "name", value: Postgres.toValue p.name }
+      , { key: "version", value: Postgres.toValue p.version }
       ]
+
+instance isBodyPackage ∷ IsBody Package where
+  toBody (Package p) =
+    Json.encodeArray id
+      [ Action.toBody p.name
+      , Action.toBody p.version
+      ]
+  fromBody value =
+    { name: _, version: _ }
+      <$> Json.decodeAtIndex 0 value Action.fromBody
+      <*> Json.decodeAtIndex 1 value Action.fromBody
+      <#> Package

@@ -16,6 +16,7 @@ import Pages.Editor.Route as Route
 import Pages.Editor.State.Actions as Actions
 import Pages.Editor.Types.Example as Example exposing (Example)
 import Pages.Editor.Types.Log as Log exposing (Log)
+import Pages.Editor.Types.Notification as Notification exposing (Notification)
 
 
 type Workbench
@@ -54,7 +55,7 @@ type alias Model =
     , animating : Bool
     , workbenchRatio : Float
     , editorsRatio : Float
-    , exceptions : List Exception
+    , notifications : List Notification
     }
 
 
@@ -86,7 +87,7 @@ init token user revision defaultPackages =
       , user = user
       , workbenchRatio = 0.5
       , editorsRatio = 0.75
-      , exceptions = []
+      , notifications = []
       }
     , Outbound.Delay 1000 AnimationFinished
     )
@@ -133,9 +134,13 @@ type Msg
     | ClearLogsClicked
     | LogReceived Log
     | LogSearchChanged String
+      -- Share stuff
     | CreateGistRequested
-    | CreateGistComplete String
+    | CreateGistComplete (Maybe String)
     | DownloadZip
+      -- StatusBar stuff
+    | CloseNotification Notification
+    | CloseAllNotifications
       -- Exception Stuff
     | ExceptionReceived Exception
       -- Global stuff
@@ -177,13 +182,45 @@ update msg ({ user } as model) =
                 CreateGistComplete
             )
 
-        CreateGistComplete url ->
-            ( { model | creatingGist = False }
+        CreateGistComplete (Just url) ->
+            ( { model
+                | creatingGist = False
+                , notifications =
+                    { title = "Gist Created"
+                    , severity = Notification.Success
+                    , message = "We created a Gist from your project. If you have popups blocked you can go directly to"
+                    , actions = [ Notification.GoToLink url ]
+                    }
+                        :: model.notifications
+              }
             , Outbound.OpenInNewTab url
             )
 
+        CreateGistComplete Nothing ->
+            ( { model | creatingGist = False }
+            , Outbound.none
+            )
+
         ExceptionReceived exception ->
-            ( { model | exceptions = exception :: model.exceptions }
+            let
+                notification =
+                    Notification.fromException exception
+            in
+            ( { model
+                | notifications = notification :: List.filter (Notification.eq notification >> not) model.notifications
+              }
+            , Outbound.none
+            )
+
+        CloseNotification notification ->
+            ( { model
+                | notifications = List.filter (Notification.eq notification >> not) model.notifications
+              }
+            , Outbound.none
+            )
+
+        CloseAllNotifications ->
+            ( { model | notifications = [] }
             , Outbound.none
             )
 

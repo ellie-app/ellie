@@ -19,12 +19,13 @@ import Ellie.Types.User as User exposing (User)
 import Elm.Package as Package exposing (Package)
 import Elm.Package.Searchable as Searchable exposing (Searchable)
 import Elm.Project as Project exposing (Project)
+import Extra.HttpBuilder exposing (withMaybe)
 import Extra.Json.Encode as Encode
 import Extra.Result as Result
 import Extra.String as String
 import Http
 import Http.Extra as Http
-import HttpBuilder exposing (get, post, withCredentials, withExpect, withHeader, withJsonBody, withQueryParams, withStringBody)
+import HttpBuilder exposing (get, post, withBearerToken, withCredentials, withExpect, withHeader, withJsonBody, withQueryParams, withStringBody)
 import Json.Decode as Decode exposing (Decoder)
 import Json.Encode as Encode exposing (Value)
 import Navigation
@@ -56,11 +57,11 @@ type Outbound msg
     | Compile Jwt String String (List Package)
     | ReloadIframe
     | Redirect String
-    | SearchPackages String (List Searchable -> msg)
+    | SearchPackages String (Maybe (List Searchable) -> msg)
     | SwitchToDebugger
     | SwitchToProgram
     | EnableNavigationCheck Bool
-    | CreateGist { title : String, project : Project, elm : ElmSource, html : HtmlSource } (Url -> msg)
+    | CreateGist { title : String, project : Project, elm : ElmSource, html : HtmlSource } (Maybe Url -> msg)
     | DownloadZip { project : Project, elm : ElmSource, html : HtmlSource }
     | OpenInNewTab Url
     | Batch (List (Outbound msg))
@@ -113,8 +114,18 @@ send onError effect state =
             , post "https://api.github.com/gists"
                 |> withJsonBody body
                 |> withExpect (Http.expectJson (Decode.field "html_url" Decode.string))
-                |> HttpBuilder.send (Result.mapError Exception.fromHttp >> Result.fold callback onError)
-                |> Cmd.map UserMsg
+                |> HttpBuilder.send
+                    (\result ->
+                        case result of
+                            Ok url ->
+                                UserMsg <| callback (Just url)
+
+                            Err error ->
+                                Multiple
+                                    [ UserMsg <| onError <| Exception.fromHttp error
+                                    , UserMsg <| callback Nothing
+                                    ]
+                    )
             )
 
         SaveSettings token settings ->
@@ -124,7 +135,7 @@ send onError effect state =
                 |> Task.andThen
                     (\_ ->
                         post "/private-api/me/settings"
-                            |> withHeader "Authorization" ("Bearer " ++ Jwt.toString token)
+                            |> withBearerToken (Jwt.toString token)
                             |> withExpect Http.expectNoContent
                             |> withJsonBody (Settings.encoder settings)
                             |> HttpBuilder.toTask
@@ -151,8 +162,18 @@ send onError effect state =
             get "/private-api/packages/search"
                 |> withQueryParams [ ( "query", query ) ]
                 |> withExpect (Http.expectJson (Decode.list Searchable.decoder))
-                |> HttpBuilder.send (Result.mapError Exception.fromHttp >> Result.fold callback onError)
-                |> Cmd.map UserMsg
+                |> HttpBuilder.send
+                    (\result ->
+                        case result of
+                            Ok packages ->
+                                UserMsg <| callback (Just packages)
+
+                            Err error ->
+                                Multiple
+                                    [ UserMsg <| onError <| Exception.fromHttp error
+                                    , UserMsg <| callback Nothing
+                                    ]
+                    )
                 |> (\cmd -> Debounce.push debouncePackageSearchConfig cmd state.debouncePackageSearch)
                 |> Tuple.mapFirst (\d -> { state | debouncePackageSearch = d })
 
@@ -174,11 +195,9 @@ send onError effect state =
 
         GetUser maybeToken callback ->
             ( state
-            , maybeToken
-                |> Maybe.map (\t -> "/private-api/me?token=" ++ Jwt.toString t)
-                |> Maybe.withDefault "/private-api/me"
-                |> post
+            , post "/private-api/me/verify"
                 |> withHeader "Accept" "application/json"
+                |> withMaybe withBearerToken (Maybe.map Jwt.toString maybeToken)
                 |> withExpect (Http.expectJson getUserDecoder)
                 |> HttpBuilder.send (Result.mapError Exception.fromHttp >> Result.fold (uncurry callback) onError)
                 |> Cmd.map UserMsg
@@ -308,6 +327,19 @@ wrapUpdate :
     -> ( ( model, State msg ), Cmd (Msg msg) )
 wrapUpdate onError userUpdate msg (( model, state ) as appState) =
     case msg of
+        Multiple msgs ->
+            List.foldl
+                (\nextMsg ( model, cmds ) ->
+                    let
+                        ( nextModel, nextCmd ) =
+                            wrapUpdate onError userUpdate nextMsg model
+                    in
+                    ( nextModel, nextCmd :: cmds )
+                )
+                ( appState, [] )
+                msgs
+                |> Tuple.mapSecond Cmd.batch
+
         UserMsg userMsg ->
             let
                 ( nextModel, outbound ) =

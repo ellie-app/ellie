@@ -7,27 +7,19 @@ module Elm.Project
 import Prelude
 
 import Data.Array as Array
-import Data.FilePath (FilePath)
-import Data.Foreign (Foreign, F)
-import Data.Foreign (ForeignError(ForeignError), fail, toForeign, unsafeReadTagged) as Foreign
-import Data.Foreign.Class (class Decode, class Encode)
-import Data.Foreign.Class (decode, encode) as Foreign
-import Data.Foreign.Index ((!))
+import Data.Bifunctor (lmap)
+import Data.Either (Either(..))
+import Data.Either as Either
+import Data.Json (Json)
+import Data.Json as Json
 import Data.Newtype (class Newtype)
 import Data.Set (Set)
 import Data.Set as Set
-import Data.StrMap (StrMap)
-import Data.StrMap as StrMap
-import Data.String (Pattern(..), Replacement(..))
-import Data.String as String
-import Data.String.Class (toString) as String
+import Data.String.Class (fromString, toString) as String
 import Data.Traversable (traverse)
-import Data.Tuple (Tuple(..))
 import Elm.Package (Package(..))
-import Elm.Package.Constraint (Constraint)
-import Elm.Package.Constraint as Constraint
-import Elm.Package.Name (Name)
-import Elm.Package.Version (Version(..))
+import Elm.Version (Version(..))
+import System.FileSystem (class IsFile)
 
 
 newtype Project =
@@ -40,50 +32,52 @@ newtype Project =
 
 derive instance newtypeDescription ∷ Newtype Project _
 
-instance encodeProject ∷ Encode Project where
-  encode (Project value) =
-    Foreign.toForeign
-      { "type": "browser"
-      , "source-directories": Foreign.encode value.sourceDirs
-      , "elm-version": Foreign.encode value.elmVersion
-      , "dependencies": putDependencies value.deps
-      , "test-dependencies": {}
-      , "do-not-edit-this-by-hand": {
-          "transitive-dependencies": putDependencies value.transDeps
+instance isFileProject ∷ IsFile Project where
+  toFile (Project value) =
+    Json.stringify $ Json.encodeObject
+      [ { key: "type", value: Json.encodeString "browser" }
+      , { key: "source-directories", value: Json.encodeArray Json.encodeString value.sourceDirs }
+      , { key: "elm-version", value: Json.encodeString $ String.toString value.elmVersion }
+      , { key: "dependencies", value: encodeDependencies value.deps }
+      , { key: "test-dependencies", value: Json.encodeObject [] }
+      , { key: "do-not-edit-this-by-hand"
+        , value: Json.encodeObject [ { key: "transitive-dependencies", value: encodeDependencies value.transDeps } ]
         }
-      }
+      ]
     where
-      putDependencies ∷ Set Package → Foreign
-      putDependencies values =
+      encodeDependencies ∷ Set Package → Json
+      encodeDependencies values =
         values
           # Array.fromFoldable
-          # map (\(Package { name, version }) → Tuple (String.toString name) (Foreign.encode version))
-          # StrMap.fromFoldable
-          # Foreign.toForeign
+          # map (\(Package { name, version }) → { key: String.toString name, value: Json.encodeString $ String.toString version })
+          # Json.encodeObject
 
-instance decodeProject ∷ Decode Project where
-  decode value =
-    {  sourceDirs: _, elmVersion: _,  deps: _, transDeps: _ }
-      <$> (value ! "source-directories" >>= Foreign.decode)
-      <*> (value ! "elm-version" >>= Foreign.decode)
-      <*> (value ! "dependencies" >>= getDependencies)
-      <*> (value ! "do-not-edit-this-by-hand" >>= (_ ! "transitive-dependencies") >>= getDependencies)
-      <#> Project
+  fromFile string =
+    lmap String.toString $ Json.parse string >>= \value →
+      { sourceDirs: _, elmVersion: _,  deps: _, transDeps: _ }
+        <$> Json.decodeAtField "source-directories" value (Json.decodeArray Json.decodeString)
+        <*> Json.decodeAtField "elm-version" value (\v → Json.decodeString v >>= (String.fromString >>> Either.note (Json.Failure "Expecting a version MAJOR.MINOR.PATCH" v)))
+        <*> Json.decodeAtField "dependencies" value decodeDependencies
+        <*> Json.decodeAtField "do-not-edit-this-by-hand" value (\v → Json.decodeAtField "transitive-dependencies" v decodeDependencies)
+        <#> Project
     where
-      getDependencies ∷ Foreign → F (Set Package)
-      getDependencies object =
-        object
-          # Foreign.unsafeReadTagged "Object"
-          <#> (StrMap.toUnfoldable ∷ StrMap Foreign → Array (Tuple String Foreign))
+      decodeDependencies ∷ Json → Either Json.Error (Set Package)
+      decodeDependencies object =
+        Json.decodeKeyValues Right object
           >>= traverse 
-              (\(Tuple k v) →
+              (\{ key, value } →
                   { name: _, version: _ }
-                    <$> Foreign.decode (Foreign.toForeign k)
-                    <*> Foreign.decode v
+                    <$> Either.note
+                            (Json.Failure "Expecting a name USER/PROJECT" (Json.encodeString key))
+                            (String.fromString key)
+                    <*> (Json.decodeString value >>= \string →
+                          Either.note
+                            (Json.Failure "Expecting a version MAJOR.MINOR.PATCH" (Json.encodeString key))
+                            (String.fromString string)
+                        )
                     <#> Package
               )
           <#> Set.fromFoldable
-
 
 default ∷ Project
 default =

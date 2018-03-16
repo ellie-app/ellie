@@ -4,11 +4,12 @@ module Ellie.Types.Settings
   ) where
 
 import Prelude
-import Data.Foreign (toForeign) as Foreign
-import Data.Foreign.Class (class Encode, class Decode)
-import Data.Foreign.Class (decode, encode) as Foreign
-import Data.Foreign.Index ((!))
-import Data.Newtype (class Newtype, unwrap)
+import Data.Json as Json
+import Data.Newtype (class Newtype)
+import Server.Action (class IsBody)
+import Server.Action as Action
+import System.Postgres (class ToValue, class FromResult)
+import System.Postgres as Postgres
 
 
 newtype Settings =
@@ -21,16 +22,38 @@ newtype Settings =
 
 derive instance newtypeSettings ∷ Newtype Settings _
 
-instance encodeSettings ∷ Encode Settings where
-  encode = unwrap >>> Foreign.toForeign
-
-instance decodeSettings ∷ Decode Settings where
-  decode value =
+instance isBodySettings ∷ IsBody Settings where
+  toBody (Settings settings) =
+    Json.encodeObject
+      [ { key: "fontSize", value: Action.toBody settings.fontSize }
+      , { key: "fontFamily", value: Action.toBody settings.fontFamily }
+      , { key: "theme", value: Action.toBody settings.theme }
+      , { key: "vimMode", value: Action.toBody settings.vimMode }
+      ]
+  fromBody value =
     { fontSize: _, fontFamily: _, theme: _, vimMode: _ }
-      <$> (value ! "fontSize" >>= Foreign.decode)
-      <*> (value ! "fontFamily" >>= Foreign.decode)
-      <*> (value ! "theme" >>= Foreign.decode)
-      <*> (value ! "vimMode" >>= Foreign.decode)
+      <$> (Json.decodeAtField "fontSize" value Postgres.fromResult)
+      <*> (Json.decodeAtField "fontFamily" value Postgres.fromResult)
+      <*> (Json.decodeAtField "theme" value Postgres.fromResult)
+      <*> (Json.decodeAtField "vimMode" value Postgres.fromResult)
+      <#> Settings
+
+instance toValueSettings ∷ ToValue Settings where
+  toValue (Settings settings) =
+    Json.encodeObject
+      [ { key: "font_size", value: Postgres.toValue settings.fontSize }
+      , { key: "font_family", value: Postgres.toValue settings.fontFamily }
+      , { key: "theme", value: Postgres.toValue settings.theme }
+      , { key: "vim_mode", value: Postgres.toValue settings.vimMode }
+      ]
+
+instance fromResultSettings ∷ FromResult Settings where
+  fromResult value =
+    { fontSize: _, fontFamily: _, theme: _, vimMode: _ }
+      <$> (Json.decodeAtField "font_size" value Postgres.fromResult)
+      <*> (Json.decodeAtField "font_family" value Postgres.fromResult)
+      <*> (Json.decodeAtField "theme" value Postgres.fromResult)
+      <*> (Json.decodeAtField "vim_mode" value Postgres.fromResult)
       <#> Settings
 
 

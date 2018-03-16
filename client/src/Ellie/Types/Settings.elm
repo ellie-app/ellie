@@ -24,10 +24,10 @@ themeDecoder =
         |> Decode.andThen
             (\tag ->
                 case tag of
-                    "Dark" ->
+                    "DARK" ->
                         Decode.succeed Dark
 
-                    "Light" ->
+                    "LIGHT" ->
                         Decode.succeed Light
 
                     _ ->
@@ -48,10 +48,10 @@ themeEncoder : Theme -> Value
 themeEncoder theme =
     case theme of
         Dark ->
-            Encode.string "Dark"
+            Encode.string "DARK"
 
         Light ->
-            Encode.string "Light"
+            Encode.string "LIGHT"
 
 
 encoder : Settings -> Value

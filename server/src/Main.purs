@@ -30,6 +30,7 @@ import Server.Socket as Socket
 import System.Cache as Cache
 import System.Jwt (Secret(..))
 import System.Time as Time
+import System.Postgres as Postgres
 
 
 foreign import jsonBodyParser ∷ ∀ e.
@@ -49,7 +50,8 @@ routes makeHandler = do
   Express.get  "/private-api/packages/search"                     $ makeHandler Api.searchPackages
   Express.get  "/private-api/workspace/result/:format"            $ makeHandler Api.result
   Express.post "/private-api/format"                              $ makeHandler Api.formatCode
-  Express.post "/private-api/me"                                  $ makeHandler Api.me
+  Express.post "/private-api/me/verify"                           $ makeHandler Api.verify
+  Express.post "/private-api/me/terms"                            $ makeHandler Api.acceptTerms
   Express.post "/private-api/me/settings"                         $ makeHandler Api.saveSettings
 
 
@@ -60,8 +62,9 @@ setup = do
   index ← Eff.liftEff $ Ref.newRef Nothing
   defaultPackages ← Cache.create (15 * Time.minutes)
   userWorkspaces ← Eff.liftEff $ Ref.newRef Map.empty
+  postgresClient ← Postgres.connect "postgresql://luke@localhost:5432/ellie"
   let jwtSecret = Secret "abc123"
-  let env = DevEnv { packageSite, defaultPackages, userWorkspaces, index, jwtSecret, assetBase: "", webpackHost: "localhost:1338" }
+  let env = DevEnv { postgresClient, packageSite, defaultPackages, userWorkspaces, index, jwtSecret, assetBase: "", webpackHost: "localhost:1338" }
   server ← Eff.liftEff $ Express.listenHttp (routes (Action.makeHandler (Ellie.runEllieM env))) port (\_ → pure unit)
   _ ← Socket.listen server "/workspace" $ BuildManager.connection (Ellie.runEllieM env)
   pure server

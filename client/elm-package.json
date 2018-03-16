@@ -26,7 +26,7 @@
         "folkertdev/elm-deque": "2.0.0 <= v < 3.0.0",
         "jinjor/elm-debounce": "2.1.2 <= v < 3.0.0",
         "krisajenkins/remotedata": "4.3.1 <= v <= 4.3.1",
-        "lukewestby/elm-http-builder": "5.1.0 <= v <= 5.1.0",
+        "lukewestby/elm-http-builder": "5.2.0 <= v <= 5.2.0",
         "lukewestby/http-extra": "2.0.0 <= v <= 2.0.0",
         "pablohirafuji/elm-markdown": "2.0.4 <= v <= 2.0.4",
         "rtfeldman/elm-css": "13.0.1 <= v <= 13.0.1",

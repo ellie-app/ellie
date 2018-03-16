@@ -14,6 +14,7 @@ import Html.Styled.Events as Events
 import Pages.Editor.State.Actions as ActionsState
 import Pages.Editor.State.Working as WorkingState
 import Pages.Editor.Views.Editors as EditorsView
+import Pages.Editor.Views.Notifications as NotificationsView
 import Pages.Editor.Views.Packages as PackagesView
 import Pages.Editor.Views.Settings as SettingsView
 import Pages.Editor.Views.Setup as SetupView
@@ -74,9 +75,15 @@ view model =
                     ]
                     [ viewActions model
                     , viewWorkspace model
+                    , NotificationsView.view
+                        { onClose = WorkingState.CloseNotification
+                        , onCloseAll = WorkingState.CloseAllNotifications
+                        , notifications = model.notifications
+                        }
                     ]
                 , StatusBarView.view
                     { connected = model.connected
+                    , notificationCount = List.length model.notifications
                     , compileStatus =
                         case ( model.compiling, model.workbench ) of
                             ( True, _ ) ->

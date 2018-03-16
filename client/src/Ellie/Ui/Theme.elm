@@ -97,6 +97,21 @@ success =
     var "--theme-color-success"
 
 
+failure : BasicProperty
+failure =
+    var "--theme-color-failure"
+
+
+warning : BasicProperty
+warning =
+    var "--theme-color-warning"
+
+
+information : BasicProperty
+information =
+    var "--theme-color-information"
+
+
 darkStyles : Css.Foreign.Snippet
 darkStyles =
     Css.Foreign.selector ":root"
@@ -118,6 +133,9 @@ darkStyles =
         , property "--theme-color-tab-foreground" "#DDDDDD"
         , property "--theme-font-family-editor" "monospace"
         , property "--theme-color-success" green.value
+        , property "--theme-color-failure" red.value
+        , property "--theme-color-warning" yellow.value
+        , property "--theme-color-information" blue.value
         ]
 
 

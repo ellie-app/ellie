@@ -5,24 +5,19 @@ import Prelude
 import Control.Monad.Eff.Exception (Error, error)
 import Control.Monad.Eff.Exception as Exception
 import Control.Monad.Error.Class (class MonadError, try)
-import Control.Monad.Except as Except
 import Control.Monad.IO (IO)
 import Data.Array as Array
 import Data.Bifunctor (lmap)
 import Data.Either (Either(..))
 import Data.Either as Either
 import Data.Entity as Entity
-import Data.Foreign (Foreign)
-import Data.Foreign (toForeign) as Foreign
-import Data.Foreign.Class (class Decode, class Encode)
-import Data.Foreign.Class (encode) as Foreign
-import Data.Foreign.Generic (genericDecode, genericEncode, defaultOptions, decodeJSON, encodeJSON) as Foreign
-import Data.Generic.Rep (class Generic)
-import Data.Generic.Rep.Show as Generic
+import Data.Json (Json)
+import Data.Json as Json
 import Data.Maybe (Maybe(..))
 import Data.Maybe as Maybe
 import Data.String (Pattern(..))
 import Data.String (contains) as String
+import Data.String.Class (toString) as String
 import Data.Url as Url
 import Data.Url.Query as Query
 import Ellie.Domain.Platform (class Platform)
@@ -30,9 +25,12 @@ import Ellie.Domain.Platform as Platform
 import Ellie.Domain.UserRepo (class UserRepo)
 import Ellie.Domain.UserRepo as UserRepo
 import Ellie.Types.User as User
+import Elm.Compiler.Error as Compiler
 import Elm.Package (Package)
 import Node.HTTP (Request)
 import Node.HTTP as HTTP
+import Server.Action (class IsBody)
+import Server.Action as Action
 import Server.Socket (Connection)
 import System.Jwt (Jwt(..))
 
@@ -40,8 +38,17 @@ import System.Jwt (Jwt(..))
 data Inbound
   = CompileRequested String String (Array Package)
 
-derive instance genericInbound ∷ Generic Inbound _
-instance decodeMsg ∷ Decode Inbound where decode = Foreign.genericDecode Foreign.defaultOptions
+decodeInbound ∷ Json → Either Json.Error Inbound
+decodeInbound value = do
+  tag ← Json.decodeAtField "tag" value Json.decodeString
+  case tag of
+    "CompileRequested" →
+      CompileRequested
+        <$> Json.decodeAtPath [ "contents", "0" ] value Json.decodeString
+        <*> Json.decodeAtPath [ "contents", "1" ] value Json.decodeString
+        <*> Json.decodeAtPath [ "contents", "2" ] value Action.fromBody
+    _ →
+      Left $ Json.Failure ("Unrecognized tag " <> tag) value
 
 
 data Topic
@@ -49,38 +56,48 @@ data Topic
   | CompileFinished
   | ServerError
 
-derive instance genericOutbound ∷ Generic Topic _
-instance showOutbound ∷ Show Topic where show = Generic.genericShow
+instance showTopic ∷ Show Topic where
+  show WorkspaceAttached = "WorkspaceAttached"
+  show CompileFinished = "CompileFinished"
+  show ServerError = "ServerError"
 
 
 data Exception
   = PackageServerUnavailable
   | Unknown String
 
-derive instance genericException ∷ Generic Exception _
-instance encodeException ∷ Encode Exception where encode = Foreign.genericEncode Foreign.defaultOptions
+encodeException ∷ Exception → Json
+encodeException exception =
+  case exception of
+    PackageServerUnavailable →
+      Json.encodeObject
+        [ { key: "tag", value: Json.encodeString "PackageServerUnavailable" } ]
+    Unknown message →
+      Json.encodeObject
+        [ { key: "tag", value: Json.encodeString "Unknown" }
+        , { key: "contents", value: Json.encodeString message }
+        ]
 
 
 newtype Message =
   Message
     { topic ∷ Topic
-    , contents ∷ Either Exception Foreign
+    , contents ∷ Either Exception Json
     }
 
-instance encodeMessage ∷ Encode Message where
-  encode (Message value) =
-    case value.contents of
-      Left e →
-        Foreign.toForeign
-          { topic: show value.topic
-          , exception: Foreign.encode e
-          }
-
-      Right a →
-        Foreign.toForeign
-          { topic: show value.topic
-          , contents: a
-          }
+encodeMessage ∷ Message → Json
+encodeMessage (Message value) =
+  case value.contents of
+    Left e →
+      Json.encodeObject
+        [ { key: "topic", value: Json.encodeString (show value.topic) }
+        , { key: "exception", value: encodeException e }
+        ]
+    Right a →
+      Json.encodeObject
+        [ { key: "topic", value: Json.encodeString (show value.topic) }
+        , { key: "contents", value: a }
+        ]
 
 
 exception ∷ Topic → Exception → Message
@@ -91,11 +108,11 @@ exception topic exception =
     }
 
 
-message ∷ ∀ a. Encode a ⇒ Topic → a → Message
+message ∷ ∀ a. IsBody a ⇒ Topic → a → Message
 message topic value =
   Message
     { topic
-    , contents: Right $ Foreign.encode value
+    , contents: Right $ Action.toBody value
     }
 
 
@@ -140,7 +157,7 @@ onMessage userId inbound =
         Left failure → 
           pure $ exception CompileFinished $ Unknown $ Exception.message failure
         Right errors →
-          pure $ message CompileFinished errors
+          pure $ message CompileFinished $ Json.encodeArray Compiler.encode errors
 
 
 onError ∷ User.Id → Error → Message
@@ -154,17 +171,17 @@ connection runner =
   , onDisconnect: \userId → runner $ onDisconnect userId
   , onConnect: \userId send → do
       message ← runner $ onConnect userId
-      send $ Foreign.encodeJSON message
+      send $ Json.stringify $ encodeMessage message
   , onMessage: \userId inbound send → do
       message ←
         inbound
-          # Foreign.decodeJSON
-          # Except.runExcept
-          # lmap (\_ → error "Unparseable message")
+          # Json.parse
+          >>= decodeInbound
+          # lmap (String.toString >>> error)
           # Either.either (onError userId >>> pure) (onMessage userId)
           # runner
-      send $ Foreign.encodeJSON message
+      send $ Json.stringify $ encodeMessage message
   , onError: \userId error send →
       let message = onError userId error
-      in send $ Foreign.encodeJSON message
+      in send $ Json.stringify $ encodeMessage message
   }
