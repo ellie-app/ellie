@@ -20,10 +20,12 @@ import Control.Monad.Reader as Reader
 import Data.Map (Map)
 import Data.Maybe (Maybe)
 import Data.Newtype (class Newtype, unwrap)
+import Data.Time.Good (Posix)
+import Data.Time.Good as Time
 import Ellie.Adapters.CdnAssets as CdnAssets
-import Ellie.Adapters.IndexSearch as IndexSearch
-import Ellie.Adapters.LocalPlatform as LocalPlatform
 import Ellie.Adapters.DatabaseRepo as DatabaseRepo
+import Ellie.Adapters.DatabaseSearch as DatabaseSearch
+import Ellie.Adapters.LocalPlatform as LocalPlatform
 import Ellie.Adapters.WebpackAssets as WebpackAssets
 import Ellie.Domain.Assets (class Assets)
 import Ellie.Domain.Platform (class Platform)
@@ -32,23 +34,23 @@ import Ellie.Domain.Search (class Search)
 import Ellie.Domain.UserRepo (class UserRepo)
 import Ellie.Types.User as User
 import Elm.Package (Package)
-import Elm.Package.Searchable (Searchable)
 import System.Aws as Aws
 import System.Cache (Cache)
 import System.Jwt (Secret)
-import System.Redis as Redis
-import System.SearchIndex (SearchIndex)
-import Type.Equality (class TypeEquals, to)
 import System.Postgres as Postgres
+import System.Redis as Redis
+import Type.Equality (class TypeEquals, to)
+
 
 type SharedEnv r =
-  { index ∷ Ref (Maybe (SearchIndex Searchable))
-  , jwtSecret ∷ Secret
+  { jwtSecret ∷ Secret
   , assetBase ∷ String
   , defaultPackages ∷ Cache (Array Package)
   , userWorkspaces ∷ Ref (Map User.Id LocalPlatform.Workspace)
   , packageSite ∷ String
   , postgresClient ∷ Postgres.Client
+  , lastSearchUpdate ∷ Ref (Maybe Posix)
+  , searchRefresh ∷ Time.Span
   | r
   }
 
@@ -104,7 +106,7 @@ instance userRepoEllieM ∷ (Newtype e a, TypeEquals a (SharedEnv e0)) ⇒ UserR
   sign uid = Reader.asks (unwrap >>> to) >>= DatabaseRepo.signUser uid
 
 instance searchEllieM ∷ (Newtype e a, TypeEquals a (SharedEnv e0)) ⇒ Search (EllieM e) where
-  search query = Reader.asks (unwrap >>> to) >>= IndexSearch.search query
+  search query = Reader.asks (unwrap >>> to) >>= DatabaseSearch.search query
 
 instance platformEllieM ∷ (Newtype e a, TypeEquals a (SharedEnv e0)) ⇒ Platform (EllieM e) where
   initialize userId = Reader.asks (unwrap >>> to) >>= LocalPlatform.initialize userId

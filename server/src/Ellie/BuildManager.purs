@@ -17,7 +17,6 @@ import Data.Maybe (Maybe(..))
 import Data.Maybe as Maybe
 import Data.String (Pattern(..))
 import Data.String (contains) as String
-import Data.String.Class (toString) as String
 import Data.Url as Url
 import Data.Url.Query as Query
 import Ellie.Domain.Platform (class Platform)
@@ -27,10 +26,9 @@ import Ellie.Domain.UserRepo as UserRepo
 import Ellie.Types.User as User
 import Elm.Compiler.Error as Compiler
 import Elm.Package (Package)
+import Elm.Package as Package
 import Node.HTTP (Request)
 import Node.HTTP as HTTP
-import Server.Action (class IsBody)
-import Server.Action as Action
 import Server.Socket (Connection)
 import System.Jwt (Jwt(..))
 
@@ -46,7 +44,7 @@ decodeInbound value = do
       CompileRequested
         <$> Json.decodeAtPath [ "contents", "0" ] value Json.decodeString
         <*> Json.decodeAtPath [ "contents", "1" ] value Json.decodeString
-        <*> Json.decodeAtPath [ "contents", "2" ] value Action.fromBody
+        <*> Json.decodeAtPath [ "contents", "2" ] value (Json.decodeArray Package.fromBody)
     _ →
       Left $ Json.Failure ("Unrecognized tag " <> tag) value
 
@@ -108,11 +106,11 @@ exception topic exception =
     }
 
 
-message ∷ ∀ a. IsBody a ⇒ Topic → a → Message
+message ∷ Topic → Json → Message
 message topic value =
   Message
     { topic
-    , contents: Right $ Action.toBody value
+    , contents: Right $ value
     }
 
 
@@ -140,7 +138,7 @@ onConnect userId = do
         then pure $ exception WorkspaceAttached PackageServerUnavailable
         else pure $ exception WorkspaceAttached $ Unknown errorMessage
     Right packages →
-      pure $ message WorkspaceAttached $ Array.fromFoldable packages
+      pure $ message WorkspaceAttached $ Json.encodeArray Package.toBody $ Array.fromFoldable packages
 
 
 onDisconnect ∷ ∀ m. Monad m ⇒ Platform m ⇒ User.Id → m Unit
@@ -177,7 +175,7 @@ connection runner =
         inbound
           # Json.parse
           >>= decodeInbound
-          # lmap (String.toString >>> error)
+          # lmap (Json.errorToString >>> error)
           # Either.either (onError userId >>> pure) (onMessage userId)
           # runner
       send $ Json.stringify $ encodeMessage message

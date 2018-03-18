@@ -1,59 +1,99 @@
 module Ellie.Types.Revision
-  ( Revision(..)
-  , Id(..)
+  ( Id(..)
+  , idToString
+  , idFromPostgres
+  , idToPostgres
+  , idToBody
+  , idFromBody
+  , Revision(..)
+  , toBody
+  , fromBody
+  , toPostgres
+  , fromPostgres
+  , entityToPostgres
+  , entityFromPostgres
+  , entityToBody
   ) where
 
 import Prelude
 
-import Data.Entity (class IdentifiedBy)
-import Data.Json (decodeAtField, encodeObject) as Json
-import Data.Maybe (Maybe)
-import Data.String.Class (class ToString)
+import Data.Either (Either(..))
+import Data.Entity (class IdentifiedBy, Entity)
+import Data.Entity as Entity
+import Data.Json (Json)
+import Data.Json as Json
+import Data.Maybe (Maybe(..))
+import Data.Newtype (class Newtype)
 import Data.String.Class (toString) as String
 import Data.Uuid (Uuid)
 import Data.Uuid as Uuid
 import Ellie.Types.TermsVersion (TermsVersion)
+import Ellie.Types.TermsVersion as TermsVersion
 import Elm.Package (Package)
+import Elm.Package as Package
 import Elm.Version (Version)
-import Server.Action (class IsBody)
-import Server.Action as Action
-import System.Postgres (class FromResult, class ToArguments)
-import System.Postgres as Postgres
+import Elm.Version as Version
 
-instance identifiedByIdRevision ∷ IdentifiedBy Id Revision
+
+-- ID
+
 
 newtype Id =
   Id { projectId ∷ Uuid, revisionNumber ∷ Int }
 
-instance toStringId ∷ ToString Id where
-  toString (Id { projectId, revisionNumber }) =
-    Uuid.encode projectId <> "/" <> String.toString revisionNumber
+derive instance newtypeId ∷ Newtype Id _
 
-instance fromResultId ∷ FromResult Id where
-  fromResult value =
-    { projectId: _, revisionNumber: _ }
-      <$> Json.decodeAtField "project_id" value Postgres.fromResult
-      <*> Json.decodeAtField "revision_number" value Postgres.fromResult
-      <#> Id
 
-instance toArgumentsId ∷ ToArguments Id where
-  toArguments (Id { projectId, revisionNumber }) =
-      [ { key: "project_id", value: Postgres.toValue projectId }
-      , { key: "revision_number", value: Postgres.toValue revisionNumber }
-      ]
+idToString ∷ Id → String
+idToString (Id { projectId, revisionNumber }) =
+    Uuid.base49Encode projectId <> "/" <> String.toString revisionNumber
 
-instance isBodyId ∷ IsBody Id where
-  toBody (Id {projectId, revisionNumber }) =
+
+idFromPostgres ∷ Json → Either Json.Error Id
+idFromPostgres value =
+  { projectId: _, revisionNumber: _ }
+    <$> Json.decodeAtField "project_id" value decodeUuid
+    <*> Json.decodeAtField "revision_number" value Json.decodeInt
+    <#> Id
+  where
+    decodeUuid ∷ Json → Either Json.Error Uuid
+    decodeUuid value =
+      Json.decodeString value >>= \string →
+        case Uuid.fromString string of
+          Just uuid → Right uuid
+          Nothing → Left (Json.Failure "Expecting a UUID" value)
+
+
+idToPostgres ∷ Id → Array Json.KeyValue
+idToPostgres (Id { projectId, revisionNumber }) =
+  [ { key: "project_id", value: Json.encodeString $ Uuid.toString projectId }
+  , { key: "revision_number", value: Json.encodeInt revisionNumber }
+  ]
+
+
+idToBody ∷ Id → Json
+idToBody (Id {projectId, revisionNumber }) =
     Json.encodeObject
-      [ { key: "projectId", value: Action.toBody projectId }
-      , { key: "revisionNumber", value: Action.toBody revisionNumber }
+      [ { key: "projectId", value: Json.encodeString $ Uuid.base49Encode projectId }
+      , { key: "revisionNumber", value: Json.encodeInt revisionNumber }
       ]
-  fromBody value =
-    { projectId: _, revisionNumber: _ }
-      <$> Json.decodeAtField "projectId" value Action.fromBody
-      <*> Json.decodeAtField "revisionNumber" value Action.fromBody
-      <#> Id
 
+idFromBody ∷ Json → Either Json.Error Id
+idFromBody value =
+  { projectId: _, revisionNumber: _ }
+    <$> Json.decodeAtField "projectId" value decodeUuid
+    <*> Json.decodeAtField "revisionNumber" value Json.decodeInt
+    <#> Id
+  where
+    decodeUuid ∷ Json → Either Json.Error Uuid
+    decodeUuid value =
+      Json.decodeString value >>= \string →
+        case Uuid.base49Decode string of
+          Just uuid → Right uuid
+          Nothing → Left (Json.Failure "Expecting a UUID" value)
+
+
+-- REVISION
 
 
 newtype Revision =
@@ -66,43 +106,77 @@ newtype Revision =
     , acceptedTerms ∷ Maybe TermsVersion
     }
 
-instance fromResultRevision ∷ FromResult Revision where
-  fromResult value =
-    { htmlCode: _, elmCode: _, packages: _, title: _,  elmVersion: _, acceptedTerms: _ }
-      <$> Json.decodeAtField "html_code" value Postgres.fromResult
-      <*> Json.decodeAtField "elm_code" value Postgres.fromResult
-      <*> Json.decodeAtField "packages" value Postgres.fromResult
-      <*> Json.decodeAtField "title" value Postgres.fromResult
-      <*> Json.decodeAtField "elm_version" value Postgres.fromResult
-      <*> Json.decodeAtField "terms_version" value Postgres.fromResult
-      <#> Revision
+derive instance newtypeRevision ∷ Newtype Revision _
 
-instance toArgumentsRevision ∷ ToArguments Revision where
-  toArguments (Revision r) =
-      [ { key: "html_code", value: Postgres.toValue r.htmlCode }
-      , { key: "elm_code", value: Postgres.toValue r.elmCode }
-      , { key: "packages", value: Postgres.toValue r.packages }
-      , { key: "title", value: Postgres.toValue r.title }
-      , { key: "elm_version", value: Postgres.toValue r.elmVersion }
-      , { key: "terms_version", value: Postgres.toValue r.acceptedTerms }
-      ]
 
-instance isBodyRevision ∷ IsBody Revision where
-  toBody (Revision r) =
-    Json.encodeObject
-      [ { key: "htmlCode", value: Action.toBody r.htmlCode }
-      , { key: "elmCode", value: Action.toBody r.elmCode }
-      , { key: "packages", value: Action.toBody r.packages }
-      , { key: "title", value: Action.toBody r.title }
-      , { key: "elmVersion", value: Action.toBody r.elmVersion }
-      , { key: "termsVersion", value: Action.toBody r.acceptedTerms }
-      ]
-  fromBody value =
-    { htmlCode: _, elmCode: _, packages: _, title: _,  elmVersion: _, acceptedTerms: _ }
-      <$> Json.decodeAtField "htmlCode" value Action.fromBody
-      <*> Json.decodeAtField "elmCode" value Action.fromBody
-      <*> Json.decodeAtField "packages" value Action.fromBody
-      <*> Json.decodeAtField "title" value Action.fromBody
-      <*> Json.decodeAtField "elmVersion" value Action.fromBody
-      <*> Json.decodeAtField "termsVersion" value Action.fromBody
-      <#> Revision
+fromPostgres ∷ Json → Either Json.Error Revision
+fromPostgres value =
+  { htmlCode: _, elmCode: _, packages: _, title: _,  elmVersion: _, acceptedTerms: _ }
+    <$> Json.decodeAtField "html_code" value Json.decodeString
+    <*> Json.decodeAtField "elm_code" value Json.decodeString
+    <*> Json.decodeAtField "packages" value (Json.decodeArray Package.fromPostgres)
+    <*> Json.decodeAtField "title" value Json.decodeString
+    <*> Json.decodeAtField "elm_version" value Version.fromPostgres
+    <*> Json.decodeAtField "terms_version" value (Json.decodeNullable TermsVersion.fromJson)
+    <#> Revision
+
+
+toPostgres ∷ Revision → Array Json.KeyValue
+toPostgres (Revision r) =
+    [ { key: "html_code", value: Json.encodeString r.htmlCode }
+    , { key: "elm_code", value: Json.encodeString r.elmCode }
+    , { key: "packages", value: Json.encodeArray Package.toPostgres r.packages }
+    , { key: "title", value: Json.encodeString r.title }
+    , { key: "elm_version", value: Version.toPostgres r.elmVersion }
+    , { key: "terms_version", value: Json.encodeNullable TermsVersion.toJson r.acceptedTerms }
+    ]
+
+
+toBody ∷ Revision → Json
+toBody (Revision r) =
+  Json.encodeObject
+    [ { key: "htmlCode", value: Json.encodeString r.htmlCode }
+    , { key: "elmCode", value: Json.encodeString r.elmCode }
+    , { key: "packages", value: Json.encodeArray Package.toBody r.packages }
+    , { key: "title", value: Json.encodeString r.title }
+    , { key: "elmVersion", value: Version.toBody r.elmVersion }
+    , { key: "termsVersion", value: Json.encodeNullable TermsVersion.toJson r.acceptedTerms }
+    ]
+
+
+fromBody ∷ Json → Either Json.Error Revision
+fromBody value =
+  { htmlCode: _, elmCode: _, packages: _, title: _,  elmVersion: _, acceptedTerms: _ }
+    <$> Json.decodeAtField "htmlCode" value Json.decodeString
+    <*> Json.decodeAtField "elmCode" value Json.decodeString
+    <*> Json.decodeAtField "packages" value (Json.decodeArray Package.fromBody)
+    <*> Json.decodeAtField "title" value Json.decodeString
+    <*> Json.decodeAtField "elmVersion" value Version.fromBody
+    <*> Json.decodeAtField "termsVersion" value (Json.decodeNullable TermsVersion.fromJson)
+    <#> Revision
+
+
+-- ENTITY
+
+
+instance identifiedByIdRevision ∷ IdentifiedBy Id Revision
+
+
+entityToPostgres ∷ Entity Id Revision → Array Json.KeyValue
+entityToPostgres entity =
+  idToPostgres (Entity.key entity) <> toPostgres (Entity.record entity)
+
+
+entityFromPostgres ∷ Json → Either Json.Error (Entity Id Revision)
+entityFromPostgres value =
+  Entity.entity
+    <$> idFromPostgres value
+    <*> fromPostgres value
+
+
+entityToBody ∷ Entity Id Revision → Json
+entityToBody entity =
+  Json.encodeObject
+    [ { key: "key", value: idToBody $ Entity.key entity }
+    , { key: "record", value: toBody $ Entity.record entity }
+    ]

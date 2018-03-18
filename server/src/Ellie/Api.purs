@@ -2,7 +2,6 @@ module Ellie.Api where
 
 import Prelude
 
-import Control.Monad.Except (ExceptT(..), runExceptT)
 import Control.Monad.Maybe.Trans (MaybeT(..), runMaybeT)
 import Control.Monad.Trans.Class (lift)
 import Data.Either (Either(..))
@@ -28,6 +27,8 @@ import Ellie.Types.Revision as Revision
 import Ellie.Types.TermsVersion as TermsVersion
 import Ellie.Types.User (User(..))
 import Ellie.Types.User as User
+import Ellie.Types.Settings as Settings
+import Elm.Package.Searchable as Searchable
 import Server.Action (ActionT)
 import Server.Action as Action
 import System.Jwt (Jwt(..))
@@ -64,7 +65,10 @@ getRevision = do
       case maybeRevision of
         Just entity → do
           Action.setStatus 200
-          Action.setStringBody $ Json.stringify $ Action.toBody entity
+          Action.setStringBody
+            $ Json.stringify
+            $ Revision.entityToBody
+            $ entity
         Nothing →
           Action.setStatus 404
     Nothing →
@@ -78,7 +82,9 @@ searchPackages = do
     Just query → do
       packages ← lift $ Search.search query
       Action.setStatus 200
-      Action.setStringBody $ Json.stringify $ Action.toBody packages
+      Action.setStringBody
+        $ Json.stringify
+        $ Json.encodeArray Searchable.toBody packages
     Nothing →
       Action.setStatus 400
 
@@ -89,14 +95,14 @@ verify = do
     authorize >>= case _ of
       Just user → pure user
       Nothing → lift $ UserRepo.create
-  token ←
+  (Jwt token) ←
     lift $ UserRepo.sign (Entity.key user)
   Action.setStatus 201
   Action.setStringBody
     $ Json.stringify
     $ Json.encodeObject
-        [ { key: "token", value: Action.toBody token }
-        , { key: "user", value: Action.toBody user }
+        [ { key: "token", value: Json.encodeString token }
+        , { key: "user", value: User.entityToBody user }
         ]
 
 
@@ -106,9 +112,9 @@ acceptTerms = do
     Nothing →
       Action.setStatus 401
     Just entity → do
-      termsVersionOrError ← runExceptT do
-        body ← ExceptT Action.getBody
-        ExceptT $ pure $ Json.decodeAtField "termsVersion" body Action.fromBody
+      termsVersionOrError ← do
+        body ← Action.getBody
+        pure $ Json.decodeAtField "termsVersion" body TermsVersion.fromJson
       case termsVersionOrError of
         Left error →
           Action.setStatus 400
@@ -128,7 +134,8 @@ saveSettings = do
     Just entity → do
       let userId = Entity.key entity
       let (User user) = Entity.record entity
-      eitherSettings ← Action.getBody
+      body ← Action.getBody
+      let eitherSettings = Settings.fromBody body
       case eitherSettings of
         Left errors → Action.setStatus 400
         Right settings → do
@@ -140,7 +147,7 @@ saveSettings = do
 formatCode ∷ ∀ m. Monad m ⇒ Platform m ⇒ ActionT m Unit
 formatCode = do
   body ← Action.getBody
-  let code = body >>= \body → (Json.decodeAtField "code" body Json.decodeString)
+  let code = Json.decodeAtField "code" body Json.decodeString
   case code of
     Left errors →
       Action.setStatus 400

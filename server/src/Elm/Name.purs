@@ -3,33 +3,34 @@ module Elm.Name
   , core
   , html
   , browser
-  , isCore
-  , isHtml
-  , isBrowser
-  -- eqName
-  -- ordName
-  -- newtypeName
-  -- showName
-  -- toStringName
-  -- fromJsonName
-  -- toJsonName
-  -- toFieldName
+  , toString
+  , fromString
+  , toBody
+  , fromBody
+  , toPostgres
+  , fromPostgres
   ) where
 
 import Prelude
 
 import Data.Either (Either(..))
+import Data.Json (Json)
 import Data.Json as Json
 import Data.Maybe (Maybe(..))
 import Data.Newtype (class Newtype)
 import Data.String (Pattern(..))
-import Data.String as String
-import Data.String.Class (class FromString, class ToString)
-import Data.String.Class as String
-import Server.Action (class IsBody)
-import Server.Action as Action
-import System.Postgres (class ToValue, class FromResult)
-import System.Postgres as Postgres
+import Data.String (split) as String
+
+
+newtype Name =
+  Name
+    { user ∷ String
+    , project ∷ String
+    }
+
+derive instance eqName ∷ Eq Name
+derive instance ordName ∷ Ord Name
+derive instance newtypeName ∷ Newtype Name _
 
 
 core ∷ Name
@@ -47,65 +48,45 @@ browser =
   Name { user: "elm-lang", project: "browser" }
 
 
-isCore ∷ Name → Boolean
-isCore (Name { user, project }) =
-  user == "elm-lang" && project == "core"
+-- SERIALIZATIONS
 
 
-isHtml ∷ Name → Boolean
-isHtml (Name { user, project }) =
-  user == "elm-lang" && project == "html"
+toString ∷ Name → String
+toString (Name { user, project }) =
+  user <> "/" <> project
 
 
-isBrowser ∷ Name → Boolean
-isBrowser name =
-  name == browser
+fromString ∷ String → Maybe Name
+fromString string =
+  case String.split (Pattern "/") string of
+    [user, project] → Just $ Name { user, project }
+    _ → Nothing
 
 
-newtype Name =
-  Name
-    { user ∷ String
-    , project ∷ String
-    }
+toBody ∷ Name → Json
+toBody name =
+  Json.encodeString $ toString name
 
-derive instance eqName ∷ Eq Name
-derive instance ordName ∷ Ord Name
-derive instance newtypeName ∷ Newtype Name _
 
-instance showName ∷ Show Name where
-  show (Name { user, project }) =
-    "Name { user: \"" <> user <> "\", project: \"" <> project <> "\" }"
+fromBody ∷ Json → Either Json.Error Name
+fromBody value =
+  Json.decodeString value >>= \string →
+    case fromString string of
+      Just name → Right name
+      Nothing → Left $ Json.Failure "Package name must be a string in the format user/project" value
 
-instance toStringName ∷ ToString Name where
-  toString (Name { user, project }) =
-    user <> "/" <> project
 
-instance fromStringName ∷ FromString Name where
-  fromString string =
-    case String.split (Pattern "/") string of
-      [user, project] → Just $ Name { user, project }
-      _ → Nothing
+fromPostgres ∷ Json → Either Json.Error Name
+fromPostgres value =
+  { user: _, project: _ }
+    <$> Json.decodeAtField "username" value Json.decodeString
+    <*> Json.decodeAtField "project" value Json.decodeString
+    <#> Name
 
-instance isBodyName ∷ IsBody Name where
-  fromBody value =
-    Json.decodeString value >>= \string →
-      case String.fromString string of
-        Just name → Right name
-        Nothing → Left $ Json.Failure "Package name must be a string in the format user/project" value
 
-  toBody name =
-    Json.encodeString $ String.toString name
-
-instance fromResultName ∷ FromResult Name where
-  fromResult value =
-    { user: _, project: _ }
-      <$> Json.decodeAtField "username" value Postgres.fromResult
-      <*> Json.decodeAtField "project" value Postgres.fromResult
-      <#> Name
-
-instance toValueName ∷ ToValue Name where
-  toValue (Name { user, project }) =
-    Json.encodeObject
-      [ { key: "username", value: Postgres.toValue user }
-      , { key: "project", value: Postgres.toValue project }
-      ]
+toPostgres ∷ Name → Json
+toPostgres (Name { user, project }) =
+  Json.encodeObject
+    [ { key: "username", value: Json.encodeString user }
+    , { key: "project", value: Json.encodeString project }
+    ]

@@ -27,7 +27,6 @@ import Data.Set (Set)
 import Data.Set as Set
 import Data.String (Pattern(..))
 import Data.String (charAt, split) as String
-import Data.String.Class (toString) as String
 import Data.Traversable (traverse)
 import Elm.Compiler.Error as Compiler
 import Elm.Name (Name)
@@ -61,12 +60,12 @@ helpers =
 
 installByName ∷ FilePath → Name → IO Unit
 installByName root name =
-  Aff.liftAff $ Aff.fromEffFnAff $ _installByName { helpers, root, name: String.toString name }
+  Aff.liftAff $ Aff.fromEffFnAff $ _installByName { helpers, root, name: Name.toString name }
 
 
 init ∷ FilePath → IO Unit
 init root = do
-  FileSystem.write (root </> "elm.json") $ Project.default
+  FileSystem.write (root </> "elm.json") $ Project.toFile Project.default
   FileSystem.createDirectory (root </> "src")
   installByName root Name.core
   installByName root Name.browser
@@ -120,7 +119,7 @@ compile { root, entry, debug, output } = do
               line
                 # Json.parse
                 >>= Json.decodeArray Compiler.decode
-                # Either.either (String.toString >>> error >>> Except.throwError) pure
+                # Either.either (Json.errorToString >>> error >>> Except.throwError) pure
             else
               pure []     
           )
@@ -143,10 +142,10 @@ readProject ∷ FilePath → IO Project
 readProject root = do
   rawProject ← FileSystem.read (root </> "elm.json")
   rawProject
-    # FileSystem.fromFile
+    # Project.fromFile
     # Either.either ((\e → error $ "Corrupted project: " <> e) >>> Except.throwError) pure
 
 
 writeProject ∷ FilePath → Project → IO Unit
 writeProject root project =
-  FileSystem.write (root </> "elm.json") $ FileSystem.toFile project
+  FileSystem.write (root </> "elm.json") $ Project.toFile project

@@ -1,6 +1,8 @@
 module Data.Json
   ( Json
+  , KeyValue
   , Error(..)
+  , errorToString
   , parse
   , decodeBoolean
   , decodeInt
@@ -13,11 +15,13 @@ module Data.Json
   , decodeAtField
   , decodeAtPath
   , decodeForeign
+  , decodeNullable
   , encodeInt
   , encodeNumber
   , encodeString
   , encodeBoolean
   , encodeNull
+  , encodeNullable
   , encodeArray
   , encodeObject
   , stringify
@@ -25,6 +29,7 @@ module Data.Json
 
 import Prelude
 
+import Control.Alt ((<|>))
 import Control.Monad.Except as Except
 import Data.Array ((:))
 import Data.Array as Array
@@ -40,11 +45,11 @@ import Data.Foreign.Generic (encodeJSON, decodeJSON) as Foreign
 import Data.Foreign.Index (index) as Foreign
 import Data.List.NonEmpty as NonEmpty
 import Data.Maybe (Maybe(..))
+import Data.Maybe as Maybe
 import Data.StrMap (StrMap)
 import Data.StrMap as StrMap
 import Data.String (Pattern(..))
 import Data.String (joinWith, split, toCharArray, uncons) as String
-import Data.String.Class (class ToString)
 import Data.String.Class (toString) as String
 import Data.Traversable (traverse)
 import Data.TraversableWithIndex (traverseWithIndex)
@@ -52,6 +57,10 @@ import Data.Tuple (Tuple(..))
 
 foreign import _null ∷ Json
 foreign import _mergeObjects ∷ Json → Json → Json
+
+
+type KeyValue =
+  { key ∷ String, value ∷ Json }
 
 
 newtype Json =
@@ -64,65 +73,63 @@ data Error
   | Field String Error
   | OneOf (Array Error)
 
+errorToString ∷ Error → String
+errorToString error = toStringHelp error []
+  where
+    toStringHelp ∷ Error → Array String → String
+    toStringHelp (Field f err) context =
+      toStringHelp err (fieldName : context)
+      where
+        isSimple =
+          case String.uncons f of
+            Nothing → false
+            Just { head, tail } → Char.isAlpha head && Foldable.all Char.isAlphaNum (String.toCharArray tail)
+        fieldName =
+          if isSimple then
+            "." <> f
+          else
+            "['" <> f <> "']"
 
-instance toStringError ∷ ToString Error where
-  toString error =
-    toStringHelp error []
-    where
-      toStringHelp ∷ Error → Array String → String
-      toStringHelp (Field f err) context =
-        toStringHelp err (fieldName : context)
-        where
-          isSimple =
-            case String.uncons f of
-              Nothing → false
-              Just { head, tail } → Char.isAlpha head && Foldable.all Char.isAlphaNum (String.toCharArray tail)
-          fieldName =
-            if isSimple then
-              "." <> f
-            else
-              "['" <> f <> "']"
+    toStringHelp (Index i err) context =
+      toStringHelp err (("[" <> String.toString i <> "]") : context)
 
-      toStringHelp (Index i err) context =
-        toStringHelp err (("[" <> String.toString i <> "]") : context)
-
-      toStringHelp (OneOf errors) context =
-        case errors of
-          [] →
-            "Ran into a Json.Decode.oneOf with no possibilities" <>
-              case context of
-                [] → "!"
-                _ → " at json" <> String.joinWith "" (Array.reverse context)
-          [err] →
-            toStringHelp err context
-          _ →
-            let
-              starter =
-                case context of
-                  [] → "Json.Decode.oneOf"
-                  _ → "The Json.Decode.oneOf at json" <> String.joinWith "" (Array.reverse context)
-
-              introduction =
-                starter <> " failed in the following " <> String.toString (Array.length errors) <> " ways:"
-            in
-              String.joinWith "\n\n" (introduction : Array.mapWithIndex errorOneOf errors)
-
-      toStringHelp (Failure msg json) context =
-        let
-          introduction =
+    toStringHelp (OneOf errors) context =
+      case errors of
+        [] →
+          "Ran into a Json.Decode.oneOf with no possibilities" <>
             case context of
-              [] → "Problem with the given value:\n\n"
-              _ → "Problem with the value at json" <> String.joinWith "" (Array.reverse context) <> ":\n\n    "
-        in
-          introduction <> indent (stringify json) <> "\n\n" <> msg
+              [] → "!"
+              _ → " at json" <> String.joinWith "" (Array.reverse context)
+        [err] →
+          toStringHelp err context
+        _ →
+          let
+            starter =
+              case context of
+                [] → "Json.Decode.oneOf"
+                _ → "The Json.Decode.oneOf at json" <> String.joinWith "" (Array.reverse context)
 
-      errorOneOf ∷ Int → Error → String
-      errorOneOf i error =
-        "\n\n(" <> String.toString (i + 1) <> ") " <> indent (String.toString error)
+            introduction =
+              starter <> " failed in the following " <> String.toString (Array.length errors) <> " ways:"
+          in
+            String.joinWith "\n\n" (introduction : Array.mapWithIndex errorOneOf errors)
 
-      indent ∷ String → String
-      indent str =
-        String.joinWith "\n    " (String.split (Pattern "\n") str)
+    toStringHelp (Failure msg json) context =
+      let
+        introduction =
+          case context of
+            [] → "Problem with the given value:\n\n"
+            _ → "Problem with the value at json" <> String.joinWith "" (Array.reverse context) <> ":\n\n    "
+      in
+        introduction <> indent (stringify json) <> "\n\n" <> msg
+
+    errorOneOf ∷ Int → Error → String
+    errorOneOf i error =
+      "\n\n(" <> String.toString (i + 1) <> ") " <> indent (errorToString error)
+
+    indent ∷ String → String
+    indent str =
+      String.joinWith "\n    " (String.split (Pattern "\n") str)
 
 
 parse ∷ String → Either Error Json
@@ -246,8 +253,13 @@ decodeAtPath path json decoder =
 decodeForeign ∷ ∀ a. Foreign → (Json → Either Error a) → F a
 decodeForeign value decoder =
   case decoder (Json value) of
-    Left e → Foreign.fail $ Foreign.JSONError (String.toString e)
+    Left e → Foreign.fail $ Foreign.JSONError (errorToString e)
     Right v → pure v
+
+
+decodeNullable ∷ ∀ a. (Json → Either Error a) → Json → Either Error (Maybe a)
+decodeNullable decoder value =
+  (Just <$> decoder value) <|> (decodeNull Nothing value)
 
 
 encode' ∷ ∀ a. a → Json
@@ -274,6 +286,9 @@ encodeBoolean = encode'
 encodeNull ∷ Json
 encodeNull = encode' _null
 
+
+encodeNullable ∷ ∀ a. (a → Json) → Maybe a → Json
+encodeNullable = Maybe.maybe encodeNull
 
 encodeArray ∷ ∀ a. (a → Json) → Array a → Json
 encodeArray encoder array =

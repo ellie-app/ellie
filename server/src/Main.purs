@@ -14,6 +14,7 @@ import Data.Int as Int
 import Data.Map as Map
 import Data.Maybe (Maybe(..))
 import Data.Maybe as Maybe
+import Data.Time.Good as Time
 import Ellie (class Ellie, DevEnv(DevEnv))
 import Ellie as Ellie
 import Ellie.Api as Api
@@ -29,7 +30,6 @@ import Server.Action as Action
 import Server.Socket as Socket
 import System.Cache as Cache
 import System.Jwt (Secret(..))
-import System.Time as Time
 import System.Postgres as Postgres
 
 
@@ -59,12 +59,27 @@ setup ∷ IO Server
 setup = do
   port ← Maybe.fromMaybe 1337 <$> (_ >>= Int.fromString) <$> (Eff.liftEff (Process.lookupEnv "PORT"))
   packageSite ← Maybe.fromMaybe "http://package.elm-lang.org" <$> Eff.liftEff (Process.lookupEnv "PACKAGE_SITE")
-  index ← Eff.liftEff $ Ref.newRef Nothing
-  defaultPackages ← Cache.create (15 * Time.minutes)
+  lastSearchUpdate ← Eff.liftEff $ Ref.newRef Nothing
+  let searchRefresh = Time.minutes 15
+  defaultPackages ← Cache.create (Time.minutes 15)
   userWorkspaces ← Eff.liftEff $ Ref.newRef Map.empty
   postgresClient ← Postgres.connect "postgresql://luke@localhost:5432/ellie"
   let jwtSecret = Secret "abc123"
-  let env = DevEnv { postgresClient, packageSite, defaultPackages, userWorkspaces, index, jwtSecret, assetBase: "", webpackHost: "localhost:1338" }
+
+  let
+    env =
+      DevEnv
+        { postgresClient
+        , packageSite
+        , defaultPackages
+        , userWorkspaces
+        , lastSearchUpdate
+        , searchRefresh
+        , jwtSecret
+        , assetBase: ""
+        , webpackHost: "localhost:1338"
+        }
+
   server ← Eff.liftEff $ Express.listenHttp (routes (Action.makeHandler (Ellie.runEllieM env))) port (\_ → pure unit)
   _ ← Socket.listen server "/workspace" $ BuildManager.connection (Ellie.runEllieM env)
   pure server

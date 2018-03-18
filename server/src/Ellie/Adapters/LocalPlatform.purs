@@ -36,7 +36,6 @@ import Data.Set (Set)
 import Data.Set as Set
 import Data.String (Pattern(Pattern))
 import Data.String (null, split, trim) as String
-import Data.String.Class (toString, fromString) as String
 import Data.String.Murmur as Murmur
 import Data.String.Regex (Regex)
 import Data.String.Regex (match) as Regex
@@ -101,11 +100,11 @@ reloadDefaultPackages env = do
       packageData ←
         rawPackageData
           # decodeNameAndVersions
-          # lmap (String.toString >>> error)
+          # lmap (Json.errorToString >>> error)
           # Either.either throwError pure
       
       packageData
-        # Array.filter (\p → Name.isCore p.name || Name.isHtml p.name || Name.isBrowser p.name)
+        # Array.filter (\p → p.name == Name.core || p.name == Name.html || p.name == Name.browser)
         # map (\p → Package { name: p.name, version: Maybe.fromMaybe Version.zero $ maximum p.versions })
         # pure
 
@@ -117,9 +116,9 @@ reloadDefaultPackages env = do
     decodeNameAndVersion value = do
       { name: _, versions: _ }
         <$> Json.decodeAtField "name" value
-            (\v → Json.decodeString v >>= (String.fromString >>> Either.note (Json.Failure "Expecting a name USER/PROJECT" v)))
+            (\v → Json.decodeString v >>= (Name.fromString >>> Either.note (Json.Failure "Expecting a name USER/PROJECT" v)))
         <*> Json.decodeAtField "versions" value
-            (\v → Json.decodeArray (\v' → Json.decodeString v' >>= (String.fromString >>> Either.note (Json.Failure "Expecting a version MAJOR.MINOR.PATCH" v'))) v)
+            (\v → Json.decodeArray (\v' → Json.decodeString v' >>= (Version.fromString >>> Either.note (Json.Failure "Expecting a version MAJOR.MINOR.PATCH" v'))) v)
 
     decodeNameAndVersions ∷ Json → Either Json.Error (Array { name ∷ Name, versions ∷ Array Version })
     decodeNameAndVersions array =
@@ -296,11 +295,11 @@ fixHtml input = do
   where
     wrapOnReady ∷ Int → String → String
     wrapOnReady random script =
-      "__ellie_onReady_" <> String.toString random <> "(function () {" <> script <> "})"
+      "__ellie_onReady_" <> show random <> "(function () {" <> script <> "})"
 
     onReady ∷ Int → Document → IO Unit
     onReady random document = do
-      let text = onReadyDecl <> String.toString random <> onReadyBody
+      let text = onReadyDecl <> show random <> onReadyBody
       script ← Dom.createElement "script" document
       Dom.setTextContent text script
       head ← Dom.head document

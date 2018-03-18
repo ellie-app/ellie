@@ -22,5 +22,5 @@ record (Entity info) = info.record
 
 
 entity ∷ ∀ k r. IdentifiedBy k r ⇒ k → r → Entity k r
-entity key record =
-  Entity { key, record }
+entity k r =
+  Entity { key: k, record: r }

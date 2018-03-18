@@ -1,17 +1,15 @@
 module Data.Uuid
   ( Uuid
+  , toString
   , fromString
-  , encode
-  , decode
+  , base49Encode
+  , base49Decode
   , zero
   ) where
 
 import Prelude
 
-import Data.Foreign as Foreign
-import Data.Foreign.Class (class Decode)
 import Data.Maybe (Maybe(..))
-import Data.String.Class (class ToString)
 
 
 foreign import _encode ∷ String → String
@@ -25,15 +23,9 @@ newtype Uuid =
 derive newtype instance eqUuid ∷ Eq Uuid
 derive newtype instance ordUuid ∷ Ord Uuid
 
-instance decodeUuid ∷ Decode Uuid where
-  decode value = do
-    string ← Foreign.readString value
-    case fromString string of
-      Just uuid → pure uuid
-      Nothing → Foreign.fail (Foreign.ForeignError "Expecting a UUID string in the format 00112233-4455-V677-8899-aabbccddeeff")
 
-instance toStringUuid ∷ ToString Uuid where
-  toString (Uuid string) = string
+toString ∷ Uuid → String
+toString (Uuid string) = string
 
 
 fromString ∷ String → Maybe Uuid
@@ -44,12 +36,12 @@ fromString input =
     Nothing
 
 
-encode ∷ Uuid → String
-encode (Uuid inner) = _encode inner
+base49Encode ∷ Uuid → String
+base49Encode (Uuid inner) = _encode inner
 
 
-decode ∷ String → Maybe Uuid
-decode string =
+base49Decode ∷ String → Maybe Uuid
+base49Decode string =
   Uuid <$> _decode { just: Just, nothing: Nothing, string }
 
 

@@ -7,14 +7,16 @@ import Control.Monad.Eff.Ref (Ref)
 import Control.Monad.Eff.Ref as Ref
 import Control.Monad.IO (IO)
 import Data.Maybe (Maybe(..))
-import System.Time as Time
+import Data.Time.Good (Posix)
+import Data.Time.Good (Span, diff) as Time
+import System.Time (now) as Time
 
 
 newtype Cache a =
-  Cache { ttl ∷ Int, ref ∷ Ref (Maybe { value ∷ a, lastFilled ∷ Int }) }
+  Cache { ttl ∷ Time.Span, ref ∷ Ref (Maybe { value ∷ a, lastFilled ∷ Posix }) }
 
 
-create ∷ ∀ e a. Int → IO (Cache a)
+create ∷ ∀ e a. Time.Span → IO (Cache a)
 create ttl = 
   Eff.liftEff $
     Ref.newRef Nothing <#> \ref →
@@ -24,20 +26,19 @@ create ttl =
 read ∷ ∀ e a. IO a → Cache a → IO a
 read reload cache@(Cache { ttl, ref }) = do
   current ←
-    Eff.liftEff $
-      Ref.readRef ref >>= \currentRef →
-        case currentRef of
-          Just { value, lastFilled } → do
-            now ← Time.now
-            if now - lastFilled < ttl
-              then pure $ Just value
-              else pure Nothing
-          _ →
-            pure Nothing
+    Eff.liftEff (Ref.readRef ref) >>= \currentRef →
+      case currentRef of
+        Just { value, lastFilled } → do
+          now ← Time.now
+          if Time.diff now lastFilled == ttl
+            then pure $ Just value
+            else pure Nothing
+        _ →
+          pure Nothing
   case current of
     Just value →
       pure value
-    Nothing -> do
+    Nothing → do
       newValue ← reload
       write newValue cache
       pure newValue
@@ -45,6 +46,5 @@ read reload cache@(Cache { ttl, ref }) = do
 
 write ∷ ∀ e a. a → Cache a → IO Unit
 write value (Cache { ttl, ref }) =
-  Eff.liftEff $
-    Time.now >>= \now →
-      Ref.writeRef ref $ Just { value, lastFilled: now }
+  Time.now >>= \now →
+    Eff.liftEff $ Ref.writeRef ref $ Just { value, lastFilled: now }
