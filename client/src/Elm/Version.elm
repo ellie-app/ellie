@@ -1,4 +1,4 @@
-module Elm.Package.Version exposing (Version, compare, decoder, encoder, fromString, toString)
+module Elm.Version exposing (Version, compare, decoder, encoder, fromString, toString)
 
 import Json.Decode as Decode exposing (Decoder)
 import Json.Encode as Encode exposing (Value)

@@ -8,3 +8,4 @@ revisions [ellie_schema uuid_extension] 2018-03-05T19:26:43Z Luke Westby <lwestb
 users [ellie_schema uuid_extension] 2018-03-07T17:36:17Z Luke Westby <lwestby@alumni.nd.edu> # Creates users table.
 user_functions [users] 2018-03-07T17:56:34Z Luke Westby <lwestby@alumni.nd.edu> # Creates functions to query users
 revision_functions [revisions] 2018-03-08T16:21:01Z Luke Westby <lwestby@alumni.nd.edu> # Creates functions to query revisions.
+searchable_packages [revisions] 2018-03-18T04:09:07Z Luke Westby <lwestby@alumni.nd.edu> # Adds searchable packages table

@@ -17,7 +17,6 @@ import Ellie.Types.Revision as Revision exposing (Revision)
 import Ellie.Types.Settings as Settings exposing (Settings)
 import Ellie.Types.User as User exposing (User)
 import Elm.Package as Package exposing (Package)
-import Elm.Package.Searchable as Searchable exposing (Searchable)
 import Elm.Project as Project exposing (Project)
 import Extra.HttpBuilder exposing (withMaybe)
 import Extra.Json.Encode as Encode
@@ -57,7 +56,7 @@ type Outbound msg
     | Compile Jwt String String (List Package)
     | ReloadIframe
     | Redirect String
-    | SearchPackages String (Maybe (List Searchable) -> msg)
+    | SearchPackages String (Maybe (List Package) -> msg)
     | SwitchToDebugger
     | SwitchToProgram
     | EnableNavigationCheck Bool
@@ -161,7 +160,7 @@ send onError effect state =
         SearchPackages query callback ->
             get "/private-api/packages/search"
                 |> withQueryParams [ ( "query", query ) ]
-                |> withExpect (Http.expectJson (Decode.list Searchable.decoder))
+                |> withExpect (Http.expectJson (Decode.list Package.decoder))
                 |> HttpBuilder.send
                     (\result ->
                         case result of
@@ -307,7 +306,7 @@ wrapInit onError userInit flags route =
 
 debouncePackageSearchConfig : Debounce.Config (Msg msg)
 debouncePackageSearchConfig =
-    { strategy = Debounce.later 1000
+    { strategy = Debounce.later 500
     , transform = DebouncePackageSearch
     }
 

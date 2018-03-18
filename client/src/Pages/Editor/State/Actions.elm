@@ -1,13 +1,13 @@
 module Pages.Editor.State.Actions exposing (..)
 
-import Elm.Package.Searchable as Searchable exposing (Searchable)
+import Elm.Package as Package exposing (Package)
 import Pages.Editor.Effects.Inbound as Inbound exposing (Inbound)
 import Pages.Editor.Effects.Outbound as Outbound exposing (Outbound)
 
 
 type alias PackagesModel =
     { query : String
-    , searchedPackages : Maybe (List Searchable)
+    , searchedPackages : Maybe (List Package)
     , awaitingSearch : Bool
     }
 
@@ -30,7 +30,7 @@ type Model
 
 type Msg
     = UserTypedInPackageSearch String
-    | SearchedPackagesReceived (Maybe (List Searchable))
+    | SearchedPackagesReceived (Maybe (List Package))
 
 
 update : Msg -> Model -> ( Model, Outbound Msg )

@@ -24,11 +24,12 @@ import Ellie.Domain.Search as Search
 import Ellie.Domain.UserRepo (class UserRepo)
 import Ellie.Domain.UserRepo as UserRepo
 import Ellie.Types.Revision as Revision
+import Ellie.Types.Settings as Settings
 import Ellie.Types.TermsVersion as TermsVersion
 import Ellie.Types.User (User(..))
 import Ellie.Types.User as User
-import Ellie.Types.Settings as Settings
 import Elm.Package.Searchable as Searchable
+import Elm.Package as Package
 import Server.Action (ActionT)
 import Server.Action as Action
 import System.Jwt (Jwt(..))
@@ -80,11 +81,12 @@ searchPackages = do
   maybeQuery ← Action.getParam "query"
   case maybeQuery of
     Just query → do
-      packages ← lift $ Search.search query
+      searchables ← lift $ Search.search query
+      let packages = map Searchable.latestPackage searchables
       Action.setStatus 200
       Action.setStringBody
         $ Json.stringify
-        $ Json.encodeArray Searchable.toBody packages
+        $ Json.encodeArray Package.toBody packages
     Nothing →
       Action.setStatus 400
 

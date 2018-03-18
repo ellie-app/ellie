@@ -5,26 +5,25 @@ module Ellie.Adapters.DatabaseSearch
 
 import Prelude
 
+import Control.Monad.Eff.Class as Eff
 import Control.Monad.Eff.Exception (Error)
+import Control.Monad.Eff.Exception as Exception
 import Control.Monad.Eff.Ref (Ref)
+import Control.Monad.Eff.Ref as Ref
 import Control.Monad.Error.Class (class MonadThrow)
+import Control.Monad.Error.Class as Error
 import Control.Monad.IO.Class (class MonadIO)
 import Control.Monad.IO.Class (liftIO) as IO
-import Data.Either (Either)
-import Data.Json (Json)
+import Data.Either (Either(..))
 import Data.Json as Json
-import Data.Maybe (Maybe)
-import Data.Maybe as Maybe
+import Data.Maybe (Maybe(..))
 import Data.Time.Good (Posix)
-import Data.Time.Good (Span) as Time
-import Data.Traversable (maximum)
-import Elm.Name (Name)
-import Elm.Name as Name
-import Elm.Package (Package(..))
-import Elm.Package.Searchable (Searchable(..))
-import Elm.Version (Version)
-import Elm.Version as Version
+import Data.Time.Good (Span, diff) as Time
+import Elm.Package.Searchable (Searchable)
+import Elm.Package.Searchable as Searchable
+import System.Http as Http
 import System.Postgres as Postgres
+import System.Time (now) as Time
 
 
 type Env r =
@@ -38,26 +37,28 @@ type Env r =
 
 search ∷ ∀ m r. MonadIO m ⇒ MonadThrow Error m ⇒ String → Env r → m (Array Searchable)
 search query env = IO.liftIO do
-  pure []
-  where
-    toSearchable ∷ { description ∷ String, name ∷ Name, versions ∷ Array Version } → Searchable
-    toSearchable { name, description, versions } =
-      Searchable
-        { package:
-            Package
-              { name: name
-              , version: Maybe.fromMaybe Version.zero $ maximum versions
-              }
-        , description
-        }
+  now ← Time.now
+  maybeLastSearchUpdate ← Eff.liftEff $ Ref.readRef env.lastSearchUpdate
+  case maybeLastSearchUpdate of
+    Just lastUpdate | Time.diff now lastUpdate < env.searchRefresh →
+      Postgres.exec env.postgresClient (Json.decodeArray Searchable.fromPostgres)
+        $ Postgres.invoke "ellie.searchable_packages_search"
+        $ [ { key: "query", value: Json.encodeString query }
+          , { key: "threshold", value: Json.encodeNumber 0.3 }
+          ]
 
-    decodeNameAndVersion ∷ Json → Either Json.Error { description ∷ String, name ∷ Name, versions ∷ Array Version }
-    decodeNameAndVersion value = do
-      { name: _, versions: _, description: _ }
-        <$> Json.decodeAtField "name" value Name.fromBody
-        <*> Json.decodeAtField "versions" value (Json.decodeArray Version.fromBody)
-        <*> Json.decodeAtField "summary" value Json.decodeString
+    _ → do
+      rawSearchables ← Http.get (env.packageSite <> "/search.json")
+      let searchables = Json.decodeArray Searchable.fromBody rawSearchables
+      case searchables of
+        Left error →
+          Error.throwError
+            $ Exception.error
+            $ Json.errorToString error
 
-    decodeNameAndVersions ∷ Json → Either Json.Error (Array { description ∷ String, name ∷ Name, versions ∷ Array Version })
-    decodeNameAndVersions array =
-      Json.decodeArray decodeNameAndVersion array
+        Right values → do
+          Postgres.exec env.postgresClient (const (Right unit))
+            $ Postgres.invoke "ellie.searchable_packages_populate"
+            $ [ { key: "packages", value: Json.encodeArray Searchable.toPostgres values } ]
+          Eff.liftEff $ Ref.writeRef env.lastSearchUpdate (Just now)
+          search query env

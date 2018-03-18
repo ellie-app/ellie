@@ -1,7 +1,7 @@
 module Elm.Package exposing (..)
 
-import Elm.Package.Name as Name exposing (Name)
-import Elm.Package.Version as Version exposing (Version)
+import Elm.Name as Name exposing (Name)
+import Elm.Version as Version exposing (Version)
 import Json.Decode as Decode exposing (Decoder)
 import Json.Encode as Encode exposing (Value)
 

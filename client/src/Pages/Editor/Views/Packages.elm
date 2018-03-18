@@ -7,8 +7,7 @@ import Ellie.Ui.Button as Button
 import Ellie.Ui.Icon as Icon
 import Ellie.Ui.TextInput as TextInput
 import Elm.Package as Package exposing (Package)
-import Elm.Package.Searchable as Searchable exposing (Searchable)
-import Elm.Package.Version as Version
+import Elm.Version as Version
 import Extra.Maybe as Maybe
 import Html.Styled as Html exposing (Html)
 import Html.Styled.Attributes exposing (css, src)
@@ -18,7 +17,7 @@ type alias Config msg =
     { query : String
     , onSearch : String -> msg
     , installedPackages : List Package
-    , searchedPackages : Maybe (List Searchable)
+    , searchedPackages : Maybe (List Package)
     , isLoading : Bool
     , onUninstall : Package -> msg
     , onInstall : Package -> msg
@@ -86,9 +85,10 @@ viewSearchInput isLoading value onSearch =
         ]
 
 
-viewSearchedPackages : (Package -> msg) -> (Package -> msg) -> List Package -> List Searchable -> Html msg
+viewSearchedPackages : (Package -> msg) -> (Package -> msg) -> List Package -> List Package -> Html msg
 viewSearchedPackages onInstall onUninstall installed packages =
-    List.map (.package >> viewSearchedPackage onInstall onUninstall installed) packages
+    packages
+        |> List.map (viewSearchedPackage onInstall onUninstall installed)
         |> Html.div
             [ css
                 [ height (pct 100)
