@@ -112,6 +112,11 @@ information =
     var "--theme-color-information"
 
 
+markdownCodeBackground : BasicProperty
+markdownCodeBackground =
+    var "--theme-color-markdown-code-background"
+
+
 darkStyles : Css.Foreign.Snippet
 darkStyles =
     Css.Foreign.selector ":root"
@@ -136,6 +141,7 @@ darkStyles =
         , property "--theme-color-failure" red.value
         , property "--theme-color-warning" yellow.value
         , property "--theme-color-information" blue.value
+        , property "--theme-color-markdown-code-background" "rgba(156,156,156,0.1)"
         ]
 
 

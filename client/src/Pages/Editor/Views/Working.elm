@@ -188,6 +188,7 @@ viewWorkspace model =
                 , onLogReceived = WorkingState.LogReceived
                 , onSelectSuccessPane = WorkingState.SuccessPaneSelected
                 , onSelectErrorsPane = WorkingState.ErrorsPaneSelected
+                , onGoToLocation = WorkingState.LocationSelected
                 , compiling = model.compiling
                 , workbench = model.workbench
                 , maximized = model.workbenchRatio < 0.05

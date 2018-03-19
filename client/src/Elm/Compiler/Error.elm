@@ -17,13 +17,9 @@ import Json.Encode as Encode exposing (Value)
 
 toLinterMessage : Error -> LinterMessage
 toLinterMessage error =
-    let
-        region =
-            Maybe.withDefault error.region error.subregion
-    in
-    { from = { line = region.start.line - 1, column = region.start.column - 1 }
-    , to = { line = region.end.line - 1, column = region.end.column - 1 }
-    , message = Markdown.toString <| error.overview ++ "\n\n" ++ error.details
+    { from = { line = error.region.start.line - 1, column = error.region.start.column - 1 }
+    , to = { line = error.region.end.line - 1, column = error.region.end.column - 1 }
+    , message = Markdown.toString <| error.message
     , severity =
         case error.level of
             "warning" ->
@@ -48,9 +44,7 @@ type alias Region =
 
 type alias Error =
     { tag : String
-    , overview : String
-    , details : String
-    , subregion : Maybe Region
+    , message : String
     , region : Region
     , level : String
     }
@@ -90,9 +84,7 @@ decoder : Decoder Error
 decoder =
     Decode.succeed Error
         |> Decode.required "tag" Decode.string
-        |> Decode.required "overview" Decode.string
-        |> Decode.required "details" Decode.string
-        |> Decode.optional "subregion" (Decode.map Just decodeRegion) Nothing
+        |> Decode.required "message" Decode.string
         |> Decode.required "region" decodeRegion
         |> Decode.required "type" Decode.string
 
@@ -101,9 +93,7 @@ encoder : Error -> Value
 encoder error =
     Encode.object
         [ ( "tag", Encode.string error.tag )
-        , ( "overview", Encode.string error.overview )
-        , ( "details", Encode.string error.details )
-        , ( "subregion", error.subregion |> Maybe.map encodeRegion |> Maybe.withDefault Encode.null )
+        , ( "message", Encode.string error.message )
         , ( "region", encodeRegion error.region )
         , ( "type", Encode.string error.level )
         ]

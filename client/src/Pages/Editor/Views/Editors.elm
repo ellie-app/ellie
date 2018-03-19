@@ -31,13 +31,9 @@ type alias Config msg =
 
 errorToLinterMessage : Error -> CodeEditor.LinterMessage
 errorToLinterMessage error =
-    let
-        region =
-            Maybe.withDefault error.region error.subregion
-    in
-    { from = { line = region.start.line - 1, column = region.start.column - 1 }
-    , to = { line = region.end.line - 1, column = region.end.column - 1 }
-    , message = Markdown.toString <| error.overview ++ "\n\n" ++ error.details
+    { from = { line = error.region.start.line - 1, column = error.region.start.column - 1 }
+    , to = { line = error.region.end.line - 1, column = error.region.end.column - 1 }
+    , message = Markdown.toString error.message
     , severity =
         case error.level of
             "warning" ->
@@ -73,6 +69,7 @@ view config =
                             , CodeEditor.tabSize 4
                             , CodeEditor.vim config.vimMode
                             , CodeEditor.linterMessages <| List.map errorToLinterMessage config.elmErrors
+                            , CodeEditor.id "elm"
                             ]
                         ]
                     ]
@@ -92,6 +89,7 @@ view config =
                             , CodeEditor.mode "htmlmixed"
                             , CodeEditor.tabSize 2
                             , CodeEditor.vim config.vimMode
+                            , CodeEditor.id "html"
                             ]
                         ]
                     ]

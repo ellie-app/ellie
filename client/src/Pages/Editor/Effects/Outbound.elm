@@ -16,6 +16,7 @@ import Ellie.Constants as Constants
 import Ellie.Types.Revision as Revision exposing (Revision)
 import Ellie.Types.Settings as Settings exposing (Settings)
 import Ellie.Types.User as User exposing (User)
+import Elm.Compiler.Error as Compiler
 import Elm.Package as Package exposing (Package)
 import Elm.Project as Project exposing (Project)
 import Extra.HttpBuilder exposing (withMaybe)
@@ -65,12 +66,22 @@ type Outbound msg
     | OpenInNewTab Url
     | Batch (List (Outbound msg))
     | Delay Float msg
+    | MoveElmCursor Compiler.Location
     | None
 
 
 send : (Exception -> msg) -> Outbound msg -> State msg -> ( State msg, Cmd (Msg msg) )
 send onError effect state =
     case effect of
+        MoveElmCursor location ->
+            ( state
+            , Encode.genericUnion "MoveElmCursor"
+                [ Encode.int location.line
+                , Encode.int location.column
+                ]
+                |> pagesEditorEffectsOutbound
+            )
+
         DownloadZip { project, elm, html } ->
             ( state
             , Encode.genericUnion "DownloadZip"
@@ -397,6 +408,9 @@ wrapUpdate onError userUpdate msg (( model, state ) as appState) =
 map : (a -> b) -> Outbound a -> Outbound b
 map f outbound =
     case outbound of
+        MoveElmCursor location ->
+            MoveElmCursor location
+
         DownloadZip stuff ->
             DownloadZip stuff
 

@@ -45,6 +45,13 @@ const start = (app) => {
         })
         break
 
+      case 'MoveElmCursor':
+        const editor = document.getElementById('elm')
+        if (!editor) break
+        const [line, column] = contents
+        editor.moveCursor(line, column)
+        break
+
       default:
         break
     }

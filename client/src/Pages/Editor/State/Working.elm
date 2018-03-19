@@ -134,6 +134,7 @@ type Msg
     | ClearLogsClicked
     | LogReceived Log
     | LogSearchChanged String
+    | LocationSelected Error.Location
       -- Share stuff
     | CreateGistRequested
     | CreateGistComplete (Maybe String)
@@ -154,6 +155,11 @@ type Msg
 update : Msg -> Model -> ( Model, Outbound Msg )
 update msg ({ user } as model) =
     case msg of
+        LocationSelected location ->
+            ( model
+            , Outbound.MoveElmCursor location
+            )
+
         DownloadZip ->
             ( model
             , Outbound.DownloadZip

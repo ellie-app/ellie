@@ -4,6 +4,7 @@ module Ellie.Ui.CodeEditor
         , LinterMessage
         , Position
         , Severity(..)
+        , id
         , linterMessages
         , mode
         , onChange
@@ -15,7 +16,7 @@ module Ellie.Ui.CodeEditor
         )
 
 import Html.Styled as Html exposing (Html)
-import Html.Styled.Attributes exposing (property)
+import Html.Styled.Attributes as Attributes exposing (property)
 import Html.Styled.Events as Events exposing (on)
 import Json.Decode as Decode
 import Json.Encode as Encode exposing (Value)
@@ -28,6 +29,11 @@ type Attribute msg
 unattr : Attribute msg -> Html.Attribute msg
 unattr (Attr a) =
     a
+
+
+id : String -> Attribute msg
+id =
+    Attributes.id >> Attr
 
 
 value : String -> Attribute msg

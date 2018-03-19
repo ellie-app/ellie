@@ -99,8 +99,7 @@ compile { root, entry, debug, output } = do
       pure
         [ Compiler.Error
             { tag: "COMPILER ERROR"
-            , overview: ""
-            , details: message
+            , message: message
             , level: "error"
             , region:
                 Compiler.Region

@@ -136,6 +136,12 @@ const initialize = () => {
         this._instance.performLint()
       }
 
+      moveCursor(line, column) {
+        if (!this._instance) return
+        this._instance.focus()
+        this._instance.setCursor({ line: line - 1, ch: column - 1 })
+      }
+
       connectedCallback() {
         if (this._instance) return
         this._instance = CodeMirror(this, {

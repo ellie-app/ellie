@@ -2,16 +2,17 @@ module Pages.Editor.Views.Workbench exposing (..)
 
 import BoundedDeque exposing (BoundedDeque)
 import Css exposing (..)
+import Css.Foreign
 import Data.Jwt as Jwt exposing (Jwt)
-import Ellie.Types.Revision exposing (Revision)
 import Ellie.Ui.Button as Button
 import Ellie.Ui.Icon as Icon
 import Ellie.Ui.TextInput as TextInput
 import Ellie.Ui.Theme as Theme
+import Elm.Compiler.Error as Compiler
 import Html.Styled as Html exposing (Attribute, Html)
 import Html.Styled.Attributes as Attributes exposing (css)
 import Html.Styled.Events as Events
-import Html.Styled.Keyed as Keyed
+import Markdown
 import Pages.Editor.State.Working exposing (ErrorsPane(..), SuccessPane(..), Workbench(..))
 import Pages.Editor.Types.Log as Log exposing (Log)
 import Pages.Editor.Views.Output as Output
@@ -25,6 +26,7 @@ type alias Config msg =
     , onClearLogs : msg
     , onCreateGist : msg
     , onDownloadZip : msg
+    , onGoToLocation : Compiler.Location -> msg
     , onLogSearchChanged : String -> msg
     , onLogReceived : Log -> msg
     , onSelectErrorsPane : ErrorsPane -> msg
@@ -40,7 +42,7 @@ view : Config msg -> Html msg
 view config =
     Html.div
         [ css
-            [ backgroundColor Theme.primaryBackground
+            [ backgroundColor Theme.secondaryBackground
             , width (pct 100)
             , height (pct 100)
             , position relative
@@ -101,12 +103,175 @@ viewContent config =
                     ]
                 ]
 
-        FinishedWithErrors _ ->
-            Html.text ""
+        FinishedWithErrors { errors, pane } ->
+            Html.div
+                [ css
+                    [ displayFlex
+                    , flexDirection column
+                    , height (pct 100)
+                    , width (pct 100)
+                    , position relative
+                    ]
+                ]
+                [ viewErrorsHeader pane config
+                , Html.div
+                    [ css
+                        [ height (pct 100)
+                        , width (pct 100)
+                        , position relative
+                        , displayFlex
+                        ]
+                    ]
+                    [ case pane of
+                        ErrorsList ->
+                            viewErrorsList errors config
+
+                        _ ->
+                            Html.text ""
+                    ]
+                ]
+
+
+viewErrorsHeader : ErrorsPane -> Config msg -> Html msg
+viewErrorsHeader pane config =
+    let
+        actions =
+            [ if config.compiling then
+                { icon = Just Icon.Loading
+                , label = "Compiling..."
+                , disabled = True
+                , action = Button.none
+                }
+              else
+                { icon = Just Icon.Play
+                , label = "Compile"
+                , disabled = False
+                , action = Button.click config.onCompile
+                }
+            ]
+
+        tabs =
+            [ ( config.onSelectErrorsPane ErrorsList, "Errors", pane == ErrorsList )
+            ]
+    in
+    viewHeader config actions tabs
+
+
+viewErrorsList : List Compiler.Error -> Config msg -> Html msg
+viewErrorsList errors config =
+    Html.div
+        [ css
+            [ padding2 zero (px 2)
+            , width (pct 100)
+            ]
+        ]
+        (List.map (viewError config) errors)
+
+
+viewError : Config msg -> Compiler.Error -> Html msg
+viewError config error =
+    Html.div
+        [ css
+            [ padding (px 12)
+            , marginBottom (px 2)
+            , backgroundColor Theme.primaryBackground
+            , color Theme.primaryForeground
+            ]
+        ]
+        [ Html.div
+            [ css
+                [ textTransform capitalize
+                , fontSize (px 14)
+                , fontWeight bold
+                , color Theme.secondaryForeground
+                , marginBottom (px 8)
+                ]
+            ]
+            [ Html.text <| String.toLower error.tag ]
+        , Html.a
+            [ Attributes.href "javascript:void(0)"
+            , css
+                [ color Theme.accent
+                , fontSize (px 14)
+                , marginBottom (px 12)
+                , display inlineBlock
+                ]
+            , Events.onClick <| config.onGoToLocation error.region.start
+            ]
+            [ Html.text <| "Line " ++ toString error.region.start.line ++ ", Column " ++ toString error.region.start.column ]
+        , Html.div
+            [ css
+                [ whiteSpace preWrap
+                , fontSize (px 16)
+                , Css.Foreign.descendants
+                    [ Css.Foreign.code
+                        [ fontWeight bold
+                        , backgroundColor Theme.markdownCodeBackground
+                        , padding (px 4)
+                        , verticalAlign middle
+                        ]
+                    ]
+                ]
+            ]
+            (List.map Html.fromUnstyled <| Markdown.toHtml Nothing error.message)
+        ]
 
 
 viewFinishedHeader : SuccessPane -> Config msg -> Html msg
 viewFinishedHeader pane config =
+    let
+        actions =
+            List.filterMap identity
+                [ if config.compiling then
+                    Just
+                        { icon = Just Icon.Loading
+                        , label = "Compiling..."
+                        , disabled = True
+                        , action = Button.none
+                        }
+                  else
+                    Just
+                        { icon = Just Icon.Play
+                        , label = "Compile"
+                        , disabled = False
+                        , action = Button.click config.onCompile
+                        }
+                , case pane of
+                    SuccessOutput ->
+                        Just
+                            { icon = Just Icon.Reload
+                            , label = "Reload"
+                            , disabled = False
+                            , action = Button.click config.onIframeReload
+                            }
+
+                    SuccessDebug ->
+                        Nothing
+
+                    SuccessLogs ->
+                        Just
+                            { icon = Just Icon.Trash
+                            , label = "Clear"
+                            , disabled = False
+                            , action = Button.click config.onClearLogs
+                            }
+
+                    SuccessShare ->
+                        Nothing
+                ]
+
+        tabs =
+            [ ( config.onSelectSuccessPane SuccessOutput, "Output", pane == SuccessOutput )
+            , ( config.onSelectSuccessPane SuccessDebug, "Debug", pane == SuccessDebug )
+            , ( config.onSelectSuccessPane SuccessLogs, "Logs", pane == SuccessLogs )
+            , ( config.onSelectSuccessPane SuccessShare, "Share", pane == SuccessShare )
+            ]
+    in
+    viewHeader config actions tabs
+
+
+viewHeader : Config msg -> List (Button.Config msg) -> List ( msg, String, Bool ) -> Html msg
+viewHeader config actions tabs =
     Html.div
         [ css
             [ width (pct 100)
@@ -152,51 +317,8 @@ viewFinishedHeader pane config =
                 ]
                 [ Icon.view Icon.Chevron ]
             ]
-        , viewHeaderActions <|
-            List.filterMap identity
-                [ if config.compiling then
-                    Just
-                        { icon = Just Icon.Loading
-                        , label = "Compiling..."
-                        , disabled = True
-                        , action = Button.none
-                        }
-                  else
-                    Just
-                        { icon = Just Icon.Play
-                        , label = "Compile"
-                        , disabled = False
-                        , action = Button.click config.onCompile
-                        }
-                , case pane of
-                    SuccessOutput ->
-                        Just
-                            { icon = Just Icon.Reload
-                            , label = "Reload"
-                            , disabled = False
-                            , action = Button.click config.onIframeReload
-                            }
-
-                    SuccessDebug ->
-                        Nothing
-
-                    SuccessLogs ->
-                        Just
-                            { icon = Just Icon.Trash
-                            , label = "Clear"
-                            , disabled = False
-                            , action = Button.click config.onClearLogs
-                            }
-
-                    SuccessShare ->
-                        Nothing
-                ]
-        , viewHeaderTabs
-            [ ( config.onSelectSuccessPane SuccessOutput, "Output", pane == SuccessOutput )
-            , ( config.onSelectSuccessPane SuccessDebug, "Debug", pane == SuccessDebug )
-            , ( config.onSelectSuccessPane SuccessLogs, "Logs", pane == SuccessLogs )
-            , ( config.onSelectSuccessPane SuccessShare, "Share", pane == SuccessShare )
-            ]
+        , viewHeaderActions actions
+        , viewHeaderTabs tabs
         ]
 
 

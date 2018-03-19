@@ -9,7 +9,6 @@ module Elm.Compiler.Error
 import Prelude
 
 import Data.Either (Either)
-import Data.Maybe (Maybe)
 import Data.Newtype (class Newtype)
 import Data.Json (Json)
 import Data.Json as Json
@@ -61,8 +60,7 @@ encodeRegion (Region { start, end }) =
 newtype Error =
   Error
     { tag ∷ String
-    , overview ∷ String
-    , details ∷ String
+    , message ∷ String
     , region ∷ Region
     , level ∷ String
     }
@@ -71,10 +69,9 @@ derive instance newtypeError ∷ Newtype Error _
 
 decode ∷ Json → Either Json.Error Error
 decode value =
-  { tag: _, overview: _, details: _, region: _, level: _ }
+  { tag: _, message: _, region: _, level: _ }
     <$> Json.decodeAtField "tag" value Json.decodeString
-    <*> Json.decodeAtField "overview" value Json.decodeString
-    <*> Json.decodeAtField "details" value Json.decodeString
+    <*> Json.decodeAtField "message" value Json.decodeString
     <*> (Json.decodeAtField "subregion" value decodeRegion <|> Json.decodeAtField "region" value decodeRegion)
     <*> Json.decodeAtField "type" value Json.decodeString
     <#> Error
@@ -83,8 +80,7 @@ encode ∷ Error → Json
 encode (Error error) =
   Json.encodeObject
     [ { key: "tag", value: Json.encodeString error.tag }
-    , { key: "overview", value: Json.encodeString error.overview }
-    , { key: "details",  value: Json.encodeString error.details }
+    , { key: "message",  value: Json.encodeString error.message }
     , { key: "region", value: encodeRegion error.region }
     , { key: "type",  value: Json.encodeString error.level }
     ]
