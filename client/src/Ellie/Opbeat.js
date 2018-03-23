@@ -7,29 +7,24 @@ if (process.env.NODE_ENV === 'production') {
   })
 }
 
-const start = app => {
-  app.ports.ellieOpbeatOut.subscribe(capture)
-}
-
-const capture = (exception) => {
-  if (process.env.NODE_ENV === 'production') {
-    const extraData = {
-      tag: exception.tag,
-      message: exception.message,
-      line: exception.line,
-      moduleName: exception.moduleName
-    }
-
-    exception.extraData.forEach(([key, value]) => {
-      extraData[key] = value
-    })
-
-    window._opbeat('setExtraContext', extraData)
-    window._opbeat('captureException', Error(extraData.message))
-  }
-}
-
 export default {
-  capture,
-  start
+  start(app) {
+    app.ports.ellieOpbeatOut.subscribe((exception) => {
+      if (process.env.NODE_ENV === 'production') {
+        const extraData = {
+          tag: exception.tag,
+          message: exception.message,
+          line: exception.line,
+          moduleName: exception.moduleName
+        }
+    
+        exception.extraData.forEach(([key, value]) => {
+          extraData[key] = value
+        })
+    
+        window._opbeat('setExtraContext', extraData)
+        window._opbeat('captureException', Error(extraData.message))
+      }
+    })
+  }
 }

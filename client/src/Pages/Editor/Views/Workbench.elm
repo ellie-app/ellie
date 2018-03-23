@@ -6,13 +6,13 @@ import Css.Foreign
 import Data.Jwt as Jwt exposing (Jwt)
 import Ellie.Ui.Button as Button
 import Ellie.Ui.Icon as Icon
+import Ellie.Ui.Markdown as Markdown
 import Ellie.Ui.TextInput as TextInput
 import Ellie.Ui.Theme as Theme
 import Elm.Compiler.Error as Compiler
 import Html.Styled as Html exposing (Attribute, Html)
 import Html.Styled.Attributes as Attributes exposing (css)
 import Html.Styled.Events as Events
-import Markdown
 import Pages.Editor.State.Working exposing (ErrorsPane(..), SuccessPane(..), Workbench(..))
 import Pages.Editor.Types.Log as Log exposing (Log)
 import Pages.Editor.Views.Output as Output
@@ -213,7 +213,7 @@ viewError config error =
                     ]
                 ]
             ]
-            (List.map Html.fromUnstyled <| Markdown.toHtml Nothing error.message)
+            [ Markdown.view error.message ]
         ]
 
 

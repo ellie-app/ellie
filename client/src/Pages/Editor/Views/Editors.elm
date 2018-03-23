@@ -7,7 +7,6 @@ import Ellie.Ui.Menu as Menu
 import Ellie.Ui.SplitPane as SplitPane
 import Ellie.Ui.Theme as Theme
 import Elm.Compiler.Error as Error exposing (Error)
-import Extra.Markdown as Markdown
 import Html.Styled as Html exposing (Attribute, Html)
 import Html.Styled.Attributes as Attributes exposing (css)
 import Html.Styled.Events as Events
@@ -33,7 +32,7 @@ errorToLinterMessage : Error -> CodeEditor.LinterMessage
 errorToLinterMessage error =
     { from = { line = error.region.start.line - 1, column = error.region.start.column - 1 }
     , to = { line = error.region.end.line - 1, column = error.region.end.column - 1 }
-    , message = Markdown.toString error.message
+    , message = error.message
     , severity =
         case error.level of
             "warning" ->

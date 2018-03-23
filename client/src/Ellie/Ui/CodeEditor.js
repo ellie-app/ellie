@@ -34,7 +34,7 @@ const debounce = (func, wait) => {
   }
 }
 
-const initialize = () => {
+const start = (app) => {
   return load().then(CodeMirror => {
     CodeMirror.registerHelper('lint', 'elm', (text, options, instance) => {
       return instance._errors || []
@@ -266,4 +266,4 @@ const initialize = () => {
   })
 }
 
-export default { initialize }
+export default { start }

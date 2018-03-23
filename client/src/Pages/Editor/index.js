@@ -1,86 +1,49 @@
+/**
+ * I want to generate this file eventually. This is roughly how I want it to work:
+ * 1. Crawl the Elm dependency graph for a specified entry point module
+ * 2. Get topological sort of imports, somehow
+ * 2. Iterate each module name and see if there are corresponding auxillary code files
+ *    - JavaScript files can expose `imports`, `flags`, and `start`. The `imports`
+ *      function lets you do async imports so you can take advantage of Webpack's
+ *      code splitting. The `flags` function lets you add values to the flags that
+ *      will be passed to start the app. The `start` function takes the started app
+ *      and does whatever it wants. Maybe it's making a custom element. Maybe it's
+ *      setting up ports. Anything.
+ *    - CSS files just load
+ *    - SVG files load async and inject into the body
+ * 3. Generate the index.js file and call the JavaScript interface functions in
+ *    topological order of module imports.
+ */
+
 import 'es6-promise/auto'
-import './Main.css'
-import '../../Ellie/Ui/SplitPane'
-import '../../Ellie/Ui/Icon'
-import '../../Ellie/Ui/Menu'
-import '../../Ellie/Ui/CopyText'
-import CodeEditor from '../../Ellie/Ui/CodeEditor'
-import OpbeatRunner from '../../Ellie/Opbeat'
-import Outbound from './Effects/Outbound'
-import Inbound from './Effects/Inbound'
+import EllieUiIcon from '../../Ellie/Ui/Icon'
+import EllieUiMenu from '../../Ellie/Ui/Menu'
+import EllieUiCopyText from '../../Ellie/Ui/CopyText'
+import EllieUiSplitPane from '../../Ellie/Ui/SplitPane'
+import EllieUiMarkdown from '../../Ellie/Ui/Markdown'
+import EllieUiCodeEditor from '../../Ellie/Ui/CodeEditor'
+import '../../Ellie/Ui/CodeEditor.css'
+import EffectsOutbound from './Effects/Outbound'
+import EffectsInbound from './Effects/Inbound'
+import ViewsOutput from './Views/Output'
 import './Views/Setup.css'
-import './Views/Output'
+import './Main.css'
+import Main from './Main'
 
+const Elm = require('./Main.elm')
 
-CodeEditor
-  .initialize()
-  .then(() => {
-    const Elm = require('./Main.elm')
+let flags = {}
+flags = Main.flags(flags)
 
-    let hasUnsavedWork = false;
-    let previousLocation = window.location.pathname
-    window.addEventListener('popstate', e => {
-      if (hasUnsavedWork) {
-        const result = window.confirm('You have unsaved work. Are you sure you want to go?')
-        if (!result) {
-          window.history.pushState({}, '', previousLocation)
-          e.preventDefault()
-        }
-      }
-    })
+const app = Elm.Pages.Editor.Main.fullscreen(flags)
 
-    const acceptedTermsVersion = JSON.parse(document.querySelector('meta[name=accepted_terms_version]').content)
-    const latestTermsVersion = JSON.parse(document.querySelector('meta[name=latest_terms_version]').content)
-
-    const app = Elm.Pages.Editor.Main.fullscreen({
-      token: localStorage.getItem('Pages.Editor.token')
-    })
-
-    Inbound.start(app)
-    Outbound.start(app)
-
-    // OpbeatRunner.start(app)
-
-    // app.ports.pathChangedOut.subscribe(() => {
-    //   previousLocation = window.location.pathname
-    // })
-
-    // app.ports.hasUnsavedWork.subscribe(nextValue => {
-    //   hasUnsavedWork = nextValue
-    // })
-
-    // app.ports.reloadIframeOut.subscribe(() => {
-    //   var iframe = document.getElementById('results_iframe')
-    //   if (!iframe) return
-    //   iframe.src = iframe.src
-    // })
-
-    // app.ports.openDebuggerOut.subscribe(() => {
-    //   var iframe = document.getElementById('results_iframe')
-    //   if (!iframe) return
-    //   iframe.contentWindow.postMessage({ type: 'debug' }, API_ORIGIN)
-    // })
-
-    // app.ports.openNewWindow.subscribe(url => {
-    //   var win = window.open(url, '_blank')
-    //   win.focus()
-    // })
-
-    // app.ports.saveVimMode.subscribe(enabled => {
-    //   localStorage.setItem('Pages.Editor.vimMode', enabled)
-    // })
-
-
-    // window.addEventListener('beforeunload', function (e) {
-    //   if (hasUnsavedWork) {
-    //     e.returnValue = 'You have unsaved work. Are you sure you want to go?'
-    //   }
-    // })
-
-    // window.addEventListener('message', function (event) {
-    //   if (event.origin !== SERVER_ORIGIN) return
-    //   if (event.data.type === 'error') {
-    //     app.ports.jsError.send(event.data.message)
-    //   }
-    // })
-  })
+EllieUiIcon.start(app)
+EllieUiMenu.start(app)
+EllieUiCopyText.start(app)
+EllieUiSplitPane.start(app)
+EllieUiMarkdown.start(app)
+EllieUiCodeEditor.start(app)
+EffectsOutbound.start(app)
+EffectsInbound.start(app)
+ViewsOutput.start(app)
+Main.start(app)
