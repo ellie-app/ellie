@@ -29,7 +29,7 @@
         "lukewestby/elm-http-builder": "5.2.0 <= v <= 5.2.0",
         "lukewestby/http-extra": "2.0.0 <= v <= 2.0.0",
         "pablohirafuji/elm-markdown": "2.0.4 <= v <= 2.0.4",
-        "rtfeldman/elm-css": "13.0.1 <= v <= 13.0.1",
+        "rtfeldman/elm-css": "13.1.1 <= v <= 13.1.1",
         "wernerdegroot/listzipper": "3.0.0 <= v <= 3.0.0"
     },
     "elm-version": "0.18.0 <= v < 0.19.0"

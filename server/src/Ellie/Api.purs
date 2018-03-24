@@ -7,12 +7,14 @@ import Control.Monad.Trans.Class (lift)
 import Data.Either (Either(..))
 import Data.Entity (Entity)
 import Data.Entity as Entity
+import Data.Int as Int
 import Data.Json as Json
 import Data.Maybe (Maybe(..))
 import Data.String (Pattern(Pattern))
 import Data.String (stripPrefix) as String
 import Data.TemplateString.Unsafe (template) as String
 import Data.Url as Url
+import Data.Uuid as Uuid
 import Ellie.Domain.Assets (class Assets)
 import Ellie.Domain.Assets as Assets
 import Ellie.Domain.Platform (class Platform)
@@ -28,8 +30,8 @@ import Ellie.Types.Settings as Settings
 import Ellie.Types.TermsVersion as TermsVersion
 import Ellie.Types.User (User(..))
 import Ellie.Types.User as User
-import Elm.Package.Searchable as Searchable
 import Elm.Package as Package
+import Elm.Package.Searchable as Searchable
 import Server.Action (ActionT)
 import Server.Action as Action
 import System.Jwt (Jwt(..))
@@ -57,8 +59,8 @@ getRevision = do
   let
     maybeRevisionId =
       { projectId: _, revisionNumber: _ }
-        <$> projectId
-        <*> revisionNumber
+        <$> (projectId >>= Uuid.base49Decode)
+        <*> (revisionNumber >>= Int.fromString)
         <#> Revision.Id
   case maybeRevisionId of
     Just revisionId → do
@@ -105,6 +107,7 @@ verify = do
     $ Json.encodeObject
         [ { key: "token", value: Json.encodeString token }
         , { key: "user", value: User.entityToBody user }
+        , { key: "latestTerms", value: TermsVersion.toJson TermsVersion.latest }
         ]
 
 
@@ -228,3 +231,17 @@ newUi = do
           <*> (Url.href <$> Assets.assetUrl "images/favicon.ico")
           <*> (Url.href <$> Assets.assetUrl "images/logo.png")
       pure $ String.template htmlTemplate parameters
+
+
+showTerms ∷ ∀ m. Monad m ⇒ Assets m ⇒ ActionT m Unit
+showTerms = do
+  maybePath ← runMaybeT do
+    asString ← MaybeT $ Action.getParam "version"
+    asTermsVersion ← MaybeT $ pure $ TermsVersion.fromString asString
+    MaybeT $ lift $ Assets.termsHtml asTermsVersion
+  case maybePath of
+    Just path → do
+      Action.setStatus 200
+      Action.setFileBody path
+    Nothing →
+      Action.setStatus 404

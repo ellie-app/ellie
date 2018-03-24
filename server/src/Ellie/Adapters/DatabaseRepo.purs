@@ -21,6 +21,7 @@ import Ellie.Types.User as User
 import System.Jwt (Jwt, Secret)
 import System.Jwt as Jwt
 import System.Postgres as Postgres
+import Debug.Trace as Debug
 
 
 type Env r =
@@ -78,6 +79,7 @@ saveUser userId user env =
   IO.liftIO
     $ Postgres.exec env.postgresClient (const (Right unit))
     $ Postgres.invoke "ellie.update_user"
+    $ Debug.spy
     $ User.entityToPostgres
     $ Entity.entity userId user
 

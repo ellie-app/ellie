@@ -117,9 +117,11 @@ instance platformEllieM ∷ (Newtype e a, TypeEquals a (SharedEnv e0)) ⇒ Platf
 
 instance assetsEllieMProdEnv ∷ Assets (EllieM ProdEnv) where
   assetUrl relative = Reader.asks unwrap <#> CdnAssets.assetUrl relative
+  termsHtml = CdnAssets.termsHtml
 
 instance assetsEllieMDevEnv ∷ Assets (EllieM DevEnv) where
   assetUrl relative = Reader.asks unwrap <#> WebpackAssets.assetUrl relative
+  termsHtml = WebpackAssets.termsHtml
 
 
 runEllieM ∷ ∀ r a. r → EllieM r a → IO a

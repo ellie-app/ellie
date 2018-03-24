@@ -1,10 +1,11 @@
-module Pages.Editor.Types.TermsVersion
+module Ellie.Types.TermsVersion
     exposing
         ( TermsVersion
         , compare
         , decoder
         , encoder
         , eq
+        , link
         )
 
 import Data.Url as Url exposing (Url)

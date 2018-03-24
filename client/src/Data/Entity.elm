@@ -4,6 +4,7 @@ module Data.Entity
         , decoder
         , encoder
         , key
+        , map
         , record
         )
 
@@ -39,6 +40,11 @@ key (Entity k _) =
 record : Entity k v -> v
 record (Entity _ v) =
     v
+
+
+map : (a -> b) -> Entity k a -> Entity k b
+map update (Entity k v) =
+    Entity k (update v)
 
 
 decoder : Decoder k -> Decoder v -> Decoder (Entity k v)

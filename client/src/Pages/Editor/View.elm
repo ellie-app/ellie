@@ -27,10 +27,19 @@ view model =
 
         AppState.Setup setupState ->
             case setupState of
-                SetupState.Authenticating _ _ ->
+                SetupState.Authenticating _ ->
                     SetupView.view SetupView.Authenticating
 
-                SetupState.Attaching _ _ _ ->
+                SetupState.AcceptingTerms state ->
+                    { termsVersion = state.latestTerms
+                    , onAccept = SetupState.UserAcceptedTerms
+                    , loading = state.loading
+                    }
+                        |> SetupView.AcceptingTerms
+                        |> SetupView.view
+                        |> Html.map AppState.SetupMsg
+
+                SetupState.Attaching _ ->
                     SetupView.view SetupView.Attaching
 
                 _ ->

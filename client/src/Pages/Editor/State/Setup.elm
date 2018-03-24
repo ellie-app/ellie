@@ -12,6 +12,7 @@ import Data.Entity as Entity exposing (Entity(..))
 import Data.Jwt as Jwt exposing (Jwt)
 import Data.Transition as Transition
 import Ellie.Types.Revision as Revision exposing (Revision)
+import Ellie.Types.TermsVersion as TermsVersion exposing (TermsVersion)
 import Ellie.Types.User as User exposing (User)
 import Elm.Package exposing (Package)
 import Pages.Editor.Effects.Exception as Exception exposing (Exception(..))
@@ -21,9 +22,10 @@ import Pages.Editor.Route as Route exposing (Route(..))
 
 
 type Model
-    = Authenticating (Maybe Jwt) (Maybe Revision.Id)
-    | Attaching Jwt (Entity User.Id User) (Maybe Revision.Id)
-    | Loading Jwt (Entity User.Id User) Revision.Id (List Package)
+    = Authenticating { possibleToken : Maybe Jwt, revisionId : Maybe Revision.Id }
+    | AcceptingTerms { latestTerms : TermsVersion, token : Jwt, user : Entity User.Id User, revisionId : Maybe Revision.Id, loading : Bool }
+    | Attaching { token : Jwt, user : Entity User.Id User, revisionId : Maybe Revision.Id }
+    | Loading { token : Jwt, user : Entity User.Id User, revisionId : Revision.Id, packages : List Package }
     | Failure Exception
 
 
@@ -37,15 +39,17 @@ type alias Transition =
 
 
 init : Maybe Jwt -> Maybe Revision.Id -> ( Model, Outbound Msg )
-init token revisionId =
-    ( Authenticating token revisionId
-    , Outbound.GetUser token UserPrepared
+init possibleToken revisionId =
+    ( Authenticating { possibleToken = possibleToken, revisionId = revisionId }
+    , Outbound.Authenticate possibleToken UserPrepared
     )
 
 
 type Msg
     = RouteChanged Route.Route
-    | UserPrepared Jwt (Entity User.Id User)
+    | UserPrepared TermsVersion Jwt (Entity User.Id User)
+    | UserAcceptedTerms
+    | ServerAcceptedTerms
     | WorkspaceAttached (List Package)
     | RevisionLoaded (Entity Revision.Id Revision)
     | ExceptionOccured Exception
@@ -54,36 +58,56 @@ type Msg
 update : Msg -> Model -> ( Transition, Outbound Msg )
 update msg state =
     case state of
-        Authenticating token revisionId ->
+        Authenticating { possibleToken, revisionId } ->
             case msg of
                 RouteChanged route ->
                     case route of
                         Route.Existing newRevisionId ->
-                            ( Transition.step <| Authenticating token (Just newRevisionId)
+                            ( Transition.step <| Authenticating { possibleToken = possibleToken, revisionId = Just newRevisionId }
                             , Outbound.none
                             )
 
                         Route.New ->
-                            ( Transition.step <| Authenticating token Nothing
+                            ( Transition.step <| Authenticating { possibleToken = possibleToken, revisionId = Nothing }
                             , Outbound.none
                             )
 
                         Route.NotFound ->
                             case revisionId of
                                 Just rid ->
-                                    ( Transition.step <| Authenticating token revisionId
+                                    ( Transition.step <| Authenticating { possibleToken = possibleToken, revisionId = revisionId }
                                     , Outbound.Redirect <| Route.toString <| Route.Existing rid
                                     )
 
                                 Nothing ->
-                                    ( Transition.step <| Authenticating token revisionId
+                                    ( Transition.step <| Authenticating { possibleToken = possibleToken, revisionId = revisionId }
                                     , Outbound.Redirect <| Route.toString Route.New
                                     )
 
-                UserPrepared newToken user ->
-                    ( Transition.step <| Attaching newToken user revisionId
-                    , Outbound.SaveToken newToken
-                    )
+                UserPrepared termsVersion newToken user ->
+                    let
+                        termsVersionMatched =
+                            user
+                                |> Entity.record
+                                |> .termsVersion
+                                |> Maybe.map (TermsVersion.eq termsVersion)
+                                |> Maybe.withDefault False
+                    in
+                    if termsVersionMatched then
+                        ( Transition.step <| Attaching { token = newToken, user = user, revisionId = revisionId }
+                        , Outbound.SaveToken newToken
+                        )
+                    else
+                        ( { latestTerms = termsVersion
+                          , token = newToken
+                          , user = user
+                          , revisionId = revisionId
+                          , loading = False
+                          }
+                            |> AcceptingTerms
+                            |> Transition.step
+                        , Outbound.SaveToken newToken
+                        )
 
                 ExceptionOccured exception ->
                     ( Transition.step <| Failure exception
@@ -91,41 +115,93 @@ update msg state =
                     )
 
                 _ ->
-                    ( Transition.step <| Authenticating token revisionId
+                    ( Transition.step <| Authenticating { possibleToken = possibleToken, revisionId = revisionId }
                     , Outbound.none
                     )
 
-        Attaching token user revisionId ->
+        AcceptingTerms state ->
             case msg of
                 RouteChanged route ->
                     case route of
                         Route.Existing newRevisionId ->
-                            ( Transition.step <| Attaching token user (Just newRevisionId)
+                            ( { state | revisionId = Just newRevisionId }
+                                |> AcceptingTerms
+                                |> Transition.step
                             , Outbound.none
                             )
 
                         Route.New ->
-                            ( Transition.step <| Attaching token user Nothing
+                            ( { state | revisionId = Nothing }
+                                |> AcceptingTerms
+                                |> Transition.step
+                            , Outbound.none
+                            )
+
+                        Route.NotFound ->
+                            ( { state | revisionId = Nothing }
+                                |> AcceptingTerms
+                                |> Transition.step
+                            , case state.revisionId of
+                                Just rid ->
+                                    Outbound.Redirect <| Route.toString <| Route.Existing rid
+
+                                Nothing ->
+                                    Outbound.Redirect <| Route.toString Route.New
+                            )
+
+                UserAcceptedTerms ->
+                    ( { state | loading = True }
+                        |> AcceptingTerms
+                        |> Transition.step
+                    , Outbound.AcceptTerms state.token state.latestTerms ServerAcceptedTerms
+                    )
+
+                ServerAcceptedTerms ->
+                    ( { token = state.token
+                      , revisionId = state.revisionId
+                      , user = Entity.map (\u -> { u | termsVersion = Just state.latestTerms }) state.user
+                      }
+                        |> Attaching
+                        |> Transition.step
+                    , Outbound.none
+                    )
+
+                _ ->
+                    ( Transition.step <| AcceptingTerms state
+                    , Outbound.none
+                    )
+
+        Attaching { token, user, revisionId } ->
+            case msg of
+                RouteChanged route ->
+                    case route of
+                        Route.Existing newRevisionId ->
+                            ( Transition.step <| Attaching { token = token, user = user, revisionId = Just newRevisionId }
+                            , Outbound.none
+                            )
+
+                        Route.New ->
+                            ( Transition.step <| Attaching { token = token, user = user, revisionId = Nothing }
                             , Outbound.none
                             )
 
                         Route.NotFound ->
                             case revisionId of
                                 Just rid ->
-                                    ( Transition.step <| Attaching token user (Just rid)
+                                    ( Transition.step <| Attaching { token = token, user = user, revisionId = Just rid }
                                     , Outbound.Redirect <| Route.toString <| Route.Existing rid
                                     )
 
                                 Nothing ->
-                                    ( Transition.step <| Attaching token user Nothing
+                                    ( Transition.step <| Attaching { token = token, user = user, revisionId = Nothing }
                                     , Outbound.Redirect <| Route.toString Route.New
                                     )
 
                 WorkspaceAttached packages ->
                     case revisionId of
-                        Just rid ->
-                            ( Transition.step <| Loading token user rid packages
-                            , Outbound.GetRevision rid RevisionLoaded
+                        Just revisionId ->
+                            ( Transition.step <| Loading { token = token, user = user, revisionId = revisionId, packages = packages }
+                            , Outbound.GetRevision revisionId RevisionLoaded
                             )
 
                         Nothing ->
@@ -139,19 +215,21 @@ update msg state =
                     )
 
                 _ ->
-                    ( Transition.step <| Attaching token user revisionId, Outbound.none )
+                    ( Transition.step <| Attaching { token = token, user = user, revisionId = revisionId }
+                    , Outbound.none
+                    )
 
-        Loading token user revisionId packages ->
+        Loading { token, user, revisionId, packages } ->
             case msg of
                 RouteChanged route ->
                     case route of
                         Route.Existing newRevisionId ->
                             if newRevisionId == revisionId then
-                                ( Transition.step <| Loading token user revisionId packages
+                                ( Transition.step <| Loading { token = token, user = user, revisionId = revisionId, packages = packages }
                                 , Outbound.none
                                 )
                             else
-                                ( Transition.step <| Loading token user newRevisionId packages
+                                ( Transition.step <| Loading { token = token, user = user, revisionId = newRevisionId, packages = packages }
                                 , Outbound.GetRevision revisionId RevisionLoaded
                                 )
 
@@ -161,7 +239,7 @@ update msg state =
                             )
 
                         Route.NotFound ->
-                            ( Transition.step <| Loading token user revisionId packages
+                            ( Transition.step <| Loading { token = token, user = user, revisionId = revisionId, packages = packages }
                             , Outbound.Redirect <| Route.toString <| Route.Existing revisionId
                             )
 
@@ -176,7 +254,7 @@ update msg state =
                     )
 
                 _ ->
-                    ( Transition.step <| Loading token user revisionId packages
+                    ( Transition.step <| Loading { token = token, user = user, revisionId = revisionId, packages = packages }
                     , Outbound.none
                     )
 
@@ -187,10 +265,10 @@ update msg state =
 subscriptions : Model -> Inbound Msg
 subscriptions model =
     case model of
-        Attaching token _ _ ->
+        Attaching { token } ->
             Inbound.WorkspaceAttached token WorkspaceAttached
 
-        Loading token _ _ _ ->
+        Loading { token } ->
             Inbound.KeepWorkspaceOpen token
 
         _ ->

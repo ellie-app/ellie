@@ -21,7 +21,8 @@
     "purescript-control": "3.3.1",
     "purescript-sets": "3.1.0",
     "purescript-random": "3.0.0",
-    "purescript-template-strings": "4.0.0"
+    "purescript-template-strings": "4.0.0",
+    "purescript-debug": "^3.0.0"
   },
   "devDependencies": {
     "purescript-psci-support": "3.0.0"

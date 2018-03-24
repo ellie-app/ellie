@@ -4,24 +4,29 @@ module Pages.Editor.Views.Setup
         , view
         )
 
-import Colors
 import Css exposing (..)
-import Html.Styled exposing (Html, div, text)
-import Html.Styled.Attributes exposing (css)
+import Data.Url as Url
+import Ellie.Types.TermsVersion as TermsVersion exposing (TermsVersion)
+import Ellie.Ui.Button as Button
+import Ellie.Ui.Icon as Icon
+import Ellie.Ui.Theme as Theme
+import Html.Styled as Html exposing (Html)
+import Html.Styled.Attributes as Attributes exposing (css)
 import Svg.Styled as Svg
 import Svg.Styled.Attributes as SvgAttributes
 
 
-type Stage
+type Stage msg
     = Authenticating
     | Attaching
+    | AcceptingTerms { termsVersion : TermsVersion, onAccept : msg, loading : Bool }
     | Loading
     | Opening
 
 
-view : Stage -> Html msg
+view : Stage msg -> Html msg
 view loadingStage =
-    div
+    Html.div
         [ css
             [ displayFlex
             , alignItems center
@@ -31,8 +36,64 @@ view loadingStage =
             , position relative
             ]
         ]
-        [ logo
+    <|
+        case loadingStage of
+            AcceptingTerms state ->
+                terms state
+
+            _ ->
+                [ logo ]
+
+
+terms : { termsVersion : TermsVersion, onAccept : msg, loading : Bool } -> List (Html msg)
+terms state =
+    [ Html.styled Html.div
+        [ padding (px 16)
+        , color Theme.primaryForeground
+        , fontSize (px 18)
+        , textAlign center
         ]
+        []
+        [ Html.text "Please accept Ellie's "
+        , Html.styled Html.a
+            [ color Theme.accent ]
+            [ Attributes.href <| Url.toString <| TermsVersion.link state.termsVersion
+            , Attributes.target "_blank"
+            ]
+            [ Html.text "Terms of Service" ]
+        , Html.text " to continue."
+        ]
+    , Html.styled Html.div
+        [ width (px 532)
+        , maxWidth (pct 100)
+        , position relative
+        , padding (px 16)
+        ]
+        []
+        [ Html.styled Html.iframe
+            [ border zero
+            , backgroundColor (hex "#fff")
+            , width (pct 100)
+            , position relative
+            , height (px 400)
+            ]
+            [ Attributes.src "/a/terms/1"
+            ]
+            []
+        ]
+    , Html.div []
+        [ Button.view
+            { icon =
+                if state.loading then
+                    Just Icon.Loading
+                else
+                    Just Icon.Success
+            , label = "Accept Terms"
+            , disabled = False
+            , action = Button.click state.onAccept
+            }
+        ]
+    ]
 
 
 logo : Html msg

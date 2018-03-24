@@ -46,6 +46,7 @@ routes makeHandler = do
   Express.useExternal jsonBodyParser
   Express.get  "/"                                                $ makeHandler Api.newUi
   Express.get  "/new"                                             $ makeHandler Api.newUi
+  Express.get  "/a/terms/:version"                                $ makeHandler Api.showTerms
   Express.get  "/private-api/revision/:projectId/:revisionNumber" $ makeHandler Api.getRevision
   Express.get  "/private-api/packages/search"                     $ makeHandler Api.searchPackages
   Express.get  "/private-api/workspace/result/:format"            $ makeHandler Api.result

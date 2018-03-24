@@ -122,7 +122,7 @@ fromPostgres value =
 toPostgres ∷ User → Array Json.KeyValue
 toPostgres (User user) =
   [ { key: "settings", value: Settings.toPostgres user.settings }
-  , { key: "termsVersion", value: Json.encodeNullable TermsVersion.toJson user.termsVersion }
+  , { key: "terms_version", value: Json.encodeNullable TermsVersion.toJson user.termsVersion }
   ]
 
 

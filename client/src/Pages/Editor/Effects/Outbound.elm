@@ -15,6 +15,7 @@ import Debounce
 import Ellie.Constants as Constants
 import Ellie.Types.Revision as Revision exposing (Revision)
 import Ellie.Types.Settings as Settings exposing (Settings)
+import Ellie.Types.TermsVersion as TermsVersion exposing (TermsVersion)
 import Ellie.Types.User as User exposing (User)
 import Elm.Compiler.Error as Compiler
 import Elm.Package as Package exposing (Package)
@@ -50,7 +51,8 @@ type alias HtmlSource =
 
 type Outbound msg
     = GetRevision Revision.Id (Entity Revision.Id Revision -> msg)
-    | GetUser (Maybe Jwt) (Jwt -> Entity User.Id User -> msg)
+    | Authenticate (Maybe Jwt) (TermsVersion -> Jwt -> Entity User.Id User -> msg)
+    | AcceptTerms Jwt TermsVersion msg
     | SaveSettings Jwt Settings
     | SaveToken Jwt
     | FormatElmCode String (String -> msg)
@@ -203,13 +205,23 @@ send onError effect state =
                 |> pagesEditorEffectsOutbound
             )
 
-        GetUser maybeToken callback ->
+        Authenticate maybeToken callback ->
             ( state
             , post "/private-api/me/verify"
                 |> withHeader "Accept" "application/json"
                 |> withMaybe withBearerToken (Maybe.map Jwt.toString maybeToken)
                 |> withExpect (Http.expectJson getUserDecoder)
-                |> HttpBuilder.send (Result.mapError Exception.fromHttp >> Result.fold (uncurry callback) onError)
+                |> HttpBuilder.send (Result.mapError Exception.fromHttp >> Result.fold (\( a, b, c ) -> callback a b c) onError)
+                |> Cmd.map UserMsg
+            )
+
+        AcceptTerms token termsVersion msg ->
+            ( state
+            , post "/private-api/me/terms"
+                |> withBearerToken (Jwt.toString token)
+                |> withJsonBody (Encode.object [ ( "termsVersion", TermsVersion.encoder termsVersion ) ])
+                |> withExpect Http.expectNoContent
+                |> HttpBuilder.send (Result.mapError Exception.fromHttp >> Result.fold (\_ -> msg) onError)
                 |> Cmd.map UserMsg
             )
 
@@ -274,9 +286,10 @@ send onError effect state =
             ( state, Cmd.none )
 
 
-getUserDecoder : Decoder ( Jwt, Entity User.Id User )
+getUserDecoder : Decoder ( TermsVersion, Jwt, Entity User.Id User )
 getUserDecoder =
-    Decode.map2 (,)
+    Decode.map3 (,,)
+        (Decode.field "latestTerms" TermsVersion.decoder)
         (Decode.field "token" Jwt.decoder)
         (Decode.field "user" (Entity.decoder Decode.string User.decoder))
 
@@ -432,8 +445,11 @@ map f outbound =
         GetRevision id callback ->
             GetRevision id (callback >> f)
 
-        GetUser maybeToken callback ->
-            GetUser maybeToken <| \a b -> f (callback a b)
+        Authenticate maybeToken callback ->
+            Authenticate maybeToken <| \a b c -> f (callback a b c)
+
+        AcceptTerms token termsVersion msg ->
+            AcceptTerms token termsVersion <| f msg
 
         FormatElmCode input callback ->
             FormatElmCode input (callback >> f)

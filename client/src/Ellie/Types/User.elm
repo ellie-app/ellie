@@ -6,6 +6,7 @@ module Ellie.Types.User
         )
 
 import Ellie.Types.Settings as Settings exposing (Settings)
+import Ellie.Types.TermsVersion as TermsVersion exposing (TermsVersion)
 import Json.Decode as Decode exposing (Decoder)
 import Json.Decode.Pipeline as Decode
 
@@ -15,7 +16,7 @@ type alias Id =
 
 
 type alias User =
-    { latestTermsVersion : Maybe Int
+    { termsVersion : Maybe TermsVersion
     , settings : Settings
     }
 
@@ -23,5 +24,5 @@ type alias User =
 decoder : Decoder User
 decoder =
     Decode.decode User
-        |> Decode.optional "acceptedTerms" (Decode.map Just Decode.int) Nothing
+        |> Decode.optional "termsVersion" (Decode.map Just TermsVersion.decoder) Nothing
         |> Decode.required "settings" Settings.decoder

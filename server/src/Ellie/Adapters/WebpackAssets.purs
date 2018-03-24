@@ -1,9 +1,17 @@
 module Ellie.Adapters.WebpackAssets where
 
 import Prelude
-import Data.FilePath (FilePath, (</>))
+
+import Control.Monad.IO.Class (class MonadIO)
+import Control.Monad.IO.Class as IO
+import Data.FilePath (FilePath, (<.>), (</>))
+import Data.Maybe (Maybe(..))
 import Data.Url (Url)
 import Data.Url as Url
+import Ellie.Types.TermsVersion (TermsVersion)
+import Ellie.Types.TermsVersion as TermsVersion
+import System.FileSystem as FileSystem
+
 
 type Env r =
   { webpackHost ∷ String
@@ -15,3 +23,12 @@ type Env r =
 assetUrl ∷ ∀ r. FilePath → Env r → Url
 assetUrl relative env =
   Url.parse $ "http://" <> env.webpackHost </> env.assetBase </> relative
+
+
+termsHtml ∷ ∀ m. MonadIO m ⇒ TermsVersion → m (Maybe FilePath)
+termsHtml termsVersion = IO.liftIO do
+  if termsVersion > TermsVersion.latest || termsVersion < TermsVersion.first
+    then pure Nothing
+    else do
+      cwd ← FileSystem.cwd
+      pure $ Just $ cwd </> "static/terms" </> show termsVersion <.> "html"

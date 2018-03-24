@@ -1,8 +1,6 @@
 module Server.Action
   ( ActionT
   , Method(..)
-  , class IsParam
-  , fromParam
   , makeHandler
   , setStatus
   , setHeader
@@ -27,7 +25,6 @@ import Control.Monad.Trans.Class (class MonadTrans, lift)
 import Data.Array ((:))
 import Data.FilePath (FilePath)
 import Data.Foldable (for_)
-import Data.Int as Int
 import Data.Json (Json)
 import Data.Maybe (Maybe(..))
 import Data.Newtype (class Newtype, unwrap)
@@ -37,8 +34,6 @@ import Data.String as String
 import Data.Url (Url)
 import Data.Url as Url
 import Data.Url.Query as Query
-import Data.Uuid (Uuid)
-import Data.Uuid as Uuid
 import Node.Express.Handler (Handler, HandlerM(..))
 import Node.Express.Response as Response
 import Node.Express.Types as Express
@@ -138,20 +133,6 @@ makeHandler runner (ActionT action) = do
     ContentEmpty → Response.end
     ContentString str → Response.send str
     ContentFile path → Response.sendFileExt path {} (\_ → pure unit)
-  
-
-
-class IsParam a where
-  fromParam ∷ String → Maybe a
-
-instance isParamString ∷ IsParam String where
-  fromParam = Just
-
-instance isParamInt ∷ IsParam Int where
-  fromParam = Int.fromString
-
-instance isParamUuid ∷ IsParam Uuid where
-  fromParam = Uuid.base49Decode
 
 
 getHeader ∷ ∀ m. Monad m ⇒ String → ActionT m (Maybe String)
@@ -160,13 +141,13 @@ getHeader key =
     StrMap.lookup (String.toLower key) request.headers
 
 
-getParam ∷ ∀ m a. IsParam a ⇒ Monad m ⇒ String → ActionT m (Maybe a)
+getParam ∷ ∀ m a. Monad m ⇒ String → ActionT m (Maybe String)
 getParam key =
   ActionT $ Reader.asks \request →
-    let inParams = StrMap.lookup key request.params >>= fromParam
+    let inParams = StrMap.lookup key request.params
     in case inParams of
       Just value → Just value
-      Nothing → Query.get key (Url.query request.url) >>= fromParam
+      Nothing → Query.get key (Url.query request.url)
 
 
 getBody ∷ ∀ m. Monad m ⇒ ActionT m Json
