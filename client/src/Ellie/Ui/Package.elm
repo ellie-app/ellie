@@ -6,7 +6,7 @@ import Ellie.Ui.Button as Button
 import Ellie.Ui.Icon as Icon
 import Ellie.Ui.Package.Styles as Styles
 import Html exposing (Html, div, img, text)
-import Html.Attributes exposing (src)
+import Html.Attributes exposing (src, title)
 
 
 type Action msg
@@ -38,7 +38,11 @@ view config =
     in
     div [ Styles.container ]
         [ div [ Styles.details ]
-            [ div [ Styles.project ] [ text name.project ]
+            [ div
+                [ Styles.project
+                , title name.project
+                ]
+                [ text name.project ]
             , div [ Styles.detailsLine ]
                 [ div [ Styles.infoIcon ] [ Icon.view Icon.Tag ]
                 , div [ Styles.infoText ] [ text <| Version.toString version ]
