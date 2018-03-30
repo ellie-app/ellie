@@ -1,6 +1,8 @@
 module Ellie.Types.Revision
-  ( Id(..)
-  , ProjectId
+  ( ProjectId
+  , projectIdToPostgres
+  , projectIdFromString
+  , Id(..)
   , idToString
   , idFromPostgres
   , idToPostgres
@@ -29,19 +31,56 @@ import Data.Newtype (class Newtype)
 import Data.String.Class (toString) as String
 import Data.Uuid (Uuid)
 import Data.Uuid as Uuid
+import Debug.Trace as Debug
 import Ellie.Types.TermsVersion (TermsVersion)
 import Ellie.Types.TermsVersion as TermsVersion
+import Ellie.Types.User as User
 import Elm.Package (Package)
 import Elm.Package as Package
 import Elm.Version (Version)
 import Elm.Version as Version
 
 
+-- PROJECT ID
+
+
+newtype ProjectId =
+  ProjectId Uuid
+
+derive instance newtypeProjectId ∷ Newtype ProjectId _
+
+projectIdFromString ∷ String → Maybe ProjectId
+projectIdFromString input =
+  ProjectId <$> Uuid.base49Decode input
+
+
+projectIdToBody ∷ ProjectId → Json
+projectIdToBody (ProjectId uuid) =
+  Json.encodeString $ Uuid.base49Encode uuid
+
+
+projectIdFromBody ∷ Json → Either Json.Error ProjectId
+projectIdFromBody value =
+  Json.decodeString value >>= \string →
+    case Uuid.base49Decode string of
+      Just uuid → Right (ProjectId uuid)
+      Nothing → Left (Json.Failure "Expecting a UUID" value)
+
+
+projectIdToPostgres ∷ ProjectId → Json
+projectIdToPostgres (ProjectId uuid) =
+  Json.encodeString $ Uuid.toString uuid
+
+
+projectIdFromPostgres ∷ Json → Either Json.Error ProjectId
+projectIdFromPostgres value =
+  Json.decodeString value >>= \string →
+    case Uuid.fromString string of
+      Just uuid → Right (ProjectId uuid)
+      Nothing → Left (Json.Failure "Expecting a UUID" value)
+
+
 -- ID
-
-
-type ProjectId =
-  Uuid
 
 newtype Id =
   Id { projectId ∷ ProjectId, revisionNumber ∷ Int }
@@ -50,28 +89,21 @@ derive instance newtypeId ∷ Newtype Id _
 
 
 idToString ∷ Id → String
-idToString (Id { projectId, revisionNumber }) =
+idToString (Id { projectId: (ProjectId projectId), revisionNumber }) =
     Uuid.base49Encode projectId <> "/" <> String.toString revisionNumber
 
 
 idFromPostgres ∷ Json → Either Json.Error Id
 idFromPostgres value =
   { projectId: _, revisionNumber: _ }
-    <$> Json.decodeAtField "project_id" value decodeUuid
+    <$> Json.decodeAtField "project_id" value projectIdFromPostgres
     <*> Json.decodeAtField "revision_number" value Json.decodeInt
     <#> Id
-  where
-    decodeUuid ∷ Json → Either Json.Error Uuid
-    decodeUuid value =
-      Json.decodeString value >>= \string →
-        case Uuid.fromString string of
-          Just uuid → Right uuid
-          Nothing → Left (Json.Failure "Expecting a UUID" value)
 
 
 idToPostgres ∷ Id → Array Json.KeyValue
 idToPostgres (Id { projectId, revisionNumber }) =
-  [ { key: "project_id", value: Json.encodeString $ Uuid.toString projectId }
+  [ { key: "project_id", value: projectIdToPostgres projectId }
   , { key: "revision_number", value: Json.encodeInt revisionNumber }
   ]
 
@@ -79,14 +111,14 @@ idToPostgres (Id { projectId, revisionNumber }) =
 idToBody ∷ Id → Json
 idToBody (Id {projectId, revisionNumber }) =
     Json.encodeObject
-      [ { key: "projectId", value: Json.encodeString $ Uuid.base49Encode projectId }
+      [ { key: "projectId", value: projectIdToBody projectId }
       , { key: "revisionNumber", value: Json.encodeInt revisionNumber }
       ]
 
 idFromBody ∷ Json → Either Json.Error Id
 idFromBody value =
   { projectId: _, revisionNumber: _ }
-    <$> Json.decodeAtField "projectId" value decodeUuid
+    <$> Json.decodeAtField "projectId" value projectIdFromBody
     <*> Json.decodeAtField "revisionNumber" value Json.decodeInt
     <#> Id
   where
@@ -109,6 +141,7 @@ newtype Revision =
     , title ∷ String
     , elmVersion ∷ Version
     , acceptedTerms ∷ Maybe TermsVersion
+    , userId ∷ Maybe User.Id
     }
 
 derive instance newtypeRevision ∷ Newtype Revision _
@@ -116,13 +149,14 @@ derive instance newtypeRevision ∷ Newtype Revision _
 
 fromPostgres ∷ Json → Either Json.Error Revision
 fromPostgres value =
-  { htmlCode: _, elmCode: _, packages: _, title: _,  elmVersion: _, acceptedTerms: _ }
+  { htmlCode: _, elmCode: _, packages: _, title: _,  elmVersion: _, acceptedTerms: _, userId: _ }
     <$> Json.decodeAtField "html_code" value Json.decodeString
     <*> Json.decodeAtField "elm_code" value Json.decodeString
     <*> Json.decodeAtField "packages" value (Json.decodeArray Package.fromPostgres)
     <*> Json.decodeAtField "title" value Json.decodeString
     <*> Json.decodeAtField "elm_version" value Version.fromPostgres
     <*> Json.decodeAtField "terms_version" value (Json.decodeNullable TermsVersion.fromJson)
+    <*> Json.decodeAtField "user_id" value (Json.decodeNullable User.idFromPostgresValue)
     <#> Revision
 
 
@@ -134,6 +168,7 @@ toPostgres (Revision r) =
     , { key: "title", value: Json.encodeString r.title }
     , { key: "elm_version", value: Version.toPostgres r.elmVersion }
     , { key: "terms_version", value: Json.encodeNullable TermsVersion.toJson r.acceptedTerms }
+    , { key: "user_id", value: Json.encodeNullable User.idToPostgresValue r.userId }
     ]
 
 
@@ -146,18 +181,20 @@ toBody (Revision r) =
     , { key: "title", value: Json.encodeString r.title }
     , { key: "elmVersion", value: Version.toBody r.elmVersion }
     , { key: "termsVersion", value: Json.encodeNullable TermsVersion.toJson r.acceptedTerms }
+    , { key: "userId", value: Json.encodeNullable User.idToBody r.userId }
     ]
 
 
 fromBody ∷ Json → Either Json.Error Revision
 fromBody value =
-  { htmlCode: _, elmCode: _, packages: _, title: _,  elmVersion: _, acceptedTerms: _ }
+  { htmlCode: _, elmCode: _, packages: _, title: _,  elmVersion: _, acceptedTerms: _, userId: _ }
     <$> Json.decodeAtField "htmlCode" value Json.decodeString
     <*> Json.decodeAtField "elmCode" value Json.decodeString
     <*> Json.decodeAtField "packages" value (Json.decodeArray Package.fromBody)
     <*> Json.decodeAtField "title" value Json.decodeString
     <*> Json.decodeAtField "elmVersion" value Version.fromBody
     <*> Json.decodeAtField "termsVersion" value (Json.decodeNullable TermsVersion.fromJson)
+    <*> Json.decodeAtField "userId" value (Json.decodeNullable User.idFromBody)
     <#> Revision
 
 

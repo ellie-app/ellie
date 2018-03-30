@@ -8,12 +8,15 @@ module Ellie.Types.Revision
         , idDecoder
         , idEncoder
         , idEq
+        , link
         )
 
-import Data.Elm.Compiler.Error as CompilerError
-import Data.Elm.Package as Package exposing (Package)
-import Data.Elm.Package.Version as Version exposing (Version)
+import Data.Url as Url exposing (Url)
 import Ellie.Types.TermsVersion as TermsVersion exposing (TermsVersion)
+import Ellie.Types.User as User
+import Elm.Package as Package exposing (Package)
+import Elm.Version as Version exposing (Version)
+import Extra.Json.Encode as Encode
 import Json.Decode as Decode exposing (Decoder)
 import Json.Decode.Pipeline as Decode
 import Json.Encode as Encode exposing (Value)
@@ -27,10 +30,8 @@ type alias Id =
 
 idEq : Id -> Id -> Bool
 idEq left right =
-    left.projectId
-        == right.projectId
-        && left.revisionNumber
-        == right.revisionNumber
+    (left.projectId == right.projectId)
+        && (left.revisionNumber == right.revisionNumber)
 
 
 idEncoder : Id -> Value
@@ -48,6 +49,11 @@ idDecoder =
         |> Decode.required "revisionNumber" Decode.int
 
 
+link : Id -> Url
+link { projectId, revisionNumber } =
+    Url.fromString <| "http://localhost:1337/" ++ projectId ++ "/" ++ toString revisionNumber
+
+
 type alias Revision =
     { htmlCode : String
     , elmCode : String
@@ -55,6 +61,7 @@ type alias Revision =
     , title : String
     , elmVersion : Version
     , termsVersion : TermsVersion
+    , userId : Maybe User.Id
     }
 
 
@@ -66,6 +73,7 @@ empty =
     , title = ""
     , elmVersion = Version 0 19 0
     , termsVersion = TermsVersion.zero
+    , userId = Nothing
     }
 
 
@@ -78,6 +86,7 @@ encoder revision =
         , ( "title", Encode.string revision.title )
         , ( "elmVersion", Version.encoder revision.elmVersion )
         , ( "termsVersion", TermsVersion.encoder revision.termsVersion )
+        , ( "userId", Encode.maybeNull User.idEncoder revision.userId )
         ]
 
 
@@ -90,3 +99,4 @@ decoder =
         |> Decode.required "title" Decode.string
         |> Decode.required "elmVersion" Version.decoder
         |> Decode.required "termsVersion" TermsVersion.decoder
+        |> Decode.required "userId" (Decode.nullable User.idDecoder)

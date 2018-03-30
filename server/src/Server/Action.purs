@@ -1,6 +1,7 @@
 module Server.Action
   ( ActionT
   , Method(..)
+  , Failure(..)
   , makeHandler
   , setStatus
   , setHeader
@@ -16,6 +17,9 @@ import Prelude
 
 import Control.Monad.Aff.Class (liftAff) as Aff
 import Control.Monad.Aff.Unsafe (unsafeCoerceAff) as Aff
+import Control.Monad.Error.Class (class MonadThrow, throwError)
+import Control.Monad.Except (ExceptT)
+import Control.Monad.Except as Except
 import Control.Monad.IO (IO)
 import Control.Monad.Reader (ReaderT)
 import Control.Monad.Reader as Reader
@@ -23,6 +27,7 @@ import Control.Monad.State (StateT)
 import Control.Monad.State as State
 import Control.Monad.Trans.Class (class MonadTrans, lift)
 import Data.Array ((:))
+import Data.Either (Either(..))
 import Data.FilePath (FilePath)
 import Data.Foldable (for_)
 import Data.Json (Json)
@@ -54,6 +59,13 @@ parseMethod "POST" = Post
 parseMethod "PATCH" = Patch
 parseMethod "DELETE" = Delete
 parseMethod a = Custom a
+
+
+data Failure
+  = Unauthorized
+  | Forbidden
+  | NotFound
+  | BadRequest
 
 
 data Method
@@ -97,7 +109,7 @@ defaultResponse =
 
 
 newtype ActionT m a =
-  ActionT (ReaderT Request (StateT Response m) a)
+  ActionT (ReaderT Request (StateT Response (ExceptT Failure m)) a)
 
 derive instance newtypeActionT ∷ Newtype (ActionT m a) _
 derive newtype instance functorActionT ∷ Monad m ⇒ Functor (ActionT m)
@@ -105,14 +117,23 @@ derive newtype instance applyActionT ∷ Monad m ⇒ Apply (ActionT m)
 derive newtype instance bindActionT ∷ Monad m ⇒ Bind (ActionT m)
 derive newtype instance applicativeActionT ∷ Monad m ⇒ Applicative (ActionT m)
 derive newtype instance monadActionT ∷ Monad m ⇒ Monad (ActionT m)
+derive newtype instance monadThrowActionT ∷ Monad m ⇒ MonadThrow Failure (ActionT m)
 
 instance monadTransActionT ∷ MonadTrans ActionT where
-  lift = lift >>> lift >>> ActionT
+  lift = lift >>> lift >>> lift >>> ActionT
 
 
 getRequest ∷ ∀ e. HandlerM e Request
 getRequest = HandlerM \req _ _ →
   pure $ _parseRequest { parseMethod, parseUrl: Url.parse } req
+
+
+handleFailure ∷ Either Failure Response → Response
+handleFailure (Left BadRequest) = defaultResponse { status = 400 }
+handleFailure (Left Unauthorized) = defaultResponse { status = 401 }
+handleFailure (Left Forbidden) = defaultResponse { status = 403 }
+handleFailure (Left NotFound) = defaultResponse { status = 404 }
+handleFailure (Right response) = response
 
 
 makeHandler ∷ ∀ m e. Monad m ⇒ (m ~> IO) → ActionT m Unit → Handler e
@@ -122,6 +143,7 @@ makeHandler runner (ActionT action) = do
     action
       # flip Reader.runReaderT request
       # flip State.execStateT defaultResponse
+      # (Except.runExceptT >>> map handleFailure)
       # runner
       # unwrap
       # Aff.unsafeCoerceAff
@@ -141,13 +163,18 @@ getHeader key =
     StrMap.lookup (String.toLower key) request.headers
 
 
-getParam ∷ ∀ m a. Monad m ⇒ String → ActionT m (Maybe String)
+getParam ∷ ∀ m a. Monad m ⇒ String → ActionT m String
 getParam key =
-  ActionT $ Reader.asks \request →
-    let inParams = StrMap.lookup key request.params
-    in case inParams of
-      Just value → Just value
-      Nothing → Query.get key (Url.query request.url)
+  lookup >>= case _ of
+    Just param → pure param
+    Nothing → throwError BadRequest
+  where
+    lookup =
+      ActionT $ Reader.asks \request →
+        let inParams = StrMap.lookup key request.params
+        in case inParams of
+          Just value → Just value
+          Nothing → Query.get key (Url.query request.url)
 
 
 getBody ∷ ∀ m. Monad m ⇒ ActionT m Json

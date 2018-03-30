@@ -3,6 +3,7 @@ module Pages.Editor.Views.Working exposing (view)
 import Colors
 import Css exposing (..)
 import Css.Foreign
+import Data.Entity as Entity
 import Ellie.Ui.Button as Button
 import Ellie.Ui.Icon as Icon
 import Ellie.Ui.SplitPane as SplitPane
@@ -138,7 +139,7 @@ viewActions model =
                     ActionsState.Settings ->
                         SettingsView.view
                             { onSettingsChange = WorkingState.SettingsChanged
-                            , settings = model.user.settings
+                            , settings = model.user |> Entity.record |> .settings
                             , onProjectNameChange = WorkingState.ChangedProjectName
                             , projectName = model.projectName
                             }
@@ -165,7 +166,6 @@ viewWorkspace model =
                 , onResize = WorkingState.EditorsResized
                 , onExampleSelect = WorkingState.ExampleSelected
                 , ratio = model.editorsRatio
-                , vimMode = model.user.settings.vimMode
                 , onFormat = WorkingState.FormatRequested
                 , onCollapse = WorkingState.CollapseHtml
                 , elmErrors =
@@ -175,6 +175,11 @@ viewWorkspace model =
 
                         _ ->
                             []
+                , vimMode =
+                    model.user
+                        |> Entity.record
+                        |> .settings
+                        |> .vimMode
                 }
         , second =
             WorkbenchView.view
@@ -200,9 +205,15 @@ viewWorkspace model =
 
 
 viewStyles model =
+    let
+        settings =
+            model.user
+                |> Entity.record
+                |> .settings
+    in
     Css.Foreign.global
         [ Css.Foreign.selector ":root"
-            [ property "--editor-font-size" model.user.settings.fontSize
-            , property "--theme-font-family-editor" model.user.settings.fontFamily
+            [ property "--editor-font-size" settings.fontSize
+            , property "--theme-font-family-editor" settings.fontFamily
             ]
         ]

@@ -3,16 +3,35 @@ module Ellie.Types.User
         ( Id
         , User
         , decoder
+        , idDecoder
+        , idEncoder
+        , idEq
         )
 
 import Ellie.Types.Settings as Settings exposing (Settings)
 import Ellie.Types.TermsVersion as TermsVersion exposing (TermsVersion)
 import Json.Decode as Decode exposing (Decoder)
 import Json.Decode.Pipeline as Decode
+import Json.Encode as Encode exposing (Value)
 
 
-type alias Id =
-    String
+type Id
+    = Id String
+
+
+idDecoder : Decoder Id
+idDecoder =
+    Decode.map Id Decode.string
+
+
+idEncoder : Id -> Value
+idEncoder (Id uuid) =
+    Encode.string uuid
+
+
+idEq : Id -> Id -> Bool
+idEq (Id left) (Id right) =
+    left == right
 
 
 type alias User =

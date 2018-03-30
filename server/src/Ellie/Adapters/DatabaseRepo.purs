@@ -54,12 +54,15 @@ createRevision revision env =
     $ Revision.toPostgres revision
 
 
-updateRevision ∷ ∀ m r. MonadIO m ⇒ Entity Revision.Id Revision → Env r → m (Entity Revision.Id Revision)
-updateRevision entity env =
+updateRevision ∷ ∀ m r. MonadIO m ⇒ Revision.ProjectId → Revision → Env r → m (Entity Revision.Id Revision)
+updateRevision projectId revision env =
   IO.liftIO
     $ Postgres.exec env.postgresClient Revision.entityFromPostgres
     $ Postgres.invoke "ellie.update_revision"
-    $ Revision.entityToPostgres entity 
+    $ args
+  where
+    args =
+      Revision.toPostgres revision <> [ { key: "project_id", value: Revision.projectIdToPostgres projectId } ] 
 
 
 -- USERS

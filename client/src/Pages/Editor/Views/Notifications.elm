@@ -2,6 +2,7 @@ module Pages.Editor.Views.Notifications exposing (..)
 
 import Css exposing (..)
 import Css.Foreign
+import Data.Url as Url exposing (Url)
 import Ellie.Ui.CopyText as CopyText
 import Ellie.Ui.Icon as Icon
 import Ellie.Ui.Theme as Theme
@@ -82,7 +83,7 @@ viewAction : Notification.Action -> Html msg
 viewAction action =
     case action of
         Notification.CopyLink url ->
-            CopyText.view url
+            CopyText.view <| Url.toString url
 
         Notification.GoToLink url ->
             Html.div []

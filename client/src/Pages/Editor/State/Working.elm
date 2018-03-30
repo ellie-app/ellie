@@ -12,6 +12,7 @@ import Ellie.Types.User as User exposing (User)
 import Elm.Compiler as Compiler
 import Elm.Compiler.Error as Error exposing (Error)
 import Elm.Package as Package exposing (Package)
+import Extra.Maybe as Maybe
 import Pages.Editor.Effects.Exception as Exception exposing (Exception)
 import Pages.Editor.Effects.Inbound as Inbound exposing (Inbound)
 import Pages.Editor.Effects.Outbound as Outbound exposing (Outbound)
@@ -51,7 +52,7 @@ type alias Model =
     , revision : Replaceable Revision.Id Revision
     , saving : Bool
     , actions : Actions.Model
-    , user : User
+    , user : Entity User.Id User
     , workbench : Workbench
     , creatingGist : Bool
     , compiling : Bool
@@ -63,59 +64,93 @@ type alias Model =
     }
 
 
-init : Jwt -> User -> Maybe (Entity Revision.Id Revision) -> List Package -> ( Model, Outbound Msg )
-init token user revision defaultPackages =
-    ( { elmCode =
-            revision
-                |> Maybe.map (Entity.record >> .elmCode)
-                |> Maybe.withDefault (.elm Example.helloWorld)
-      , htmlCode =
-            revision
-                |> Maybe.map (Entity.record >> .htmlCode)
-                |> Maybe.withDefault (.html Example.helloWorld)
-      , packages =
-            revision
-                |> Maybe.map (Entity.record >> .packages)
-                |> Maybe.withDefault defaultPackages
-      , activeExample = Example.helloWorld
-      , projectName = ""
-      , token = token
-      , defaultPackages = defaultPackages
-      , revision = Replaceable.fromMaybe revision
-      , actions = Actions.Hidden
-      , workbench = Ready
-      , creatingGist = False
-      , compiling = False
-      , saving = False
-      , connected = True
-      , animating = True
-      , user = user
-      , workbenchRatio = 0.5
-      , editorsRatio = 0.75
-      , notifications = []
-      }
-    , Outbound.Delay 1000 AnimationFinished
-    )
+reset : Jwt -> Entity User.Id User -> Maybe (Entity Revision.Id Revision) -> List Package -> Model
+reset token user revision defaultPackages =
+    { elmCode =
+        revision
+            |> Maybe.map (Entity.record >> .elmCode)
+            |> Maybe.withDefault (.elm Example.helloWorld)
+    , htmlCode =
+        revision
+            |> Maybe.map (Entity.record >> .htmlCode)
+            |> Maybe.withDefault (.html Example.helloWorld)
+    , packages =
+        revision
+            |> Maybe.map (Entity.record >> .packages)
+            |> Maybe.withDefault defaultPackages
+    , activeExample = Example.helloWorld
+    , projectName = ""
+    , token = token
+    , defaultPackages = defaultPackages
+    , revision = Replaceable.fromMaybe revision
+    , actions = Actions.Hidden
+    , workbench = Ready
+    , creatingGist = False
+    , compiling = False
+    , saving = False
+    , connected = True
+    , animating = True
+    , user = user
+    , workbenchRatio = 0.5
+    , editorsRatio = 0.75
+    , notifications = []
+    }
+
+
+init : Jwt -> Entity User.Id User -> Maybe (Entity Revision.Id Revision) -> List Package -> ( Model, Outbound Msg )
+init token user maybeRevision defaultPackages =
+    reset token user maybeRevision defaultPackages
+        |> update CompileRequested
+        |> Tuple.mapSecond (\c -> Outbound.batch [ c, Outbound.Delay 1000 AnimationFinished ])
+
+
+ownRevision : Model -> Bool
+ownRevision model =
+    case Replaceable.toMaybe model.revision of
+        Just revision ->
+            Maybe.eq User.idEq
+                (Entity.record revision |> .userId)
+                (Just (Entity.key model.user))
+
+        Nothing ->
+            False
 
 
 toSave : Model -> Either Revision (Entity Revision.Id Revision)
 toSave model =
     case Replaceable.toMaybe model.revision of
-        Just entity ->
-            entity
-                |> Entity.map
-                    (\r ->
-                        { r
-                            | elmCode = model.elmCode
-                            , htmlCode = model.htmlCode
-                            , packages = model.packages
-                            , title = model.projectName
-                            , termsVersion =
-                                model.user.termsVersion
-                                    |> Maybe.withDefault TermsVersion.zero
-                        }
-                    )
-                |> Right
+        Just revision ->
+            if Debug.log "owned" <| ownRevision model then
+                Right <|
+                    Entity.map
+                        (\r ->
+                            { r
+                                | elmCode = model.elmCode
+                                , htmlCode = model.htmlCode
+                                , packages = model.packages
+                                , title = model.projectName
+                                , termsVersion =
+                                    model.user
+                                        |> Entity.record
+                                        |> .termsVersion
+                                        |> Maybe.withDefault TermsVersion.zero
+                            }
+                        )
+                        revision
+            else
+                Left
+                    { elmCode = model.elmCode
+                    , htmlCode = model.htmlCode
+                    , packages = model.packages
+                    , title = model.projectName
+                    , elmVersion = Compiler.version
+                    , userId = Just (Entity.key model.user)
+                    , termsVersion =
+                        model.user
+                            |> Entity.record
+                            |> .termsVersion
+                            |> Maybe.withDefault TermsVersion.zero
+                    }
 
         Nothing ->
             Left
@@ -124,8 +159,11 @@ toSave model =
                 , packages = model.packages
                 , title = model.projectName
                 , elmVersion = Compiler.version
+                , userId = Just (Entity.key model.user)
                 , termsVersion =
-                    model.user.termsVersion
+                    model.user
+                        |> Entity.record
+                        |> .termsVersion
                         |> Maybe.withDefault TermsVersion.zero
                 }
 
@@ -219,7 +257,17 @@ update msg ({ user } as model) =
                         )
 
                 ( Nothing, Ok entity ) ->
-                    ( { model | saving = False, revision = Replaceable.Loaded entity }
+                    ( { model
+                        | saving = False
+                        , revision = Replaceable.Loaded entity
+                        , notifications =
+                            { title = "Saved!"
+                            , severity = Notification.Success
+                            , message = "Your changes have been saved. You can share them using this link:"
+                            , actions = [ Notification.CopyLink <| Revision.link <| Entity.key entity ]
+                            }
+                                :: model.notifications
+                      }
                     , Outbound.Navigate <| Route.toString <| Route.Existing (Entity.key entity)
                     )
 
@@ -513,7 +561,7 @@ update msg ({ user } as model) =
             )
 
         SettingsChanged settings ->
-            ( { model | user = { user | settings = settings } }
+            ( { model | user = Entity.map (\u -> { u | settings = settings }) model.user }
             , Outbound.SaveSettings model.token settings
             )
 

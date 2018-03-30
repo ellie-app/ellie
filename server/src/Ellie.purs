@@ -97,7 +97,7 @@ instance revisionRepoEllieMProdEnv ∷ (Newtype e a, TypeEquals a (SharedEnv e0)
   retrieve rid = Reader.asks (unwrap >>> to) >>= DatabaseRepo.getRevision rid
   exists rid = Reader.asks (unwrap >>> to) >>= DatabaseRepo.revisionExists rid
   create revision = Reader.asks (unwrap >>> to) >>= DatabaseRepo.createRevision revision
-  update entity = Reader.asks (unwrap >>> to) >>= DatabaseRepo.updateRevision entity
+  update projectId revision = Reader.asks (unwrap >>> to) >>= DatabaseRepo.updateRevision projectId revision
 
 instance userRepoEllieM ∷ (Newtype e a, TypeEquals a (SharedEnv e0)) ⇒ UserRepo (EllieM e) where
   retrieve uid = Reader.asks (unwrap >>> to) >>= DatabaseRepo.getUser uid

@@ -52,7 +52,7 @@ const start = (app) => {
         this._instance = null
         this._errors = []
         this._vimMode = false
-        this._vimModeLoading = false
+        this._vimModeLoadState = 'NOT_ASKED'
       }
 
       get vimMode() {
@@ -62,13 +62,14 @@ const start = (app) => {
         if (value === null) value = false
         if (value === this._vimMode) return
         this._vimMode = value
-        if (!this._vimModeLoading && this._vimMode) {
-          this._vimModeLoading = true
+        if (this._vimModeLoadState === 'NOT_ASKED' && this._vimMode) {
+          this._vimModeLoadState = 'LOADING'
           loadVimMode().then(() => {
+            this._vimModeLoadState = 'FINISHED'
             if (!this._instance) return
             this._instance.setOption('keyMap', this._vimMode ? 'vim' : 'default')
           })
-        } else if (this._instance) {
+        } else if (this._vimModeLoadState === 'FINISHED' && this._instance) {
           this._instance.setOption('keyMap', this._vimMode ? 'vim' : 'default')
         }
       }
@@ -149,7 +150,7 @@ const start = (app) => {
           styleActiveLine: { nonEmpty: true },
           smartIndent: true,
           indentWithTabs: false,
-          keyMap: this._vimMode ? 'vim' : 'default',
+          keyMap: this._vimModeLoadState === 'FINISHED' && this._vimMode ? 'vim' : 'default',
           lint: { lintOnChange: false },
           theme: 'material',
           indentWidth: this._tabSize,
@@ -182,9 +183,12 @@ const start = (app) => {
           this._instance.refresh()
         })
 
-        if (this._vimMode && !this._vimModeLoading) {
-          this._vimModeLoading = true
-          loadVimMode()
+        if (this._vimMode && this._vimModeLoadState !== 'FINISHED') {
+          this._vimModeLoadState = 'LOADING'
+          loadVimMode().then(() => {
+            this._vimModeLoadState = 'FINISHED'
+            this._instance.setOption('keyMap', this._vimMode ? 'vim' : 'default')
+          })
         }
       }
 

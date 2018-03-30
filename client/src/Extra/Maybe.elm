@@ -19,3 +19,16 @@ withDefaultLazy default maybe =
 
         Nothing ->
             default ()
+
+
+eq : (a -> a -> Bool) -> Maybe a -> Maybe a -> Bool
+eq inner left right =
+    case ( left, right ) of
+        ( Just l, Just r ) ->
+            inner l r
+
+        ( Nothing, Nothing ) ->
+            True
+
+        _ ->
+            False

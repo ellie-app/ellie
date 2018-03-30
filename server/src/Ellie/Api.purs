@@ -2,19 +2,22 @@ module Ellie.Api where
 
 import Prelude
 
+import Control.Monad.Error.Class (throwError) as Error
 import Control.Monad.Maybe.Trans (MaybeT(..), runMaybeT)
 import Control.Monad.Trans.Class (lift)
 import Data.Either (Either(..))
+import Data.Either as Either
 import Data.Entity (Entity)
 import Data.Entity as Entity
 import Data.Int as Int
 import Data.Json as Json
 import Data.Maybe (Maybe(..))
+import Data.Maybe as Maybe
+import Data.Newtype (unwrap)
 import Data.String (Pattern(Pattern))
 import Data.String (stripPrefix) as String
 import Data.TemplateString.Unsafe (template) as String
 import Data.Url as Url
-import Data.Uuid as Uuid
 import Ellie.Domain.Assets (class Assets)
 import Ellie.Domain.Assets as Assets
 import Ellie.Domain.Platform (class Platform)
@@ -37,8 +40,8 @@ import Server.Action as Action
 import System.Jwt (Jwt(..))
 
 
-authorize ∷ ∀ m. Monad m ⇒ UserRepo m ⇒ ActionT m (Maybe (Entity User.Id User))
-authorize = runMaybeT do
+authorizeHeader ∷ ∀ m. Monad m ⇒ UserRepo m ⇒ ActionT m (Maybe (Entity User.Id User))
+authorizeHeader = runMaybeT do
   tokenHeader ← MaybeT $ Action.getHeader "Authorization"
   token ← MaybeT $ pure $ String.stripPrefix (Pattern "Bearer ") tokenHeader
   userId ← MaybeT $ lift $ UserRepo.verify (Jwt token)
@@ -47,9 +50,21 @@ authorize = runMaybeT do
 
 authorizeParam ∷ ∀ m. Monad m ⇒ UserRepo m ⇒ ActionT m (Maybe (Entity User.Id User))
 authorizeParam = runMaybeT $ do
-  token ← MaybeT $ Action.getParam "token"
+  token ← MaybeT $ (Just <$> Action.getParam "token")
   userId ← MaybeT $ lift $ UserRepo.verify (Jwt token)
   MaybeT $ lift $ UserRepo.retrieve userId
+
+
+requireAuth ∷ ∀ m. Monad m ⇒ UserRepo m ⇒ ActionT m (Entity User.Id User)
+requireAuth =
+  authorizeHeader >>= case _ of
+    Just user → pure user
+    Nothing →
+      authorizeParam >>= case _ of
+        Just user → pure user
+        Nothing → Error.throwError Action.Unauthorized
+
+
 
 
 getRevision ∷ ∀ m. Monad m ⇒ RevisionRepo m ⇒ ActionT m Unit
@@ -59,8 +74,8 @@ getRevision = do
   let
     maybeRevisionId =
       { projectId: _, revisionNumber: _ }
-        <$> (projectId >>= Uuid.base49Decode)
-        <*> (revisionNumber >>= Int.fromString)
+        <$> Revision.projectIdFromString projectId
+        <*> Int.fromString revisionNumber
         <#> Revision.Id
   case maybeRevisionId of
     Just revisionId → do
@@ -80,23 +95,19 @@ getRevision = do
 
 searchPackages ∷ ∀ m. Monad m ⇒ Search m ⇒ ActionT m Unit
 searchPackages = do
-  maybeQuery ← Action.getParam "query"
-  case maybeQuery of
-    Just query → do
-      searchables ← lift $ Search.search query
-      let packages = map Searchable.latestPackage searchables
-      Action.setStatus 200
-      Action.setStringBody
-        $ Json.stringify
-        $ Json.encodeArray Package.toBody packages
-    Nothing →
-      Action.setStatus 400
+  query ← Action.getParam "query"
+  searchables ← lift $ Search.search query
+  let packages = map Searchable.latestPackage searchables
+  Action.setStatus 200
+  Action.setStringBody
+    $ Json.stringify
+    $ Json.encodeArray Package.toBody packages
 
 
 verify ∷ ∀ m. Monad m ⇒ UserRepo m ⇒ ActionT m Unit
 verify = do
   user ← 
-    authorize >>= case _ of
+    authorizeHeader >>= case _ of
       Just user → pure user
       Nothing → lift $ UserRepo.create
   (Jwt token) ←
@@ -113,115 +124,114 @@ verify = do
 
 acceptTerms ∷ ∀ m. Monad m ⇒ UserRepo m ⇒ ActionT m Unit
 acceptTerms = do
-  authorize >>= case _ of
-    Nothing →
-      Action.setStatus 401
-    Just entity → do
-      termsVersionOrError ← do
-        body ← Action.getBody
-        pure $ Json.decodeAtField "termsVersion" body TermsVersion.fromJson
-      case termsVersionOrError of
-        Left error →
-          Action.setStatus 400
-        Right termsVersion → do
-          let (User user) = Entity.record entity
-          let userId = Entity.key entity
-          let updated = User $ user { termsVersion = Just termsVersion }
-          lift $ UserRepo.save userId updated
-          Action.setStatus 204
+  userEntity ← requireAuth
+
+  termsVersion ← do
+    body ← Action.getBody
+    Either.either
+      (\_ → Error.throwError Action.BadRequest)
+      pure
+      (Json.decodeAtField "termsVersion" body TermsVersion.fromJson)
+
+  let (User user) = Entity.record userEntity
+  let userId = Entity.key userEntity
+  let updated = User $ user { termsVersion = Just termsVersion }
+  lift $ UserRepo.save userId updated
+  Action.setStatus 204
 
 
 saveSettings ∷ ∀ m. Monad m ⇒ UserRepo m ⇒ ActionT m Unit
 saveSettings = do
-  authorize >>= case _ of
-    Nothing →
-      Action.setStatus 401
-    Just entity → do
-      let userId = Entity.key entity
-      let (User user) = Entity.record entity
-      body ← Action.getBody
-      let eitherSettings = Settings.fromBody body
-      case eitherSettings of
-        Left errors → Action.setStatus 400
-        Right settings → do
-          let newUser = User $ user { settings = settings }
-          lift $ UserRepo.save userId newUser
-          Action.setStatus 204
+  entity ← requireAuth
+  let userId = Entity.key entity
+  let (User user) = Entity.record entity
+  settings ← do
+    body ← Action.getBody
+    Either.either
+      (\_ → Error.throwError Action.BadRequest)
+      pure
+      (Settings.fromBody body)
+  let newUser = User $ user { settings = settings }
+  lift $ UserRepo.save userId newUser
+  Action.setStatus 204
 
 
 formatCode ∷ ∀ m. Monad m ⇒ Platform m ⇒ ActionT m Unit
 formatCode = do
-  body ← Action.getBody
-  let code = Json.decodeAtField "code" body Json.decodeString
-  case code of
-    Left errors →
+  code ← do
+    body ← Action.getBody
+    Either.either
+      (\_ → Error.throwError Action.BadRequest)
+      pure
+      (Json.decodeAtField "code" body Json.decodeString)
+
+  result ← lift $ Platform.format code
+
+  case result of
+    Left message → do
       Action.setStatus 400
+      Action.setHeader "Content-Type" "application/json"
+      Action.setStringBody
+        $ Json.stringify
+        $ Json.encodeObject [ { key: "error", value: Json.encodeString message } ]
     Right code → do
-      result ← lift $ Platform.format code
-      case result of
-        Left message → do
-          Action.setStatus 400
-          Action.setHeader "Content-Type" "application/json"
-          Action.setStringBody
-            $ Json.stringify
-            $ Json.encodeObject [ { key: "error", value: Json.encodeString message } ]
-        Right code → do
-          Action.setStatus 200
-          Action.setHeader "Content-Type" "application/json"
-          Action.setStringBody
-            $ Json.stringify
-            $ Json.encodeObject [ { key: "code", value: Json.encodeString code } ]
+      Action.setStatus 200
+      Action.setHeader "Content-Type" "application/json"
+      Action.setStringBody
+        $ Json.stringify
+        $ Json.encodeObject [ { key: "code", value: Json.encodeString code } ]
 
 
 createRevision ∷ ∀ m. Monad m ⇒ UserRepo m ⇒ RevisionRepo m ⇒ ActionT m Unit
 createRevision = do
-  authorize >>= case _ of
-    Nothing →
-      Action.setStatus 401
-    Just userEntity → do
-      body ← Action.getBody
-      let revision = Revision.fromBody body
-      case revision of
-        Left errors →
-          Action.setStatus 400
-        Right revision → do
-          entity ← lift $ RevisionRepo.create revision
-          Action.setStatus 201
-          Action.setStringBody
-            $ Json.stringify
-            $ Revision.entityToBody entity
+  userEntity ← requireAuth
+  revision ← do
+    body ← Action.getBody
+    Either.either
+      (\_ → Error.throwError Action.BadRequest)
+      pure
+      (Revision.fromBody body)
+  entity ← lift $ RevisionRepo.create revision
+  Action.setStatus 201
+  Action.setStringBody
+    $ Json.stringify
+    $ Revision.entityToBody entity
 
 
 updateRevision ∷ ∀ m. Monad m ⇒ UserRepo m ⇒ RevisionRepo m ⇒ ActionT m Unit
 updateRevision = do
-  authorize >>= case _ of
-    Nothing →
-      Action.setStatus 401
-    Just userEntity → do
-      body ← Action.getBody
-      case Revision.entityFromBody body of
-        Left errors →
-          Action.setStatus 400
-        Right revisionEntity → do
-          entity ← lift $ RevisionRepo.update revisionEntity
-          Action.setStatus 201
-          Action.setStringBody
-            $ Json.stringify
-            $ Revision.entityToBody entity
+  userEntity ← requireAuth
+
+  projectId ← do
+    asString ← Action.getParam "projectId"
+    Maybe.maybe (Error.throwError Action.BadRequest) pure (Revision.projectIdFromString asString)
+
+  revision ← do
+    body ← Action.getBody
+    Either.either (\_ → Error.throwError Action.BadRequest) pure (Revision.fromBody body)
+
+  let revisionUserId = _.userId $ unwrap $ revision
+  let userId = Entity.key userEntity
+
+  if revisionUserId /= Just userId
+    then Error.throwError Action.Forbidden
+    else do
+      updatedEntity ← lift $ RevisionRepo.update projectId revision
+      Action.setStatus 201
+      Action.setStringBody
+        $ Json.stringify
+        $ Revision.entityToBody updatedEntity
 
 
 result ∷ ∀ m. Monad m ⇒ UserRepo m ⇒ Platform m ⇒ ActionT m Unit
 result = do
-  maybeUser ← authorizeParam 
-  case maybeUser of
-    Nothing → Action.setStatus 401
-    Just entity → do
-      { javascript, html } ← lift $ Platform.result $ Entity.key entity
-      format ← Action.getParam "format"
-      case format of
-        Just "javascript" → Action.setFileBody javascript
-        Just "html" → Action.setFileBody html
-        _ → Action.setStatus 404
+  entity ← requireAuth 
+  { javascript, html } ← lift $ Platform.result $ Entity.key entity
+  format ← Action.getParam "format"
+  case format of
+    "javascript" → Action.setFileBody javascript
+    "html" → Action.setFileBody html
+    _ → Action.setStatus 404
 
 
 newUi ∷ ∀ m. Monad m ⇒ Assets m ⇒ UserRepo m ⇒ ActionT m Unit
@@ -272,8 +282,8 @@ newUi = do
 
 showTerms ∷ ∀ m. Monad m ⇒ Assets m ⇒ ActionT m Unit
 showTerms = do
+  asString ← Action.getParam "version"
   maybePath ← runMaybeT do
-    asString ← MaybeT $ Action.getParam "version"
     asTermsVersion ← MaybeT $ pure $ TermsVersion.fromString asString
     MaybeT $ lift $ Assets.termsHtml asTermsVersion
   case maybePath of

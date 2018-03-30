@@ -16,4 +16,4 @@ class RevisionRepo m where
   retrieve ∷ Revision.Id → m (Maybe (Entity Revision.Id Revision))
   exists ∷ Revision.Id → m Boolean
   create ∷ Revision → m (Entity Revision.Id Revision)
-  update ∷ Entity Revision.Id Revision → m (Entity Revision.Id Revision)
+  update ∷ Revision.ProjectId → Revision → m (Entity Revision.Id Revision)

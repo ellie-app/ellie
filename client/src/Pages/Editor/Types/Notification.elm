@@ -7,11 +7,12 @@ module Pages.Editor.Types.Notification
         , fromException
         )
 
+import Data.Url as Url exposing (Url)
 import Pages.Editor.Effects.Exception exposing (Exception(..))
 
 
 type Action
-    = CopyLink String
+    = CopyLink Url
     | GoToLink String
 
 

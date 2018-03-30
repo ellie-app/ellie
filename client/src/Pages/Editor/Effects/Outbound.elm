@@ -11,6 +11,7 @@ port module Pages.Editor.Effects.Outbound
 
 import Data.Entity as Entity exposing (Entity)
 import Data.Jwt as Jwt exposing (Jwt)
+import Data.Url as Url exposing (Url)
 import Debounce
 import Ellie.Constants as Constants
 import Ellie.Types.Revision as Revision exposing (Revision)
@@ -37,10 +38,6 @@ import Task
 import WebSocket
 
 
-type alias Url =
-    String
-
-
 type alias ElmSource =
     String
 
@@ -61,14 +58,14 @@ type Outbound msg
     | Compile Jwt String String (List Package)
     | ReloadIframe
     | Redirect String
-    | Navigate Url
+    | Navigate String
     | SearchPackages String (Maybe (List Package) -> msg)
     | SwitchToDebugger
     | SwitchToProgram
     | EnableNavigationCheck Bool
-    | CreateGist { title : String, project : Project, elm : ElmSource, html : HtmlSource } (Maybe Url -> msg)
+    | CreateGist { title : String, project : Project, elm : ElmSource, html : HtmlSource } (Maybe String -> msg)
     | DownloadZip { project : Project, elm : ElmSource, html : HtmlSource }
-    | OpenInNewTab Url
+    | OpenInNewTab String
     | Batch (List (Outbound msg))
     | Delay Float msg
     | MoveElmCursor Compiler.Location
@@ -81,6 +78,15 @@ send onError effect state =
         Navigate url ->
             ( state
             , Navigation.newUrl url
+            )
+
+        GetRevision id callback ->
+            ( state
+            , get ("/private-api/revisions/" ++ id.projectId ++ "/" ++ String.fromInt id.revisionNumber)
+                |> withHeader "Accept" "application/json"
+                |> withExpect (Http.expectJson (Entity.decoder Revision.idDecoder Revision.decoder))
+                |> HttpBuilder.send (Result.mapError Exception.fromHttp >> Result.fold callback onError)
+                |> Cmd.map UserMsg
             )
 
         CreateRevision token revision callback ->
@@ -219,15 +225,6 @@ send onError effect state =
                 |> (\cmd -> Debounce.push debouncePackageSearchConfig cmd state.debouncePackageSearch)
                 |> Tuple.mapFirst (\d -> { state | debouncePackageSearch = d })
 
-        GetRevision id callback ->
-            ( state
-            , get ("/private-api/revisions/" ++ id.projectId ++ "/" ++ String.fromInt id.revisionNumber)
-                |> withHeader "Accept" "application/json"
-                |> withExpect (Http.expectJson (Entity.decoder Revision.idDecoder Revision.decoder))
-                |> HttpBuilder.send (Result.mapError Exception.fromHttp >> Result.fold callback onError)
-                |> Cmd.map UserMsg
-            )
-
         SaveToken token ->
             ( state
             , Encode.genericUnion "SaveToken"
@@ -321,7 +318,7 @@ getUserDecoder =
     Decode.map3 (,,)
         (Decode.field "latestTerms" TermsVersion.decoder)
         (Decode.field "token" Jwt.decoder)
-        (Decode.field "user" (Entity.decoder Decode.string User.decoder))
+        (Decode.field "user" (Entity.decoder User.idDecoder User.decoder))
 
 
 

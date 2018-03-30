@@ -1,7 +1,9 @@
 module Ellie.Types.User
   ( Id(..)
   , idToPostgres
+  , idToPostgresValue
   , idFromPostgres
+  , idFromPostgresValue
   , idToBody
   , idFromBody
   , User(..)
@@ -43,23 +45,27 @@ derive newtype instance eqId ∷ Eq Id
 derive newtype instance ordId ∷ Ord Id
 
 
+idToPostgresValue ∷ Id → Json
+idToPostgresValue (Id uuid) =
+   Json.encodeString $ Uuid.toString uuid
+
+
 idToPostgres ∷ Id → Array Json.KeyValue
 idToPostgres (Id uuid) =
   [ { key: "id", value: Json.encodeString $ Uuid.toString uuid } ]
 
 
+idFromPostgresValue ∷ Json → Either Json.Error Id
+idFromPostgresValue value =
+  Json.decodeString value >>= \string →
+    case Uuid.fromString string of
+      Just uuid → Right (Id uuid)
+      Nothing → Left (Json.Failure "Expecting a UUID" value)
+
+
 idFromPostgres ∷ Json → Either Json.Error Id
 idFromPostgres value =
-  Json.decodeAtField "id" value decodeUuid
-    <#> Id
-  where
-    decodeUuid ∷ Json → Either Json.Error Uuid
-    decodeUuid value =
-      Json.decodeString value >>= \string →
-        case Uuid.fromString string of
-          Just uuid → Right uuid
-          Nothing → Left (Json.Failure "Expecting a UUID" value)
-
+  Json.decodeAtField "id" value idFromPostgresValue
 
 
 idToBody ∷ Id → Json

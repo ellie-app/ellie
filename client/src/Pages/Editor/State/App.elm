@@ -56,7 +56,7 @@ setupToWorking :
     }
     -> ( Model, Outbound Msg )
 setupToWorking { token, revision, packages, user } =
-    Working.init token (Entity.record user) revision packages
+    Working.init token user revision packages
         |> Tuple.mapFirst Working
         |> Tuple.mapSecond (Outbound.map WorkingMsg)
 
