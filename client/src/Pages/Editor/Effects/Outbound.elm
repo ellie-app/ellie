@@ -26,7 +26,7 @@ import Extra.Result as Result
 import Extra.String as String
 import Http
 import Http.Extra as Http
-import HttpBuilder exposing (get, post, withBearerToken, withCredentials, withExpect, withHeader, withJsonBody, withQueryParams, withStringBody)
+import HttpBuilder exposing (get, post, put, withBearerToken, withCredentials, withExpect, withHeader, withJsonBody, withQueryParams, withStringBody)
 import Json.Decode as Decode exposing (Decoder)
 import Json.Encode as Encode exposing (Value)
 import Navigation
@@ -50,7 +50,9 @@ type alias HtmlSource =
 
 
 type Outbound msg
-    = GetRevision Revision.Id (Entity Revision.Id Revision -> msg)
+    = CreateRevision Jwt Revision (Result String (Entity Revision.Id Revision) -> msg)
+    | UpdateRevision Jwt (Entity Revision.Id Revision) (Result String (Entity Revision.Id Revision) -> msg)
+    | GetRevision Revision.Id (Entity Revision.Id Revision -> msg)
     | Authenticate (Maybe Jwt) (TermsVersion -> Jwt -> Entity User.Id User -> msg)
     | AcceptTerms Jwt TermsVersion msg
     | SaveSettings Jwt Settings
@@ -59,6 +61,7 @@ type Outbound msg
     | Compile Jwt String String (List Package)
     | ReloadIframe
     | Redirect String
+    | Navigate Url
     | SearchPackages String (Maybe (List Package) -> msg)
     | SwitchToDebugger
     | SwitchToProgram
@@ -75,6 +78,33 @@ type Outbound msg
 send : (Exception -> msg) -> Outbound msg -> State msg -> ( State msg, Cmd (Msg msg) )
 send onError effect state =
     case effect of
+        Navigate url ->
+            ( state
+            , Navigation.newUrl url
+            )
+
+        CreateRevision token revision callback ->
+            ( state
+            , post "/private-api/revisions"
+                |> Jwt.withTokenHeader token
+                |> withJsonBody (Revision.encoder revision)
+                |> withExpect (Http.expectJson (Entity.decoder Revision.idDecoder Revision.decoder))
+                |> HttpBuilder.send (Result.mapError toString >> callback >> UserMsg)
+            )
+
+        UpdateRevision token entity callback ->
+            let
+                key =
+                    Entity.key entity
+            in
+            ( state
+            , put ("/private-api/revisions/" ++ key.projectId)
+                |> Jwt.withTokenHeader token
+                |> withJsonBody (Revision.encoder (Entity.record entity))
+                |> withExpect (Http.expectJson (Entity.decoder Revision.idDecoder Revision.decoder))
+                |> HttpBuilder.send (Result.mapError toString >> callback >> UserMsg)
+            )
+
         MoveElmCursor location ->
             ( state
             , Encode.genericUnion "MoveElmCursor"
@@ -147,7 +177,7 @@ send onError effect state =
                 |> Task.andThen
                     (\_ ->
                         post "/private-api/me/settings"
-                            |> withBearerToken (Jwt.toString token)
+                            |> Jwt.withTokenHeader token
                             |> withExpect Http.expectNoContent
                             |> withJsonBody (Settings.encoder settings)
                             |> HttpBuilder.toTask
@@ -191,7 +221,7 @@ send onError effect state =
 
         GetRevision id callback ->
             ( state
-            , get (Constants.apiBase ++ "/revisions/" ++ id.projectId ++ "/" ++ String.fromInt id.revisionNumber)
+            , get ("/private-api/revisions/" ++ id.projectId ++ "/" ++ String.fromInt id.revisionNumber)
                 |> withHeader "Accept" "application/json"
                 |> withExpect (Http.expectJson (Entity.decoder Revision.idDecoder Revision.decoder))
                 |> HttpBuilder.send (Result.mapError Exception.fromHttp >> Result.fold callback onError)
@@ -201,7 +231,7 @@ send onError effect state =
         SaveToken token ->
             ( state
             , Encode.genericUnion "SaveToken"
-                [ Encode.string (Jwt.toString token) ]
+                [ Jwt.encoder token ]
                 |> pagesEditorEffectsOutbound
             )
 
@@ -209,7 +239,7 @@ send onError effect state =
             ( state
             , post "/private-api/me/verify"
                 |> withHeader "Accept" "application/json"
-                |> withMaybe withBearerToken (Maybe.map Jwt.toString maybeToken)
+                |> withMaybe Jwt.withTokenHeader maybeToken
                 |> withExpect (Http.expectJson getUserDecoder)
                 |> HttpBuilder.send (Result.mapError Exception.fromHttp >> Result.fold (\( a, b, c ) -> callback a b c) onError)
                 |> Cmd.map UserMsg
@@ -218,7 +248,7 @@ send onError effect state =
         AcceptTerms token termsVersion msg ->
             ( state
             , post "/private-api/me/terms"
-                |> withBearerToken (Jwt.toString token)
+                |> Jwt.withTokenHeader token
                 |> withJsonBody (Encode.object [ ( "termsVersion", TermsVersion.encoder termsVersion ) ])
                 |> withExpect Http.expectNoContent
                 |> HttpBuilder.send (Result.mapError Exception.fromHttp >> Result.fold (\_ -> msg) onError)
@@ -421,6 +451,15 @@ wrapUpdate onError userUpdate msg (( model, state ) as appState) =
 map : (a -> b) -> Outbound a -> Outbound b
 map f outbound =
     case outbound of
+        Navigate url ->
+            Navigate url
+
+        CreateRevision token revision callback ->
+            CreateRevision token revision (callback >> f)
+
+        UpdateRevision token entity callback ->
+            UpdateRevision token entity (callback >> f)
+
         MoveElmCursor location ->
             MoveElmCursor location
 

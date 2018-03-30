@@ -96,7 +96,8 @@ derive newtype instance monadErrorAppM ∷ MonadError Error (EllieM r)
 instance revisionRepoEllieMProdEnv ∷ (Newtype e a, TypeEquals a (SharedEnv e0)) ⇒ RevisionRepo (EllieM e) where
   retrieve rid = Reader.asks (unwrap >>> to) >>= DatabaseRepo.getRevision rid
   exists rid = Reader.asks (unwrap >>> to) >>= DatabaseRepo.revisionExists rid
-  save rid revision = Reader.asks (unwrap >>> to) >>= DatabaseRepo.saveRevision rid revision
+  create revision = Reader.asks (unwrap >>> to) >>= DatabaseRepo.createRevision revision
+  update entity = Reader.asks (unwrap >>> to) >>= DatabaseRepo.updateRevision entity
 
 instance userRepoEllieM ∷ (Newtype e a, TypeEquals a (SharedEnv e0)) ⇒ UserRepo (EllieM e) where
   retrieve uid = Reader.asks (unwrap >>> to) >>= DatabaseRepo.getUser uid

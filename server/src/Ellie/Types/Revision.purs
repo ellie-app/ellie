@@ -1,5 +1,6 @@
 module Ellie.Types.Revision
   ( Id(..)
+  , ProjectId
   , idToString
   , idFromPostgres
   , idToPostgres
@@ -13,6 +14,7 @@ module Ellie.Types.Revision
   , entityToPostgres
   , entityFromPostgres
   , entityToBody
+  , entityFromBody
   ) where
 
 import Prelude
@@ -38,8 +40,11 @@ import Elm.Version as Version
 -- ID
 
 
+type ProjectId =
+  Uuid
+
 newtype Id =
-  Id { projectId ∷ Uuid, revisionNumber ∷ Int }
+  Id { projectId ∷ ProjectId, revisionNumber ∷ Int }
 
 derive instance newtypeId ∷ Newtype Id _
 
@@ -180,3 +185,10 @@ entityToBody entity =
     [ { key: "key", value: idToBody $ Entity.key entity }
     , { key: "record", value: toBody $ Entity.record entity }
     ]
+
+
+entityFromBody ∷ Json → Either Json.Error (Entity Id Revision)
+entityFromBody value =
+  Entity.entity
+    <$> Json.decodeAtField "key" value idFromBody
+    <*> Json.decodeAtField "record" value fromBody

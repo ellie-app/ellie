@@ -1,6 +1,6 @@
 module Data.Replaceable exposing (..)
 
-import Data.Entity exposing (Entity)
+import Data.Entity as Entity exposing (Entity)
 
 
 type Replaceable k v
@@ -31,3 +31,35 @@ toMaybe replaceable =
 
         Loaded entity ->
             Just entity
+
+
+loading : Replaceable k v -> Maybe k
+loading replaceable =
+    case replaceable of
+        NotAsked ->
+            Nothing
+
+        Loading k ->
+            Just k
+
+        Replacing k _ ->
+            Just k
+
+        Loaded entity ->
+            Nothing
+
+
+inject : Entity k v -> Replaceable k v -> Replaceable k v
+inject entity replaceable =
+    case replaceable of
+        NotAsked ->
+            Loaded entity
+
+        Loading k ->
+            Replacing k entity
+
+        Replacing k _ ->
+            Replacing k entity
+
+        Loaded _ ->
+            Loaded entity

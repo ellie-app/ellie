@@ -179,6 +179,7 @@ viewWorkspace model =
         , second =
             WorkbenchView.view
                 { onCompile = WorkingState.CompileRequested
+                , onSave = WorkingState.SaveRequested
                 , onExpand = WorkingState.ExpandWorkbench
                 , onIframeReload = WorkingState.IframeReloadClicked
                 , onLogSearchChanged = WorkingState.LogSearchChanged
@@ -190,6 +191,7 @@ viewWorkspace model =
                 , onSelectErrorsPane = WorkingState.ErrorsPaneSelected
                 , onGoToLocation = WorkingState.LocationSelected
                 , compiling = model.compiling
+                , saving = model.saving
                 , workbench = model.workbench
                 , maximized = model.workbenchRatio < 0.05
                 , token = model.token

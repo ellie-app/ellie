@@ -6,6 +6,7 @@ module Ellie.Types.TermsVersion
         , encoder
         , eq
         , link
+        , zero
         )
 
 import Data.Url as Url exposing (Url)
@@ -41,3 +42,8 @@ compare (TermsVersion left) (TermsVersion right) =
 link : TermsVersion -> Url
 link (TermsVersion int) =
     Url.fromString <| "/a/terms/" ++ String.fromInt int
+
+
+zero : TermsVersion
+zero =
+    TermsVersion 0

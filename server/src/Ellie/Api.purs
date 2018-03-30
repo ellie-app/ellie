@@ -173,6 +173,43 @@ formatCode = do
             $ Json.encodeObject [ { key: "code", value: Json.encodeString code } ]
 
 
+createRevision ∷ ∀ m. Monad m ⇒ UserRepo m ⇒ RevisionRepo m ⇒ ActionT m Unit
+createRevision = do
+  authorize >>= case _ of
+    Nothing →
+      Action.setStatus 401
+    Just userEntity → do
+      body ← Action.getBody
+      let revision = Revision.fromBody body
+      case revision of
+        Left errors →
+          Action.setStatus 400
+        Right revision → do
+          entity ← lift $ RevisionRepo.create revision
+          Action.setStatus 201
+          Action.setStringBody
+            $ Json.stringify
+            $ Revision.entityToBody entity
+
+
+updateRevision ∷ ∀ m. Monad m ⇒ UserRepo m ⇒ RevisionRepo m ⇒ ActionT m Unit
+updateRevision = do
+  authorize >>= case _ of
+    Nothing →
+      Action.setStatus 401
+    Just userEntity → do
+      body ← Action.getBody
+      case Revision.entityFromBody body of
+        Left errors →
+          Action.setStatus 400
+        Right revisionEntity → do
+          entity ← lift $ RevisionRepo.update revisionEntity
+          Action.setStatus 201
+          Action.setStringBody
+            $ Json.stringify
+            $ Revision.entityToBody entity
+
+
 result ∷ ∀ m. Monad m ⇒ UserRepo m ⇒ Platform m ⇒ ActionT m Unit
 result = do
   maybeUser ← authorizeParam 

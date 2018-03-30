@@ -35,6 +35,8 @@ type alias Config msg =
     , workbench : Workbench
     , maximized : Bool
     , token : Jwt
+    , saving : Bool
+    , onSave : msg
     }
 
 
@@ -148,6 +150,19 @@ viewErrorsHeader pane config =
                 , disabled = False
                 , action = Button.click config.onCompile
                 }
+            , { disabled = config.saving
+              , action = Button.click config.onSave
+              , label =
+                    if config.saving then
+                        "Saving..."
+                    else
+                        "Save"
+              , icon =
+                    if config.saving then
+                        Just Icon.Loading
+                    else
+                        Just Icon.Upload
+              }
             ]
 
         tabs =
@@ -236,6 +251,12 @@ viewFinishedHeader pane config =
                         , disabled = False
                         , action = Button.click config.onCompile
                         }
+                , Just
+                    { icon = Just Icon.Upload
+                    , label = "Save"
+                    , disabled = config.saving
+                    , action = Button.click config.onSave
+                    }
                 , case pane of
                     SuccessOutput ->
                         Just

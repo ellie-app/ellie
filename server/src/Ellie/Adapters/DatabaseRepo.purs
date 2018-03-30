@@ -21,7 +21,6 @@ import Ellie.Types.User as User
 import System.Jwt (Jwt, Secret)
 import System.Jwt as Jwt
 import System.Postgres as Postgres
-import Debug.Trace as Debug
 
 
 type Env r =
@@ -47,13 +46,20 @@ revisionExists revisionId env =
     $ Revision.idToPostgres revisionId
 
 
-saveRevision ∷ ∀ m r. MonadIO m ⇒ Revision.Id → Revision → Env r → m Unit
-saveRevision revisionId revision env =
+createRevision ∷ ∀ m r. MonadIO m ⇒ Revision → Env r → m (Entity Revision.Id Revision)
+createRevision revision env =
   IO.liftIO
-    $ Postgres.exec env.postgresClient (const (Right unit))
-    $ Postgres.invoke "ellie.save_revision"
-    $ Revision.entityToPostgres
-    $ Entity.entity revisionId revision
+    $ Postgres.exec env.postgresClient Revision.entityFromPostgres
+    $ Postgres.invoke "ellie.create_revision"
+    $ Revision.toPostgres revision
+
+
+updateRevision ∷ ∀ m r. MonadIO m ⇒ Entity Revision.Id Revision → Env r → m (Entity Revision.Id Revision)
+updateRevision entity env =
+  IO.liftIO
+    $ Postgres.exec env.postgresClient Revision.entityFromPostgres
+    $ Postgres.invoke "ellie.update_revision"
+    $ Revision.entityToPostgres entity 
 
 
 -- USERS
@@ -79,7 +85,6 @@ saveUser userId user env =
   IO.liftIO
     $ Postgres.exec env.postgresClient (const (Right unit))
     $ Postgres.invoke "ellie.update_user"
-    $ Debug.spy
     $ User.entityToPostgres
     $ Entity.entity userId user
 

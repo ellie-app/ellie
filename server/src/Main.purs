@@ -20,7 +20,7 @@ import Ellie as Ellie
 import Ellie.Api as Api
 import Ellie.BuildManager as BuildManager
 import Node.Express.App (App)
-import Node.Express.App (get, listenHttp, post, useExternal) as Express
+import Node.Express.App (get, listenHttp, post, put, useExternal) as Express
 import Node.Express.Handler (Handler)
 import Node.Express.Types (ExpressM, Request, Response) as Express
 import Node.HTTP (Server)
@@ -44,16 +44,19 @@ foreign import jsonBodyParser ∷ ∀ e.
 routes ∷ ∀ m e. Ellie m ⇒ (ActionT m Unit → Handler e) → App e
 routes makeHandler = do
   Express.useExternal jsonBodyParser
-  Express.get  "/"                                                $ makeHandler Api.newUi
-  Express.get  "/new"                                             $ makeHandler Api.newUi
-  Express.get  "/a/terms/:version"                                $ makeHandler Api.showTerms
-  Express.get  "/private-api/revision/:projectId/:revisionNumber" $ makeHandler Api.getRevision
-  Express.get  "/private-api/packages/search"                     $ makeHandler Api.searchPackages
-  Express.get  "/private-api/workspace/result/:format"            $ makeHandler Api.result
-  Express.post "/private-api/format"                              $ makeHandler Api.formatCode
-  Express.post "/private-api/me/verify"                           $ makeHandler Api.verify
-  Express.post "/private-api/me/terms"                            $ makeHandler Api.acceptTerms
-  Express.post "/private-api/me/settings"                         $ makeHandler Api.saveSettings
+  Express.get  "/a/terms/:version"                                 $ makeHandler Api.showTerms
+  Express.get  "/private-api/revisions/:projectId/:revisionNumber" $ makeHandler Api.getRevision
+  Express.post "/private-api/revisions"                            $ makeHandler Api.createRevision
+  Express.put  "/private-api/revisions/:projectId"                 $ makeHandler Api.updateRevision
+  Express.get  "/private-api/packages/search"                      $ makeHandler Api.searchPackages
+  Express.get  "/private-api/workspace/result/:format"             $ makeHandler Api.result
+  Express.post "/private-api/format"                               $ makeHandler Api.formatCode
+  Express.post "/private-api/me/verify"                            $ makeHandler Api.verify
+  Express.post "/private-api/me/terms"                             $ makeHandler Api.acceptTerms
+  Express.post "/private-api/me/settings"                          $ makeHandler Api.saveSettings
+  Express.get  "/"                                                 $ makeHandler Api.newUi
+  Express.get  "/new"                                              $ makeHandler Api.newUi
+  Express.get  "*"                                                 $ makeHandler Api.newUi
 
 
 setup ∷ IO Server

@@ -1,12 +1,15 @@
 module Pages.Editor.State.Working exposing (..)
 
 import BoundedDeque exposing (BoundedDeque)
+import Data.Either as Either exposing (Either(..))
 import Data.Entity as Entity exposing (Entity(..))
 import Data.Jwt exposing (Jwt)
 import Data.Replaceable as Replaceable exposing (Replaceable)
 import Ellie.Types.Revision as Revision exposing (Revision)
 import Ellie.Types.Settings as Settings exposing (Settings)
+import Ellie.Types.TermsVersion as TermsVersion exposing (TermsVersion)
 import Ellie.Types.User as User exposing (User)
+import Elm.Compiler as Compiler
 import Elm.Compiler.Error as Error exposing (Error)
 import Elm.Package as Package exposing (Package)
 import Pages.Editor.Effects.Exception as Exception exposing (Exception)
@@ -46,6 +49,7 @@ type alias Model =
     , activeExample : Example
     , defaultPackages : List Package
     , revision : Replaceable Revision.Id Revision
+    , saving : Bool
     , actions : Actions.Model
     , user : User
     , workbench : Workbench
@@ -82,6 +86,7 @@ init token user revision defaultPackages =
       , workbench = Ready
       , creatingGist = False
       , compiling = False
+      , saving = False
       , connected = True
       , animating = True
       , user = user
@@ -91,6 +96,38 @@ init token user revision defaultPackages =
       }
     , Outbound.Delay 1000 AnimationFinished
     )
+
+
+toSave : Model -> Either Revision (Entity Revision.Id Revision)
+toSave model =
+    case Replaceable.toMaybe model.revision of
+        Just entity ->
+            entity
+                |> Entity.map
+                    (\r ->
+                        { r
+                            | elmCode = model.elmCode
+                            , htmlCode = model.htmlCode
+                            , packages = model.packages
+                            , title = model.projectName
+                            , termsVersion =
+                                model.user.termsVersion
+                                    |> Maybe.withDefault TermsVersion.zero
+                        }
+                    )
+                |> Right
+
+        Nothing ->
+            Left
+                { elmCode = model.elmCode
+                , htmlCode = model.htmlCode
+                , packages = model.packages
+                , title = model.projectName
+                , elmVersion = Compiler.version
+                , termsVersion =
+                    model.user.termsVersion
+                        |> Maybe.withDefault TermsVersion.zero
+                }
 
 
 shouldCheckNavigation : Model -> Bool
@@ -135,6 +172,8 @@ type Msg
     | LogReceived Log
     | LogSearchChanged String
     | LocationSelected Error.Location
+    | SaveRequested
+    | SaveCompleted (Result String (Entity Revision.Id Revision))
       -- Share stuff
     | CreateGistRequested
     | CreateGistComplete (Maybe String)
@@ -155,6 +194,49 @@ type Msg
 update : Msg -> Model -> ( Model, Outbound Msg )
 update msg ({ user } as model) =
     case msg of
+        SaveRequested ->
+            case toSave model of
+                Left revision ->
+                    ( { model | saving = True }
+                    , Outbound.CreateRevision model.token revision SaveCompleted
+                    )
+
+                Right entity ->
+                    ( { model | saving = True }
+                    , Outbound.UpdateRevision model.token entity SaveCompleted
+                    )
+
+        SaveCompleted result ->
+            case ( Replaceable.loading model.revision, result ) of
+                ( Just key, Ok entity ) ->
+                    if Revision.idEq key (Entity.key entity) then
+                        ( { model | saving = False, revision = Replaceable.Loaded entity }
+                        , Outbound.none
+                        )
+                    else
+                        ( { model | saving = False }
+                        , Outbound.none
+                        )
+
+                ( Nothing, Ok entity ) ->
+                    ( { model | saving = False, revision = Replaceable.Loaded entity }
+                    , Outbound.Navigate <| Route.toString <| Route.Existing (Entity.key entity)
+                    )
+
+                ( _, Err message ) ->
+                    ( { model
+                        | saving = False
+                        , notifications =
+                            { title = "Failed to Save"
+                            , severity = Notification.Failure
+                            , message = message
+                            , actions = []
+                            }
+                                :: model.notifications
+                      }
+                    , Outbound.none
+                    )
+
         LocationSelected location ->
             ( model
             , Outbound.MoveElmCursor location
