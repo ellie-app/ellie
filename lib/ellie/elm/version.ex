@@ -2,7 +2,7 @@ defmodule Ellie.Elm.Version do
   defstruct major: 1, minor: 0, patch: 0
 
   @behaviour Ecto.Type
-  
+
   def up do
     Ecto.Migration.execute """
       do $$ begin

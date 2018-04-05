@@ -11,7 +11,7 @@ defmodule Ellie.Repo.Migrations.CreateUsers do
   end
 
   def down do
-    Ellie.Settings.down
     drop_if_exists table(:users)
+    Ellie.Settings.down
   end
 end
