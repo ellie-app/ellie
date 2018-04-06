@@ -2,7 +2,6 @@ defmodule EllieWeb.Context do
   @behaviour Plug
 
   import Plug.Conn
-  alias Ecto.Query
   alias EllieWeb.Auth
 
   def init(opts), do: opts
@@ -11,14 +10,14 @@ defmodule EllieWeb.Context do
     case build_context(conn) do
       {:ok, context} ->
         put_private(conn, :absinthe, %{context: context})
-      {:error, reason} ->
+      {:error, _reason} ->
         conn
-        |> send_resp(403, reason)
-        |> halt()
+          |> send_resp(403, "Unauthorized")
+          |> halt()
       _ ->
         conn
-        |> send_resp(400, "Bad Request")
-        |> halt()
+          |> send_resp(400, "Bad Request")
+          |> halt()
     end
   end
 
@@ -32,5 +31,4 @@ defmodule EllieWeb.Context do
       error -> error
     end
   end
-
 end
