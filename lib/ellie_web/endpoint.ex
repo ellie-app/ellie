@@ -1,7 +1,7 @@
 defmodule EllieWeb.Endpoint do
   use Phoenix.Endpoint, otp_app: :ellie
 
-  socket "/socket", EllieWeb.UserSocket
+  socket "/sockets/workspace", EllieWeb.WorkspaceSocket
 
   # Serve at "/" the static files from "priv/static" directory.
   #

@@ -28,4 +28,10 @@ defmodule Ellie.Application do
     EllieWeb.Endpoint.config_change(changed, removed)
     :ok
   end
+
+  def stop(_) do
+    System.cmd("pkill", ["-f", "webpack"])
+    System.cmd("pkill", ["-f", "chokidar"])
+    :ok
+  end
 end

@@ -1,0 +1,62 @@
+@keyframes shimmer {
+  0% { transform: translateX(-100%) }
+  100% { transform: translateX(100%) }
+}
+
+@keyframes components_editors_shimmer {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}
+
+@keyframes components_output_shimmer {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}
+
+@keyframes pulse {
+  0% {
+    opacity: 0;
+    transform: scaleY(0);
+  }
+
+  25%, 50% {
+    opacity: 1;
+    transform: scaleY(1);
+  }
+
+  75%, 100% {
+    transform: scaleY(0.5);
+    opacity: 0;
+  }
+}
+
+.LoadingIcon-circle {
+  transform-origin: center;
+  fill: currentColor;
+  animation-name: pulse;
+  animation-duration: 1s;
+  animation-timing-function: ease-in;
+  animation-play-state: running;
+  animation-fill-mode: forwards;
+  animation-iteration-count: infinite;
+}
+
+.LoadingIcon-circle:nth-child(2) {
+  animation-delay: 0.2s;
+}
+
+.LoadingIcon-circle:nth-child(3) {
+  animation-delay: 0.4s;
+}
+
+
+
+.elm-overlay {
+  z-index: 20;
+}
+
+
+.elm-mini-controls {
+  left: 6px !important;
+  right: unset !important;
+}

@@ -27,3 +27,5 @@ npm-debug.log
 /config/*.secret.exs
 
 .elixir_ls/
+elm-stuff/
+priv/graphql/

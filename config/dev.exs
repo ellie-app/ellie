@@ -11,8 +11,23 @@ config :ellie, EllieWeb.Endpoint,
   debug_errors: true,
   code_reloader: true,
   check_origin: false,
-  watchers: [node: ["node_modules/brunch/bin/brunch", "watch", "--stdin",
-                    cd: Path.expand("../assets", __DIR__)]]
+  watchers: [
+    node: [
+      "node_modules/.bin/webpack-dev-server",
+      "--watch",
+      "--config",
+      "./webpack.dev.config.js",
+      cd: Path.expand("../assets", __DIR__)
+    ],
+    node: [
+      "assets/node_modules/.bin/chokidar",
+      "lib/ellie_web/graphql/**/*.ex",
+      "lib/ellie_web/schema.ex",
+      "-c",
+      "mix ellie.graphqelm",
+      cd: Path.expand("..", __DIR__)
+    ]
+  ]
 
 # ## SSL Support
 #
@@ -35,7 +50,6 @@ config :ellie, EllieWeb.Endpoint,
   live_reload: [
     patterns: [
       ~r{priv/static/.*(js|css|png|jpeg|jpg|gif|svg)$},
-      ~r{priv/gettext/.*(po)$},
       ~r{lib/ellie_web/views/.*(ex)$},
       ~r{lib/ellie_web/templates/.*(eex)$}
     ]

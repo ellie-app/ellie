@@ -22,24 +22,15 @@ defmodule EllieWeb do
       use Phoenix.Controller, namespace: EllieWeb
       import Plug.Conn
       import EllieWeb.Router.Helpers
-      import EllieWeb.Gettext
     end
   end
 
   def view do
     quote do
-      use Phoenix.View, root: "lib/ellie_web/templates",
-                        namespace: EllieWeb
-
-      # Import convenience functions from controllers
-      import Phoenix.Controller, only: [get_flash: 2, view_module: 1]
-
-      # Use all HTML functionality (forms, tags, etc)
+      use Phoenix.View, root: "lib/ellie_web/templates", namespace: EllieWeb
       use Phoenix.HTML
-
       import EllieWeb.Router.Helpers
       import EllieWeb.ErrorHelpers
-      import EllieWeb.Gettext
     end
   end
 
@@ -54,7 +45,6 @@ defmodule EllieWeb do
   def channel do
     quote do
       use Phoenix.Channel
-      import EllieWeb.Gettext
     end
   end
 
