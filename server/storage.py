@@ -11,6 +11,7 @@ from urllib.parse import quote, unquote
 
 import boto3
 import botocore
+from botocore.client import Config
 from flask import request
 
 from .classes import (Package, PackageInfo, PackageName, ProjectId, Revision,
@@ -45,8 +46,8 @@ def _unsign_cookie(value: str) -> Optional[str]:
     return unsigned_value if to_match == value else None
 
 
-s3 = boto3.resource('s3')
-client = boto3.client('s3')
+s3 = boto3.resource('s3', config=Config(signature_version='s3v4'))
+client = boto3.client('s3', config=Config(signature_version='s3v4'))
 bucket = s3.Bucket(BUCKET_NAME)
 
 

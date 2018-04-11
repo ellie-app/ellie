@@ -18,6 +18,7 @@
     "bower": "1.8.2",
     "envify": "4.1.0",
     "pulp": "12.0.1",
-    "purescript": "0.11.7"
+    "purescript": "0.11.7",
+    "es6-promise": "4.1.0"
   }
 }
