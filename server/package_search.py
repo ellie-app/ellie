@@ -7,6 +7,7 @@ from typing import (Any, Dict, Iterator, List, NamedTuple, Optional, Pattern,
                     Set, TypeVar)
 
 import boto3
+from botocore.client import Config
 import whoosh.analysis as analysis
 import whoosh.fields as fields
 import whoosh.index as index
@@ -19,7 +20,7 @@ T = TypeVar('T')
 
 BUCKET_NAME = os.environ['AWS_S3_BUCKET']
 INDEX_DIR = ".packages_index"
-s3 = boto3.resource('s3')
+s3 = boto3.resource('s3', config=Config(signature_version='s3v4'))
 
 _all_compiler_versions = [
     Version(0, 18, 0)

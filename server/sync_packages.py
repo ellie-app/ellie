@@ -17,7 +17,6 @@ import glob2
 import requests
 from joblib import Parallel, delayed
 
-from . import storage
 from .classes import Constraint, PackageInfo, Version
 
 BUCKET_NAME = os.environ['AWS_S3_BUCKET']

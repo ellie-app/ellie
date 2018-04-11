@@ -8,7 +8,7 @@ import Ellie.Prelude
 import Control.Callback (CALLBACK, Callback)
 import Control.Callback as Callback
 import Control.Monad.Eff (Eff)
-import Control.Monad.Task (Task)
+import Control.Monad.Task (Task, EffFnTask)
 import Control.Monad.Task as Task
 import Control.Monad.Eff.Exception as Exception
 import Data.Bifunctor (lmap)
@@ -23,6 +23,9 @@ import System.FileSystem as FileSystem
 import System.Http (HTTP)
 import System.Http as Http
 import Report as Report
+
+
+foreign import injectPromisePolyfill :: forall x e. Blob -> EffFnTask (blob :: BLOB | e) x Blob
 
 
 compilerSize :: Int
@@ -93,7 +96,8 @@ load onProgress = do
     if hasSaved
       then loadBlob
       else fetchScript onProgress >>= saveBlob
-  blob
+  withPolyfill <- Task.fromEffFnTask "injectPromisePolyfill" $ injectPromisePolyfill blob
+  withPolyfill
     |> Blob.createObjectUrl
     |> Task.liftEff "Blob.createObjectUrl"
     |> lmap UnknownRuntimeCrash
