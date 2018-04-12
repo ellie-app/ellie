@@ -29,3 +29,6 @@ npm-debug.log
 .elixir_ls/
 elm-stuff/
 priv/graphql/
+priv/bin/
+priv/fixtures/
+.local_tmp/

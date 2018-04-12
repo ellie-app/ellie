@@ -60,6 +60,13 @@ fromException exception =
             , actions = []
             }
 
+        GraphqlError errors ->
+            { severity = Failure
+            , title = "GraphQL Failure"
+            , message = toString errors
+            , actions = []
+            }
+
         Unknown message ->
             { severity = Failure
             , title = "Unhandled error"

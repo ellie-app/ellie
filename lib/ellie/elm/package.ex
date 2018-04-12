@@ -2,7 +2,7 @@ defmodule Ellie.Elm.Package do
   defstruct name: %Ellie.Elm.Name{}, version: %Ellie.Elm.Version{}
 
   @behaviour Ecto.Type
-  
+
   def up do
     Ellie.Elm.Version.up
     Ellie.Elm.Name.up
@@ -25,20 +25,29 @@ defmodule Ellie.Elm.Package do
   end
 
   def type, do: :elm_package
-  
+
   def cast(%Ellie.Elm.Package{} = package), do: {:ok, package}
   def cast(_), do: :error
 
-  def load(data) when is_tuple(data) do
-    {name, version} = data
-    packge = %Ellie.Elm.Package{name: Ellie.Elm.Name.load(name), version: Ellie.Elm.Version.load(version)}
-    {:ok, packge}
+  def load({name, version}) do
+    with {:ok, n} <- Ellie.Elm.Name.load(name),
+      {:ok, v} <- Ellie.Elm.Version.load(version)
+    do
+      {:ok, %Ellie.Elm.Package{name: n, version: v}}
+    else
+      _ -> :error
+    end
   end
   def load(_), do: :error
 
   def dump(%Ellie.Elm.Package{} = package) do
-    data = {Ellie.Elm.Name.dump(package.name), Ellie.Elm.Version.dump(package.version)}
-    {:ok, data}
+    with {:ok, name} <- Ellie.Elm.Name.dump(package.name),
+      {:ok, version} <- Ellie.Elm.Version.dump(package.version)
+    do
+      {:ok, {name, version}}
+    else
+      _ -> :error
+    end
   end
   def dump(_), do: :error
 end

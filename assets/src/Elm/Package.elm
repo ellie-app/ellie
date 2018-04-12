@@ -1,50 +1,47 @@
-module Elm.Package exposing (..)
+module Elm.Package
+    exposing
+        ( Package
+        , codeLink
+        , compare
+        , docsLink
+        , selection
+        , toInputObject
+        , toString
+        )
 
-import Ellie.Constants as Constants
+import Ellie.Api.Helpers as ApiHelpers
+import Ellie.Api.InputObject as ApiInputObject
+import Ellie.Api.Object as ApiObject
+import Ellie.Api.Object.Package as ApiPackage
+import Ellie.Api.Scalar as ApiScalar
 import Elm.Name as Name exposing (Name)
 import Elm.Version as Version exposing (Version)
-import Json.Decode as Decode exposing (Decoder)
-import Json.Encode as Encode exposing (Value)
+import Graphqelm.SelectionSet exposing (SelectionSet, with)
 
 
 type alias Package =
-    ( Name, Version )
+    { name : Name
+    , version : Version
+    }
 
 
 toString : Package -> String
-toString ( name, version ) =
+toString { name, version } =
     Name.toString name ++ "@" ++ Version.toString version
 
 
 compare : Package -> Package -> Order
-compare ( ln, lv ) ( rn, rv ) =
-    let
-        nameCmp =
-            Name.compare ln rn
-    in
-    if nameCmp == EQ then
-        Version.compare lv rv
-    else
-        nameCmp
+compare l r =
+    case Name.compare l.name r.name of
+        EQ ->
+            Version.compare l.version r.version
 
-
-decoder : Decoder Package
-decoder =
-    Decode.map2 (,)
-        (Decode.index 0 Name.decoder)
-        (Decode.index 1 Version.decoder)
-
-
-encoder : Package -> Value
-encoder ( name, version ) =
-    Encode.list
-        [ Name.encoder name
-        , Version.encoder version
-        ]
+        nameCmp ->
+            nameCmp
 
 
 docsLink : Package -> String
-docsLink ( name, version ) =
+docsLink { name, version } =
     "http://package.elm-lang.org/packages/"
         ++ name.user
         ++ "/"
@@ -54,8 +51,8 @@ docsLink ( name, version ) =
 
 
 codeLink : Package -> String
-codeLink ( name, version ) =
-    "http://github.com/"
+codeLink { name, version } =
+    "https://github.com/"
         ++ name.user
         ++ "/"
         ++ name.project
@@ -63,12 +60,15 @@ codeLink ( name, version ) =
         ++ Version.toString version
 
 
-docsUrl : Package -> String
-docsUrl ( name, version ) =
-    "/private-api/packages/"
-        ++ name.user
-        ++ "/"
-        ++ name.project
-        ++ "/"
-        ++ Version.toString version
-        ++ "/docs"
+selection : SelectionSet Package ApiObject.Package
+selection =
+    ApiPackage.selection Package
+        |> with (ApiHelpers.nameField ApiPackage.name)
+        |> with (ApiHelpers.versionField ApiPackage.version)
+
+
+toInputObject : Package -> ApiInputObject.PackageInput
+toInputObject package =
+    { name = ApiScalar.Name <| Name.toString package.name
+    , version = ApiScalar.Version <| Version.toString package.version
+    }

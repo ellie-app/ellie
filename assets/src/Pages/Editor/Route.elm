@@ -1,21 +1,27 @@
 module Pages.Editor.Route exposing (Route(..), parse, toString)
 
-import Ellie.Types.Revision as Revision
+import Data.Uuid as Uuid exposing (Uuid)
 import Extra.String as String
 import Navigation
+import Pages.Editor.Types.RevisionId as RevisionId exposing (RevisionId)
 import UrlParser exposing ((</>), Parser, int, map, s, string)
 
 
 type Route
     = New
-    | Existing Revision.Id
+    | Existing RevisionId
     | NotFound
+
+
+uuid : Parser (Uuid -> a) a
+uuid =
+    UrlParser.map Uuid.fromString string
 
 
 parser : Parser (Route -> Route) Route
 parser =
     UrlParser.oneOf
-        [ UrlParser.map Existing <| UrlParser.map Revision.Id <| string </> int
+        [ UrlParser.map Existing <| UrlParser.map RevisionId <| uuid </> int
         , UrlParser.map New <| s "new"
         ]
 
@@ -33,7 +39,7 @@ toString route =
             "/new"
 
         Existing { projectId, revisionNumber } ->
-            "/" ++ projectId ++ "/" ++ String.fromInt revisionNumber
+            "/" ++ Uuid.toString projectId ++ "/" ++ String.fromInt revisionNumber
 
         NotFound ->
             "/not-found"

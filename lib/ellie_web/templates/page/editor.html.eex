@@ -4,7 +4,7 @@
     <meta charset="utf-8" />
     <script src="https://cdnjs.cloudflare.com/ajax/libs/custom-elements/1.0.8/custom-elements.min.js"></script>
     <script src="<%= asset(:editor_js) %>"></script>
-    <%= if production? do %>
+    <%= if production?() do %>
       <link rel="stylesheet" href="<%= asset(:editor_css) %>" />
     <% end %>
   </head>

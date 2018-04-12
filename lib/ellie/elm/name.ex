@@ -1,8 +1,32 @@
 defmodule Ellie.Elm.Name do
   defstruct user: "user", project: "project"
 
+  def core() do
+    %Ellie.Elm.Name{ user: "elm-lang", project: "core" }
+  end
+
+  def browser() do
+    %Ellie.Elm.Name{ user: "elm-lang", project: "browser" }
+  end
+
+  def html() do
+    %Ellie.Elm.Name{ user: "elm-lang", project: "html" }
+  end
+
+  def to_string(%Ellie.Elm.Name{user: user, project: project}) do
+    user <> "/" <> project
+  end
+
+  def from_string(value) do
+    with [user, project] <- String.split(value, "/") do
+      {:ok, %Ellie.Elm.Name{user: user, project: project}}
+    else
+      _ -> :error
+    end
+  end
+
   @behaviour Ecto.Type
-  
+
   def up do
     Ecto.Migration.execute """
       do $$ begin
@@ -21,7 +45,7 @@ defmodule Ellie.Elm.Name do
   end
 
   def type, do: :elm_name
-  
+
   def cast(%Ellie.Elm.Name{} = name), do: {:ok, name}
   def cast(_), do: :error
 

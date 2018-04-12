@@ -2,16 +2,12 @@ module Pages.Editor.State.Working exposing (..)
 
 import BoundedDeque exposing (BoundedDeque)
 import Data.Either as Either exposing (Either(..))
-import Data.Entity as Entity exposing (Entity(..))
 import Data.Jwt exposing (Jwt)
 import Data.Replaceable as Replaceable exposing (Replaceable)
-import Ellie.Types.Revision as Revision exposing (Revision)
-import Ellie.Types.Settings as Settings exposing (Settings)
-import Ellie.Types.TermsVersion as TermsVersion exposing (TermsVersion)
-import Ellie.Types.User as User exposing (User)
+import Data.Uuid as Uuid exposing (Uuid)
 import Elm.Compiler as Compiler
-import Elm.Compiler.Error as Error exposing (Error)
 import Elm.Docs as Docs exposing (Module)
+import Elm.Error as Error exposing (Error)
 import Elm.Package as Package exposing (Package)
 import Extra.Maybe as Maybe
 import Pages.Editor.Effects.Exception as Exception exposing (Exception)
@@ -23,6 +19,11 @@ import Pages.Editor.Types.Analysis as Analysis exposing (Analysis)
 import Pages.Editor.Types.Example as Example exposing (Example)
 import Pages.Editor.Types.Log as Log exposing (Log)
 import Pages.Editor.Types.Notification as Notification exposing (Notification)
+import Pages.Editor.Types.Revision as Revision exposing (Revision)
+import Pages.Editor.Types.RevisionId as RevisionId exposing (RevisionId)
+import Pages.Editor.Types.Settings as Settings exposing (Settings)
+import Pages.Editor.Types.User as User exposing (User)
+import Pages.Editor.Types.WorkspaceUpdate as WorkspaceUpdate exposing (WorkspaceUpdate)
 
 
 -- MODEL
@@ -30,7 +31,7 @@ import Pages.Editor.Types.Notification as Notification exposing (Notification)
 
 type Workbench
     = Ready
-    | FinishedWithErrors { errors : List Error, pane : ErrorsPane }
+    | FinishedWithError { error : Error, pane : ErrorsPane }
     | Finished { logs : BoundedDeque Log, pane : SuccessPane, logSearch : String }
 
 
@@ -54,10 +55,10 @@ type alias Model =
     , token : Jwt
     , activeExample : Example
     , defaultPackages : List Package
-    , revision : Replaceable Revision.Id Revision
+    , revision : Replaceable RevisionId Revision
     , saving : Bool
     , actions : Actions.Model
-    , user : Entity User.Id User
+    , user : User
     , workbench : Workbench
     , creatingGist : Bool
     , compiling : Bool
@@ -70,19 +71,19 @@ type alias Model =
     }
 
 
-reset : Jwt -> Entity User.Id User -> Maybe (Entity Revision.Id Revision) -> List Package -> Model
+reset : Jwt -> User -> Maybe ( RevisionId, Revision ) -> List Package -> Model
 reset token user revision defaultPackages =
     { elmCode =
         revision
-            |> Maybe.map (Entity.record >> .elmCode)
+            |> Maybe.map (Tuple.second >> .elmCode)
             |> Maybe.withDefault (.elm Example.helloWorld)
     , htmlCode =
         revision
-            |> Maybe.map (Entity.record >> .htmlCode)
+            |> Maybe.map (Tuple.second >> .htmlCode)
             |> Maybe.withDefault (.html Example.helloWorld)
     , packages =
         revision
-            |> Maybe.map (Entity.record >> .packages)
+            |> Maybe.map (Tuple.second >> .packages)
             |> Maybe.withDefault defaultPackages
     , activeExample = Example.helloWorld
     , projectName = ""
@@ -108,64 +109,38 @@ ownRevision : Model -> Bool
 ownRevision model =
     case Replaceable.toMaybe model.revision of
         Just revision ->
-            Maybe.eq User.idEq
-                (Entity.record revision |> .userId)
-                (Just (Entity.key model.user))
+            -- Maybe.eq
+            --     (Tuple.second revision |> .userId)
+            --     (Just (Entity.key model.user))
+            -- TODO
+            False
 
         Nothing ->
             False
 
 
-toSave : Model -> Either Revision (Entity Revision.Id Revision)
+toRevision : Model -> Revision
+toRevision model =
+    { elmCode = model.elmCode
+    , htmlCode = model.htmlCode
+    , packages = model.packages
+    , title = model.projectName
+    , elmVersion = Compiler.version
+    }
+
+
+toSave : Model -> Either Revision ( RevisionId, Revision )
 toSave model =
     case Replaceable.toMaybe model.revision of
-        Just revision ->
-            if Debug.log "owned" <| ownRevision model then
-                Right <|
-                    Entity.map
-                        (\r ->
-                            { r
-                                | elmCode = model.elmCode
-                                , htmlCode = model.htmlCode
-                                , packages = model.packages
-                                , title = model.projectName
-                                , termsVersion =
-                                    model.user
-                                        |> Entity.record
-                                        |> .termsVersion
-                                        |> Maybe.withDefault TermsVersion.zero
-                            }
-                        )
-                        revision
+        Just ( rid, _ ) ->
+            if ownRevision model then
+                Right
+                    ( rid, toRevision model )
             else
-                Left
-                    { elmCode = model.elmCode
-                    , htmlCode = model.htmlCode
-                    , packages = model.packages
-                    , title = model.projectName
-                    , elmVersion = Compiler.version
-                    , userId = Just (Entity.key model.user)
-                    , termsVersion =
-                        model.user
-                            |> Entity.record
-                            |> .termsVersion
-                            |> Maybe.withDefault TermsVersion.zero
-                    }
+                Left <| toRevision model
 
         Nothing ->
-            Left
-                { elmCode = model.elmCode
-                , htmlCode = model.htmlCode
-                , packages = model.packages
-                , title = model.projectName
-                , elmVersion = Compiler.version
-                , userId = Just (Entity.key model.user)
-                , termsVersion =
-                    model.user
-                        |> Entity.record
-                        |> .termsVersion
-                        |> Maybe.withDefault TermsVersion.zero
-                }
+            Left <| toRevision model
 
 
 shouldCheckNavigation : Model -> Bool
@@ -176,7 +151,7 @@ shouldCheckNavigation model =
                 || (model.htmlCode /= model.activeExample.html)
                 || (model.packages /= model.defaultPackages)
 
-        Just (Entity _ revision) ->
+        Just ( _, revision ) ->
             (model.elmCode /= revision.elmCode)
                 || (model.htmlCode /= revision.htmlCode)
                 || (model.packages /= revision.packages)
@@ -208,7 +183,7 @@ type Msg
       -- Workbench stuff
     | CompileRequested
     | ExpandWorkbench
-    | CompileFinished (List Error)
+    | CompileFinished (Maybe Error)
     | WorkbenchResized Float
     | ErrorsPaneSelected ErrorsPane
     | SuccessPaneSelected SuccessPane
@@ -216,9 +191,9 @@ type Msg
     | ClearLogsClicked
     | LogReceived Log
     | LogSearchChanged String
-    | LocationSelected Error.Location
+    | LocationSelected Error.Position
     | SaveRequested
-    | SaveCompleted (Result String (Entity Revision.Id Revision))
+    | SaveCompleted RevisionId Revision
       -- Share stuff
     | CreateGistRequested
     | CreateGistComplete (Maybe String)
@@ -230,13 +205,13 @@ type Msg
     | ExceptionReceived Exception
       -- Global stuff
     | RouteChanged Route.Route
-    | RevisionLoaded (Entity Revision.Id Revision)
+    | RevisionLoaded RevisionId Revision
     | AnimationFinished
     | OnlineStatusChanged Bool
     | NoOp
 
 
-init : Jwt -> Entity User.Id User -> Maybe (Entity Revision.Id Revision) -> List Package -> ( Model, Outbound Msg )
+init : Jwt -> User -> Maybe ( RevisionId, Revision ) -> List Package -> ( Model, Outbound Msg )
 init token user revision defaultPackages =
     reset token user revision defaultPackages
         |> update CompileRequested
@@ -245,7 +220,8 @@ init token user revision defaultPackages =
                 , Outbound.batch
                     [ outbound
                     , Outbound.Delay 1000 AnimationFinished
-                    , Outbound.GetDocs model.packages DocsReceived
+
+                    -- , Outbound.GetDocs model.packages DocsReceived
                     ]
                 )
            )
@@ -265,10 +241,6 @@ update msg ({ user } as model) =
             )
 
         TokenChanged token ->
-            let
-                _ =
-                    Debug.log "token" token
-            in
             ( model, Outbound.none )
 
         SaveRequested ->
@@ -278,16 +250,16 @@ update msg ({ user } as model) =
                     , Outbound.CreateRevision model.token revision SaveCompleted
                     )
 
-                Right entity ->
+                Right ( revisionId, revision ) ->
                     ( { model | saving = True }
-                    , Outbound.UpdateRevision model.token entity SaveCompleted
+                    , Outbound.UpdateRevision model.token revisionId.projectId revision SaveCompleted
                     )
 
-        SaveCompleted result ->
-            case ( Replaceable.loading model.revision, result ) of
-                ( Just key, Ok entity ) ->
-                    if Revision.idEq key (Entity.key entity) then
-                        ( { model | saving = False, revision = Replaceable.Loaded entity }
+        SaveCompleted revisionId revision ->
+            case Replaceable.loading model.revision of
+                Just key ->
+                    if RevisionId.eq key revisionId then
+                        ( { model | saving = False, revision = Replaceable.Loaded ( revisionId, revision ) }
                         , Outbound.none
                         )
                     else
@@ -295,33 +267,19 @@ update msg ({ user } as model) =
                         , Outbound.none
                         )
 
-                ( Nothing, Ok entity ) ->
+                Nothing ->
                     ( { model
                         | saving = False
-                        , revision = Replaceable.Loaded entity
+                        , revision = Replaceable.Loaded ( revisionId, revision )
                         , notifications =
                             { title = "Saved!"
                             , severity = Notification.Success
                             , message = "Your changes have been saved. You can share them using this link:"
-                            , actions = [ Notification.CopyLink <| Revision.link <| Entity.key entity ]
+                            , actions = [ Notification.CopyLink <| RevisionId.link revisionId ]
                             }
                                 :: model.notifications
                       }
-                    , Outbound.Navigate <| Route.toString <| Route.Existing (Entity.key entity)
-                    )
-
-                ( _, Err message ) ->
-                    ( { model
-                        | saving = False
-                        , notifications =
-                            { title = "Failed to Save"
-                            , severity = Notification.Failure
-                            , message = message
-                            , actions = []
-                            }
-                                :: model.notifications
-                      }
-                    , Outbound.none
+                    , Outbound.Navigate <| Route.toString <| Route.Existing revisionId
                     )
 
         LocationSelected location ->
@@ -401,8 +359,8 @@ update msg ({ user } as model) =
 
         ErrorsPaneSelected pane ->
             case model.workbench of
-                FinishedWithErrors state ->
-                    ( { model | workbench = FinishedWithErrors { state | pane = pane } }
+                FinishedWithError state ->
+                    ( { model | workbench = FinishedWithError { state | pane = pane } }
                     , Outbound.none
                     )
 
@@ -488,12 +446,12 @@ update msg ({ user } as model) =
 
         CompileRequested ->
             ( { model | compiling = True }
-            , Outbound.Compile model.token model.elmCode model.htmlCode model.packages
+            , Outbound.Compile model.elmCode model.packages
             )
 
-        CompileFinished errors ->
-            case ( model.compiling, errors, model.workbench ) of
-                ( True, [], Finished state ) ->
+        CompileFinished error ->
+            case ( model.compiling, error, model.workbench ) of
+                ( True, Nothing, Finished state ) ->
                     ( { model
                         | compiling = False
                         , workbench =
@@ -506,7 +464,7 @@ update msg ({ user } as model) =
                     , Outbound.ReloadIframe
                     )
 
-                ( True, [], _ ) ->
+                ( True, Nothing, _ ) ->
                     ( { model
                         | compiling = False
                         , workbench =
@@ -516,21 +474,21 @@ update msg ({ user } as model) =
                                 , logSearch = ""
                                 }
                       }
-                    , Outbound.none
+                    , Outbound.ReloadIframe
                     )
 
-                ( True, nonEmpty, FinishedWithErrors state ) ->
+                ( True, Just error, FinishedWithError state ) ->
                     ( { model
                         | compiling = False
-                        , workbench = FinishedWithErrors { state | errors = nonEmpty }
+                        , workbench = FinishedWithError { state | error = error }
                       }
                     , Outbound.none
                     )
 
-                ( True, nonEmpty, _ ) ->
+                ( True, Just error, _ ) ->
                     ( { model
                         | compiling = False
-                        , workbench = FinishedWithErrors { errors = nonEmpty, pane = ErrorsList }
+                        , workbench = FinishedWithError { error = error, pane = ErrorsList }
                       }
                     , Outbound.none
                     )
@@ -575,7 +533,8 @@ update msg ({ user } as model) =
                     model.packages ++ [ package ]
             in
             ( { model | packages = nextPackages }
-            , Outbound.GetDocs nextPackages DocsReceived
+              -- , Outbound.GetDocs nextPackages DocsReceived
+            , Outbound.none
             )
 
         PackageUninstalled package ->
@@ -584,7 +543,8 @@ update msg ({ user } as model) =
                     List.filter ((/=) package) model.packages
             in
             ( { model | packages = nextPackages }
-            , Outbound.GetDocs nextPackages DocsReceived
+              -- , Outbound.GetDocs nextPackages DocsReceived
+            , Outbound.none
             )
 
         ChangedProjectName projectName ->
@@ -608,7 +568,7 @@ update msg ({ user } as model) =
             )
 
         SettingsChanged settings ->
-            ( { model | user = Entity.map (\u -> { u | settings = settings }) model.user }
+            ( { model | user = { user | settings = settings } }
             , Outbound.SaveSettings model.token settings
             )
 
@@ -638,11 +598,11 @@ update msg ({ user } as model) =
             , Outbound.EnableNavigationCheck <| shouldCheckNavigation model
             )
 
-        RevisionLoaded ((Entity revisionId _) as entity) ->
+        RevisionLoaded revisionId revision ->
             case model.revision of
                 Replaceable.Loading rid ->
                     if rid == revisionId then
-                        ( reset model.token model.user (Just entity) model.defaultPackages
+                        ( reset model.token model.user (Just ( revisionId, revision )) model.defaultPackages
                         , Outbound.none
                         )
                     else
@@ -650,7 +610,7 @@ update msg ({ user } as model) =
 
                 Replaceable.Replacing rid _ ->
                     if rid == revisionId then
-                        ( reset model.token model.user (Just entity) model.defaultPackages
+                        ( reset model.token model.user (Just ( revisionId, revision )) model.defaultPackages
                         , Outbound.none
                         )
                     else
@@ -663,10 +623,10 @@ update msg ({ user } as model) =
             case route of
                 Route.Existing newRevisionId ->
                     case model.revision of
-                        Replaceable.Loaded (Entity rid r) ->
+                        Replaceable.Loaded ( rid, r ) ->
                             if newRevisionId /= rid then
-                                ( { model | revision = Replaceable.Replacing newRevisionId (Entity rid r) }
-                                , Outbound.GetRevision newRevisionId RevisionLoaded
+                                ( { model | revision = Replaceable.Replacing newRevisionId ( rid, r ) }
+                                , Outbound.GetRevision newRevisionId (RevisionLoaded newRevisionId)
                                 )
                             else
                                 ( model, Outbound.none )
@@ -674,7 +634,7 @@ update msg ({ user } as model) =
                         Replaceable.Loading rid ->
                             if newRevisionId /= rid then
                                 ( { model | revision = Replaceable.Loading newRevisionId }
-                                , Outbound.GetRevision newRevisionId RevisionLoaded
+                                , Outbound.GetRevision newRevisionId (RevisionLoaded newRevisionId)
                                 )
                             else
                                 ( model, Outbound.none )
@@ -682,14 +642,14 @@ update msg ({ user } as model) =
                         Replaceable.Replacing rid entity ->
                             if newRevisionId /= rid then
                                 ( { model | revision = Replaceable.Replacing newRevisionId entity }
-                                , Outbound.GetRevision newRevisionId RevisionLoaded
+                                , Outbound.GetRevision newRevisionId (RevisionLoaded newRevisionId)
                                 )
                             else
                                 ( model, Outbound.none )
 
                         Replaceable.NotAsked ->
                             ( { model | revision = Replaceable.Loading newRevisionId }
-                            , Outbound.GetRevision newRevisionId RevisionLoaded
+                            , Outbound.GetRevision newRevisionId (RevisionLoaded newRevisionId)
                             )
 
                 Route.New ->
@@ -704,7 +664,7 @@ update msg ({ user } as model) =
 
                 Route.NotFound ->
                     case Replaceable.toMaybe model.revision of
-                        Just (Entity rid _) ->
+                        Just ( rid, _ ) ->
                             ( model
                             , Outbound.Redirect <| Route.toString <| Route.Existing rid
                             )
@@ -719,9 +679,15 @@ subscriptions : Model -> Inbound Msg
 subscriptions model =
     Inbound.batch
         [ Inbound.map ActionsMsg <| Actions.subscriptions model.actions
-        , Inbound.CompileFinished model.token CompileFinished
-        , if model.connected then
-            Inbound.WorkspaceDetached model.token (OnlineStatusChanged False)
-          else
-            Inbound.WorkspaceAttached model.token (\_ -> OnlineStatusChanged True)
+        , Inbound.WorkspaceUpdates <|
+            \update ->
+                case update of
+                    WorkspaceUpdate.CompileCompleted maybeError ->
+                        CompileFinished maybeError
+
+                    WorkspaceUpdate.Attached _ ->
+                        OnlineStatusChanged True
+
+                    _ ->
+                        NoOp
         ]

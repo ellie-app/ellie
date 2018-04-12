@@ -8,37 +8,37 @@ module Pages.Editor.State.Setup
         , update
         )
 
-import Data.Entity as Entity exposing (Entity(..))
 import Data.Jwt as Jwt exposing (Jwt)
 import Data.Transition as Transition
-import Ellie.Types.Revision as Revision exposing (Revision)
-import Ellie.Types.TermsVersion as TermsVersion exposing (TermsVersion)
-import Ellie.Types.User as User exposing (User)
 import Elm.Package exposing (Package)
 import Pages.Editor.Effects.Exception as Exception exposing (Exception(..))
 import Pages.Editor.Effects.Inbound as Inbound exposing (Inbound)
 import Pages.Editor.Effects.Outbound as Outbound exposing (Outbound)
 import Pages.Editor.Route as Route exposing (Route(..))
+import Pages.Editor.Types.Revision as Revision exposing (Revision)
+import Pages.Editor.Types.RevisionId as RevisionId exposing (RevisionId)
+import Pages.Editor.Types.User as User exposing (User)
+import Pages.Editor.Types.WorkspaceUpdate as WorkspaceUpdate exposing (WorkspaceUpdate)
 
 
 type Model
-    = Authenticating { possibleToken : Maybe Jwt, revisionId : Maybe Revision.Id }
-    | AcceptingTerms { latestTerms : TermsVersion, token : Jwt, user : Entity User.Id User, revisionId : Maybe Revision.Id, loading : Bool }
-    | Attaching { token : Jwt, user : Entity User.Id User, revisionId : Maybe Revision.Id }
-    | Loading { token : Jwt, user : Entity User.Id User, revisionId : Revision.Id, packages : List Package }
+    = Authenticating { possibleToken : Maybe Jwt, revisionId : Maybe RevisionId }
+    | AcceptingTerms { latestTerms : Int, token : Jwt, user : User, revisionId : Maybe RevisionId, loading : Bool }
+    | Attaching { token : Jwt, user : User, revisionId : Maybe RevisionId }
+    | Loading { token : Jwt, user : User, revisionId : RevisionId, packages : List Package }
     | Failure Exception
 
 
 type alias Transition =
     Transition.Transition Model
         { token : Jwt
-        , user : Entity User.Id User
-        , revision : Maybe (Entity Revision.Id Revision)
+        , user : User
+        , revision : Maybe ( RevisionId, Revision )
         , packages : List Package
         }
 
 
-init : Maybe Jwt -> Maybe Revision.Id -> ( Model, Outbound Msg )
+init : Maybe Jwt -> Maybe RevisionId -> ( Model, Outbound Msg )
 init possibleToken revisionId =
     ( Authenticating { possibleToken = possibleToken, revisionId = revisionId }
     , Outbound.Authenticate possibleToken UserPrepared
@@ -47,12 +47,13 @@ init possibleToken revisionId =
 
 type Msg
     = RouteChanged Route.Route
-    | UserPrepared TermsVersion Jwt (Entity User.Id User)
+    | UserPrepared Int Jwt User
     | UserAcceptedTerms
     | ServerAcceptedTerms
     | WorkspaceAttached (List Package)
-    | RevisionLoaded (Entity Revision.Id Revision)
+    | RevisionLoaded Revision
     | ExceptionOccured Exception
+    | NoOp
 
 
 update : Msg -> Model -> ( Transition, Outbound Msg )
@@ -87,15 +88,16 @@ update msg state =
                 UserPrepared termsVersion newToken user ->
                     let
                         termsVersionMatched =
-                            user
-                                |> Entity.record
-                                |> .termsVersion
-                                |> Maybe.map (TermsVersion.eq termsVersion)
+                            user.acceptedTerms
+                                |> Maybe.map ((==) termsVersion)
                                 |> Maybe.withDefault False
                     in
                     if termsVersionMatched then
                         ( Transition.step <| Attaching { token = newToken, user = user, revisionId = revisionId }
-                        , Outbound.SaveToken newToken
+                        , Outbound.batch
+                            [ Outbound.SaveToken newToken
+                            , Outbound.AttachToWorkspace newToken
+                            ]
                         )
                     else
                         ( { latestTerms = termsVersion
@@ -119,7 +121,7 @@ update msg state =
                     , Outbound.none
                     )
 
-        AcceptingTerms state ->
+        AcceptingTerms ({ user } as state) ->
             case msg of
                 RouteChanged route ->
                     case route of
@@ -159,11 +161,11 @@ update msg state =
                 ServerAcceptedTerms ->
                     ( { token = state.token
                       , revisionId = state.revisionId
-                      , user = Entity.map (\u -> { u | termsVersion = Just state.latestTerms }) state.user
+                      , user = { user | acceptedTerms = Just state.latestTerms }
                       }
                         |> Attaching
                         |> Transition.step
-                    , Outbound.none
+                    , Outbound.AttachToWorkspace state.token
                     )
 
                 _ ->
@@ -243,9 +245,9 @@ update msg state =
                             , Outbound.Redirect <| Route.toString <| Route.Existing revisionId
                             )
 
-                RevisionLoaded ((Entity rid revision) as entity) ->
-                    ( Transition.exit { token = token, user = user, revision = Just entity, packages = packages }
-                    , Outbound.GetRevision rid RevisionLoaded
+                RevisionLoaded revision ->
+                    ( Transition.exit { token = token, user = user, revision = Just ( revisionId, revision ), packages = packages }
+                    , Outbound.none
                     )
 
                 ExceptionOccured exception ->
@@ -263,13 +265,13 @@ update msg state =
 
 
 subscriptions : Model -> Inbound Msg
-subscriptions model =
-    case model of
-        Attaching { token } ->
-            Inbound.WorkspaceAttached token WorkspaceAttached
+subscriptions _ =
+    Inbound.WorkspaceUpdates
+        (\update ->
+            case update of
+                WorkspaceUpdate.Attached packages ->
+                    WorkspaceAttached packages
 
-        Loading { token } ->
-            Inbound.KeepWorkspaceOpen token
-
-        _ ->
-            Inbound.none
+                _ ->
+                    NoOp
+        )

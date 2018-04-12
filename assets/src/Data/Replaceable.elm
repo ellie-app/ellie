@@ -1,23 +1,21 @@
 module Data.Replaceable exposing (..)
 
-import Data.Entity as Entity exposing (Entity)
-
 
 type Replaceable k v
     = NotAsked
     | Loading k
-    | Replacing k (Entity k v)
-    | Loaded (Entity k v)
+    | Replacing k ( k, v )
+    | Loaded ( k, v )
 
 
-fromMaybe : Maybe (Entity k v) -> Replaceable k v
+fromMaybe : Maybe ( k, v ) -> Replaceable k v
 fromMaybe maybeEntity =
     maybeEntity
         |> Maybe.map Loaded
         |> Maybe.withDefault NotAsked
 
 
-toMaybe : Replaceable k v -> Maybe (Entity k v)
+toMaybe : Replaceable k v -> Maybe ( k, v )
 toMaybe replaceable =
     case replaceable of
         NotAsked ->
@@ -49,7 +47,7 @@ loading replaceable =
             Nothing
 
 
-inject : Entity k v -> Replaceable k v -> Replaceable k v
+inject : ( k, v ) -> Replaceable k v -> Replaceable k v
 inject entity replaceable =
     case replaceable of
         NotAsked ->

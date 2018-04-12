@@ -7,6 +7,7 @@ defmodule Ellie.User do
   @foreign_key_type :binary_id
   schema "users" do
     field :settings, Ellie.Settings
+    field :terms_version, :integer
     has_many :revisions, Revision
     timestamps()
   end
@@ -14,7 +15,7 @@ defmodule Ellie.User do
   @doc false
   def changeset(user, attrs) do
     user
-    |> cast(attrs, [:settings])
+    |> cast(attrs, [:settings, :terms_version])
     |> validate_required([:settings])
   end
 end

@@ -38,12 +38,16 @@ defmodule Ellie.Mixfile do
       {:phoenix_pubsub, "~> 1.0"},
       {:phoenix_ecto, "~> 3.2"},
       {:postgrex, ">= 0.0.0"},
-      {:phoenix_html, "~> 2.10"},
+      {:phoenix_html, "~> 2.10.0"},
       {:phoenix_live_reload, "~> 1.0", only: :dev},
       {:cowboy, "~> 1.0"},
-      {:absinthe, "~> 1.4"},
-      {:absinthe_plug, "~> 1.4"}
-      {:poison, "~> 3.1"}
+      {:absinthe, "~> 1.4.0"},
+      {:absinthe_plug, "~> 1.4.0"},
+      {:absinthe_phoenix, "~> 1.4.0"},
+      {:poison, "~> 3.1"},
+      {:porcelain, "~> 2.0.3"},
+      {:murmur, "~> 1.0"},
+      {:briefly, "~> 0.3"}
     ]
   end
 
@@ -57,7 +61,8 @@ defmodule Ellie.Mixfile do
     [
       "ecto.setup": ["ecto.create", "ecto.migrate", "run priv/repo/seeds.exs"],
       "ecto.reset": ["ecto.drop", "ecto.setup"],
-      "test": ["ecto.create --quiet", "ecto.migrate", "test"]
+      "test": ["ecto.create --quiet", "ecto.migrate", "test"],
+      "ellie.graphql": ["loadpaths", "absinthe.schema.json ./priv/graphql/schema.json", "ellie.graphqelm"]
     ]
   end
 end

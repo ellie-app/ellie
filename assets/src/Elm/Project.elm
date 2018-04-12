@@ -19,6 +19,7 @@ module Elm.Project
 -}
 
 import Elm.Name as Name exposing (Name)
+import Elm.Package as Package exposing (Package)
 import Elm.Version as Version exposing (Version)
 import Json.Encode as Encode exposing (Value)
 
@@ -30,7 +31,7 @@ import Json.Encode as Encode exposing (Value)
 -}
 type alias Project =
     { sourceDirs : List String
-    , deps : List ( Name, Version )
+    , deps : List Package
     , elm : Version
     }
 
@@ -45,7 +46,7 @@ encoder project =
         [ ( "type", Encode.string "browser" )
         , ( "source-directories", Encode.list <| List.map Encode.string project.sourceDirs )
         , ( "elm-version", Version.encoder project.elm )
-        , ( "dependencies", encodeDeps Version.encoder project.deps )
+        , ( "dependencies", encodeDeps project.deps )
         , ( "test-dependencies", Encode.object [] )
         , ( "do-not-edit-this-by-hand"
           , Encode.object [ ( "transitive-dependencies", Encode.object [] ) ]
@@ -53,13 +54,11 @@ encoder project =
         ]
 
 
-encodeDeps : (constraint -> Value) -> List ( Name, constraint ) -> Value
-encodeDeps encodeConstraint deps =
-    Encode.object <|
-        List.sortBy Tuple.first <|
-            List.map (encodeDep encodeConstraint) deps
+encodeDeps : List Package -> Value
+encodeDeps deps =
+    Encode.object <| List.sortBy Tuple.first <| List.map encodeDep deps
 
 
-encodeDep : (constraint -> Value) -> ( Name, constraint ) -> ( String, Value )
-encodeDep encodeConstraint ( name, constraint ) =
-    ( Name.toString name, encodeConstraint constraint )
+encodeDep : Package -> ( String, Value )
+encodeDep { name, version } =
+    ( Name.toString name, Version.encoder version )

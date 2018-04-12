@@ -1,11 +1,10 @@
-module Pages.Editor.Views.Output exposing (Attribute, debug, onLog, src, view)
+module Pages.Editor.Views.Output exposing (Attribute, debug, elmSource, html, onLog, view)
 
 import Css exposing (..)
 import Css.Foreign
 import Html.Styled as Html exposing (Html)
 import Html.Styled.Attributes as Attributes exposing (css)
 import Html.Styled.Events as Events
-import Html.Styled.Keyed as Keyed
 import Json.Decode as Decode
 import Json.Encode as Encode
 import Pages.Editor.Types.Log as Log exposing (Log)
@@ -20,9 +19,14 @@ unAttr (Attr a) =
     a
 
 
-src : String -> Attribute msg
-src value =
-    Attr <| Attributes.src value
+elmSource : String -> Attribute msg
+elmSource value =
+    Attr <| Attributes.property "elmSource" <| Encode.string value
+
+
+html : String -> Attribute msg
+html value =
+    Attr <| Attributes.property "html" <| Encode.string value
 
 
 debug : Bool -> Attribute msg

@@ -1,6 +1,22 @@
 defmodule Ellie.Elm.Version do
   defstruct major: 1, minor: 0, patch: 0
 
+  def to_string(%Ellie.Elm.Version{major: major, minor: minor, patch: patch}) do
+    Integer.to_string(major) <> "." <> Integer.to_string(minor) <> "." <> Integer.to_string(patch)
+  end
+
+  def from_string(value) do
+    with [major_s, minor_s, patch_s] <- String.split(value, "."),
+      {major, _} <- Integer.parse(major_s),
+      {minor, _} <- Integer.parse(minor_s),
+      {patch, _} <- Integer.parse(patch_s)
+    do
+      {:ok, %Ellie.Elm.Version{major: major, minor: minor, patch: patch}}
+    else
+      _ -> :error
+    end
+  end
+
   @behaviour Ecto.Type
 
   def up do
@@ -22,7 +38,7 @@ defmodule Ellie.Elm.Version do
   end
 
   def type, do: :elm_version
-  
+
   def cast(%Ellie.Elm.Version{} = version), do: {:ok, version}
   def cast(_), do: :error
 
@@ -38,4 +54,13 @@ defmodule Ellie.Elm.Version do
     {:ok, data}
   end
   def dump(_), do: :error
+end
+
+defimpl Poison.Decoder, for: Ellie.Elm.Version do
+  def decode(value, _options) do
+    case Ellie.Elm.Version.from_string(value) do
+      :error -> {:error, {:invalid, "Expecting a version MAJOR.MINOR.PATCH"}}
+      success -> success
+    end
+  end
 end

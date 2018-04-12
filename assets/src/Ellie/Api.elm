@@ -1,221 +1,75 @@
 module Ellie.Api
     exposing
-        ( acceptTerms
-        , createGist
-        , defaultRevision
-        , exactRevision
-        , format
-        , searchPackages
-        , send
-        , termsContent
-        , toTask
+        ( revision
         )
 
-import Data.Ellie.ApiError as ApiError exposing (ApiError)
-import Data.Ellie.Revision as Revision exposing (Revision, Snapshot(..))
-import Data.Ellie.RevisionId as RevisionId exposing (RevisionId)
-import Data.Ellie.TermsVersion as TermsVersion exposing (TermsVersion)
-import Data.Elm.Package as Package exposing (Package)
-import Data.Elm.Package.Description as Description exposing (Description)
-import Data.Elm.Package.Version as Version exposing (Version)
-import Ellie.Constants as Constants
-import Http exposing (Error(..), Expect, Request)
-import Http.Extra as Http
-import HttpBuilder exposing (..)
-import Json.Decode as Decode exposing (Decoder)
-import Json.Encode as Encode exposing (Value)
-import Task exposing (Task)
+import Data.Jwt as Jwt exposing (Jwt)
+import Ellie.Api.Object.Package as ApiPackage
+import Ellie.Api.Object.Revision as ApiRevision
+import Ellie.Api.Query as ApiQuery
+import Ellie.Api.Scalar exposing (Name(..), Uuid(..), Version(..))
+import Ellie.Types.Revision as Revision exposing (Revision)
+import Ellie.Types.TermsVersion as TermsVersion exposing (TermsVersion)
+import Elm.Name as Name
+import Elm.Version as Version
+import Graphqelm.Field as Field
+import Graphqelm.Http as Graphqelm
+import Graphqelm.Operation exposing (RootMutation, RootQuery, RootSubscription)
+import Graphqelm.SelectionSet exposing (hardcoded, with)
 
 
--- TOP LEVEL
+type alias Error =
+    Graphqelm.Error ()
 
 
-send : (Result ApiError a -> msg) -> RequestBuilder a -> Cmd msg
-send tagger builder =
-    builder
-        |> toRequest
-        |> Http.send (Result.mapError upgradeError >> tagger)
+versionField : Field.Field Version a -> Field.Field Version.Version a
+versionField =
+    Field.mapOrFail (\(Version v) -> Version.fromString v)
 
 
-toTask : RequestBuilder a -> Task ApiError a
-toTask builder =
-    builder
-        |> HttpBuilder.toTask
-        |> Task.mapError upgradeError
+uuidField : Field.Field Uuid a -> Field.Field String a
+uuidField =
+    Field.map (\(Uuid u) -> u)
 
 
-fullUrl : String -> String
-fullUrl path =
-    Constants.apiBase ++ path
+nameField : Field.Field Name a -> Field.Field Name.Name a
+nameField =
+    Field.mapOrFail (\(Name n) -> Name.fromString n)
 
 
-withApiHeaders : RequestBuilder a -> RequestBuilder a
-withApiHeaders builder =
-    builder
-        |> withCredentials
-        |> withHeader "Accept" "application/json"
-
-
-
--- ERRORS
-
-
-decodeServerError : Decoder String
-decodeServerError =
-    Decode.oneOf
-        [ Decode.field "message" Decode.string
-        , Decode.field "error" Decode.string
-        ]
-
-
-upgradeError : Error -> ApiError
-upgradeError error =
-    case error of
-        BadUrl url ->
-            { statusCode = 0
-            , message = "Bad Url" ++ url
-            , explanation = "Url " ++ url
+revision : Jwt -> Revision.Id -> (Result Error ( Revision.Id, Revision ) -> msg) -> Cmd msg
+revision token revisionId callback =
+    let
+        arguments =
+            { projectId = Uuid revisionId.projectId
+            , revisionNumber = revisionId.revisionNumber
             }
 
-        NetworkError ->
-            { statusCode = 0
-            , message = "A Network Error Occurred"
-            , explanation = "The network may be offline or your signal may not be strong enough."
-            }
+        query =
+            ApiQuery.selection (,)
+                |> with (ApiQuery.revision arguments idQuery)
+                |> with (ApiQuery.revision arguments revisionQuery)
 
-        Timeout ->
-            { statusCode = 0
-            , message = "A Network Timeout Occurred"
-            , explanation = "The request timed out."
-            }
+        idQuery =
+            ApiRevision.selection Revision.Id
+                |> with (uuidField ApiRevision.projectId)
+                |> with ApiRevision.revisionNumber
 
-        BadStatus response ->
-            case Decode.decodeString decodeServerError response.body of
-                Ok explanation ->
-                    { statusCode = response.status.code
-                    , message = response.status.message
-                    , explanation = explanation
-                    }
+        revisionQuery =
+            ApiRevision.selection Revision
+                |> with ApiRevision.htmlCode
+                |> with ApiRevision.elmCode
+                |> with (ApiRevision.packages packageQuery)
+                |> with (Field.map (Maybe.withDefault "") ApiRevision.title)
+                |> with (versionField ApiRevision.elmVersion)
+                |> with (Field.map (Maybe.withDefault 1 >> TermsVersion.fromInt >> Result.withDefault TermsVersion.zero) ApiRevision.termsVersion)
 
-                Err failure ->
-                    upgradeError <| BadPayload failure response
-
-        BadPayload innerError response ->
-            { statusCode = response.status.code
-            , message = "Unexpected Response from Server"
-            , explanation = innerError
-            }
-
-
-
--- SEARCH
-
-
-searchPackages : Version -> String -> RequestBuilder (List Package)
-searchPackages elmVersion searchTerm =
-    get (fullUrl "/search")
-        |> withQueryParams
-            [ ( "query", searchTerm )
-            , ( "elmVersion", Version.toString elmVersion )
-            ]
-        |> withApiHeaders
-        |> withExpect (Http.expectJson (Decode.list Package.decoder))
-
-
-
--- FORMAT
-
-
-formatPayload : String -> Value
-formatPayload source =
-    Encode.object
-        [ ( "source", Encode.string source ) ]
-
-
-formatExpect : Expect String
-formatExpect =
-    Decode.field "result" Decode.string
-        |> Http.expectJson
-
-
-format : String -> RequestBuilder String
-format source =
-    post (fullUrl "/format")
-        |> withApiHeaders
-        |> withJsonBody (formatPayload source)
-        |> withExpect formatExpect
-
-
-
--- REVISIONS AND PROJECTS
-
-
-exactRevision : RevisionId -> RequestBuilder Revision
-exactRevision { projectId, revisionNumber } =
-    get (fullUrl ("/revisions/" ++ projectId ++ "/" ++ toString revisionNumber))
-        |> withApiHeaders
-        |> withExpect (Http.expectJson Revision.decoder)
-
-
-defaultRevision : RequestBuilder Revision
-defaultRevision =
-    get (fullUrl "/revisions/default")
-        |> withApiHeaders
-        |> withExpect (Http.expectJson Revision.decoder)
-
-
-
--- EXPORTS
-
-
-elmPackageJson : Revision -> String
-elmPackageJson revision =
-    revision
-        |> Revision.toDescription
-        |> Description.encoder
-        |> Encode.encode 4
-
-
-createGistPayload : Revision -> Value
-createGistPayload revision =
-    Encode.object
-        [ ( "description", Encode.string revision.title )
-        , ( "public", Encode.bool True )
-        , ( "files"
-          , Encode.object
-                [ ( Revision.moduleName revision ++ ".elm", Encode.object [ ( "content", Encode.string revision.elmCode ) ] )
-                , ( "index.html", Encode.object [ ( "content", Encode.string revision.htmlCode ) ] )
-                , ( "elm-package.json", Encode.object [ ( "content", Encode.string <| elmPackageJson revision ) ] )
-                ]
-          )
-        ]
-
-
-createGistExpect : Expect String
-createGistExpect =
-    Decode.field "html_url" Decode.string
-        |> Http.expectJson
-
-
-createGist : Revision -> RequestBuilder String
-createGist revision =
-    post "https://api.github.com/gists"
-        |> withJsonBody (createGistPayload revision)
-        |> withExpect createGistExpect
-
-
-
--- TERMS
-
-
-termsContent : TermsVersion -> RequestBuilder String
-termsContent version =
-    get (Constants.cdnBase ++ "/terms-of-service/" ++ TermsVersion.toString version ++ ".md")
-        |> withExpect Http.expectString
-
-
-acceptTerms : TermsVersion -> RequestBuilder Http.NoContent
-acceptTerms termsVersion =
-    post (fullUrl <| "/terms/" ++ TermsVersion.toString termsVersion ++ "/accept")
-        |> withApiHeaders
-        |> withExpect Http.expectNoContent
+        packageQuery =
+            ApiPackage.selection (,)
+                |> with (nameField ApiPackage.name)
+                |> with (versionField ApiPackage.version)
+    in
+    query
+        |> Graphqelm.queryRequest "/api"
+        |> Jwt.withTokenHeader token
+        |> Graphqelm.send (Result.mapError Graphqelm.ignoreParsedErrorData >> callback)

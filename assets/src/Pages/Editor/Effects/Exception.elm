@@ -1,6 +1,8 @@
 module Pages.Editor.Effects.Exception exposing (..)
 
 import Extra.Json.Decode as Decode
+import Graphqelm.Http as Graphqelm
+import Graphqelm.Http.GraphqlError as Graphqelm
 import Http
 import Json.Decode as Decode exposing (Decoder)
 
@@ -9,6 +11,7 @@ type Exception
     = PackageServerUnavailable
     | ClientNetworkError
     | ClientDecoderFailure String
+    | GraphqlError (List Graphqelm.GraphqlError)
     | Unknown String
 
 
@@ -28,6 +31,16 @@ fromString string =
 
         Err decoderError ->
             ClientDecoderFailure decoderError
+
+
+fromGqlError : Graphqelm.Error () -> Exception
+fromGqlError error =
+    case error of
+        Graphqelm.GraphqlError _ errors ->
+            GraphqlError errors
+
+        Graphqelm.HttpError httpError ->
+            fromHttp httpError
 
 
 fromHttp : Http.Error -> Exception

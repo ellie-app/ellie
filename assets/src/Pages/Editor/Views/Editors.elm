@@ -6,7 +6,7 @@ import Ellie.Ui.Icon as Icon
 import Ellie.Ui.Menu as Menu
 import Ellie.Ui.SplitPane as SplitPane
 import Ellie.Ui.Theme as Theme
-import Elm.Compiler.Error as Error exposing (Error)
+import Elm.Error as Error exposing (Error)
 import Html.Styled as Html exposing (Attribute, Html)
 import Html.Styled.Attributes as Attributes exposing (css)
 import Html.Styled.Events as Events
@@ -26,23 +26,47 @@ type alias Config msg =
     , onFormat : msg
     , onCollapse : msg
     , onSettled : msg
-    , elmErrors : List Error
+    , elmError : Maybe Error
     }
 
 
-errorToLinterMessage : Error -> CodeEditor.LinterMessage
-errorToLinterMessage error =
+renderChunks : List Error.Chunk -> String
+renderChunks chunks =
+    chunks
+        |> List.map
+            (\chunk ->
+                case chunk of
+                    Error.Styled _ string ->
+                        string
+
+                    Error.Unstyled string ->
+                        string
+            )
+        |> String.join " "
+
+
+problemToLinterMessage : Error.Problem -> CodeEditor.LinterMessage
+problemToLinterMessage error =
     { from = { line = error.region.start.line - 1, column = error.region.start.column - 1 }
     , to = { line = error.region.end.line - 1, column = error.region.end.column - 1 }
-    , message = error.message
-    , severity =
-        case error.level of
-            "warning" ->
-                CodeEditor.Warning
-
-            _ ->
-                CodeEditor.Error
+    , message = renderChunks error.message
+    , severity = CodeEditor.Error
     }
+
+
+errorToLinterMessages : Error -> List CodeEditor.LinterMessage
+errorToLinterMessages error =
+    case error of
+        Error.GeneralProblem { message } ->
+            [ { from = { line = 0, column = 0 }
+              , to = { line = 0, column = 10 }
+              , message = renderChunks message
+              , severity = CodeEditor.Error
+              }
+            ]
+
+        Error.ModuleProblems badModules ->
+            List.concatMap (.problems >> List.map problemToLinterMessage) badModules
 
 
 view : Config msg -> Html msg
@@ -71,7 +95,10 @@ view config =
                             , CodeEditor.mode "elm"
                             , CodeEditor.tabSize 4
                             , CodeEditor.vim config.vimMode
-                            , CodeEditor.linterMessages <| List.map errorToLinterMessage config.elmErrors
+                            , config.elmError
+                                |> Maybe.map errorToLinterMessages
+                                |> Maybe.withDefault []
+                                |> CodeEditor.linterMessages
                             , CodeEditor.id "elm"
                             ]
                         ]

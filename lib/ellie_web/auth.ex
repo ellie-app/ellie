@@ -5,7 +5,7 @@ defmodule EllieWeb.Auth do
     case Phoenix.Token.verify(EllieWeb.Endpoint, "user auth", token, max_age: :infinity) do
       {:ok, user_id} ->
         User
-          |> Repo.get(user_id)
+          |> Repo.get_by(id: user_id)
           |> case do
             nil ->  {:error, :user_not_found}
             user -> {:ok, user}

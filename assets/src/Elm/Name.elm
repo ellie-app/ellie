@@ -1,7 +1,10 @@
-module Elm.Name exposing (..)
-
-import Json.Decode as Decode exposing (Decoder)
-import Json.Encode as Encode exposing (Value)
+module Elm.Name
+    exposing
+        ( Name
+        , compare
+        , fromString
+        , toString
+        )
 
 
 type alias Name =
@@ -15,40 +18,16 @@ toString packageName =
     packageName.user ++ "/" ++ packageName.project
 
 
-fromString : String -> Maybe Name
+fromString : String -> Result String Name
 fromString input =
     case String.split "/" input of
         [ user, project ] ->
-            Just <| Name user project
+            Ok <| Name user project
 
         _ ->
-            Nothing
-
-
-decoder : Decoder Name
-decoder =
-    Decode.andThen
-        (\string ->
-            case fromString string of
-                Just version ->
-                    Decode.succeed version
-
-                Nothing ->
-                    Decode.fail "No package name"
-        )
-        Decode.string
+            Err "Expecting a name like USER/PROJECT"
 
 
 compare : Name -> Name -> Order
 compare left right =
     Basics.compare (toString left) (toString right)
-
-
-encoder : Name -> Value
-encoder name =
-    Encode.string (toString name)
-
-
-virtualDom : Name
-virtualDom =
-    Name "elm-lang" "virtual-dom"

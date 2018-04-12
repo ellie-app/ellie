@@ -6,16 +6,15 @@ port module Pages.Editor.Effects.Outbound
         , none
         )
 
-import Data.Entity as Entity exposing (Entity)
 import Data.Jwt as Jwt exposing (Jwt)
-import Ellie.Types.Revision as Revision exposing (Revision)
-import Ellie.Types.Settings as Settings exposing (Settings)
-import Ellie.Types.TermsVersion as TermsVersion exposing (TermsVersion)
-import Ellie.Types.User as User exposing (User)
-import Elm.Compiler.Error as Compiler
-import Elm.Docs as Docs exposing (Module)
+import Data.Uuid as Uuid exposing (Uuid)
+import Elm.Error as ElmError
 import Elm.Package as Package exposing (Package)
 import Elm.Project as Project exposing (Project)
+import Pages.Editor.Types.Revision as Revision exposing (Revision)
+import Pages.Editor.Types.RevisionId as RevisionId exposing (RevisionId)
+import Pages.Editor.Types.Settings as Settings exposing (Settings)
+import Pages.Editor.Types.User as User exposing (User)
 
 
 type alias ElmSource =
@@ -27,15 +26,15 @@ type alias HtmlSource =
 
 
 type Outbound msg
-    = CreateRevision Jwt Revision (Result String (Entity Revision.Id Revision) -> msg)
-    | UpdateRevision Jwt (Entity Revision.Id Revision) (Result String (Entity Revision.Id Revision) -> msg)
-    | GetRevision Revision.Id (Entity Revision.Id Revision -> msg)
-    | Authenticate (Maybe Jwt) (TermsVersion -> Jwt -> Entity User.Id User -> msg)
-    | AcceptTerms Jwt TermsVersion msg
+    = CreateRevision Jwt Revision (RevisionId -> Revision -> msg)
+    | UpdateRevision Jwt Uuid Revision (RevisionId -> Revision -> msg)
+    | GetRevision RevisionId (Revision -> msg)
+    | Authenticate (Maybe Jwt) (Int -> Jwt -> User -> msg)
+    | AcceptTerms Jwt Int msg
     | SaveSettings Jwt Settings
     | SaveToken Jwt
     | FormatElmCode String (String -> msg)
-    | Compile Jwt String String (List Package)
+    | Compile String (List Package)
     | ReloadIframe
     | Redirect String
     | Navigate String
@@ -48,8 +47,8 @@ type Outbound msg
     | OpenInNewTab String
     | Batch (List (Outbound msg))
     | Delay Float msg
-    | MoveElmCursor Compiler.Location
-    | GetDocs (List Package) (List Module -> msg)
+    | MoveElmCursor ElmError.Position
+    | AttachToWorkspace Jwt
     | None
 
 
@@ -66,17 +65,14 @@ none =
 map : (a -> b) -> Outbound a -> Outbound b
 map f outbound =
     case outbound of
-        GetDocs packages callback ->
-            GetDocs packages (callback >> f)
-
         Navigate url ->
             Navigate url
 
         CreateRevision token revision callback ->
-            CreateRevision token revision (callback >> f)
+            CreateRevision token revision (\rid r -> f (callback rid r))
 
-        UpdateRevision token entity callback ->
-            UpdateRevision token entity (callback >> f)
+        UpdateRevision token projectId revision callback ->
+            UpdateRevision token projectId revision (\rid r -> f (callback rid r))
 
         MoveElmCursor location ->
             MoveElmCursor location
@@ -117,8 +113,8 @@ map f outbound =
         SearchPackages query callback ->
             SearchPackages query (callback >> f)
 
-        Compile token elm html packages ->
-            Compile token elm html packages
+        Compile elm packages ->
+            Compile elm packages
 
         ReloadIframe ->
             ReloadIframe
@@ -131,6 +127,9 @@ map f outbound =
 
         SwitchToProgram ->
             SwitchToProgram
+
+        AttachToWorkspace token ->
+            AttachToWorkspace token
 
         Batch outbounds ->
             Batch <| List.map (map f) outbounds

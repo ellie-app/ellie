@@ -7,11 +7,8 @@ module Pages.Editor.State.App
         , update
         )
 
-import Data.Entity as Entity exposing (Entity(..))
 import Data.Jwt as Jwt exposing (Jwt)
 import Data.Transition as Transition exposing (Transition(..))
-import Ellie.Types.Revision as Revision exposing (Revision)
-import Ellie.Types.User as User exposing (User)
 import Elm.Package as Package exposing (Package)
 import Pages.Editor.Effects.Exception as Exception exposing (Exception)
 import Pages.Editor.Effects.Inbound as Inbound exposing (Inbound)
@@ -20,6 +17,9 @@ import Pages.Editor.Flags as Flags exposing (Flags)
 import Pages.Editor.Route as Route exposing (Route(..))
 import Pages.Editor.State.Setup as Setup
 import Pages.Editor.State.Working as Working
+import Pages.Editor.Types.Revision as Revision exposing (Revision)
+import Pages.Editor.Types.RevisionId as RevisionId exposing (RevisionId)
+import Pages.Editor.Types.User as User exposing (User)
 
 
 type Model
@@ -50,9 +50,9 @@ init flags route =
 
 setupToWorking :
     { token : Jwt
-    , revision : Maybe (Entity Revision.Id Revision)
+    , revision : Maybe ( RevisionId, Revision )
     , packages : List Package
-    , user : Entity User.Id User
+    , user : User
     }
     -> ( Model, Outbound Msg )
 setupToWorking { token, revision, packages, user } =

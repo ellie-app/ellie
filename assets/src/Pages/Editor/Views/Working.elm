@@ -93,14 +93,8 @@ view model =
                             ( False, WorkingState.Ready ) ->
                                 "Ready"
 
-                            ( False, WorkingState.FinishedWithErrors { errors } ) ->
-                                toString (List.length errors)
-                                    ++ " compiler error"
-                                    ++ (if List.length errors > 1 then
-                                            "s"
-                                        else
-                                            ""
-                                       )
+                            ( False, WorkingState.FinishedWithError { error } ) ->
+                                "TODO FIX ME"
 
                             ( False, WorkingState.Finished _ ) ->
                                 "Success"
@@ -139,7 +133,7 @@ viewActions model =
                     ActionsState.Settings ->
                         SettingsView.view
                             { onSettingsChange = WorkingState.SettingsChanged
-                            , settings = model.user |> Entity.record |> .settings
+                            , settings = model.user.settings
                             , onProjectNameChange = WorkingState.ChangedProjectName
                             , projectName = model.projectName
                             }
@@ -170,18 +164,14 @@ viewWorkspace model =
                 , onFormat = WorkingState.FormatRequested
                 , onCollapse = WorkingState.CollapseHtml
                 , onSettled = WorkingState.EditorSettled
-                , elmErrors =
+                , vimMode = model.user.settings.vimMode
+                , elmError =
                     case model.workbench of
-                        WorkingState.FinishedWithErrors { errors } ->
-                            errors
+                        WorkingState.FinishedWithError { error } ->
+                            Just error
 
                         _ ->
-                            []
-                , vimMode =
-                    model.user
-                        |> Entity.record
-                        |> .settings
-                        |> .vimMode
+                            Nothing
                 }
         , second =
             WorkbenchView.view
@@ -201,21 +191,16 @@ viewWorkspace model =
                 , saving = model.saving
                 , workbench = model.workbench
                 , maximized = model.workbenchRatio < 0.05
+                , htmlCode = model.htmlCode
                 , token = model.token
                 }
         }
 
 
 viewStyles model =
-    let
-        settings =
-            model.user
-                |> Entity.record
-                |> .settings
-    in
     Css.Foreign.global
         [ Css.Foreign.selector ":root"
-            [ property "--editor-font-size" settings.fontSize
-            , property "--theme-font-family-editor" settings.fontFamily
+            [ property "--editor-font-size" model.user.settings.fontSize
+            , property "--theme-font-family-editor" model.user.settings.fontFamily
             ]
         ]

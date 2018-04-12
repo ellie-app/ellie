@@ -1,6 +1,6 @@
-module Data.Jwt exposing (Jwt, decoder, encoder, toString, withTokenHeader)
+module Data.Jwt exposing (Jwt, decoder, encoder, fromString, toString, withTokenHeader)
 
-import HttpBuilder
+import Graphqelm.Http
 import Json.Decode as Decode exposing (Decoder)
 import Json.Encode as Encode exposing (Value)
 
@@ -14,6 +14,11 @@ toString (Jwt token) =
     token
 
 
+fromString : String -> Jwt
+fromString =
+    Jwt
+
+
 encoder : Jwt -> Value
 encoder (Jwt token) =
     Encode.string token
@@ -24,6 +29,6 @@ decoder =
     Decode.map Jwt Decode.string
 
 
-withTokenHeader : Jwt -> HttpBuilder.RequestBuilder a -> HttpBuilder.RequestBuilder a
-withTokenHeader (Jwt token) builder =
-    HttpBuilder.withBearerToken token builder
+withTokenHeader : Jwt -> Graphqelm.Http.Request a -> Graphqelm.Http.Request a
+withTokenHeader (Jwt token) =
+    Graphqelm.Http.withHeader "authorization" ("Bearer " ++ token)

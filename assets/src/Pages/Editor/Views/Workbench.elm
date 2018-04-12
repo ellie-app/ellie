@@ -9,7 +9,7 @@ import Ellie.Ui.Icon as Icon
 import Ellie.Ui.Markdown as Markdown
 import Ellie.Ui.TextInput as TextInput
 import Ellie.Ui.Theme as Theme
-import Elm.Compiler.Error as Compiler
+import Elm.Error as ElmError
 import Html.Styled as Html exposing (Attribute, Html)
 import Html.Styled.Attributes as Attributes exposing (css)
 import Html.Styled.Events as Events
@@ -26,7 +26,7 @@ type alias Config msg =
     , onClearLogs : msg
     , onCreateGist : msg
     , onDownloadZip : msg
-    , onGoToLocation : Compiler.Location -> msg
+    , onGoToLocation : ElmError.Position -> msg
     , onLogSearchChanged : String -> msg
     , onLogReceived : Log -> msg
     , onSelectErrorsPane : ErrorsPane -> msg
@@ -37,6 +37,7 @@ type alias Config msg =
     , token : Jwt
     , saving : Bool
     , onSave : msg
+    , htmlCode : String
     }
 
 
@@ -105,7 +106,7 @@ viewContent config =
                     ]
                 ]
 
-        FinishedWithErrors { errors, pane } ->
+        FinishedWithError { error, pane } ->
             Html.div
                 [ css
                     [ displayFlex
@@ -126,7 +127,7 @@ viewContent config =
                     ]
                     [ case pane of
                         ErrorsList ->
-                            viewErrorsList errors config
+                            viewErrorsList error config
 
                         _ ->
                             Html.text ""
@@ -172,19 +173,23 @@ viewErrorsHeader pane config =
     viewHeader config actions tabs
 
 
-viewErrorsList : List Compiler.Error -> Config msg -> Html msg
-viewErrorsList errors config =
+viewErrorsList : ElmError.Error -> Config msg -> Html msg
+viewErrorsList error config =
     Html.div
         [ css
             [ padding2 zero (px 2)
             , width (pct 100)
             ]
         ]
-        (List.map (viewError config) errors)
+        []
 
 
-viewError : Config msg -> Compiler.Error -> Html msg
-viewError config error =
+
+-- (List.map (viewProblem config) errors)
+
+
+viewProblem : Config msg -> ElmError.Problem -> Html msg
+viewProblem config problem =
     Html.div
         [ css
             [ padding (px 12)
@@ -202,7 +207,7 @@ viewError config error =
                 , marginBottom (px 8)
                 ]
             ]
-            [ Html.text <| String.toLower error.tag ]
+            [ Html.text <| String.toLower problem.title ]
         , Html.a
             [ Attributes.href "javascript:void(0)"
             , css
@@ -211,9 +216,9 @@ viewError config error =
                 , marginBottom (px 12)
                 , display inlineBlock
                 ]
-            , Events.onClick <| config.onGoToLocation error.region.start
+            , Events.onClick <| config.onGoToLocation problem.region.start
             ]
-            [ Html.text <| "Line " ++ toString error.region.start.line ++ ", Column " ++ toString error.region.start.column ]
+            [ Html.text <| "Line " ++ toString problem.region.start.line ++ ", Column " ++ toString problem.region.start.column ]
         , Html.div
             [ css
                 [ whiteSpace preWrap
@@ -228,8 +233,13 @@ viewError config error =
                     ]
                 ]
             ]
-            [ Markdown.view error.message ]
+            [ viewProblemMessage problem.message ]
         ]
+
+
+viewProblemMessage : List ElmError.Chunk -> Html msg
+viewProblemMessage chunks =
+    Html.text ""
 
 
 viewFinishedHeader : SuccessPane -> Config msg -> Html msg
@@ -464,9 +474,10 @@ viewInitial config =
 viewOutput : Bool -> Config msg -> Html msg
 viewOutput debug config =
     Output.view
-        [ Output.src <| "/private-api/workspace/result/html?token=" ++ Jwt.toString config.token
+        [ Output.elmSource <| "http://localhost:4000/private/result?token=" ++ Jwt.toString config.token
         , Output.onLog config.onLogReceived
         , Output.debug debug
+        , Output.html <| config.htmlCode
         ]
 
 

@@ -27,6 +27,7 @@ defmodule EllieWeb.Graphql.Types do
   object :user do
     field :id, non_null(:uuid)
     field :settings, non_null(:settings)
+    field :terms_version, :integer
   end
 
   object :revision do
@@ -48,11 +49,43 @@ defmodule EllieWeb.Graphql.Types do
     field :elm_code, non_null(:string)
     field :html_code, non_null(:string)
     field :packages, non_null(list_of(non_null(:package_input)))
-    field :terms_version, non_null(:integer)
   end
 
   object :user_auth do
     field :user, non_null(:user)
     field :token, non_null(:string)
+    field :terms_version, non_null(:integer)
+  end
+
+  object :position do
+    field :line, non_null(:integer)
+    field :column, non_null(:integer)
+  end
+
+  object :region do
+    field :start, non_null(:position)
+    field :end, non_null(:position)
+  end
+
+  object :compiler_error do
+    field :title, non_null(:string)
+    field :message, non_null(:string)
+    field :region, non_null(:region)
+  end
+
+  object :workspace_attached do
+    field :packages, non_null(list_of(non_null(:package)))
+  end
+
+  object :compile_completed do
+    field :error, :elm_error
+  end
+
+  union :workspace_update do
+    types [:workspace_attached, :compile_completed]
+    resolve_type fn
+      %{packages: _}, _ -> :workspace_attached
+      %{error: _}, _ -> :compile_completed
+    end
   end
 end

@@ -12,19 +12,17 @@ import Data.Entity as Entity exposing (Entity)
 import Data.Jwt as Jwt exposing (Jwt)
 import Debounce exposing (Debounce)
 import Dict exposing (Dict)
+import Ellie.Api.Union as ApiUnion
 import Ellie.Constants as Constants
-import Ellie.Types.Revision as Revision exposing (Revision)
-import Ellie.Types.Settings as Settings exposing (Settings)
-import Ellie.Types.TermsVersion as TermsVersion exposing (TermsVersion)
-import Ellie.Types.User as User exposing (User)
-import Elm.Compiler.Error as CompilerError
 import Elm.Docs as Docs exposing (Module)
+import Elm.Error as ElmError
 import Elm.Package as Package exposing (Package)
 import Elm.Project as Project exposing (Project)
 import Extra.HttpBuilder exposing (withMaybe)
 import Extra.Json.Encode as Encode
 import Extra.Result as Result
 import Extra.String as String
+import Graphqelm.Subscription as Subscription
 import Http
 import Http.Extra as Http
 import HttpBuilder exposing (get, post, put, withBearerToken, withCredentials, withExpect, withHeader, withJsonBody, withQueryParams, withStringBody)
@@ -33,11 +31,15 @@ import Json.Encode as Encode exposing (Value)
 import Keyboard
 import Navigation
 import Pages.Editor.Effects.Exception as Exception exposing (Exception(..))
+import Pages.Editor.Effects.Handlers as Handlers
 import Pages.Editor.Effects.Inbound as Inbound exposing (Inbound(..))
 import Pages.Editor.Effects.Outbound as Outbound exposing (Outbound(..))
+import Pages.Editor.Types.Revision as Revision exposing (Revision)
+import Pages.Editor.Types.Settings as Settings exposing (Settings)
+import Pages.Editor.Types.User as User exposing (User)
+import Pages.Editor.Types.WorkspaceUpdate as WorkspaceUpdate exposing (WorkspaceUpdate)
 import Process
 import Task
-import WebSocket
 
 
 port pagesEditorEffectsStateIn : (Value -> msg) -> Sub msg
@@ -49,26 +51,6 @@ port pagesEditorEffectsStateOut : Value -> Cmd msg
 processOutbound : (Exception -> msg) -> Outbound msg -> State model msg -> ( State model msg, Cmd (Msg msg) )
 processOutbound onError effect state =
     case effect of
-        GetDocs packages callback ->
-            let
-                ( inCache, needFetch ) =
-                    List.partition
-                        (\package -> Dict.member (Package.toString package) state.docsCache)
-                        packages
-            in
-            ( state
-            , needFetch
-                |> List.map
-                    (\package ->
-                        Http.get (Package.docsUrl package) (Decode.list Docs.decoder)
-                            |> Http.toTask
-                            |> Task.map (\docs -> ( Package.toString package, docs ))
-                    )
-                |> Task.sequence
-                |> Task.map (Dict.fromList >> Dict.union state.docsCache)
-                |> Task.attempt (DocsReceived packages callback)
-            )
-
         Navigate url ->
             ( state
             , Navigation.newUrl url
@@ -76,40 +58,33 @@ processOutbound onError effect state =
 
         GetRevision id callback ->
             ( state
-            , get ("/private-api/revisions/" ++ id.projectId ++ "/" ++ String.fromInt id.revisionNumber)
-                |> withHeader "Accept" "application/json"
-                |> withExpect (Http.expectJson (Entity.decoder Revision.idDecoder Revision.decoder))
-                |> HttpBuilder.send (Result.mapError Exception.fromHttp >> Result.fold callback onError)
+            , Handlers.getRevision id
+                |> Cmd.map (Result.mapError Exception.fromGqlError)
+                |> Cmd.map (Result.fold callback onError)
                 |> Cmd.map UserMsg
             )
 
         CreateRevision token revision callback ->
             ( state
-            , post "/private-api/revisions"
-                |> Jwt.withTokenHeader token
-                |> withJsonBody (Revision.encoder revision)
-                |> withExpect (Http.expectJson (Entity.decoder Revision.idDecoder Revision.decoder))
-                |> HttpBuilder.send (Result.mapError toString >> callback >> UserMsg)
+            , Handlers.createRevision token revision
+                |> Cmd.map (Result.mapError Exception.fromGqlError)
+                |> Cmd.map (Result.fold (\rid -> callback rid revision) onError)
+                |> Cmd.map UserMsg
             )
 
-        UpdateRevision token entity callback ->
-            let
-                key =
-                    Entity.key entity
-            in
+        UpdateRevision token projectId revision callback ->
             ( state
-            , put ("/private-api/revisions/" ++ key.projectId)
-                |> Jwt.withTokenHeader token
-                |> withJsonBody (Revision.encoder (Entity.record entity))
-                |> withExpect (Http.expectJson (Entity.decoder Revision.idDecoder Revision.decoder))
-                |> HttpBuilder.send (Result.mapError toString >> callback >> UserMsg)
+            , Handlers.updateRevision token projectId revision
+                |> Cmd.map (Result.mapError Exception.fromGqlError)
+                |> Cmd.map (Result.fold (\rid -> callback rid revision) onError)
+                |> Cmd.map UserMsg
             )
 
-        MoveElmCursor location ->
+        MoveElmCursor position ->
             ( state
             , Encode.genericUnion "MoveElmCursor"
-                [ Encode.int location.line
-                , Encode.int location.column
+                [ Encode.int position.line
+                , Encode.int position.column
                 ]
                 |> pagesEditorEffectsStateOut
             )
@@ -131,32 +106,21 @@ processOutbound onError effect state =
                 |> pagesEditorEffectsStateOut
             )
 
-        CreateGist stuff callback ->
+        AttachToWorkspace token ->
             let
-                body =
-                    Encode.object
-                        [ ( "description", Encode.string stuff.title )
-                        , ( "public", Encode.bool False )
-                        , ( "files"
-                          , Encode.object
-                                [ ( "elm.json"
-                                  , Encode.object [ ( "content", Encode.string <| Encode.encode 2 (Project.encoder stuff.project) ) ]
-                                  )
-                                , ( "Main.elm"
-                                  , Encode.object [ ( "content", Encode.string stuff.elm ) ]
-                                  )
-                                , ( "index.html"
-                                  , Encode.object [ ( "content", Encode.string stuff.html ) ]
-                                  )
-                                ]
-                          )
-                        ]
+                ( socket, cmd ) =
+                    Handlers.setupSocket token
             in
+            ( { state
+                | socket = Just ( Subscription.Uninitialized, socket )
+              }
+            , Cmd.map (subInfoToMsg state.socketCallbacks) cmd
+            )
+
+        CreateGist stuff callback ->
             ( state
-            , post "https://api.github.com/gists"
-                |> withJsonBody body
-                |> withExpect (Http.expectJson (Decode.field "html_url" Decode.string))
-                |> HttpBuilder.send
+            , Handlers.createGist stuff.title stuff.elm stuff.html stuff.project
+                |> Cmd.map
                     (\result ->
                         case result of
                             Ok url ->
@@ -174,15 +138,7 @@ processOutbound onError effect state =
             state.saveSettingsId
                 |> Maybe.map Process.kill
                 |> Maybe.withDefault (Task.succeed ())
-                |> Task.andThen
-                    (\_ ->
-                        post "/private-api/me/settings"
-                            |> Jwt.withTokenHeader token
-                            |> withExpect Http.expectNoContent
-                            |> withJsonBody (Settings.encoder settings)
-                            |> HttpBuilder.toTask
-                            |> Process.spawn
-                    )
+                |> Task.andThen (\_ -> Process.spawn (Handlers.updateSettings token settings))
                 |> Task.perform SaveSettingsSpawned
                 |> (\cmd -> Debounce.push debounceSaveSettingsConfig cmd state.debounceSaveSettings)
                 |> Tuple.mapFirst (\d -> { state | debounceSaveSettings = d })
@@ -201,10 +157,8 @@ processOutbound onError effect state =
             )
 
         SearchPackages query callback ->
-            get "/private-api/packages/search"
-                |> withQueryParams [ ( "query", query ) ]
-                |> withExpect (Http.expectJson (Decode.list Package.decoder))
-                |> HttpBuilder.send
+            Handlers.searchPackages query
+                |> Cmd.map
                     (\result ->
                         case result of
                             Ok packages ->
@@ -212,7 +166,7 @@ processOutbound onError effect state =
 
                             Err error ->
                                 Multiple
-                                    [ UserMsg <| onError <| Exception.fromHttp error
+                                    [ UserMsg <| onError <| Exception.fromGqlError error
                                     , UserMsg <| callback Nothing
                                     ]
                     )
@@ -228,43 +182,37 @@ processOutbound onError effect state =
 
         Authenticate maybeToken callback ->
             ( state
-            , post "/private-api/me/verify"
-                |> withHeader "Accept" "application/json"
-                |> withMaybe Jwt.withTokenHeader maybeToken
-                |> withExpect (Http.expectJson getUserDecoder)
-                |> HttpBuilder.send (Result.mapError Exception.fromHttp >> Result.fold (\( a, b, c ) -> callback a b c) onError)
+            , Handlers.authenticate maybeToken
+                |> Cmd.map (Result.mapError Exception.fromGqlError)
+                |> Cmd.map (Result.fold (\( a, b, c ) -> callback a b c) onError)
                 |> Cmd.map UserMsg
             )
 
         AcceptTerms token termsVersion msg ->
             ( state
-            , post "/private-api/me/terms"
-                |> Jwt.withTokenHeader token
-                |> withJsonBody (Encode.object [ ( "termsVersion", TermsVersion.encoder termsVersion ) ])
-                |> withExpect Http.expectNoContent
-                |> HttpBuilder.send (Result.mapError Exception.fromHttp >> Result.fold (\_ -> msg) onError)
+            , Handlers.acceptTerms token termsVersion
+                |> Cmd.map (Result.mapError Exception.fromGqlError)
+                |> Cmd.map (Result.fold (\_ -> msg) onError)
                 |> Cmd.map UserMsg
             )
 
         FormatElmCode code callback ->
             ( state
-            , post "/private-api/format"
-                |> withHeader "Accept" "application/json"
-                |> withJsonBody (Encode.object [ ( "code", Encode.string code ) ])
-                |> withExpect (Http.expectJson (Decode.field "code" Decode.string))
-                |> HttpBuilder.send (Result.mapError Exception.fromHttp >> Result.fold callback onError)
+            , Handlers.formatCode code
+                |> Cmd.map (Result.mapError Exception.fromGqlError)
+                |> Cmd.map (Result.fold callback onError)
                 |> Cmd.map UserMsg
             )
 
-        Compile token elm html packages ->
+        Compile elm packages ->
             ( state
-            , Encode.genericUnion "CompileRequested"
-                [ Encode.string elm
-                , Encode.string html
-                , Encode.list <| List.map Package.encoder packages
-                ]
-                |> Encode.encode 0
-                |> WebSocket.send (Constants.workspaceUrl ++ "?token=" ++ Jwt.toString token)
+            , case state.socket of
+                Just ( Subscription.Connected, socket ) ->
+                    Handlers.compile socket elm packages
+                        |> Cmd.map (\_ -> NoOp)
+
+                _ ->
+                    Cmd.none
             )
 
         ReloadIframe ->
@@ -307,85 +255,44 @@ processOutbound onError effect state =
             ( state, Cmd.none )
 
 
-getUserDecoder : Decoder ( TermsVersion, Jwt, Entity User.Id User )
-getUserDecoder =
-    Decode.map3 (,,)
-        (Decode.field "latestTerms" TermsVersion.decoder)
-        (Decode.field "token" Jwt.decoder)
-        (Decode.field "user" (Entity.decoder User.idDecoder User.decoder))
+processInbound : State model msg -> Inbound msg -> Sub (Msg msg)
+processInbound state inbound =
+    Sub.batch
+        [ case ( state.socketCallbacks, state.socket ) of
+            ( [], _ ) ->
+                Sub.none
 
+            ( _, Nothing ) ->
+                Sub.none
 
-processInbound : Inbound msg -> Sub (Msg msg)
-processInbound inbound =
-    case inbound of
-        WorkspaceDetached token next ->
-            Decode.string
-                |> Decode.map
-                    (\url ->
-                        if url == (Constants.workspaceUrl ++ "?token=" ++ Jwt.toString token) then
+            ( callbacks, Just ( _, socket ) ) ->
+                Subscription.listen Handlers.Control socket
+                    |> Sub.map (subInfoToMsg callbacks)
+        , case inbound of
+            EscapePressed next ->
+                Keyboard.ups
+                    (\keycode ->
+                        if keycode == 27 then
                             UserMsg next
                         else
                             NoOp
                     )
-                |> portDecoder "SocketClosed"
-                |> pagesEditorEffectsStateIn
 
-        EscapePressed next ->
-            Keyboard.ups
-                (\keycode ->
-                    if keycode == 27 then
-                        UserMsg next
-                    else
-                        NoOp
-                )
+            WorkspaceUpdates callback ->
+                Sub.none
 
-        KeepWorkspaceOpen token ->
-            WebSocket.keepAlive (Constants.workspaceUrl ++ "?token=" ++ Jwt.toString token)
+            OutputThrewException callback ->
+                Decode.string
+                    |> Decode.map (callback >> UserMsg)
+                    |> portDecoder "OutputThrewException"
+                    |> pagesEditorEffectsStateIn
 
-        CompileFinished token callback ->
-            Decode.list CompilerError.decoder
-                |> Decode.map (callback >> UserMsg)
-                |> socketDecoder "CompileFinished"
-                |> WebSocket.listen (Constants.workspaceUrl ++ "?token=" ++ Jwt.toString token)
+            Inbound.Batch inbounds ->
+                Sub.batch <| List.map (processInbound state) inbounds
 
-        WorkspaceAttached token callback ->
-            Decode.list Package.decoder
-                |> Decode.map (callback >> UserMsg)
-                |> socketDecoder "WorkspaceAttached"
-                |> WebSocket.listen (Constants.workspaceUrl ++ "?token=" ++ Jwt.toString token)
-
-        OutputThrewException callback ->
-            Decode.string
-                |> Decode.map (callback >> UserMsg)
-                |> portDecoder "OutputThrewException"
-                |> pagesEditorEffectsStateIn
-
-        Inbound.Batch inbounds ->
-            Sub.batch <| List.map processInbound inbounds
-
-        Inbound.None ->
-            Sub.none
-
-
-socketDecoder : String -> Decoder (Msg msg) -> String -> Msg msg
-socketDecoder topic decoder message =
-    let
-        messageDecoder =
-            Decode.field "topic" Decode.string
-                |> Decode.andThen
-                    (\realTopic ->
-                        if realTopic == topic then
-                            Decode.oneOf
-                                [ Decode.field "contents" decoder
-                                , Decode.map ExceptionOccured <| Decode.field "exception" Exception.decoder
-                                ]
-                        else
-                            Decode.succeed NoOp
-                    )
-    in
-    message
-        |> Decode.decodeString messageDecoder
-        |> Result.fold identity (ClientDecoderFailure >> ExceptionOccured)
+            Inbound.None ->
+                Sub.none
+        ]
 
 
 portDecoder : String -> Decoder (Msg msg) -> Value -> Msg msg
@@ -421,6 +328,8 @@ type Msg msg
     | DocsReceived (List Package) (List Module -> msg) (Result Http.Error (Dict String (List Module)))
     | ExceptionOccured Exception
     | Multiple (List (Msg msg))
+    | SubscriptionMsg (Subscription.Msg WorkspaceUpdate)
+    | SubscriptionStatusChange Subscription.Status
     | NoOp
 
 
@@ -430,6 +339,8 @@ type alias State model msg =
     , saveSettingsId : Maybe Process.Id
     , debounceSaveSettings : Debounce (Cmd (Msg msg))
     , docsCache : Dict String (List Module)
+    , socket : Maybe ( Subscription.Status, Subscription.Model Handlers.SubscriptionInfo WorkspaceUpdate )
+    , socketCallbacks : List (WorkspaceUpdate -> msg)
     , model : model
     }
 
@@ -444,7 +355,7 @@ type alias Config msg flags route model =
 
 subscriptions : Config msg flags route model -> State model msg -> Sub (Msg msg)
 subscriptions config state =
-    processInbound <| config.userSubs state.model
+    processInbound state <| config.userSubs state.model
 
 
 init :
@@ -452,10 +363,24 @@ init :
     -> flags
     -> route
     -> ( State model msg, Cmd (Msg msg) )
-init { onError, userInit } flags route =
+init { onError, userInit, userSubs } flags route =
     let
         ( model, outbound ) =
             userInit flags route
+
+        socketCallbacks =
+            model
+                |> userSubs
+                |> Inbound.flatten
+                |> List.filterMap
+                    (\inbound ->
+                        case inbound of
+                            WorkspaceUpdates callback ->
+                                Just callback
+
+                            _ ->
+                                Nothing
+                    )
 
         initialState =
             { debouncePackageSearch = Debounce.init
@@ -463,6 +388,8 @@ init { onError, userInit } flags route =
             , saveSettingsId = Nothing
             , debounceSaveSettings = Debounce.init
             , docsCache = Dict.empty
+            , socket = Nothing
+            , socketCallbacks = socketCallbacks
             , model = model
             }
 
@@ -474,27 +401,48 @@ init { onError, userInit } flags route =
     )
 
 
-debouncePackageSearchConfig : Debounce.Config (Msg msg)
-debouncePackageSearchConfig =
-    { strategy = Debounce.later 500
-    , transform = DebouncePackageSearch
-    }
-
-
-debounceSaveSettingsConfig : Debounce.Config (Msg msg)
-debounceSaveSettingsConfig =
-    { strategy = Debounce.later 1000
-    , transform = DebounceSaveSettings
-    }
-
-
 update :
     Config msg flags route model
     -> Msg msg
     -> State model msg
     -> ( State model msg, Cmd (Msg msg) )
-update ({ onError, userUpdate } as config) msg state =
+update ({ onError, userUpdate } as config) msg beforeSocketState =
+    let
+        state =
+            { beforeSocketState | socketCallbacks = isolateSocketCallbacks config beforeSocketState }
+    in
     case msg of
+        SubscriptionMsg subMsg ->
+            case state.socket of
+                Just ( status, socket ) ->
+                    let
+                        ( newSocket, newCmd ) =
+                            Subscription.update subMsg socket
+                    in
+                    ( { state | socket = Just ( status, newSocket ) }
+                    , newCmd
+                        |> Cmd.map (subInfoToMsg state.socketCallbacks)
+                    )
+
+                Nothing ->
+                    ( state, Cmd.none )
+
+        SubscriptionStatusChange status ->
+            case ( status, state.socket ) of
+                ( Subscription.Connected, Just ( Subscription.Uninitialized, socket ) ) ->
+                    ( { state | socket = Just ( status, socket ) }
+                    , Handlers.attachToWorkspace socket
+                        |> Cmd.map (subInfoToMsg state.socketCallbacks)
+                    )
+
+                ( _, Just ( _, socket ) ) ->
+                    ( { state | socket = Just ( status, socket ) }
+                    , Cmd.none
+                    )
+
+                ( _, Nothing ) ->
+                    ( state, Cmd.none )
+
         DocsReceived packages callback cacheResult ->
             case cacheResult of
                 Ok cache ->
@@ -574,3 +522,48 @@ update ({ onError, userUpdate } as config) msg state =
 
         NoOp ->
             ( state, Cmd.none )
+
+
+isolateSocketCallbacks : Config msg flags route model -> State model msg -> List (WorkspaceUpdate -> msg)
+isolateSocketCallbacks { userSubs } { model } =
+    model
+        |> userSubs
+        |> Inbound.flatten
+        |> List.filterMap
+            (\inbound ->
+                case inbound of
+                    WorkspaceUpdates callback ->
+                        Just callback
+
+                    _ ->
+                        Nothing
+            )
+
+
+subInfoToMsg : List (WorkspaceUpdate -> msg) -> Handlers.SubscriptionInfo -> Msg msg
+subInfoToMsg callbacks info =
+    case info of
+        Handlers.Data data ->
+            callbacks
+                |> List.map (\cb -> UserMsg (cb data))
+                |> Multiple
+
+        Handlers.Control msg ->
+            SubscriptionMsg msg
+
+        Handlers.Status status ->
+            SubscriptionStatusChange status
+
+
+debouncePackageSearchConfig : Debounce.Config (Msg msg)
+debouncePackageSearchConfig =
+    { strategy = Debounce.later 500
+    , transform = DebouncePackageSearch
+    }
+
+
+debounceSaveSettingsConfig : Debounce.Config (Msg msg)
+debounceSaveSettingsConfig =
+    { strategy = Debounce.later 1000
+    , transform = DebounceSaveSettings
+    }

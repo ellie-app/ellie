@@ -117,7 +117,7 @@ viewInstalledPackages onUninstall packages =
 
 
 viewInstalledPackage : (Package -> msg) -> Package -> Html msg
-viewInstalledPackage onUninstall (( name, version ) as package) =
+viewInstalledPackage onUninstall ({ name, version } as package) =
     viewPackage package
         [ Button.view
             { icon = Just Icon.Trash
@@ -161,7 +161,7 @@ viewSearchedPackage onInstall onUninstall installed package =
 
 
 viewPackage : Package -> List (Html msg) -> Html msg
-viewPackage ( name, version ) actions =
+viewPackage { name, version } actions =
     Html.div
         [ css
             [ displayFlex

@@ -6,7 +6,6 @@ module Pages.Editor.Views.Setup
 
 import Css exposing (..)
 import Data.Url as Url
-import Ellie.Types.TermsVersion as TermsVersion exposing (TermsVersion)
 import Ellie.Ui.Button as Button
 import Ellie.Ui.Icon as Icon
 import Ellie.Ui.Theme as Theme
@@ -19,7 +18,7 @@ import Svg.Styled.Attributes as SvgAttributes
 type Stage msg
     = Authenticating
     | Attaching
-    | AcceptingTerms { termsVersion : TermsVersion, onAccept : msg, loading : Bool }
+    | AcceptingTerms { termsVersion : Int, onAccept : msg, loading : Bool }
     | Loading
     | Opening
 
@@ -45,7 +44,7 @@ view loadingStage =
                 [ logo ]
 
 
-terms : { termsVersion : TermsVersion, onAccept : msg, loading : Bool } -> List (Html msg)
+terms : { termsVersion : Int, onAccept : msg, loading : Bool } -> List (Html msg)
 terms state =
     [ Html.styled Html.div
         [ padding (px 16)
@@ -57,7 +56,7 @@ terms state =
         [ Html.text "Please accept Ellie's "
         , Html.styled Html.a
             [ color Theme.accent ]
-            [ Attributes.href <| Url.toString <| TermsVersion.link state.termsVersion
+            [ Attributes.href <| "/a/terms/" ++ toString state.termsVersion
             , Attributes.target "_blank"
             ]
             [ Html.text "Terms of Service" ]

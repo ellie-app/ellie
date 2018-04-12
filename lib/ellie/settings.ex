@@ -2,22 +2,30 @@ defmodule Ellie.Settings do
   defstruct font_size: "14px", font_family: "monospace", theme: "DARK", vim_mode: false
 
   @behaviour Ecto.Type
-  
+
   def up do
     Ecto.Migration.execute """
-      create type theme as enum (
-        'DARK',
-        'LIGHT'
-      );
+      do $$ begin
+        if not exists (select 1 from pg_type where typname = 'theme') then
+          create type theme as enum (
+            'DARK',
+            'LIGHT'
+          );
+        end if;
+      end $$;
     """
 
     Ecto.Migration.execute """
-      create type settings as (
-        font_size   varchar(255),
-        font_family varchar(255),
-        theme       theme,
-        vim_mode    boolean
-      );
+      do $$ begin
+        if not exists (select 1 from pg_type where typname = 'settings') then
+          create type settings as (
+            font_size   varchar(255),
+            font_family varchar(255),
+            theme       theme,
+            vim_mode    boolean
+          );
+        end if;
+      end $$;
     """
   end
 
@@ -27,7 +35,7 @@ defmodule Ellie.Settings do
   end
 
   def type, do: :settings
-  
+
   def cast(%Ellie.Settings{} = settings), do: {:ok, settings}
   def cast(_), do: :error
 

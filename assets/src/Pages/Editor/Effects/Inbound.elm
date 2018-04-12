@@ -2,22 +2,21 @@ port module Pages.Editor.Effects.Inbound
     exposing
         ( Inbound(..)
         , batch
+        , flatten
         , map
         , none
         )
 
 import Data.Jwt exposing (Jwt)
-import Elm.Compiler.Error as CompilerError
+import Elm.Error as ElmError
 import Elm.Package as Package exposing (Package)
+import Pages.Editor.Types.WorkspaceUpdate as WorkspaceUpdate exposing (WorkspaceUpdate)
 
 
 type Inbound msg
-    = CompileFinished Jwt (List CompilerError.Error -> msg)
-    | OutputThrewException (String -> msg)
-    | WorkspaceAttached Jwt (List Package -> msg)
-    | KeepWorkspaceOpen Jwt
+    = OutputThrewException (String -> msg)
+    | WorkspaceUpdates (WorkspaceUpdate -> msg)
     | EscapePressed msg
-    | WorkspaceDetached Jwt msg
     | Batch (List (Inbound msg))
     | None
 
@@ -32,26 +31,30 @@ none =
     None
 
 
+flatten : Inbound msg -> List (Inbound msg)
+flatten inbound =
+    case inbound of
+        None ->
+            []
+
+        Batch others ->
+            List.concatMap flatten others
+
+        _ ->
+            [ inbound ]
+
+
 map : (a -> b) -> Inbound a -> Inbound b
 map f inbound =
     case inbound of
-        WorkspaceDetached token next ->
-            WorkspaceDetached token (f next)
+        WorkspaceUpdates callback ->
+            WorkspaceUpdates (callback >> f)
 
         EscapePressed next ->
             EscapePressed (f next)
 
-        CompileFinished token callback ->
-            CompileFinished token (callback >> f)
-
         OutputThrewException callback ->
             OutputThrewException (callback >> f)
-
-        WorkspaceAttached token callback ->
-            WorkspaceAttached token (callback >> f)
-
-        KeepWorkspaceOpen token ->
-            KeepWorkspaceOpen token
 
         Batch inbounds ->
             Batch <| List.map (map f) inbounds

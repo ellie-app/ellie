@@ -1,0 +1,324 @@
+<html>
+<head>
+  <meta charset="utf-8" />
+</head>
+<body>
+  <div>
+      <h1 id="ellietermsofserviceagreement">
+        Ellie Terms of Service Agreement
+      </h1>
+      <small>Version 1</small>
+      <small>Last updated September 12, 2017</small>
+
+      <div>
+        <div>
+          <h2 id="1">1. Definitions</h2>
+          <h3 id="1.1">1.1.</h3>
+          <p>The following defined terms apply in this agreement.</p>
+          <p><strong>Revision</strong>: means the User’s generated Content as “Content” is defined later in these Terms.</p>
+          <p><strong>Documentation</strong>: any documentation made available to the User by Ellie online via the Ellie Site or such other web address where the Services may be accessed by the User from time to time which sets out a description of the Services and the User instructions for the Services.</p>
+          <p><strong>Services</strong>: the services provided by Ellie to you as defined in clause 2.2 below.</p>
+          <p><strong>Software</strong>: the online software applications provided by Ellie as part of the Services.</p>
+          <p><strong>Terms</strong>: the terms and conditions set out in this document.</p>
+          <p><strong>User</strong>: the user of the Service being a person who creates Content via the Software.</p>
+
+          <h3 id="1.2">1.2.</h3>
+          <p>Any other defined terms (introduced as such by capitalisation in bold) which appear later in these Terms will take the meaning ascribed to them.</p>
+        </div>
+
+        <hr>
+
+        <div>
+          <h2 id="2">2. Our contract with you</h2>
+
+          <h3 id="2.1">2.1.</h3>
+          <p>These Terms are a contract between you, the User, and the authors and maintainers of the Services (‘<strong>Ellie</strong>’).</p>
+
+          <h3 id="2.2">2.2.</h3>
+          <p>Ellie operates ellie-app.com which includes other domains from time to time which direct to ellie-app.com via DNS aliases (the ‘<strong>Ellie Site</strong>’) and the Ellie creation service contained therein. By using the Ellie Site and any services accessible from the Ellie Site, you are agreeing to be bound by these Terms. If you do not agree to these Terms or any part thereof, your only remedy is to not use the Ellie Site or any services or products offered on the Ellie Site or on any other platform, including mobile applications, offered by Ellie (collectively, the ‘<strong>Service</strong>’ or ‘<strong>Services</strong>’).</p>
+
+          <h3 id="2.3">2.3.</h3>
+          <p>Breach of these Terms or any part thereof will entitle Ellie to terminate your right to use the Service. Any Content you may have created will be deleted. Ellie reserves the right to refuse provision of the Service to anyone at their complete discretion.</p>
+
+          <h3 id="2.4">2.4.</h3>
+          <p>You agree and accept that your use of the Service is entirely at your own risk.</p>
+
+          <h3 id="2.5">2.5.</h3>
+          <p>These Terms will apply for as long as you use the Ellie Site and/or the Services. Any part of these Terms that by necessity or implication are to continue after your use of the Ellie Site or the Services ends (including the licence under clause 4.1) shall continue in force.</p>
+        </div>
+
+        <hr>
+
+        <div>
+          <h2 id="3">3. Our Licence to You</h2>
+
+          <h3 id="3.1">3.1.</h3>
+          <p>Ellie hereby grants you a non-exclusive, non-transferable, worldwide right to access and use the Ellie Site, solely with supported browsers through the Internet for your own internal purposes, subject to these Terms.</p>
+
+          <h3 id="3.2">3.2.</h3>
+          <p>You may not permit the Ellie Site to be used by or for the benefit of any third parties.</p>
+
+          <h3 id="3.3">3.3.</h3>
+          <p>Nothing in these Terms shall be construed to grant you any right to transfer or assign rights to access or use the Ellie Site.</p>
+        </div>
+
+        <hr>
+
+        <div>
+          <h2 id="4">4. Your Licence to Us</h2>
+
+          <h3 id="4.1">4.1.</h3>
+          <p>You hereby grant Ellie and other Users of the Services a worldwide, non-exclusive, royalty-free licence (with the right to sub-licence) to use, copy, reproduce, process, adapt, modify, publish, transmit, display and distribute Content you submit, post or display on the Ellie Site in any and all media or distribution methods (now known or later developed). Such Content shall be licensed upon the terms of the <a href="https://opensource.org/licenses/MIT">MIT licence</a>.</p>
+
+          <h3 id="4.2">4.2.</h3>
+          <p>You agree that the licence in clause 4.1 includes the right for Ellie and other users of the Services to make your Content available to others for the publication, distribution, syndication, or broadcast of such Content on other media and services, subject to our terms and conditions for such Content use. Such additional uses by Ellie or others may be made with no compensation paid to you with respect to the Content that you submit, post, transmit or otherwise make available through the Services.</p>
+
+          <h3 id="4.3">4.3.</h3>
+          <p>Ellie may modify or adapt your Content in order to transmit, display or distribute it over computer networks and in various media and/or make changes to your Content as are necessary to conform and adapt that Content to any requirements or limitations of any networks, devices, services or media.</p>
+
+          <h3 id="4.4">4.4.</h3>
+          <p>You warrant, represent and agree that you have the right to grant Ellie the licence in clause 4.1. You also represent, warrant and agree that you have not and will not contribute any Content that:</p>
+          <ol>
+            <li>infringes or otherwise interferes with any copyright or trade mark of another party;</li>
+            <li>reveals any confidential information or trade secret, unless the confidential information or trade secret belongs to you or you have the owner's permission to disclose it; or</li>
+            <li>infringes any intellectual property right of another or the privacy or publicity rights of another.</li>
+          </ol>
+
+          <h3 id="4.5">4.5.</h3>
+          <p>You are responsible for your use of the Service, for any Content you provide, and for any consequences thereof, including the use of your Content by other users and third party partners. You understand that your Content may be republished and if you do not have the right to submit Content for such use, it may subject you to liability. Ellie will not be responsible or liable for any use of your Content in accordance with these Terms.</p>
+
+          <h3 id="4.6">4.6.</h3>
+          <p>Ellie cannot monitor or control the Content posted via the Services. Any use of or reliance on the Content posted via the Services or obtained by your through the Services is at your own risk. We do not endorse, support, represent or guarantee the completeness, truthfulness, accuracy, or reliability of any Content or communications posted via the Services. You recognise that by using the Services, you may be exposed to Content that may be offensive, harmful, inaccurate or otherwise inappropriate and, whilst we may act to remove it where we are notified and deem it necessary or appropriate to do so or where a third party with legal authority demands that we do so, we are not responsible for it. Under no circumstances will Ellie be liable in any way for any Content, including but not limited to, any errors or omissions in any Content, or any loss of damage of any kind incurred as a result of the use of the Content made available via the Services.</p>
+        </div>
+
+        <hr>
+
+        <div>
+          <h2 id="5">5. Ellie’s obligations</h2>
+
+          <h3 id="5.1">5.1.</h3>
+          <p>Subject to the other Terms, Ellie undertakes to use its reasonable endeavours to provide that the Services will be available for use and in accordance with the Documentation.</p>
+
+          <h3 id="5.2">5.2.</h3>
+          <p>The undertaking at clause 5.1 shall not apply to the extent of any non-conformance which is caused by use of the Services contrary to the Ellie's instructions, or modification or alteration of the Services by any party other than Ellie or Ellie's duly authorised contractors or agents. If the Services do not conform with the foregoing undertaking, Ellie will, at its expense, use all reasonable commercial endeavours to correct any such non-conformance promptly, or provide the User with an alternative means of accomplishing the desired performance. Such correction or substitution constitutes the User's sole and exclusive remedy for any breach of the undertaking set out in clause 5.1. Notwithstanding the foregoing, Ellie:</p>
+          <ol>
+            <li>does not warrant that the User's use of the Services will be uninterrupted or error-free; or that the Services, Documentation and/or the information obtained by the User through the Services will meet the User's requirements; and</li>
+            <li>is not responsible for any delays, delivery failures, or any other loss or damage resulting from the transfer of data over communications networks and facilities, including the internet, and the User acknowledges that the Services
+              and Documentation may be subject to limitations, delays and other problems inherent in the use of such communications facilities.</li>
+          </ol>
+
+          <h3 id="5.3">5.3.</h3>
+          <p>Ellie shall, in providing the Services, comply with our privacy policy relating to the privacy and security of your data held by us. Such privacy policy is available from the Ellie Site or such other website address as may be notified to you from time to time. The privacy policy may be amended from time to time by Ellie in its sole discretion.</p>
+
+          <h3 id="5.4">5.4.</h3>
+          <p>If Ellie processes any personal data on your behalf when performing our obligations under these Terms, we agree that you shall be the data controller and Ellie shall be a data processor and in any such case:</p>
+          <ol>
+            <li>you acknowledge and agree that the personal data may be transferred or stored outside the EEA or the country where you are located in order to carry out the Services and Ellie’s other obligations under these Terms;</li>
+            <li>you warrant that you are entitled to transfer the relevant personal data to Ellie;</li>
+            <li>both you and Ellie shall take appropriate technical and organisational measures against unauthorised or unlawful processing of the personal data or its accidental loss, destruction or damage.</li>
+          </ol>
+        </div>
+
+        <hr>
+
+        <div>
+          <h2 id="6">6. Your obligations and impermissible acts</h2>
+
+          <h3 id="6.1">6.1.</h3>
+          <p>You warrant that you are legally entitled to enter into and be bound by these Terms.</p>
+
+          <h3 id="6.2">6.2.</h3>
+          <p>You shall:</p>
+          <ol>
+            <li>provide Ellie with all necessary co-operation in relation to these Terms in order to allow us to provide the Services;</li>
+            <li>comply with all applicable laws and regulations with respect to your activities under these Terms;</li>
+            <li>ensure that you use the Services and the Documentation in accordance with the Terms;</li>
+            <li>obtain and shall maintain all necessary licences, consents, and permissions necessary for Ellie, its contractors and agents to perform their obligations under these Terms, including without limitation the Services;</li>
+            <li>pay the Fees for the Services applicable to your Account</li>
+          </ol>
+
+          <h3 id="6.3">6.3.</h3>
+          <p>You acknowledge that you are solely responsible for procuring and maintaining your network connections and telecommunications links, and all problems, conditions, delays, delivery failures and all other loss or damage arising from or relating to your network connections or telecommunications links or caused by the internet.</p>
+
+          <h3 id="6.4">6.4.</h3>
+          <p>You shall not access, store, distribute or transmit any material (in the Content or otherwise) during the course of your use of the Services that:</p>
+          <ol>
+            <li>is unlawful, harmful, threatening, defamatory, obscene, infringing, harassing or racially or ethnically offensive;</li>
+            <li>facilitates illegal activity;</li>
+            <li>depicts sexually explicit images;</li>
+            <li>promotes unlawful violence;</li>
+            <li>is discriminatory based on race, gender, colour, religious belief, sexual orientation, disability; or</li>
+            <li>in a manner that is otherwise illegal or causes damage or injury to any person or property.</li>
+          </ol>
+
+          <h3 id="6.5">6.5.</h3>
+          <p>You further agree not to:</p>
+          <ol>
+            <li>impersonate any person or entity of falsely state or otherwise present your affiliation with a person or entity;</li>
+            <li>phish, collect, upload, post, email or transmit or otherwise make able any login data and/or passwords for other web sites, software or services;</li>
+            <li>forge headers or otherwise manipulate identifiers in order to disguise the origin of any Content transmitted through the Ellie Site;</li>
+            <li>upload, post, email, transmit or otherwise make available any information, materials or other Content that infringes another’s rights, including any intellectual property rights;</li>
+            <li>upload, post, email, transmit or otherwise make available any horised advertising, promotional materials, “junk mail”, “spam”, “chain letters”, “pyramid schemes”, or any other form of solicitation;</li>
+            <li>upload, post, email, transmit or otherwise make available any material contains software viruses or any other computer code, files or programs ned to interrupt, destroy or limit the functionality of any computer are or hardware or
+              telecommunications equipment;</li>
+            <li>use any manual or automated software devices, or other processes to ”crawl”, “spider” or “screen scrape” any web pages contained in the Ellie</li>
+            <li>interfere with or disrupt the Ellie Site, or any servers or networks cted to the Ellie Site, or disobey any requirements, procedures, policies or regulations of networks connected to the Ellie Site;</li>
+            <li>obtain, collect, store or modify the personal information about other;</li>
+            <li>modify, adapt or hack the Ellie Site or falsely imply that some other is associated with the Ellie Site or Ellie; or</li>
+            <li>use the Ellie Site for any illegal or unauthorised purpose. You must not, in the use of the Ellie Site and the Services, breach any laws in your jurisdiction (including but not limited to copyright laws).</li>
+          </ol>
+
+          <h3 id="6.6">6.6.</h3>
+          <p>For the avoidance of doubt any breach by you of any of these Terms (which constitute conditions of your use) shall entitle Ellie, in its sole discretion, without liability (including in relation to any payment made in relation to your Account) or prejudice to its other rights, to remove or refuse to distribute any Content via the Services and to disable your access to your Account and to terminate Users and reclaim User names. We also reserve the right to access, read, preserve, and disclose (to any competent authority) any information as we reasonably believe is necessary to (i) satisfy any applicable law, regulation, legal process or governmental request, (ii) enforce these Terms of Use, including investigation of potential breaches hereof, (iii) detect, prevent or otherwise address fraud, security or technical issues, (iv) respond to User support requests, or (v) protect the rights of Ellie, its Users, legitimate business interests and the public.</p>
+        </div>
+
+        <hr>
+
+        <div>
+          <h2 id="7">7. intellectual property</h2>
+
+          <h3 id="7.1">7.1.</h3>
+          <p>You acknowledge and agree that Ellie and/or its licensors own all intellectual property rights in the Ellie Site, the Software, the Services and the Documentation. Except as expressly stated herein, these Terms do not grant you any rights to, or in, patents, copyright, database right, trade secrets, trade names, trade marks (whether registered or unregistered), or any other rights or licences in respect of the Ellie Site, the Software, the Services or the Documentation.</p>
+
+          <h3 id="7.2">7.2.</h3>
+          <p>All right, title and interest in Content generated by you shall be proprietary to you (but shall be subject to the licence granted by clause 4.1).</p>
+        </div>
+
+        <hr>
+
+        <div>
+          <h2 id="8">8. Indemnity</h2>
+
+          <h3 id="8.1">8.1.</h3>
+          <p>You acknowledge that you will be solely and fully responsible for all liabilities incurred through the use of your Account and the Services. You shall defend, indemnify and hold harmless Ellie against claims, actions, proceedings, losses, damages, expenses and costs (including without limitation court costs and reasonable legal fees) arising out of or in connection with your use of the Account, the Services and/or the Documentation including, but not limited to, any liability arising from or resulting from the Content uploaded to your Revision including infringement of third party intellectual property or laws or civil or criminal claims</p>
+        </div>
+
+        <hr>
+
+        <div>
+          <h2 id="9">9. Limitation of liability</h2>
+
+          <h3 id="9.1">9.1.</h3>
+          <p>You understand, agree and accept that your use of the Ellie Site and the Services is at your own discretion and risk and that you will be solely responsible for loss of data that results from the submission or download of such content.</p>
+
+          <h3 id="9.2">9.2.</h3>
+          <p>This clause 9 sets out the entire financial liability of Ellie (including any liability for the acts or omissions of its employees, agents and sub-contractors) to you:</p>
+          <ol>
+            <li>arising under or in connection with these Terms;</li>
+            <li>in respect of any use made by you of the Ellie Site, the Services and Documentation or any part of them; and</li>
+            <li>in respect of any representation, statement or tortious act or omission (including negligence) arising under or in connection with these Terms.</li>
+          </ol>
+
+          <h3 id="9.3">9.3.</h3>
+          <p>Except as expressly and specifically provided in this agreement:</p>
+          <ol>
+            <li>you assume sole responsibility for results obtained from your use of the Ellie Site, the Services and the Documentation, and for conclusions drawn from such use. Ellie shall have no liability for any damage caused by errors or omissions in any information, instructions or scripts provided to Ellie by you in connection with the Services, or any actions taken by Ellie at your direction;</li>
+            <li>all warranties, representations, conditions and all other terms of any kind whatsoever implied by statute or common law are, to the fullest extent permitted by applicable law, excluded from this agreement; and</li>
+            <li>the Ellie Site, the Services and the Documentation are made available to you on an "as is" and “as available” basis.</li>
+          </ol>
+
+          <h3 id="9.4">9.4.</h3>
+          <p>Ellie does not warrant:</p>
+          <ol>
+            <li>that the provision of operation of the Ellie Site or provision of the Services will be uninterrupted, secure, reliable, timely or error-free;</li>
+            <li>that the Ellie Site or the Services will meet your specific requirements;</li>
+            <li>that the results that may be obtained from the use of the Ellie Site or the Services will be accurate or reliable;</li>
+            <li>that the quality of any products, services, information or other material purchased or obtained by you will meet your expectations;</li>
+            <li>that any errors in the Ellie Site will be corrected;</li>
+            <li>the accuracy, validity or completeness of any information, content or advice obtained through the Ellie Site or the Services.</li>
+          </ol>
+
+          <h3 id="9.5">9.5.</h3>
+          <p>Nothing in these Terms excludes the liability of Ellie:</p>
+          <ol>
+            <li>for death or personal injury caused by Ellie’s negligence; or</li>
+            <li>for fraud or fraudulent misrepresentation.</li>
+          </ol>
+
+          <h3 id="9.6">9.6.</h3>
+          <p>Subject to clause 9.3 and clause 9.4:</p>
+          <ol>
+            <li>Ellie shall not be liable whether in tort (including for negligence or breach of statutory duty), contract, misrepresentation, restitution or otherwise for any loss of profits, loss of business, depletion of goodwill and/or similar
+              losses or loss or corruption of data or information, or pure economic loss, or for any special, indirect or consequential loss, costs, damages, charges or expenses however arising under these Terms; and</li>
+            <li>Subject the other provisions of this clause Ellie's total aggregate liability in contract, tort (including negligence or breach of statutory duty), misrepresentation, restitution or otherwise, arising in connection with the performance
+              or contemplated performance of this agreement shall in no circumstances exceed the total of any Fees paid for the User Subscriptions during the 12 months immediately preceding the date on which the claim arose.</li>
+          </ol>
+        </div>
+
+        <hr>
+
+        <div>
+          <h2 id="11">11. Force majeure</h2>
+
+          <h3 id="11.1">11.1.</h3>
+          <p>Ellie shall have no liability to you under these Terms if we are prevented from or delayed in performing our obligations under these Terms, or from carrying on its business, by acts, events, omissions or accidents beyond our reasonable control, including, without limitation, strikes, lock-outs or other industrial disputes (whether involving the workforce of the Supplier or any other party), failure of a utility service or transport or telecommunications network, act of God, war, riot, civil commotion, malicious damage, compliance with any law or governmental order, rule, regulation or direction, accident, breakdown of plant or machinery, fire, flood, storm or default of suppliers or sub-contractors.</p>
+        </div>
+
+        <hr>
+
+        <div>
+          <h2 id="12">12. Variation</h2>
+          <p>Ellie may update the Terms from time to time without notice and any changes will be Revisionding on you. You agree to review these Terms regularly and we are entitled to treat your continued access to or use of the Services as confirmation that you agree to the changes.</p>
+        </div>
+
+        <hr>
+
+        <div>
+          <h2 id="13">13. Waiver</h2>
+          <p>No failure or delay by a party to exercise any right or remedy provided under these Terms or by law shall constitute a waiver of that or any other right or remedy, nor shall it prevent or restrict the further exercise of that or any other right or remedy. No single or partial exercise of such right or remedy shall prevent or restrict the further exercise of that or any other right or remedy.</p>
+        </div>
+
+        <hr>
+
+        <div>
+          <h2 id="14">15. Rights and remedies</h2>
+          <p>Except as expressly provided in these Terms, the rights and remedies provided under these Terms are in addition to, and not exclusive of, any rights or remedies provided by law.</p>
+        </div>
+
+        <hr>
+
+        <div>
+          <h2 id="15">15. Severance</h2>
+
+          <h3 id="15.1">15.1.</h3>
+          <p>If any provision (or part of a provision) of these Terms is found by any court or administrative body of competent jurisdiction to be invalid, unenforceable or illegal, the other provisions shall remain in force.</p>
+
+          <h3 id="15.2">15.2.</h3>
+          <p>If any invalid, unenforceable or illegal provision would be valid, enforceable or legal if some part of it were deleted, the provision shall apply with whatever modification is necessary to give effect to the commercial intention of the parties.</p>
+        </div>
+
+        <hr>
+
+        <div>
+          <h2 id="16">16. Entire agreement</h2>
+
+          <h3 id="16.1">16.1.</h3>
+          <p>These Terms, and any documents referred to in them, constitute the whole agreement between the parties and supersede any previous arrangement, understanding or agreement between them relating to the subject matter they cover.</p>
+
+          <h3 id="16.2">16.2.</h3>
+          <p>Both you and Ellie acknowledge and agree that in entering into these Terms that we do not rely on any undertaking, promise, assurance, statement, representation, warranty or understanding (whether in writing or not) of any person (whether party to this agreement or not) relating to the subject matter of this agreement, other than as expressly set out in these Terms.</p>
+        </div>
+
+        <hr>
+
+        <div>
+          <h2 id="17">17. Assignment</h2>
+          <p>You shall not assign, transfer, charge, sub-contract or deal in any other manner with all or any of your rights or obligations under these Terms. Ellie may at any time assign, transfer, charge, sub-contract or deal in any other manner with all or any of its rights or obligations under these Terms.</p>
+        </div>
+
+        <hr>
+
+        <div>
+          <h2 id="18">18. Governing law</h2>
+          <p>These Terms and any dispute or claim arising out of or in connection with it or its subject matter or formation (including non-contractual disputes or claims) shall be governed by and construed in accordance with the law of the United States of America and the State of California.</p>
+        </div>
+
+        <div>
+          <h2 id="19">19. Jurisdiction</h2>
+          <p>Each party irrevocably agrees that the courts of the United States of America and the State of California shall have exclusive jurisdiction to settle any dispute or claim arising out of or in connection with these Terms or their subject matter or formation (including non-contractual disputes or claims).</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

@@ -1,12 +1,12 @@
 module Pages.Editor.Views.Settings exposing (Config, view)
 
 import Css exposing (..)
-import Ellie.Types.Settings as Settings exposing (Settings)
 import Ellie.Ui.Checkbox as Checkbox
 import Ellie.Ui.TextInput as TextInput
 import Ellie.Ui.Theme as Theme
 import Html.Styled as Html exposing (Attribute, Html)
 import Html.Styled.Attributes exposing (css, src)
+import Pages.Editor.Types.Settings as Settings exposing (Settings)
 
 
 type alias Config msg =

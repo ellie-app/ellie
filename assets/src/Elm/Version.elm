@@ -11,19 +11,18 @@ type alias Version =
     }
 
 
-fromString : String -> Maybe Version
+fromString : String -> Result String Version
 fromString str =
     case String.split "." str of
         [ major, minor, patch ] ->
-            Result.toMaybe <|
-                Result.map3
-                    Version
-                    (String.toInt major)
-                    (String.toInt minor)
-                    (String.toInt patch)
+            Result.map3
+                Version
+                (String.toInt major)
+                (String.toInt minor)
+                (String.toInt patch)
 
         _ ->
-            Nothing
+            Err "Expecting a version like MAJOR.MINOR.PATCH"
 
 
 compare : Version -> Version -> Order
@@ -51,11 +50,11 @@ decoder =
     let
         check str =
             case fromString str of
-                Just version ->
+                Ok version ->
                     Decode.succeed version
 
-                Nothing ->
-                    Decode.fail "a version like \"2.0.3\" or \"4.2.1\""
+                Err message ->
+                    Decode.fail message
     in
     Decode.andThen check Decode.string
 
