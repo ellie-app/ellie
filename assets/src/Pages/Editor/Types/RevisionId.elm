@@ -2,6 +2,7 @@ module Pages.Editor.Types.RevisionId exposing (..)
 
 import Data.Url as Url exposing (Url)
 import Data.Uuid as Uuid exposing (Uuid)
+import Ellie.Constants as Constants
 
 
 type alias RevisionId =
@@ -16,6 +17,11 @@ eq left right =
         && (left.revisionNumber == right.revisionNumber)
 
 
-link : RevisionId -> Url
-link { projectId, revisionNumber } =
-    Url.fromString <| "http://localhost:4000/" ++ Uuid.toString projectId ++ "/" ++ toString revisionNumber
+editorLink : RevisionId -> Url
+editorLink { projectId, revisionNumber } =
+    Url.fromString <| Constants.editorBase ++ "/" ++ Uuid.toString projectId ++ "/" ++ toString revisionNumber
+
+
+embedLink : RevisionId -> Url
+embedLink { projectId, revisionNumber } =
+    Url.fromString <| Constants.embedBase ++ "/" ++ Uuid.toString projectId ++ "/" ++ toString revisionNumber

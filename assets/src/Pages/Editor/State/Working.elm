@@ -272,7 +272,7 @@ update msg ({ user } as model) =
                             { title = "Saved!"
                             , severity = Notification.Success
                             , message = "Your changes have been saved. You can share them using this link:"
-                            , actions = [ Notification.CopyLink <| RevisionId.link revisionId ]
+                            , actions = [ Notification.CopyLink <| RevisionId.editorLink revisionId ]
                             }
                                 :: model.notifications
                       }

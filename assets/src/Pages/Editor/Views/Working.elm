@@ -4,6 +4,7 @@ import Colors
 import Css exposing (..)
 import Css.Foreign
 import Data.Entity as Entity
+import Data.Replaceable as Replaceable
 import Ellie.Ui.Button as Button
 import Ellie.Ui.Icon as Icon
 import Ellie.Ui.SplitPane as SplitPane
@@ -193,6 +194,7 @@ viewWorkspace model =
                 , maximized = model.workbenchRatio < 0.05
                 , htmlCode = model.htmlCode
                 , token = model.token
+                , revisionId = Maybe.map Tuple.first <| Replaceable.toMaybe model.revision
                 }
         }
 

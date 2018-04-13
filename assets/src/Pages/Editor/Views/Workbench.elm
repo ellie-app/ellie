@@ -15,6 +15,7 @@ import Html.Styled.Attributes as Attributes exposing (css)
 import Html.Styled.Events as Events
 import Pages.Editor.State.Working exposing (ErrorsPane(..), SuccessPane(..), Workbench(..))
 import Pages.Editor.Types.Log as Log exposing (Log)
+import Pages.Editor.Types.RevisionId as RevisionId exposing (RevisionId)
 import Pages.Editor.Views.Output as Output
 import Pages.Editor.Views.Share as Share
 import Pages.Editor.Views.Workbench.Chunk as Chunk
@@ -39,6 +40,7 @@ type alias Config msg =
     , saving : Bool
     , onSave : msg
     , htmlCode : String
+    , revisionId : Maybe RevisionId
     }
 
 
@@ -92,14 +94,15 @@ viewContent config =
                         ]
                     ]
                     [ viewOutput (pane == SuccessDebug) config
-                    , case pane of
-                        SuccessLogs ->
+                    , case ( config.revisionId, pane ) of
+                        ( _, SuccessLogs ) ->
                             viewLogs logSearch logs config
 
-                        SuccessShare ->
+                        ( Just rid, SuccessShare ) ->
                             Share.view
                                 { onCreateGist = config.onCreateGist
                                 , onDownloadZip = config.onDownloadZip
+                                , revisionId = rid
                                 }
 
                         _ ->
@@ -312,11 +315,12 @@ viewFinishedHeader pane config =
                 ]
 
         tabs =
-            [ ( config.onSelectSuccessPane SuccessOutput, "Output", pane == SuccessOutput )
-            , ( config.onSelectSuccessPane SuccessDebug, "Debug", pane == SuccessDebug )
-            , ( config.onSelectSuccessPane SuccessLogs, "Logs", pane == SuccessLogs )
-            , ( config.onSelectSuccessPane SuccessShare, "Share", pane == SuccessShare )
-            ]
+            List.filterMap identity
+                [ Just ( config.onSelectSuccessPane SuccessOutput, "Output", pane == SuccessOutput )
+                , Just ( config.onSelectSuccessPane SuccessDebug, "Debug", pane == SuccessDebug )
+                , Just ( config.onSelectSuccessPane SuccessLogs, "Logs", pane == SuccessLogs )
+                , Maybe.map (\_ -> ( config.onSelectSuccessPane SuccessShare, "Share", pane == SuccessShare )) config.revisionId
+                ]
     in
     viewHeader config actions tabs
 

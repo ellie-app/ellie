@@ -1,17 +1,20 @@
 module Pages.Editor.Views.Share exposing (..)
 
 import Css exposing (..)
+import Data.Url as Url
 import Ellie.Ui.Button as Button
 import Ellie.Ui.CopyText as CopyText
 import Ellie.Ui.Icon as Icon
 import Ellie.Ui.Theme as Theme
 import Html.Styled as Html exposing (Attribute, Html)
 import Html.Styled.Attributes as Attributes exposing (css)
+import Pages.Editor.Types.RevisionId as RevisionId exposing (RevisionId)
 
 
 type alias Config msg =
     { onCreateGist : msg
     , onDownloadZip : msg
+    , revisionId : RevisionId
     }
 
 
@@ -52,18 +55,18 @@ view config =
             ]
         , Html.div [ containerStyles ]
             [ Html.div [ headerStyles ] [ Html.text "Share on Medium (Embed.ly)" ]
-            , CopyText.view "http://localhost:1337/lol"
+            , CopyText.view <| Url.toString <| RevisionId.editorLink config.revisionId
             ]
         , Html.div [ containerStyles ]
             [ Html.div [ headerStyles ] [ Html.text "Embed IFrame" ]
-            , CopyText.view iframe
+            , CopyText.view (iframe config.revisionId)
             ]
         ]
 
 
-iframe : String
-iframe =
-    """<iframe src="https://ellie-app.com/embed/nywq2JvGQa1/1" style="width:100%; height:400px; border:0; overflow:hidden;" sandbox="allow-modals allow-forms allow-popups allow-scripts allow-same-origin"></iframe>"""
+iframe : RevisionId -> String
+iframe revisionId =
+    "<iframe src=\"" ++ Url.toString (RevisionId.embedLink revisionId) ++ "\" style=\"width:100%; height:400px; border:0; overflow:hidden;\" sandbox=\"allow-modals allow-forms allow-popups allow-scripts allow-same-origin\"></iframe>"
 
 
 containerStyles : Attribute msg
