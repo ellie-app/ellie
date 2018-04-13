@@ -108,12 +108,8 @@ reset token user revision defaultPackages =
 ownRevision : Model -> Bool
 ownRevision model =
     case Replaceable.toMaybe model.revision of
-        Just revision ->
-            -- Maybe.eq
-            --     (Tuple.second revision |> .userId)
-            --     (Just (Entity.key model.user))
-            -- TODO
-            False
+        Just ( rid, revision ) ->
+            Maybe.eq Uuid.eq revision.userId (Just model.user.id)
 
         Nothing ->
             False
@@ -126,6 +122,7 @@ toRevision model =
     , packages = model.packages
     , title = model.projectName
     , elmVersion = Compiler.version
+    , userId = Just model.user.id
     }
 
 
@@ -685,8 +682,11 @@ subscriptions model =
                     WorkspaceUpdate.CompileCompleted maybeError ->
                         CompileFinished maybeError
 
-                    WorkspaceUpdate.Attached _ ->
+                    WorkspaceUpdate.Connected ->
                         OnlineStatusChanged True
+
+                    WorkspaceUpdate.Disconnected ->
+                        OnlineStatusChanged False
 
                     _ ->
                         NoOp

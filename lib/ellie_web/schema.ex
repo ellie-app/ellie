@@ -6,6 +6,18 @@ defmodule EllieWeb.Schema do
   import_types EllieWeb.Graphql.Types.Elm.Error
   import_types EllieWeb.Graphql.Types
 
+  def middleware(middleware, %{identifier: identifier} = field, object) do
+    middleware_spec = {{__MODULE__, :get_string_key}, identifier}
+    Absinthe.Schema.replace_default(middleware, middleware_spec, field, object)
+  end
+  def middleware(middleware, _field, _object) do
+    middleware
+  end
+
+  def get_string_key(%{source: source} = res, key) do
+    %{res | state: :resolved, value: Map.get(source, key, Map.get(source, Atom.to_string(key))) }
+  end
+
   query do
     field :user, non_null(:user) do
       middleware EllieWeb.Graphql.Middleware.Auth

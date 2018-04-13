@@ -57,13 +57,8 @@ problemToLinterMessage error =
 errorToLinterMessages : Error -> List CodeEditor.LinterMessage
 errorToLinterMessages error =
     case error of
-        Error.GeneralProblem { message } ->
-            [ { from = { line = 0, column = 0 }
-              , to = { line = 0, column = 10 }
-              , message = renderChunks message
-              , severity = CodeEditor.Error
-              }
-            ]
+        Error.GeneralProblem _ ->
+            []
 
         Error.ModuleProblems badModules ->
             List.concatMap (.problems >> List.map problemToLinterMessage) badModules

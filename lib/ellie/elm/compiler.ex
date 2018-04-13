@@ -30,6 +30,8 @@ defmodule Ellie.Elm.Compiler do
     end
   end
 
+  require IEx
+
   def compile(options) do
     %{root: root, entry: entry, output: output} = Enum.into(options, %{})
     binary = Path.join(@bin_path, "elm")
@@ -37,9 +39,9 @@ defmodule Ellie.Elm.Compiler do
     options = [dir: root, out: :string, err: :string]
     result = Porcelain.exec(binary, args, options)
     case result do
-      %Porcelain.Result{err: "", out: "", status: 0} ->
+      %Porcelain.Result{err: "", status: 0} ->
         {:ok, nil}
-      %Porcelain.Result{err: "", out: string, status: 0} ->
+      %Porcelain.Result{err: string, status: 0} ->
         case Poison.decode(string) do
           {:ok, error} -> {:ok, error}
           _ -> {:error, "unparseable compiler result"}

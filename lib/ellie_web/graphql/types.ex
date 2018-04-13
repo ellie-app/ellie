@@ -39,7 +39,7 @@ defmodule EllieWeb.Graphql.Types do
     field :packages, non_null(list_of(non_null(:package)))
     field :elm_version, non_null(:version)
     field :terms_version, :integer
-    field :user, non_null(:user) do
+    field :user, :user do
       resolve fn revision, _, _ -> {:ok, Repo.preload(revision, :user).user} end
     end
   end

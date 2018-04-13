@@ -32,3 +32,4 @@ priv/graphql/
 priv/bin/
 priv/fixtures/
 .local_tmp/
+.DS_Store

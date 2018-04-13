@@ -1,11 +1,34 @@
 defmodule EllieWeb.Graphql.Types.Elm.Error do
   use Absinthe.Schema.Notation
+  require IEx
+
+  defp format_message(_, %{source: source}) do
+    stuff =
+      source
+        |> Map.get("message", [])
+        |> Enum.map(fn
+            string when is_binary(string) ->
+              %{string: string, style: nil}
+            a ->
+              %{
+                string: Map.get(a, "string"),
+                style: %{
+                  bold: Map.get(a, "bold"),
+                  color: Map.get(a, "color"),
+                  underline: Map.get(a, "underline")
+                }
+              }
+          end)
+    {:ok, stuff}
+  end
 
   union :elm_error do
     types [:elm_error_general_problem, :elm_error_module_problems]
-    resolve_type fn
-      %{type: "error"}, _ -> :elm_error_general_problem
-      %{type: "compile-errors"}, _ -> :elm_error_module_problems
+    resolve_type fn value, _ ->
+      case value do
+        %{"type" => "error"} -> :elm_error_general_problem
+        %{"type" => "compile-errors"} -> :elm_error_module_problems
+      end
     end
   end
 
@@ -13,12 +36,7 @@ defmodule EllieWeb.Graphql.Types.Elm.Error do
     field :path, non_null(:string)
     field :title, non_null(:string)
     field :message, non_null(list_of(non_null(:elm_error_chunk))) do
-      resolve fn problem, _ ->
-        Enum.map(problem.messages, fn
-          string when is_binary(string) -> %{string: string, style: nil}
-          a -> a
-        end)
-      end
+      resolve &format_message/2
     end
   end
 
@@ -36,12 +54,7 @@ defmodule EllieWeb.Graphql.Types.Elm.Error do
     field :title, non_null(:string)
     field :region, non_null(:elm_error_region)
     field :message, non_null(list_of(non_null(:elm_error_chunk))) do
-      resolve fn problem, _ ->
-        Enum.map(problem.messages, fn
-          string when is_binary(string) -> %{string: string, style: nil}
-          a -> a
-        end)
-      end
+      resolve &format_message/2
     end
   end
 

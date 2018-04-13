@@ -21,7 +21,7 @@ defmodule Ellie.Mixfile do
   def application do
     [
       mod: {Ellie.Application, []},
-      extra_applications: [:logger, :runtime_tools]
+      extra_applications: [:logger, :runtime_tools, :porcelain]
     ]
   end
 

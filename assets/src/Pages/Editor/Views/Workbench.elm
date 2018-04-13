@@ -17,6 +17,7 @@ import Pages.Editor.State.Working exposing (ErrorsPane(..), SuccessPane(..), Wor
 import Pages.Editor.Types.Log as Log exposing (Log)
 import Pages.Editor.Views.Output as Output
 import Pages.Editor.Views.Share as Share
+import Pages.Editor.Views.Workbench.Chunk as Chunk
 
 
 type alias Config msg =
@@ -181,11 +182,42 @@ viewErrorsList error config =
             , width (pct 100)
             ]
         ]
-        []
+        [ case error of
+            ElmError.GeneralProblem { title, message } ->
+                Html.styled Html.div
+                    [ padding (px 12)
+                    , marginBottom (px 2)
+                    , backgroundColor Theme.primaryBackground
+                    , color Theme.primaryForeground
+                    ]
+                    []
+                    [ Html.styled Html.div
+                        [ textTransform capitalize
+                        , fontSize (px 14)
+                        , fontWeight bold
+                        , color Theme.secondaryForeground
+                        , marginBottom (px 8)
+                        ]
+                        []
+                        [ Html.text title ]
+                    , Html.styled Html.div
+                        [ whiteSpace preWrap
+                        , fontSize (px 16)
+                        , fontFamily monospace
+                        ]
+                        []
+                        (List.map Chunk.view message)
+                    ]
 
-
-
--- (List.map (viewProblem config) errors)
+            ElmError.ModuleProblems badModules ->
+                Html.styled Html.div
+                    []
+                    []
+                    (badModules
+                        |> List.concatMap .problems
+                        |> List.map (viewProblem config)
+                    )
+        ]
 
 
 viewProblem : Config msg -> ElmError.Problem -> Html msg
@@ -223,23 +255,11 @@ viewProblem config problem =
             [ css
                 [ whiteSpace preWrap
                 , fontSize (px 16)
-                , Css.Foreign.descendants
-                    [ Css.Foreign.code
-                        [ fontWeight bold
-                        , backgroundColor Theme.markdownCodeBackground
-                        , padding (px 4)
-                        , verticalAlign middle
-                        ]
-                    ]
+                , fontFamily monospace
                 ]
             ]
-            [ viewProblemMessage problem.message ]
+            (List.map Chunk.view problem.message)
         ]
-
-
-viewProblemMessage : List ElmError.Chunk -> Html msg
-viewProblemMessage chunks =
-    Html.text ""
 
 
 viewFinishedHeader : SuccessPane -> Config msg -> Html msg

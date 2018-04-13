@@ -76,6 +76,11 @@ getRevision revisionId =
                 |> with (ApiRevision.packages Package.selection)
                 |> with (ApiHelpers.defaultField "" ApiRevision.title)
                 |> with (ApiHelpers.versionField ApiRevision.elmVersion)
+                |> with (ApiRevision.user userQuery)
+
+        userQuery =
+            ApiUser.selection identity
+                |> with (ApiHelpers.uuidField ApiUser.id)
     in
     query
         |> GraphqlHttp.queryRequest "/api"
