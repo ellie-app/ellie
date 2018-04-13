@@ -22,7 +22,6 @@ import Extra.HttpBuilder exposing (withMaybe)
 import Extra.Json.Encode as Encode
 import Extra.Result as Result
 import Extra.String as String
-import Graphqelm.Subscription as Subscription
 import Http
 import Http.Extra as Http
 import HttpBuilder exposing (get, post, put, withBearerToken, withCredentials, withExpect, withHeader, withJsonBody, withQueryParams, withStringBody)
@@ -30,6 +29,7 @@ import Json.Decode as Decode exposing (Decoder)
 import Json.Encode as Encode exposing (Value)
 import Keyboard
 import Navigation
+import Network.Absinthe.Subscription as Subscription
 import Pages.Editor.Effects.Exception as Exception exposing (Exception(..))
 import Pages.Editor.Effects.Handlers as Handlers
 import Pages.Editor.Effects.Inbound as Inbound exposing (Inbound(..))
@@ -40,6 +40,7 @@ import Pages.Editor.Types.User as User exposing (User)
 import Pages.Editor.Types.WorkspaceUpdate as WorkspaceUpdate exposing (WorkspaceUpdate)
 import Process
 import Task
+import Time
 
 
 port pagesEditorEffectsStateIn : (Value -> msg) -> Sub msg
@@ -107,14 +108,9 @@ processOutbound onError effect state =
             )
 
         AttachToWorkspace token ->
-            let
-                ( socket, cmd ) =
-                    Handlers.setupSocket token
-            in
-            ( { state
-                | socket = Just ( Subscription.Uninitialized, socket )
-              }
-            , Cmd.map (subInfoToMsg state.socketCallbacks) cmd
+            ( state
+            , Handlers.attachToWorkspace token
+                |> Cmd.map (\_ -> NoOp)
             )
 
         CreateGist stuff callback ->
@@ -204,15 +200,10 @@ processOutbound onError effect state =
                 |> Cmd.map UserMsg
             )
 
-        Compile elm packages ->
+        Compile token elm packages ->
             ( state
-            , case state.socket of
-                Just ( Subscription.Connected, socket ) ->
-                    Handlers.compile socket elm packages
-                        |> Cmd.map (\_ -> NoOp)
-
-                _ ->
-                    Cmd.none
+            , Handlers.compile token elm packages
+                |> Cmd.map (\_ -> NoOp)
             )
 
         ReloadIframe ->
@@ -257,42 +248,50 @@ processOutbound onError effect state =
 
 processInbound : State model msg -> Inbound msg -> Sub (Msg msg)
 processInbound state inbound =
-    Sub.batch
-        [ case ( state.socketCallbacks, state.socket ) of
-            ( [], _ ) ->
-                Sub.none
+    case inbound of
+        EscapePressed next ->
+            Keyboard.ups
+                (\keycode ->
+                    if keycode == 27 then
+                        UserMsg next
+                    else
+                        NoOp
+                )
 
-            ( _, Nothing ) ->
-                Sub.none
+        WorkspaceUpdates token callback ->
+            case state.socket of
+                Nothing ->
+                    Time.every 100 (\_ -> SetupSocket token)
 
-            ( callbacks, Just ( _, socket ) ) ->
-                Subscription.listen Handlers.Control socket
-                    |> Sub.map (subInfoToMsg callbacks)
-        , case inbound of
-            EscapePressed next ->
-                Keyboard.ups
-                    (\keycode ->
-                        if keycode == 27 then
-                            UserMsg next
-                        else
-                            NoOp
-                    )
+                Just socket ->
+                    Subscription.listen socket
+                        |> Sub.map
+                            (\info ->
+                                case info of
+                                    Subscription.Data data ->
+                                        UserMsg (callback data)
 
-            WorkspaceUpdates callback ->
-                Sub.none
+                                    Subscription.Control msg ->
+                                        SubscriptionMsg msg
 
-            OutputThrewException callback ->
-                Decode.string
-                    |> Decode.map (callback >> UserMsg)
-                    |> portDecoder "OutputThrewException"
-                    |> pagesEditorEffectsStateIn
+                                    Subscription.Status True ->
+                                        UserMsg (callback WorkspaceUpdate.Connected)
 
-            Inbound.Batch inbounds ->
-                Sub.batch <| List.map (processInbound state) inbounds
+                                    Subscription.Status False ->
+                                        UserMsg (callback WorkspaceUpdate.Disconnected)
+                            )
 
-            Inbound.None ->
-                Sub.none
-        ]
+        OutputThrewException callback ->
+            Decode.string
+                |> Decode.map (callback >> UserMsg)
+                |> portDecoder "OutputThrewException"
+                |> pagesEditorEffectsStateIn
+
+        Inbound.Batch inbounds ->
+            Sub.batch <| List.map (processInbound state) inbounds
+
+        Inbound.None ->
+            Sub.none
 
 
 portDecoder : String -> Decoder (Msg msg) -> Value -> Msg msg
@@ -322,14 +321,14 @@ portDecoder topic decoder message =
 
 type Msg msg
     = UserMsg msg
+    | SetupSocket Jwt
+    | SubscriptionMsg Subscription.Msg
     | DebouncePackageSearch Debounce.Msg
     | SaveSettingsSpawned Process.Id
     | DebounceSaveSettings Debounce.Msg
     | DocsReceived (List Package) (List Module -> msg) (Result Http.Error (Dict String (List Module)))
     | ExceptionOccured Exception
     | Multiple (List (Msg msg))
-    | SubscriptionMsg (Subscription.Msg WorkspaceUpdate)
-    | SubscriptionStatusChange Subscription.Status
     | NoOp
 
 
@@ -339,8 +338,7 @@ type alias State model msg =
     , saveSettingsId : Maybe Process.Id
     , debounceSaveSettings : Debounce (Cmd (Msg msg))
     , docsCache : Dict String (List Module)
-    , socket : Maybe ( Subscription.Status, Subscription.Model Handlers.SubscriptionInfo WorkspaceUpdate )
-    , socketCallbacks : List (WorkspaceUpdate -> msg)
+    , socket : Maybe (Subscription.State WorkspaceUpdate)
     , model : model
     }
 
@@ -368,20 +366,6 @@ init { onError, userInit, userSubs } flags route =
         ( model, outbound ) =
             userInit flags route
 
-        socketCallbacks =
-            model
-                |> userSubs
-                |> Inbound.flatten
-                |> List.filterMap
-                    (\inbound ->
-                        case inbound of
-                            WorkspaceUpdates callback ->
-                                Just callback
-
-                            _ ->
-                                Nothing
-                    )
-
         initialState =
             { debouncePackageSearch = Debounce.init
             , getUserTagger = Nothing
@@ -389,7 +373,6 @@ init { onError, userInit, userSubs } flags route =
             , debounceSaveSettings = Debounce.init
             , docsCache = Dict.empty
             , socket = Nothing
-            , socketCallbacks = socketCallbacks
             , model = model
             }
 
@@ -406,42 +389,26 @@ update :
     -> Msg msg
     -> State model msg
     -> ( State model msg, Cmd (Msg msg) )
-update ({ onError, userUpdate } as config) msg beforeSocketState =
-    let
-        state =
-            { beforeSocketState | socketCallbacks = isolateSocketCallbacks config beforeSocketState }
-    in
+update ({ onError, userUpdate } as config) msg state =
     case msg of
+        SetupSocket token ->
+            ( { state | socket = Just <| Handlers.setupSocket token }
+            , Cmd.none
+            )
+
         SubscriptionMsg subMsg ->
             case state.socket of
-                Just ( status, socket ) ->
-                    let
-                        ( newSocket, newCmd ) =
-                            Subscription.update subMsg socket
-                    in
-                    ( { state | socket = Just ( status, newSocket ) }
-                    , newCmd
-                        |> Cmd.map (subInfoToMsg state.socketCallbacks)
-                    )
-
                 Nothing ->
                     ( state, Cmd.none )
 
-        SubscriptionStatusChange status ->
-            case ( status, state.socket ) of
-                ( Subscription.Connected, Just ( Subscription.Uninitialized, socket ) ) ->
-                    ( { state | socket = Just ( status, socket ) }
-                    , Handlers.attachToWorkspace socket
-                        |> Cmd.map (subInfoToMsg state.socketCallbacks)
+                Just socket ->
+                    let
+                        ( newSocket, socketCmd ) =
+                            Subscription.update subMsg socket
+                    in
+                    ( { state | socket = Just newSocket }
+                    , Cmd.map SubscriptionMsg socketCmd
                     )
-
-                ( _, Just ( _, socket ) ) ->
-                    ( { state | socket = Just ( status, socket ) }
-                    , Cmd.none
-                    )
-
-                ( _, Nothing ) ->
-                    ( state, Cmd.none )
 
         DocsReceived packages callback cacheResult ->
             case cacheResult of
@@ -522,37 +489,6 @@ update ({ onError, userUpdate } as config) msg beforeSocketState =
 
         NoOp ->
             ( state, Cmd.none )
-
-
-isolateSocketCallbacks : Config msg flags route model -> State model msg -> List (WorkspaceUpdate -> msg)
-isolateSocketCallbacks { userSubs } { model } =
-    model
-        |> userSubs
-        |> Inbound.flatten
-        |> List.filterMap
-            (\inbound ->
-                case inbound of
-                    WorkspaceUpdates callback ->
-                        Just callback
-
-                    _ ->
-                        Nothing
-            )
-
-
-subInfoToMsg : List (WorkspaceUpdate -> msg) -> Handlers.SubscriptionInfo -> Msg msg
-subInfoToMsg callbacks info =
-    case info of
-        Handlers.Data data ->
-            callbacks
-                |> List.map (\cb -> UserMsg (cb data))
-                |> Multiple
-
-        Handlers.Control msg ->
-            SubscriptionMsg msg
-
-        Handlers.Status status ->
-            SubscriptionStatusChange status
 
 
 debouncePackageSearchConfig : Debounce.Config (Msg msg)

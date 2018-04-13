@@ -34,7 +34,7 @@ type Outbound msg
     | SaveSettings Jwt Settings
     | SaveToken Jwt
     | FormatElmCode String (String -> msg)
-    | Compile String (List Package)
+    | Compile Jwt String (List Package)
     | ReloadIframe
     | Redirect String
     | Navigate String
@@ -113,8 +113,8 @@ map f outbound =
         SearchPackages query callback ->
             SearchPackages query (callback >> f)
 
-        Compile elm packages ->
-            Compile elm packages
+        Compile token elm packages ->
+            Compile token elm packages
 
         ReloadIframe ->
             ReloadIframe

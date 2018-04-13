@@ -446,7 +446,7 @@ update msg ({ user } as model) =
 
         CompileRequested ->
             ( { model | compiling = True }
-            , Outbound.Compile model.elmCode model.packages
+            , Outbound.Compile model.token model.elmCode model.packages
             )
 
         CompileFinished error ->
@@ -679,7 +679,7 @@ subscriptions : Model -> Inbound Msg
 subscriptions model =
     Inbound.batch
         [ Inbound.map ActionsMsg <| Actions.subscriptions model.actions
-        , Inbound.WorkspaceUpdates <|
+        , Inbound.WorkspaceUpdates model.token <|
             \update ->
                 case update of
                     WorkspaceUpdate.CompileCompleted maybeError ->

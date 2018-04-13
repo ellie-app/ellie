@@ -15,7 +15,7 @@ import Pages.Editor.Types.WorkspaceUpdate as WorkspaceUpdate exposing (Workspace
 
 type Inbound msg
     = OutputThrewException (String -> msg)
-    | WorkspaceUpdates (WorkspaceUpdate -> msg)
+    | WorkspaceUpdates Jwt (WorkspaceUpdate -> msg)
     | EscapePressed msg
     | Batch (List (Inbound msg))
     | None
@@ -47,8 +47,8 @@ flatten inbound =
 map : (a -> b) -> Inbound a -> Inbound b
 map f inbound =
     case inbound of
-        WorkspaceUpdates callback ->
-            WorkspaceUpdates (callback >> f)
+        WorkspaceUpdates token callback ->
+            WorkspaceUpdates token (callback >> f)
 
         EscapePressed next ->
             EscapePressed (f next)

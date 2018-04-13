@@ -1,7 +1,6 @@
 module Pages.Editor.Effects.Handlers
     exposing
         ( GqlError
-        , SubscriptionInfo(..)
         , acceptTerms
         , attachToWorkspace
         , authenticate
@@ -14,7 +13,6 @@ module Pages.Editor.Effects.Handlers
         , setupSocket
         , updateRevision
         , updateSettings
-        , workspaceUpdates
         )
 
 import Data.Jwt as Jwt exposing (Jwt)
@@ -42,12 +40,11 @@ import Graphqelm.Field as Field
 import Graphqelm.Http as GraphqlHttp
 import Graphqelm.OptionalArgument as OptionalArgument
 import Graphqelm.SelectionSet exposing (hardcoded, with)
-import Graphqelm.Subscription as Subscription
-import Graphqelm.Subscription.Protocol as Subscription
 import Http
 import HttpBuilder exposing (post, withExpectJson, withJsonBody)
 import Json.Decode as Decode exposing (Decoder)
 import Json.Encode as Encode exposing (Value)
+import Network.Absinthe.Subscription as Subscription
 import Pages.Editor.Types.Revision as Revision exposing (Revision)
 import Pages.Editor.Types.RevisionId as RevisionId exposing (RevisionId)
 import Pages.Editor.Types.Settings as Settings exposing (Settings)
@@ -170,8 +167,8 @@ formatCode code =
         |> GraphqlHttp.send (Result.mapError GraphqlHttp.ignoreParsedErrorData)
 
 
-compile : Subscription.Model msg a -> String -> List Package -> Cmd msg
-compile model elmCode packages =
+compile : Jwt -> String -> List Package -> Cmd (Result GqlError ())
+compile token elmCode packages =
     let
         mutation =
             ApiMutation.selection (\_ -> ())
@@ -187,16 +184,13 @@ compile model elmCode packages =
             , version = ApiScalar.Version <| Version.toString package.version
             }
     in
-    Subscription.sendMutation model mutation
+    mutation
+        |> GraphqlHttp.mutationRequest "/api"
+        |> Jwt.withTokenHeader token
+        |> GraphqlHttp.send (Result.mapError GraphqlHttp.ignoreParsedErrorData)
 
 
-type SubscriptionInfo
-    = Data WorkspaceUpdate
-    | Control (Subscription.Msg WorkspaceUpdate)
-    | Status Subscription.Status
-
-
-setupSocket : Jwt -> ( Subscription.Model SubscriptionInfo WorkspaceUpdate, Cmd SubscriptionInfo )
+setupSocket : Jwt -> Subscription.State WorkspaceUpdate
 setupSocket token =
     let
         selection =
@@ -204,7 +198,7 @@ setupSocket token =
                 |> with (ApiSubscription.workspace workspaceUpdateSelection)
 
         workspaceUpdateSelection =
-            ApiWorkspaceUpdate.selection (Maybe.withDefault Ping)
+            ApiWorkspaceUpdate.selection (Maybe.withDefault Disconnected)
                 [ ApiWorkspaceAttached.selection Attached
                     |> with (ApiWorkspaceAttached.packages Package.selection)
                     |> ApiWorkspaceUpdate.onWorkspaceAttached
@@ -212,26 +206,20 @@ setupSocket token =
                     |> with (ApiCompileCompleted.error ElmError.selection)
                     |> ApiWorkspaceUpdate.onCompileCompleted
                 ]
-
-        ( socket, cmd ) =
-            Subscription.init Subscription.phoenixAbsinthe ("ws://localhost:4000/api/sockets/websocket?vsn=2.0.0&token=" ++ Jwt.toString token) selection Data
-                |> Tuple.mapFirst (Subscription.onStatusChanged Status)
     in
-    ( socket
-    , cmd
-    )
+    Subscription.init
+        ("ws://localhost:4000/api/sockets/websocket?vsn=2.0.0&token=" ++ Jwt.toString token)
+        Debug.log
+        selection
 
 
-attachToWorkspace : Subscription.Model SubscriptionInfo WorkspaceUpdate -> Cmd SubscriptionInfo
-attachToWorkspace socket =
+attachToWorkspace : Jwt -> Cmd (Result GqlError ())
+attachToWorkspace token =
     ApiMutation.selection (\_ -> ())
         |> with ApiMutation.attachToWorkspace
-        |> Subscription.sendMutation socket
-
-
-workspaceUpdates : Subscription.Model SubscriptionInfo WorkspaceUpdate -> Sub SubscriptionInfo
-workspaceUpdates model =
-    Subscription.listen Control model
+        |> GraphqlHttp.mutationRequest "/api"
+        |> Jwt.withTokenHeader token
+        |> GraphqlHttp.send (Result.mapError GraphqlHttp.ignoreParsedErrorData)
 
 
 createGist : String -> String -> String -> Project -> Cmd (Result Http.Error String)

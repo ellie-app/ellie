@@ -50,6 +50,7 @@ type Msg
     | UserPrepared Int Jwt User
     | UserAcceptedTerms
     | ServerAcceptedTerms
+    | WorkspaceConnected
     | WorkspaceAttached (List Package)
     | RevisionLoaded Revision
     | ExceptionOccured Exception
@@ -94,10 +95,7 @@ update msg state =
                     in
                     if termsVersionMatched then
                         ( Transition.step <| Attaching { token = newToken, user = user, revisionId = revisionId }
-                        , Outbound.batch
-                            [ Outbound.SaveToken newToken
-                            , Outbound.AttachToWorkspace newToken
-                            ]
+                        , Outbound.SaveToken newToken
                         )
                     else
                         ( { latestTerms = termsVersion
@@ -165,7 +163,7 @@ update msg state =
                       }
                         |> Attaching
                         |> Transition.step
-                    , Outbound.AttachToWorkspace state.token
+                    , Outbound.none
                     )
 
                 _ ->
@@ -173,7 +171,7 @@ update msg state =
                     , Outbound.none
                     )
 
-        Attaching { token, user, revisionId } ->
+        Attaching ({ token, user, revisionId } as attachingState) ->
             case msg of
                 RouteChanged route ->
                     case route of
@@ -198,6 +196,11 @@ update msg state =
                                     ( Transition.step <| Attaching { token = token, user = user, revisionId = Nothing }
                                     , Outbound.Redirect <| Route.toString Route.New
                                     )
+
+                WorkspaceConnected ->
+                    ( Transition.step <| Attaching attachingState
+                    , Outbound.AttachToWorkspace token
+                    )
 
                 WorkspaceAttached packages ->
                     case revisionId of
@@ -265,13 +268,29 @@ update msg state =
 
 
 subscriptions : Model -> Inbound Msg
-subscriptions _ =
-    Inbound.WorkspaceUpdates
-        (\update ->
-            case update of
-                WorkspaceUpdate.Attached packages ->
-                    WorkspaceAttached packages
+subscriptions model =
+    case model of
+        AcceptingTerms { token } ->
+            Inbound.WorkspaceUpdates token chooseUpdate
 
-                _ ->
-                    NoOp
-        )
+        Attaching { token } ->
+            Inbound.WorkspaceUpdates token chooseUpdate
+
+        Loading { token } ->
+            Inbound.WorkspaceUpdates token chooseUpdate
+
+        _ ->
+            Inbound.none
+
+
+chooseUpdate : WorkspaceUpdate -> Msg
+chooseUpdate update =
+    case update of
+        WorkspaceUpdate.Attached packages ->
+            WorkspaceAttached packages
+
+        WorkspaceUpdate.Connected ->
+            WorkspaceConnected
+
+        _ ->
+            NoOp

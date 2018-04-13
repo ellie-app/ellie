@@ -245,7 +245,6 @@ export default {
       }
 
       _onLoad() {
-        console.log('loaded')
         if (this._debug) {
           iframe.contentWindow.postMessage({ tag: 'SwitchToDebugger' }, window.location.origin)
         } else {
