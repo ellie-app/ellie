@@ -1,4 +1,0 @@
-@keyframes ProgressBar-indeterminate {
-  0% { transform: scaleX(0) translateX(-100%) }
-  100% { transform: scaleX(2) translateX(100%) }
-}
