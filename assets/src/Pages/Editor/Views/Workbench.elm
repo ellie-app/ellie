@@ -129,9 +129,16 @@ viewContent config =
                         , displayFlex
                         ]
                     ]
-                    [ case pane of
-                        ErrorsList ->
+                    [ case ( config.revisionId, pane ) of
+                        ( _, ErrorsList ) ->
                             viewErrorsList error config
+
+                        ( Just rid, ErrorsShare ) ->
+                            Share.view
+                                { onCreateGist = config.onCreateGist
+                                , onDownloadZip = config.onDownloadZip
+                                , revisionId = rid
+                                }
 
                         _ ->
                             Html.text ""
@@ -171,8 +178,10 @@ viewErrorsHeader pane config =
             ]
 
         tabs =
-            [ ( config.onSelectErrorsPane ErrorsList, "Errors", pane == ErrorsList )
-            ]
+            List.filterMap identity
+                [ Just ( config.onSelectErrorsPane ErrorsList, "Errors", pane == ErrorsList )
+                , Maybe.map (\_ -> ( config.onSelectErrorsPane ErrorsShare, "Share", pane == ErrorsShare )) config.revisionId
+                ]
     in
     viewHeader config actions tabs
 
