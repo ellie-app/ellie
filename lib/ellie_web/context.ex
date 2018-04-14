@@ -23,13 +23,9 @@ defmodule EllieWeb.Context do
     with ["Bearer " <> auth_token] <- get_req_header(conn, "authorization"),
       {:ok, current_user} <- Auth.verify(auth_token)
     do
-      IO.puts("user found")
       %{context: %{current_user: current_user}}
     else
-      error ->
-        IO.puts("user not found")
-        IO.inspect(error)
-        %{}
+      _ -> %{}
     end
   end
 end

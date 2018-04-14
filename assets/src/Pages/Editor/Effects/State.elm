@@ -52,6 +52,14 @@ port pagesEditorEffectsStateOut : Value -> Cmd msg
 processOutbound : (Exception -> msg) -> Outbound msg -> State model msg -> ( State model msg, Cmd (Msg msg) )
 processOutbound onError effect state =
     case effect of
+        GetDocs packages callback ->
+            ( state
+            , Handlers.getDocs packages
+                |> Cmd.map (Result.mapError Exception.fromGqlError)
+                |> Cmd.map (Result.fold callback onError)
+                |> Cmd.map UserMsg
+            )
+
         Navigate url ->
             ( state
             , Navigation.newUrl url

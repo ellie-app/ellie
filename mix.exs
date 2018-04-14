@@ -47,7 +47,9 @@ defmodule Ellie.Mixfile do
       {:poison, "~> 3.1"},
       {:porcelain, "~> 2.0.3"},
       {:murmur, "~> 1.0"},
-      {:briefly, "~> 0.3"}
+      {:briefly, "~> 0.3"},
+      {:httpoison, "~> 1.1"},
+      {:dataloader, "~> 1.0.0"}
     ]
   end
 

@@ -7,7 +7,7 @@ module Elm.Docs
         , Module
         , Union
         , Value
-        , decoder
+        , selection
         , toBlocks
         )
 
@@ -38,8 +38,19 @@ web pages!
 
 -}
 
+import Ellie.Api.Enum.ElmDocsAssociativity as ElmDocsAssociativity
+import Ellie.Api.Object exposing (ElmDocsModule)
+import Ellie.Api.Object.ElmDocsAlias as ElmDocsAlias
+import Ellie.Api.Object.ElmDocsBinop as ElmDocsBinop
+import Ellie.Api.Object.ElmDocsModule as ElmDocsModule
+import Ellie.Api.Object.ElmDocsTag as ElmDocsTag
+import Ellie.Api.Object.ElmDocsUnion as ElmDocsUnion
+import Ellie.Api.Object.ElmDocsValue as ElmDocsValue
+import Ellie.Api.Scalar as Scalar
 import Elm.Type as Type exposing (Type)
-import Json.Decode exposing (..)
+import Extra.Result as Result
+import Graphqelm.Field as Field
+import Graphqelm.SelectionSet exposing (SelectionSet, with)
 
 
 -- DOCUMENTATION
@@ -180,87 +191,69 @@ type Associativity
 
 
 
--- DECODE
+-- SELECTION
 
 
-{-| Decode the JSON documentation produced by `elm-make` for an individual
-module. The documentation for a whole package is an array of module docs,
-so you may need to say `(Decode.list Docs.decoder)` depending on what you
-want to do.
--}
-decoder : Decoder Module
-decoder =
-    map6 Module
-        (field "name" string)
-        (field "comment" string)
-        (field "unions" (list unionDecoder))
-        (field "aliases" (list aliasDecoder))
-        (field "values" (list valueDecoder))
-        (field "binops" (list binopDecoder))
+selection : SelectionSet Module ElmDocsModule
+selection =
+    let
+        selection_ =
+            ElmDocsModule.selection Module
+                |> with ElmDocsModule.name
+                |> with ElmDocsModule.comment
+                |> with (ElmDocsModule.unions unionSelection)
+                |> with (ElmDocsModule.aliases aliasSelection)
+                |> with (ElmDocsModule.values valueSelection)
+                |> with (ElmDocsModule.binops binopSelection)
 
+        unionSelection =
+            ElmDocsUnion.selection Union
+                |> with ElmDocsUnion.name
+                |> with ElmDocsUnion.comment
+                |> with ElmDocsUnion.args
+                |> with (ElmDocsUnion.tags tagSelection)
 
-aliasDecoder : Decoder Alias
-aliasDecoder =
-    map4 Alias
-        (field "name" string)
-        (field "comment" string)
-        (field "args" (list string))
-        (field "type" Type.decoder)
+        aliasSelection =
+            ElmDocsAlias.selection Alias
+                |> with ElmDocsAlias.name
+                |> with ElmDocsAlias.comment
+                |> with ElmDocsAlias.args
+                |> with (Field.mapOrFail parseType ElmDocsAlias.type_)
 
+        valueSelection =
+            ElmDocsValue.selection Value
+                |> with ElmDocsValue.name
+                |> with ElmDocsValue.comment
+                |> with (Field.mapOrFail parseType ElmDocsValue.type_)
 
-unionDecoder : Decoder Union
-unionDecoder =
-    map4 Union
-        (field "name" string)
-        (field "comment" string)
-        (field "args" (list string))
-        (field "cases" (list tagDecoder))
+        binopSelection =
+            ElmDocsBinop.selection Binop
+                |> with ElmDocsBinop.name
+                |> with ElmDocsBinop.comment
+                |> with (Field.mapOrFail parseType ElmDocsBinop.type_)
+                |> with (Field.map makeAssociativity ElmDocsBinop.associativity)
+                |> with ElmDocsBinop.precedence
 
+        tagSelection =
+            ElmDocsTag.selection (,)
+                |> with ElmDocsTag.name
+                |> with (Field.mapOrFail (Result.traverse parseType) ElmDocsTag.args)
 
-tagDecoder : Decoder ( String, List Type )
-tagDecoder =
-    map2 (\a b -> ( a, b ))
-        (index 0 string)
-        (index 1 (list Type.decoder))
+        makeAssociativity a =
+            case a of
+                ElmDocsAssociativity.Left ->
+                    Left
 
+                ElmDocsAssociativity.Right ->
+                    Right
 
-valueDecoder : Decoder Value
-valueDecoder =
-    map3 Value
-        (field "name" string)
-        (field "comment" string)
-        (field "type" Type.decoder)
+                ElmDocsAssociativity.None ->
+                    None
 
-
-binopDecoder : Decoder Binop
-binopDecoder =
-    map5 Binop
-        (field "name" string)
-        (field "comment" string)
-        (field "type" Type.decoder)
-        (field "associativity" assocDecoder)
-        (field "precedence" int)
-
-
-assocDecoder : Decoder Associativity
-assocDecoder =
-    andThen toAssoc string
-
-
-toAssoc : String -> Decoder Associativity
-toAssoc str =
-    case str of
-        "left" ->
-            succeed Left
-
-        "non" ->
-            succeed None
-
-        "right" ->
-            succeed Right
-
-        _ ->
-            fail "expecting one of the following values: left, non, right"
+        parseType (Scalar.ElmDocsType t) =
+            Result.mapError toString <| Type.parse t
+    in
+    selection_
 
 
 

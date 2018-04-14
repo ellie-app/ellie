@@ -1,5 +1,21 @@
 defmodule Ellie.Elm.Package do
+  alias Ellie.Elm.Version
+
   defstruct name: %Ellie.Elm.Name{}, version: %Ellie.Elm.Version{}
+
+  def docs_view_link(%Ellie.Elm.Package{} = package) do
+    Application.get_env(:ellie, :package_endpoint) <>
+      "/" <>
+      package.name.user <>
+      "/" <>
+      package.name.project <>
+      "/" <>
+      Version.to_string(package.version)
+  end
+
+  def docs_data_link(%Ellie.Elm.Package{} = package) do
+    docs_view_link(package) <> "/docs.json"
+  end
 
   @behaviour Ecto.Type
 
@@ -48,6 +64,9 @@ defmodule Ellie.Elm.Package do
     else
       _ -> :error
     end
+  end
+  def dump({{_user, _project}, {_major,_minor,_patch}} = stuff) do
+    {:ok, stuff}
   end
   def dump(_), do: :error
 end

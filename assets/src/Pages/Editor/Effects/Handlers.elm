@@ -8,6 +8,7 @@ module Pages.Editor.Effects.Handlers
         , createGist
         , createRevision
         , formatCode
+        , getDocs
         , getRevision
         , searchPackages
         , setupSocket
@@ -31,6 +32,7 @@ import Ellie.Api.Query as ApiQuery
 import Ellie.Api.Scalar as ApiScalar
 import Ellie.Api.Subscription as ApiSubscription
 import Ellie.Api.Union.WorkspaceUpdate as ApiWorkspaceUpdate
+import Elm.Docs as Docs
 import Elm.Error as ElmError
 import Elm.Name as Name
 import Elm.Package as Package exposing (Package)
@@ -38,8 +40,9 @@ import Elm.Project as Project exposing (Project)
 import Elm.Version as Version
 import Graphqelm.Field as Field
 import Graphqelm.Http as GraphqlHttp
+import Graphqelm.Internal.Builder.Object as ObjectBuilder
 import Graphqelm.OptionalArgument as OptionalArgument
-import Graphqelm.SelectionSet exposing (hardcoded, with)
+import Graphqelm.SelectionSet exposing (SelectionSet(..), hardcoded, with)
 import Http
 import HttpBuilder exposing (post, withExpectJson, withJsonBody)
 import Json.Decode as Decode exposing (Decoder)
@@ -347,4 +350,25 @@ updateRevision token projectId revision =
     selection
         |> GraphqlHttp.mutationRequest "/api"
         |> Jwt.withTokenHeader token
+        |> GraphqlHttp.send (Result.mapError GraphqlHttp.ignoreParsedErrorData)
+
+
+getDocs : List Package -> Cmd (Result GqlError (List Docs.Module))
+getDocs packages =
+    let
+        selection =
+            ApiQuery.selection List.concat
+                |> with (ApiQuery.packages { packages = List.map makeArgs packages } packageSelection)
+
+        makeArgs package =
+            { name = ApiScalar.Name <| Name.toString package.name
+            , version = ApiScalar.Version <| Version.toString package.version
+            }
+
+        packageSelection =
+            ApiPackage.selection identity
+                |> with (ApiPackage.docs Docs.selection)
+    in
+    selection
+        |> GraphqlHttp.queryRequest "/api"
         |> GraphqlHttp.send (Result.mapError GraphqlHttp.ignoreParsedErrorData)

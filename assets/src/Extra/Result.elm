@@ -9,3 +9,11 @@ fold success error result =
 
         Err x ->
             error x
+
+
+traverse : (a -> Result x b) -> List a -> Result x (List b)
+traverse toResult list =
+    List.foldr
+        (\next result -> Result.map2 (::) (toResult next) result)
+        (Ok [])
+        list

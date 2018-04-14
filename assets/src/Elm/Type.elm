@@ -1,7 +1,7 @@
 module Elm.Type
     exposing
         ( Type(..)
-        , decoder
+        , parse
         )
 
 {-| This is specifically for handling the types that appear in
@@ -15,7 +15,6 @@ check out the source code and go from there. It's not too tough!
 -}
 
 import Char
-import Json.Decode as Decode exposing (Decoder)
 import Parser exposing ((|.), (|=), Parser)
 import Parser.LanguageKit as Parser
 import Set
@@ -46,27 +45,6 @@ type Type
 
 
 
--- DECODE
-
-
-{-| Decode the JSON representation of `Type` values.
--}
-decoder : Decoder Type
-decoder =
-    Decode.andThen decoderHelp Decode.string
-
-
-decoderHelp : String -> Decoder Type
-decoderHelp string =
-    case parse string of
-        Err error ->
-            Decode.fail "TODO"
-
-        Ok actualType ->
-            Decode.fail "OOPS"
-
-
-
 -- PARSE TYPES
 
 
@@ -89,19 +67,23 @@ tipe =
 
 tipeHelp : Type -> Parser Type
 tipeHelp t =
-    Parser.oneOf
-        [ Parser.map (Lambda t) arrowAndType
-        , Parser.succeed t
-        ]
+    Parser.lazy <|
+        \_ ->
+            Parser.oneOf
+                [ Parser.map (Lambda t) arrowAndType
+                , Parser.succeed t
+                ]
 
 
 arrowAndType : Parser Type
 arrowAndType =
-    Parser.delayedCommit spaces <|
-        Parser.succeed identity
-            |. arrow
-            |. spaces
-            |= tipe
+    Parser.lazy <|
+        \_ ->
+            Parser.delayedCommit spaces <|
+                Parser.succeed identity
+                    |. arrow
+                    |. spaces
+                    |= tipe
 
 
 arrow : Parser ()
@@ -109,35 +91,42 @@ arrow =
     Parser.symbol "->"
 
 
-chompArgs : List Type -> Parser (List Type)
-chompArgs revArgs =
-    Parser.oneOf
-        [ Parser.delayedCommit spaces term
-            |> Parser.andThen (\arg -> chompArgs (arg :: revArgs))
-        , Parser.succeed (List.reverse revArgs)
-        ]
+getArgs : List Type -> Parser (List Type)
+getArgs revArgs =
+    Parser.lazy <|
+        \_ ->
+            Parser.oneOf
+                [ Parser.delayedCommit spaces term
+                    |> Parser.andThen (\arg -> getArgs (arg :: revArgs))
+                , Parser.succeed (List.reverse revArgs)
+                ]
 
 
 tipeTerm : Parser Type
 tipeTerm =
-    Parser.oneOf
-        [ Parser.map Var lowVar
-        , Parser.succeed Type
-            |= qualifiedCapVar
-            |= chompArgs []
-        , record
-        , tuple
-        ]
+    Parser.lazy
+        (\_ ->
+            Parser.oneOf
+                [ Parser.map Var lowVar
+                , Parser.succeed Type
+                    |= qualifiedCapVar
+                    |= getArgs []
+                , record
+                , tuple
+                ]
+        )
 
 
 term : Parser Type
 term =
-    Parser.oneOf
-        [ Parser.map Var lowVar
-        , Parser.map (\name -> Type name []) qualifiedCapVar
-        , record
-        , tuple
-        ]
+    Parser.lazy <|
+        \_ ->
+            Parser.oneOf
+                [ Parser.map Var lowVar
+                , Parser.map (\name -> Type name []) qualifiedCapVar
+                , record
+                , tuple
+                ]
 
 
 
@@ -146,13 +135,15 @@ term =
 
 record : Parser Type
 record =
-    Parser.succeed (\ext fields -> Record fields ext)
-        |. Parser.symbol "{"
-        |. spaces
-        |= extension
-        |= commaSep field
-        |. spaces
-        |. Parser.symbol "}"
+    Parser.lazy <|
+        \_ ->
+            Parser.succeed (\ext fields -> Record fields ext)
+                |. Parser.symbol "{"
+                |. spaces
+                |= extension
+                |= commaSep field
+                |. spaces
+                |. Parser.symbol "}"
 
 
 extension : Parser (Maybe String)
@@ -174,12 +165,14 @@ extensionHelp =
 
 field : Parser ( String, Type )
 field =
-    Parser.succeed (\a b -> ( a, b ))
-        |= lowVar
-        |. spaces
-        |. Parser.symbol ":"
-        |. spaces
-        |= tipe
+    Parser.lazy <|
+        \_ ->
+            Parser.succeed (\a b -> ( a, b ))
+                |= lowVar
+                |. spaces
+                |. Parser.symbol ":"
+                |. spaces
+                |= tipe
 
 
 

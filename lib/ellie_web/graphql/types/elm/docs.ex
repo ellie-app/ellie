@@ -1,4 +1,4 @@
-defmodule EllieWeb.Graphql.Types.Docs do
+defmodule EllieWeb.Graphql.Types.Elm.Docs do
   use Absinthe.Schema.Notation
 
   defp good_list(type), do: non_null(list_of(non_null(type)))
@@ -16,7 +16,11 @@ defmodule EllieWeb.Graphql.Types.Docs do
     field :name, non_null(:string)
     field :comment, non_null(:string)
     field :args, good_list(:string)
-    field :tags, good_list(:elm_docs_tag)
+    field :tags, good_list(:elm_docs_tag) do
+      resolve fn union, _, _ ->
+        {:ok, Map.get(union, "tags", [])}
+      end
+    end
   end
 
   object :elm_docs_tag do
@@ -43,7 +47,7 @@ defmodule EllieWeb.Graphql.Types.Docs do
   object :elm_docs_value do
     field :name, non_null(:string)
     field :comment, non_null(:string)
-    field :type, non_null(:type)
+    field :type, non_null(:elm_docs_type)
   end
 
   object :elm_docs_binop do

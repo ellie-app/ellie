@@ -4,7 +4,9 @@ defmodule EllieWeb.Schema do
   import_types EllieWeb.Graphql.Types.Version
   import_types EllieWeb.Graphql.Types.Name
   import_types EllieWeb.Graphql.Types.Elm.Error
+  import_types EllieWeb.Graphql.Types.Elm.Docs
   import_types EllieWeb.Graphql.Types
+
 
   def middleware(middleware, %{identifier: identifier} = field, object) do
     middleware_spec = {{__MODULE__, :get_string_key}, identifier}
@@ -13,9 +15,19 @@ defmodule EllieWeb.Schema do
   def middleware(middleware, _field, _object) do
     middleware
   end
-
   def get_string_key(%{source: source} = res, key) do
     %{res | state: :resolved, value: Map.get(source, key, Map.get(source, Atom.to_string(key))) }
+  end
+
+  def plugins() do
+    [Absinthe.Middleware.Dataloader] ++ Absinthe.Plugin.defaults()
+  end
+
+  def context(map) do
+    loader =
+      Dataloader.new()
+      |> Dataloader.add_source(Ellie.Elm.Docs, Ellie.Elm.Docs.data())
+    Map.put(map, :loader, loader)
   end
 
   query do
@@ -23,7 +35,6 @@ defmodule EllieWeb.Schema do
       middleware EllieWeb.Graphql.Middleware.Auth
       resolve fn _, %{context: %{current_user: current_user}} -> {:ok, current_user} end
     end
-
 
     field :revision, non_null(:revision) do
       arg :project_id, non_null(:uuid)
@@ -34,6 +45,16 @@ defmodule EllieWeb.Schema do
     field :package_search, non_null(list_of(non_null(:package))) do
       arg :query, non_null(:string)
       resolve &EllieWeb.Graphql.Resolvers.SearchPackages.call/2
+    end
+
+    field :packages, non_null(list_of(non_null(:package))) do
+      arg :packages, non_null(list_of(non_null(:package_input)))
+      resolve fn _parent, args, _opts ->
+        mapped =
+          args.packages
+            |> Enum.map(fn p -> %Ellie.Elm.Package{name: p.name, version: p.version} end)
+        {:ok, mapped}
+      end
     end
   end
 

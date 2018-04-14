@@ -4,7 +4,6 @@ defmodule Ellie.Repo.Migrations.CreateRevisions do
   def up do
     Ellie.Elm.Version.up
     Ellie.Elm.Package.up
-
     create table(:revisions, primary_key: false) do
       add :project_id,      :uuid,                            primary_key: true
       add :revision_number, :integer,                         primary_key: true

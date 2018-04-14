@@ -8,6 +8,7 @@ port module Pages.Editor.Effects.Outbound
 
 import Data.Jwt as Jwt exposing (Jwt)
 import Data.Uuid as Uuid exposing (Uuid)
+import Elm.Docs as Docs
 import Elm.Error as ElmError
 import Elm.Package as Package exposing (Package)
 import Elm.Project as Project exposing (Project)
@@ -49,6 +50,7 @@ type Outbound msg
     | Delay Float msg
     | MoveElmCursor ElmError.Position
     | AttachToWorkspace Jwt
+    | GetDocs (List Package) (List Docs.Module -> msg)
     | None
 
 
@@ -65,6 +67,9 @@ none =
 map : (a -> b) -> Outbound a -> Outbound b
 map f outbound =
     case outbound of
+        GetDocs packages callback ->
+            GetDocs packages (callback >> f)
+
         Navigate url ->
             Navigate url
 

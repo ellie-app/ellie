@@ -10,6 +10,9 @@ defmodule EllieWeb.Graphql.Types do
   object :package do
     field :name, non_null(:name)
     field :version, non_null(:version)
+    field :docs, non_null(list_of(non_null(:elm_docs_module))) do
+      resolve &EllieWeb.Graphql.Resolvers.PackageDocs.call/3
+    end
   end
 
   input_object :package_input do

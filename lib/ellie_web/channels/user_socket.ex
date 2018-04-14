@@ -8,6 +8,7 @@ defmodule EllieWeb.UserSocket do
   def connect(params, socket) do
     token = params["token"]
     {:ok, user} = Auth.verify(token)
+    send(self(), :hello)
     socket = Absinthe.Phoenix.Socket.put_options(socket, context: %{current_user: user})
     {:ok, socket}
   end
