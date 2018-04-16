@@ -3,7 +3,6 @@ defmodule EllieWeb.Graphql.Resolvers.PackageDocs do
   alias Ellie.Elm.Docs
   alias Ellie.Repo
   alias Absinthe.Resolution.Helpers
-  import Ecto.Query
 
   def call(package, _, %{context: %{loader: loader}}) do
     loader

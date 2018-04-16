@@ -8,7 +8,8 @@ use Mix.Config
 # General application configuration
 config :ellie,
   ecto_repos: [Ellie.Repo],
-  env: Mix.env
+  env: Mix.env,
+  package_endpoint: System.get_env("PACKAGE_SITE")
 
 # Configures the endpoint
 config :ellie, EllieWeb.Endpoint,
@@ -16,8 +17,7 @@ config :ellie, EllieWeb.Endpoint,
   secret_key_base: "+ODF8PyQMpBDb5mxA117MqkLne/bGi0PZoTl5uIHAzck2hDAJ8uGJPzark0Aolyi",
   render_errors: [view: EllieWeb.ErrorView, accepts: ~w(html json)],
   pubsub: [name: Ellie.PubSub,
-           adapter: Phoenix.PubSub.PG2],
-  package_endpoint: System.get_env("PACKAGE_SITE")
+           adapter: Phoenix.PubSub.PG2]
 
 # Configures Elixir's Logger
 config :logger, :console,

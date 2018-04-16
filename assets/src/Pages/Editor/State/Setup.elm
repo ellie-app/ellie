@@ -270,9 +270,6 @@ update msg state =
 subscriptions : Model -> Inbound Msg
 subscriptions model =
     case model of
-        AcceptingTerms { token } ->
-            Inbound.WorkspaceUpdates token chooseUpdate
-
         Attaching { token } ->
             Inbound.WorkspaceUpdates token chooseUpdate
 

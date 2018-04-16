@@ -367,15 +367,7 @@ update msg ({ user } as model) =
             case model.workbench of
                 Finished state ->
                     ( { model | workbench = Finished { state | pane = pane } }
-                    , case pane of
-                        SuccessOutput ->
-                            Outbound.SwitchToProgram
-
-                        SuccessDebug ->
-                            Outbound.SwitchToDebugger
-
-                        _ ->
-                            Outbound.none
+                    , Outbound.none
                     )
 
                 _ ->

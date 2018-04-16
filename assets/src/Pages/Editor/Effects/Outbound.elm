@@ -40,8 +40,6 @@ type Outbound msg
     | Redirect String
     | Navigate String
     | SearchPackages String (Maybe (List Package) -> msg)
-    | SwitchToDebugger
-    | SwitchToProgram
     | EnableNavigationCheck Bool
     | CreateGist { title : String, project : Project, elm : ElmSource, html : HtmlSource } (Maybe String -> msg)
     | DownloadZip { project : Project, elm : ElmSource, html : HtmlSource }
@@ -126,12 +124,6 @@ map f outbound =
 
         Redirect url ->
             Redirect url
-
-        SwitchToDebugger ->
-            SwitchToDebugger
-
-        SwitchToProgram ->
-            SwitchToProgram
 
         AttachToWorkspace token ->
             AttachToWorkspace token

@@ -225,18 +225,6 @@ processOutbound onError effect state =
             , Navigation.modifyUrl url
             )
 
-        SwitchToDebugger ->
-            ( state
-            , Encode.genericUnion "SwitchToDebugger" []
-                |> pagesEditorEffectsStateOut
-            )
-
-        SwitchToProgram ->
-            ( state
-            , Encode.genericUnion "SwitchToProgram" []
-                |> pagesEditorEffectsStateOut
-            )
-
         Outbound.Batch outbounds ->
             outbounds
                 |> List.foldr

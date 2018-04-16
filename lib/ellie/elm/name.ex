@@ -1,6 +1,8 @@
 defmodule Ellie.Elm.Name do
   defstruct user: "user", project: "project"
 
+  @type t :: %Ellie.Elm.Name{user: String.t(), project: String.t()}
+
   def core() do
     %Ellie.Elm.Name{ user: "elm-lang", project: "core" }
   end

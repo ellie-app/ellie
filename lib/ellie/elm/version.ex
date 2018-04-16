@@ -1,6 +1,8 @@
 defmodule Ellie.Elm.Version do
   defstruct major: 1, minor: 0, patch: 0
 
+  @type t :: %Ellie.Elm.Version{major: integer, minor: integer, patch: integer}
+
   def to_string(%Ellie.Elm.Version{major: major, minor: minor, patch: patch}) do
     Integer.to_string(major) <> "." <> Integer.to_string(minor) <> "." <> Integer.to_string(patch)
   end
