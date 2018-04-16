@@ -122,13 +122,11 @@ viewInstalledPackage onUninstall ({ name, version } as package) =
         [ Button.view
             { icon = Just Icon.Trash
             , label = "Uninstall"
-            , disabled = False
             , action = Button.click <| onUninstall package
             }
         , Button.view
             { icon = Just Icon.Document
             , label = "View Docs"
-            , disabled = False
             , action =
                 Button.link
                     { external = True
@@ -154,7 +152,6 @@ viewSearchedPackage onInstall onUninstall installed package =
             [ Button.view
                 { icon = Just Icon.Install
                 , label = "Install"
-                , disabled = False
                 , action = Button.click <| onInstall package
                 }
             ]

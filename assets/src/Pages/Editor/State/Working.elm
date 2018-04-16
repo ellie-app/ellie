@@ -140,8 +140,8 @@ toSave model =
             Left <| toRevision model
 
 
-shouldCheckNavigation : Model -> Bool
-shouldCheckNavigation model =
+hasChanged : Model -> Bool
+hasChanged model =
     case Replaceable.toMaybe model.revision of
         Nothing ->
             (model.elmCode /= model.activeExample.elm)
@@ -512,7 +512,7 @@ update msg ({ user } as model) =
                     }
             in
             ( nextModel
-            , Outbound.EnableNavigationCheck <| shouldCheckNavigation nextModel
+            , Outbound.EnableNavigationCheck <| hasChanged nextModel
             )
 
         PackageInstalled package ->
@@ -578,12 +578,12 @@ update msg ({ user } as model) =
 
         ElmCodeChanged code ->
             ( { model | elmCode = code }
-            , Outbound.EnableNavigationCheck <| shouldCheckNavigation model
+            , Outbound.EnableNavigationCheck <| hasChanged model
             )
 
         HtmlCodeChanged code ->
             ( { model | htmlCode = code }
-            , Outbound.EnableNavigationCheck <| shouldCheckNavigation model
+            , Outbound.EnableNavigationCheck <| hasChanged model
             )
 
         RevisionLoaded revisionId revision ->

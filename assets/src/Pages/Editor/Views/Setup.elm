@@ -88,7 +88,6 @@ terms state =
                 else
                     Just Icon.Success
             , label = "Accept Terms"
-            , disabled = False
             , action = Button.click state.onAccept
             }
         ]

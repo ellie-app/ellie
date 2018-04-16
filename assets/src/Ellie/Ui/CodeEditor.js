@@ -66,15 +66,15 @@ const loadVimMode = () => {
   .then(() => {})
 }
 
-const debounce = (func, wait) => {
-  let timeout
+const debounce = (func) => {
+  let token
   return function() {
-    var later = function() {
-      timeout = null
+    const later = () => {
+      token = null
       func.apply(null, arguments)
     };
-    clearTimeout(timeout)
-    timeout = setTimeout(later, wait)
+    cancelIdleCallback(token)
+    token = requestIdleCallback(later)
   }
 }
 
@@ -87,14 +87,22 @@ const start = (app) => {
     customElements.define('code-editor', class CodeEditor extends HTMLElement {
       constructor() {
         super()
+        this._value = this.editorValue || ''
+        delete this.editorValue
+
+        this._tabSize = this.tabSize || 4
+        delete this.tabSize
+
+        this._readOnly = this.readOnly || false
+        delete this.readOnly
+
+        this._mode = this.mode || 'htmlmixed'
+        delete this.mode
+
         this._onTokenChange = this._onTokenChange.bind(this)
         this._onElmChanges = this._onElmChanges.bind(this)
         this._linterFormatDiv = document.createElement('div')
         this._ready = false
-        this._value = ''
-        this._tabSize = 4
-        this._readOnly = false
-        this._mode = 'htmlmixed'
         this._instance = null
         this._errors = []
         this._vimMode = false
@@ -154,6 +162,7 @@ const start = (app) => {
         if (value === null) value = false
         if (value === this._readOnly) return
         this._readOnly = value
+        if (!this._instance) return
         this._instance.setOption('readOnly', value)
       }
 
@@ -220,7 +229,7 @@ const start = (app) => {
           this._value = this._instance.getValue()
           const event = new Event('change')
           this.dispatchEvent(event)
-        }, 200)
+        })
 
         this._instance.on('changes', runDispatch)
       

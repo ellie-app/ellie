@@ -6,7 +6,6 @@ import Css.Foreign
 import Data.Jwt as Jwt exposing (Jwt)
 import Ellie.Ui.Button as Button
 import Ellie.Ui.Icon as Icon
-import Ellie.Ui.Markdown as Markdown
 import Ellie.Ui.TextInput as TextInput
 import Ellie.Ui.Theme as Theme
 import Elm.Error as ElmError
@@ -22,7 +21,8 @@ import Pages.Editor.Views.Workbench.Chunk as Chunk
 
 
 type alias Config msg =
-    { onCompile : msg
+    { onCompile : Maybe msg
+    , onSave : Maybe msg
     , onExpand : msg
     , onIframeReload : msg
     , onClearLogs : msg
@@ -38,7 +38,6 @@ type alias Config msg =
     , maximized : Bool
     , token : Jwt
     , saving : Bool
-    , onSave : msg
     , htmlCode : String
     , revisionId : Maybe RevisionId
     }
@@ -153,18 +152,20 @@ viewErrorsHeader pane config =
             [ if config.compiling then
                 { icon = Just Icon.Loading
                 , label = "Compiling..."
-                , disabled = True
                 , action = Button.none
                 }
               else
                 { icon = Just Icon.Play
                 , label = "Compile"
-                , disabled = False
-                , action = Button.click config.onCompile
+                , action =
+                    case config.onCompile of
+                        Just onCompile ->
+                            Button.click onCompile
+
+                        Nothing ->
+                            Button.none
                 }
-            , { disabled = config.saving
-              , action = Button.click config.onSave
-              , label =
+            , { label =
                     if config.saving then
                         "Saving..."
                     else
@@ -174,6 +175,13 @@ viewErrorsHeader pane config =
                         Just Icon.Loading
                     else
                         Just Icon.Upload
+              , action =
+                    case config.onSave of
+                        Just onSave ->
+                            Button.click onSave
+
+                        Nothing ->
+                            Button.none
               }
             ]
 
@@ -279,32 +287,39 @@ viewFinishedHeader pane config =
     let
         actions =
             List.filterMap identity
-                [ if config.compiling then
-                    Just
-                        { icon = Just Icon.Loading
-                        , label = "Compiling..."
-                        , disabled = True
-                        , action = Button.none
-                        }
-                  else
-                    Just
-                        { icon = Just Icon.Play
-                        , label = "Compile"
-                        , disabled = False
-                        , action = Button.click config.onCompile
-                        }
+                [ Just
+                    { icon = Just Icon.Play
+                    , label = "Compile"
+                    , action =
+                        if config.compiling then
+                            Button.none
+                        else
+                            case config.onCompile of
+                                Just onCompile ->
+                                    Button.click onCompile
+
+                                Nothing ->
+                                    Button.none
+                    }
                 , Just
                     { icon = Just Icon.Upload
                     , label = "Save"
-                    , disabled = config.saving
-                    , action = Button.click config.onSave
+                    , action =
+                        if config.saving then
+                            Button.none
+                        else
+                            case config.onSave of
+                                Just onSave ->
+                                    Button.click onSave
+
+                                Nothing ->
+                                    Button.none
                     }
                 , case pane of
                     SuccessOutput ->
                         Just
                             { icon = Just Icon.Reload
                             , label = "Reload"
-                            , disabled = False
                             , action = Button.click config.onIframeReload
                             }
 
@@ -315,7 +330,6 @@ viewFinishedHeader pane config =
                         Just
                             { icon = Just Icon.Trash
                             , label = "Clear"
-                            , disabled = False
                             , action = Button.click config.onClearLogs
                             }
 
@@ -486,20 +500,24 @@ viewInitial config =
         , Html.div
             [ css [ paddingTop (px 24) ]
             ]
-            [ if config.compiling then
-                Button.view
-                    { icon = Just Icon.Loading
-                    , label = "Compiling..."
-                    , disabled = True
-                    , action = Button.click config.onCompile
-                    }
-              else
-                Button.view
-                    { icon = Just Icon.Play
-                    , label = "Compile"
-                    , disabled = False
-                    , action = Button.click config.onCompile
-                    }
+            [ Button.view
+                { icon = Just Icon.Loading
+                , label =
+                    if config.compiling then
+                        "Compiling..."
+                    else
+                        "Compile"
+                , action =
+                    if config.compiling then
+                        Button.none
+                    else
+                        case config.onCompile of
+                            Just onCompile ->
+                                Button.click onCompile
+
+                            Nothing ->
+                                Button.none
+                }
             ]
         ]
 

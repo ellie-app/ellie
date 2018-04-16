@@ -21,7 +21,6 @@ import EllieUiIcon from '../../Ellie/Ui/Icon'
 import EllieUiMenu from '../../Ellie/Ui/Menu'
 import EllieUiCopyText from '../../Ellie/Ui/CopyText'
 import EllieUiSplitPane from '../../Ellie/Ui/SplitPane'
-import EllieUiMarkdown from '../../Ellie/Ui/Markdown'
 import EllieUiCodeEditor from '../../Ellie/Ui/CodeEditor'
 import '../../Ellie/Ui/CodeEditor.css'
 import EffectsState from './Effects/State'
@@ -42,7 +41,6 @@ document.addEventListener('DOMContentLoaded', () => {
   EllieUiMenu.start(app)
   EllieUiCopyText.start(app)
   EllieUiSplitPane.start(app)
-  EllieUiMarkdown.start(app)
   EllieUiCodeEditor.start(app)
   EffectsState.start(app)
   ViewsOutput.start(app)

@@ -34,7 +34,6 @@ none =
 type alias Config msg =
     { icon : Maybe Icon.Icon
     , label : String
-    , disabled : Bool
     , action : Action msg
     }
 
@@ -57,7 +56,13 @@ view config =
     in
     elemFn
         [ buttonStyles config
-        , Attributes.disabled config.disabled
+        , Attributes.disabled <|
+            case config.action of
+                None ->
+                    True
+
+                _ ->
+                    False
         ]
         [ div
             [ css
@@ -126,10 +131,13 @@ buttonStyles config =
             , cursor notAllowed
             ]
         , batch <|
-            if config.disabled then
-                [ opacity (num 0.6)
-                , cursor notAllowed
-                ]
-            else
-                []
+            case config.action of
+                None ->
+                    [ opacity (num 0.6)
+                    , cursor notAllowed
+                    , active [ property "transform" "none" ]
+                    ]
+
+                _ ->
+                    []
         ]

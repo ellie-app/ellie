@@ -30,7 +30,7 @@ defmodule Ellie.Search.Server do
 
   def handle_info(:reload, _state) do
     Task.start fn -> Helpers.reload() end
-    timer = Process.send_after(self(), :reload, 15_000)
+    timer = Process.send_after(self(), :reload, 1_000 * 60 * 15)
     {:ok, %{timer: timer}}
   end
 

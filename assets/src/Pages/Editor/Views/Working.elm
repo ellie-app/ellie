@@ -152,50 +152,66 @@ viewWorkspace model =
         , originalRatio = 0.5
         , onResize = WorkingState.WorkbenchResized
         , minSize = 24
-        , first =
-            EditorsView.view
-                { elmCode = model.elmCode
-                , onElmChange = WorkingState.ElmCodeChanged
-                , onTokenChange = WorkingState.TokenChanged
-                , htmlCode = model.htmlCode
-                , onHtmlChange = WorkingState.HtmlCodeChanged
-                , onResize = WorkingState.EditorsResized
-                , onExampleSelect = WorkingState.ExampleSelected
-                , ratio = model.editorsRatio
-                , onFormat = WorkingState.FormatRequested
-                , onCollapse = WorkingState.CollapseHtml
-                , onSettled = WorkingState.EditorSettled
-                , vimMode = model.user.settings.vimMode
-                , elmError =
-                    case model.workbench of
-                        WorkingState.FinishedWithError { error } ->
-                            Just error
+        , first = viewEditors model
+        , second = viewWorkbench model
+        }
 
-                        _ ->
-                            Nothing
-                }
-        , second =
-            WorkbenchView.view
-                { onCompile = WorkingState.CompileRequested
-                , onSave = WorkingState.SaveRequested
-                , onExpand = WorkingState.ExpandWorkbench
-                , onIframeReload = WorkingState.IframeReloadClicked
-                , onLogSearchChanged = WorkingState.LogSearchChanged
-                , onClearLogs = WorkingState.ClearLogsClicked
-                , onCreateGist = WorkingState.CreateGistRequested
-                , onDownloadZip = WorkingState.DownloadZip
-                , onLogReceived = WorkingState.LogReceived
-                , onSelectSuccessPane = WorkingState.SuccessPaneSelected
-                , onSelectErrorsPane = WorkingState.ErrorsPaneSelected
-                , onGoToLocation = WorkingState.LocationSelected
-                , compiling = model.compiling
-                , saving = model.saving
-                , workbench = model.workbench
-                , maximized = model.workbenchRatio < 0.05
-                , htmlCode = model.htmlCode
-                , token = model.token
-                , revisionId = Maybe.map Tuple.first <| Replaceable.toMaybe model.revision
-                }
+
+viewEditors : WorkingState.Model -> Html WorkingState.Msg
+viewEditors model =
+    EditorsView.view
+        { elmCode = model.elmCode
+        , onElmChange = WorkingState.ElmCodeChanged
+        , onTokenChange = WorkingState.TokenChanged
+        , htmlCode = model.htmlCode
+        , onHtmlChange = WorkingState.HtmlCodeChanged
+        , onResize = WorkingState.EditorsResized
+        , onExampleSelect = WorkingState.ExampleSelected
+        , ratio = model.editorsRatio
+        , onFormat = WorkingState.FormatRequested
+        , onCollapse = WorkingState.CollapseHtml
+        , onSettled = WorkingState.EditorSettled
+        , vimMode = model.user.settings.vimMode
+        , elmError =
+            case model.workbench of
+                WorkingState.FinishedWithError { error } ->
+                    Just error
+
+                _ ->
+                    Nothing
+        }
+
+
+viewWorkbench : WorkingState.Model -> Html WorkingState.Msg
+viewWorkbench model =
+    WorkbenchView.view
+        { onExpand = WorkingState.ExpandWorkbench
+        , onIframeReload = WorkingState.IframeReloadClicked
+        , onLogSearchChanged = WorkingState.LogSearchChanged
+        , onClearLogs = WorkingState.ClearLogsClicked
+        , onCreateGist = WorkingState.CreateGistRequested
+        , onDownloadZip = WorkingState.DownloadZip
+        , onLogReceived = WorkingState.LogReceived
+        , onSelectSuccessPane = WorkingState.SuccessPaneSelected
+        , onSelectErrorsPane = WorkingState.ErrorsPaneSelected
+        , onGoToLocation = WorkingState.LocationSelected
+        , onCompile =
+            if model.connected then
+                Just WorkingState.CompileRequested
+            else
+                Nothing
+        , onSave =
+            if model.connected && WorkingState.hasChanged model then
+                Just WorkingState.SaveRequested
+            else
+                Nothing
+        , compiling = model.compiling
+        , saving = model.saving
+        , workbench = model.workbench
+        , maximized = model.workbenchRatio < 0.05
+        , htmlCode = model.htmlCode
+        , token = model.token
+        , revisionId = Maybe.map Tuple.first <| Replaceable.toMaybe model.revision
         }
 
 

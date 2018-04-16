@@ -41,14 +41,12 @@ view config =
                     [ Button.view
                         { icon = Just Icon.GitHub
                         , label = "Create Gist"
-                        , disabled = False
                         , action = Button.click config.onCreateGist
                         }
                     ]
                 , Button.view
                     { icon = Just Icon.Zip
                     , label = "Download Zip"
-                    , disabled = False
                     , action = Button.click config.onDownloadZip
                     }
                 ]

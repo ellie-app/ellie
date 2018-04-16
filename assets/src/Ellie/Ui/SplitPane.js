@@ -88,7 +88,6 @@ const start = (app) => {
       if (nextRatio === this._ratio) return
       this._ratio = nextRatio
       this.layout(rect)
-      this.dispatchEvent(new Event('resize'))
     }
 
     layout(rect) {
@@ -111,6 +110,7 @@ const start = (app) => {
       this.style.userSelect = null
       this.children[0].style.pointerEvents = this.children[2].style.pointerEvents = null
       this._dragging = false
+      this.dispatchEvent(new Event('resize'))
       document.removeEventListener('mousemove', this.onDocumentMouseMove)
       document.removeEventListener('mouseup', this.onDocumentMouseUp)
     }
