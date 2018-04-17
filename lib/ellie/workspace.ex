@@ -7,6 +7,7 @@ defmodule Ellie.Workspace do
     case current do
       nil ->
         location = Path.expand("../../.local_tmp/#{user.id}", __DIR__)
+        File.rm_rf!(location)
         File.mkdir_p!(location)
         with :ok <- Compiler.init(location),
           {:ok, deps} <- Compiler.dependencies(location)

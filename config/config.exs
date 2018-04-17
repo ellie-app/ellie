@@ -11,6 +11,13 @@ config :ellie,
   env: Mix.env,
   package_endpoint: System.get_env("PACKAGE_SITE")
 
+config :ellie, Ellie.Scheduler,
+  global: true,
+  jobs: [
+    {"*/15 * * * *", {Ellie.Search, :reload, []}},
+  ]
+
+
 # Configures the endpoint
 config :ellie, EllieWeb.Endpoint,
   url: [host: "localhost"],

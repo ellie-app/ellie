@@ -33,6 +33,7 @@ type alias Config msg =
     , onLogReceived : Log -> msg
     , onSelectErrorsPane : ErrorsPane -> msg
     , onSelectSuccessPane : SuccessPane -> msg
+    , onCanDebugChange : Bool -> msg
     , compiling : Bool
     , workbench : Workbench
     , maximized : Bool
@@ -54,8 +55,7 @@ view config =
             , zIndex (int 0)
             ]
         ]
-        [ viewWatermark
-        , Html.div
+        [ Html.div
             [ css
                 [ zIndex (int 1)
                 , position relative
@@ -73,7 +73,7 @@ viewContent config =
         Ready ->
             viewInitial config
 
-        Finished { pane, logs, logSearch } ->
+        Finished { pane, logs, logSearch, canDebug } ->
             Html.div
                 [ css
                     [ displayFlex
@@ -83,7 +83,7 @@ viewContent config =
                     , position relative
                     ]
                 ]
-                [ viewFinishedHeader pane config
+                [ viewFinishedHeader pane canDebug config
                 , Html.div
                     [ css
                         [ height (pct 100)
@@ -92,7 +92,7 @@ viewContent config =
                         , displayFlex
                         ]
                     ]
-                    [ viewOutput (pane == SuccessDebug) config
+                    [ viewOutput (pane == SuccessDebug && canDebug) config
                     , case ( config.revisionId, pane ) of
                         ( _, SuccessLogs ) ->
                             viewLogs logSearch logs config
@@ -282,8 +282,8 @@ viewProblem config problem =
         ]
 
 
-viewFinishedHeader : SuccessPane -> Config msg -> Html msg
-viewFinishedHeader pane config =
+viewFinishedHeader : SuccessPane -> Bool -> Config msg -> Html msg
+viewFinishedHeader pane canDebug config =
     let
         actions =
             List.filterMap identity
@@ -340,7 +340,10 @@ viewFinishedHeader pane config =
         tabs =
             List.filterMap identity
                 [ Just ( config.onSelectSuccessPane SuccessOutput, "Output", pane == SuccessOutput )
-                , Just ( config.onSelectSuccessPane SuccessDebug, "Debug", pane == SuccessDebug )
+                , if canDebug then
+                    Just ( config.onSelectSuccessPane SuccessDebug, "Debug", pane == SuccessDebug )
+                  else
+                    Nothing
                 , Just ( config.onSelectSuccessPane SuccessLogs, "Logs", pane == SuccessLogs )
                 , Maybe.map (\_ -> ( config.onSelectSuccessPane SuccessShare, "Share", pane == SuccessShare )) config.revisionId
                 ]
@@ -529,6 +532,7 @@ viewOutput debug config =
         , Output.onLog config.onLogReceived
         , Output.debug debug
         , Output.html <| config.htmlCode
+        , Output.onCanDebug config.onCanDebugChange
         ]
 
 
@@ -615,32 +619,4 @@ viewLog log =
                 ]
             ]
             [ Html.text log.body ]
-        ]
-
-
-viewWatermark : Html msg
-viewWatermark =
-    Html.div
-        [ css
-            [ property "pointer-events" "none"
-            , color Theme.workbenchWatermark
-            , width (pct 100)
-            , height (pct 100)
-            , displayFlex
-            , alignItems center
-            , justifyContent center
-            , overflow hidden
-            , position absolute
-            , zIndex (int 0)
-            , top zero
-            , left zero
-            ]
-        ]
-        [ Html.div
-            [ css
-                [ minWidth (px 600)
-                , flexShrink zero
-                ]
-            ]
-            [ Icon.view Icon.SmallLogo ]
         ]

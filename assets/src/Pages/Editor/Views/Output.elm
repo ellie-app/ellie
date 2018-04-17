@@ -1,4 +1,4 @@
-module Pages.Editor.Views.Output exposing (Attribute, debug, elmSource, html, onLog, view)
+module Pages.Editor.Views.Output exposing (Attribute, debug, elmSource, html, onCanDebug, onLog, view)
 
 import Css exposing (..)
 import Css.Foreign
@@ -37,6 +37,11 @@ debug value =
 onLog : (Log -> msg) -> Attribute msg
 onLog callback =
     Attr <| Events.on "log" <| Decode.map callback <| Decode.field "detail" Log.decoder
+
+
+onCanDebug : (Bool -> msg) -> Attribute msg
+onCanDebug callback =
+    Attr <| Events.on "canDebug" <| Decode.map callback <| Decode.field "detail" Decode.bool
 
 
 view : List (Attribute msg) -> Html msg

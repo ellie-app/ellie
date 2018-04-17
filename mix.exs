@@ -34,22 +34,24 @@ defmodule Ellie.Mixfile do
   # Type `mix help deps` for examples and options.
   defp deps do
     [
+      {:absinthe, "~> 1.4.0"},
+      {:absinthe_plug, "~> 1.4.0"},
+      {:absinthe_phoenix, "~> 1.4.0"},
+      {:briefly, "~> 0.3"},
+      {:cowboy, "~> 1.0"},
+      {:dataloader, "~> 1.0.0"},
+      {:httpoison, "~> 1.1"},
+      {:murmur, "~> 1.0"},
       {:phoenix, "~> 1.3.2"},
       {:phoenix_pubsub, "~> 1.0"},
       {:phoenix_ecto, "~> 3.2"},
       {:postgrex, ">= 0.0.0"},
       {:phoenix_html, "~> 2.10.0"},
       {:phoenix_live_reload, "~> 1.0", only: :dev},
-      {:cowboy, "~> 1.0"},
-      {:absinthe, "~> 1.4.0"},
-      {:absinthe_plug, "~> 1.4.0"},
-      {:absinthe_phoenix, "~> 1.4.0"},
       {:poison, "~> 3.1"},
       {:porcelain, "~> 2.0.3"},
-      {:murmur, "~> 1.0"},
-      {:briefly, "~> 0.3"},
-      {:httpoison, "~> 1.1"},
-      {:dataloader, "~> 1.0.0"}
+      {:quantum, "~> 2.2"},
+      {:timex, "~> 3.0"}
     ]
   end
 

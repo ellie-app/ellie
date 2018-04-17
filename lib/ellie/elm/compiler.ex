@@ -1,6 +1,7 @@
 defmodule Ellie.Elm.Compiler do
   alias Ellie.Elm.Project
   alias Ellie.Elm.Name
+  require Logger
 
   @bin_path Path.expand("../../../priv/bin", __DIR__)
 
@@ -8,8 +9,8 @@ defmodule Ellie.Elm.Compiler do
     write_project!(root, %Project{}) # write default project file
     File.mkdir_p!(Path.join(root, "src"))
     with :ok <- install_by_name(root, Name.core()),
-      :ok <- install_by_name(root, Name.browser()),
-      :ok <- install_by_name(root, Name.html())
+      :ok <- install_by_name(root, Name.html()),
+      :ok <- install_by_name(root, Name.browser())
     do
       :ok
     else
@@ -20,8 +21,9 @@ defmodule Ellie.Elm.Compiler do
   defp install_by_name(root, name) do
     binary = Path.join(@bin_path, "elm")
     args = ["install", Name.to_string(name)]
-    options = [out: nil, err: nil, dir: root]
+    options = [out: :string, err: :string, dir: root]
     result = Porcelain.exec(binary, args, options)
+    Logger.debug("elm install\nexit: #{result.status}\nstdout: #{result.out}\nstderr: #{result.err}\n")
     case result do
       %Porcelain.Result{status: 0} ->
         :ok
@@ -30,14 +32,13 @@ defmodule Ellie.Elm.Compiler do
     end
   end
 
-  require IEx
-
   def compile(options) do
     %{root: root, entry: entry, output: output} = Enum.into(options, %{})
     binary = Path.join(@bin_path, "elm")
-    args = ["make", entry, "--output", output, "--report", "json"]
+    args = ["make", entry, "--debug", "--output", output, "--report", "json"]
     options = [dir: root, out: :string, err: :string]
     result = Porcelain.exec(binary, args, options)
+    Logger.debug("elm make\nexit: #{result.status}\nstdout: #{result.out}\nstderr: #{result.err}\n")
     case result do
       %Porcelain.Result{err: "", status: 0} ->
         {:ok, nil}

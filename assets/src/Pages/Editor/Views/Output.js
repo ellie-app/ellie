@@ -7,7 +7,7 @@ export default {
     `(function () {
       var parent = window.parent
       delete window.parent
-    
+
       // LOGS
     
       var oldLog = console.log
@@ -17,13 +17,12 @@ export default {
           var split = firstArg.split(': ')
           var label = split[0]
           var body = split.slice(1).join(': ')
-          parent.postMessage({ tag: 'LogReceived', contents: { label: label, body: body } }, origin)
+          parent.postMessage({ tag: 'LogReceived', contents: { label: label, body: body } }, '${window.location.origin}')
         }
         oldLog.apply(this, arguments)
       }
     
       // DEBUGGER
-    
       var debuggerWindowProxy = null
       window.open = function () {
         var iframe = document.createElement('iframe')
@@ -54,24 +53,32 @@ export default {
         })
         return debuggerWindowProxy
       }
+      var buttonSelector = '#elm-debugger-overlay div[style="padding: 6px; cursor: pointer; text-align: center; min-width: 24ch;"]'
+      var controlsSelector = 'div[style*="background-color: rgb(61, 61, 61);"]'
       var styles = document.createElement('style')
-      styles.textContent = [
-        '.elm-mini-controls {',
-        '  display: none !important;',
-        '}'
-      ].join('\\n')
+      styles.textContent = '#elm-debugger-overlay > ' + controlsSelector + ' { display: none !important; }'
       document.head.appendChild(styles)
       window.addEventListener('message', function (event) {
         switch(event.data.tag) {
           case 'SwitchToDebugger':
-            var button = document.querySelector('.elm-mini-controls-button')
+            var button = document.querySelector(buttonSelector)
             if (button) button.click()
             break
     
           case 'SwitchToProgram':
             if (debuggerWindowProxy) debuggerWindowProxy.close()
             break
-        } 
+        }
+      })
+
+      // READY
+      document.addEventListener('DOMContentLoaded', function () {
+        setTimeout(function () {
+          parent.postMessage({
+            tag: 'Ready',
+            contents: { canDebug: document.querySelector(buttonSelector) !== null }
+          }, '${window.location.origin}')
+        }, 0)
       })
     }())`
 
@@ -177,7 +184,6 @@ export default {
         this._debug = false
         this._url = null
         this._attached = false
-        this._onLoad = this._onLoad.bind(this)
         this._onMessage = this._onMessage.bind(this)
         this._idleCallback = null
       }
@@ -227,7 +233,6 @@ export default {
       }
 
       disconnectedCallback() {
-        iframe.removeEventListener('load', this._onLoad)
         window.removeEventListener('message', this._onMessage)
         this.removeChild(iframe)
         cancelIdleCallback(this._idleCallback)
@@ -241,11 +246,17 @@ export default {
         switch (e.data.tag) {
           case 'LogReceived':
             this.dispatchEvent(new CustomEvent('log', { detail: e.data.contents }))
+            return
+          case 'Ready':
+            this._canDebug = e.data.contents.canDebug
+            this.dispatchEvent(new CustomEvent('canDebug', { detail: e.data.contents.canDebug }))
+            this._onReady()
+            return
         }
       }
 
-      _onLoad() {
-        if (this._debug) {
+      _onReady() {
+        if (this._debug && this._canDebug) {
           iframe.contentWindow.postMessage({ tag: 'SwitchToDebugger' }, window.location.origin)
         } else {
           iframe.contentWindow.postMessage({ tag: 'SwitchToProgram' }, window.location.origin)

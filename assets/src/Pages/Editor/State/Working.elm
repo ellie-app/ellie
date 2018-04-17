@@ -31,8 +31,16 @@ import Pages.Editor.Types.WorkspaceUpdate as WorkspaceUpdate exposing (Workspace
 
 type Workbench
     = Ready
-    | FinishedWithError { error : Error, pane : ErrorsPane }
-    | Finished { logs : BoundedDeque Log, pane : SuccessPane, logSearch : String }
+    | FinishedWithError
+        { error : Error
+        , pane : ErrorsPane
+        }
+    | Finished
+        { logs : BoundedDeque Log
+        , pane : SuccessPane
+        , logSearch : String
+        , canDebug : Bool
+        }
 
 
 type ErrorsPane
@@ -76,16 +84,16 @@ reset token user revision defaultPackages =
     { elmCode =
         revision
             |> Maybe.map (Tuple.second >> .elmCode)
-            |> Maybe.withDefault (.elm Example.helloWorld)
+            |> Maybe.withDefault (.elm Example.default)
     , htmlCode =
         revision
             |> Maybe.map (Tuple.second >> .htmlCode)
-            |> Maybe.withDefault (.html Example.helloWorld)
+            |> Maybe.withDefault (.html Example.default)
     , packages =
         revision
             |> Maybe.map (Tuple.second >> .packages)
             |> Maybe.withDefault defaultPackages
-    , activeExample = Example.helloWorld
+    , activeExample = Example.default
     , projectName = ""
     , token = token
     , defaultPackages = defaultPackages
@@ -191,6 +199,7 @@ type Msg
     | LocationSelected Error.Position
     | SaveRequested
     | SaveCompleted RevisionId Revision
+    | CanDebugUpdated Bool
       -- Share stuff
     | CreateGistRequested
     | CreateGistComplete (Maybe String)
@@ -427,6 +436,18 @@ update msg ({ user } as model) =
                 _ ->
                     ( model, Outbound.none )
 
+        CanDebugUpdated canDebug ->
+            case model.workbench of
+                Finished state ->
+                    ( { model
+                        | workbench = Finished { state | canDebug = canDebug }
+                      }
+                    , Outbound.none
+                    )
+
+                _ ->
+                    ( model, Outbound.none )
+
         IframeReloadClicked ->
             ( model
             , Outbound.ReloadIframe
@@ -460,6 +481,7 @@ update msg ({ user } as model) =
                                 { logs = BoundedDeque.empty 50
                                 , pane = SuccessOutput
                                 , logSearch = ""
+                                , canDebug = True
                                 }
                       }
                     , Outbound.ReloadIframe

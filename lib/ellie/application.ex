@@ -9,7 +9,7 @@ defmodule Ellie.Application do
       supervisor(EllieWeb.Endpoint, []),
       supervisor(Absinthe.Subscription, [EllieWeb.Endpoint]),
       supervisor(Ellie.Workspace.Supervisor, []),
-      supervisor(Ellie.Search.Supervisor, [])
+      worker(Ellie.Scheduler, [])
     ]
 
     opts = [strategy: :one_for_one, name: Ellie.Supervisor]

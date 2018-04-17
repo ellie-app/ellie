@@ -1,4 +1,4 @@
-module Pages.Editor.Types.Example exposing (Example, all, helloWorld)
+module Pages.Editor.Types.Example exposing (Example, all, counter, default, helloWorld)
 
 
 type alias Example =
@@ -6,6 +6,11 @@ type alias Example =
     , elm : String
     , label : String
     }
+
+
+default : Example
+default =
+    counter
 
 
 helloWorld : Example
@@ -27,8 +32,9 @@ main =
   </style>
 </head>
 <body>
+  <main></main>
   <script>
-    var app = Elm.Main.staticPage(document.body)
+    var app = Elm.Main.embed(document.querySelector('main'))
     // you can use ports and stuff here
   </script>
 </body>
@@ -47,8 +53,9 @@ counter =
   </style>
 </head>
 <body>
+  <main></main>
   <script>
-    var app = Elm.Main.embed(document.body)
+    var app = Elm.Main.embed(document.querySelector('main'))
     // you can use ports and stuff here
   </script>
 </body>
