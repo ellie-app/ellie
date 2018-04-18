@@ -14,8 +14,8 @@ defmodule EllieWeb.Router do
 
   scope "/api" do
     pipe_through :api
-    forward "/graphiql", Absinthe.Plug.GraphiQL, schema: EllieWeb.Schema
-    forward "/", Absinthe.Plug, schema: EllieWeb.Schema
+    forward "/graphiql", Absinthe.Plug.GraphiQL, schema: EllieWeb.Graphql.Schema
+    forward "/", Absinthe.Plug, schema: EllieWeb.Graphql.Schema
   end
 
   scope "/" do

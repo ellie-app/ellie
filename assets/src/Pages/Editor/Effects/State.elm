@@ -8,23 +8,15 @@ port module Pages.Editor.Effects.State
         , update
         )
 
-import Data.Entity as Entity exposing (Entity)
 import Data.Jwt as Jwt exposing (Jwt)
 import Debounce exposing (Debounce)
 import Dict exposing (Dict)
-import Ellie.Api.Union as ApiUnion
-import Ellie.Constants as Constants
 import Elm.Docs as Docs exposing (Module)
-import Elm.Error as ElmError
 import Elm.Package as Package exposing (Package)
 import Elm.Project as Project exposing (Project)
-import Extra.HttpBuilder exposing (withMaybe)
 import Extra.Json.Encode as Encode
 import Extra.Result as Result
-import Extra.String as String
 import Http
-import Http.Extra as Http
-import HttpBuilder exposing (get, post, put, withBearerToken, withCredentials, withExpect, withHeader, withJsonBody, withQueryParams, withStringBody)
 import Json.Decode as Decode exposing (Decoder)
 import Json.Encode as Encode exposing (Value)
 import Keyboard
@@ -34,8 +26,6 @@ import Pages.Editor.Effects.Exception as Exception exposing (Exception(..))
 import Pages.Editor.Effects.Handlers as Handlers
 import Pages.Editor.Effects.Inbound as Inbound exposing (Inbound(..))
 import Pages.Editor.Effects.Outbound as Outbound exposing (Outbound(..))
-import Pages.Editor.Types.Revision as Revision exposing (Revision)
-import Pages.Editor.Types.Settings as Settings exposing (Settings)
 import Pages.Editor.Types.User as User exposing (User)
 import Pages.Editor.Types.WorkspaceUpdate as WorkspaceUpdate exposing (WorkspaceUpdate)
 import Process
@@ -55,9 +45,7 @@ processOutbound onError effect state =
         GetDocs packages callback ->
             ( state
             , Handlers.getDocs packages
-                |> Cmd.map (Result.mapError Exception.fromGqlError)
-                |> Cmd.map (Result.fold callback onError)
-                |> Cmd.map UserMsg
+                |> Cmd.map (callback >> UserMsg)
             )
 
         Navigate url ->
@@ -115,9 +103,9 @@ processOutbound onError effect state =
                 |> pagesEditorEffectsStateOut
             )
 
-        AttachToWorkspace token ->
+        AttachToWorkspace token version ->
             ( state
-            , Handlers.attachToWorkspace token
+            , Handlers.attachToWorkspace token version
                 |> Cmd.map (\_ -> NoOp)
             )
 
@@ -200,17 +188,17 @@ processOutbound onError effect state =
                 |> Cmd.map UserMsg
             )
 
-        FormatElmCode code callback ->
+        FormatElmCode version code callback ->
             ( state
-            , Handlers.formatCode code
+            , Handlers.formatCode version code
                 |> Cmd.map (Result.mapError Exception.fromGqlError)
                 |> Cmd.map (Result.fold callback onError)
                 |> Cmd.map UserMsg
             )
 
-        Compile token elm packages ->
+        Compile token version elm packages ->
             ( state
-            , Handlers.compile token elm packages
+            , Handlers.compile token version elm packages
                 |> Cmd.map (\_ -> NoOp)
             )
 

@@ -32,15 +32,15 @@ import Ellie.Api.Query as ApiQuery
 import Ellie.Api.Scalar as ApiScalar
 import Ellie.Api.Subscription as ApiSubscription
 import Ellie.Api.Union.WorkspaceUpdate as ApiWorkspaceUpdate
+import Elm.Compiler as Compiler
 import Elm.Docs as Docs
 import Elm.Error as ElmError
 import Elm.Name as Name
 import Elm.Package as Package exposing (Package)
 import Elm.Project as Project exposing (Project)
-import Elm.Version as Version
+import Elm.Version as Version exposing (Version)
 import Graphqelm.Field as Field
 import Graphqelm.Http as GraphqlHttp
-import Graphqelm.Internal.Builder.Object as ObjectBuilder
 import Graphqelm.OptionalArgument as OptionalArgument
 import Graphqelm.SelectionSet exposing (SelectionSet(..), hardcoded, with)
 import Http
@@ -163,20 +163,25 @@ authenticate maybeToken =
         |> GraphqlHttp.send (Result.mapError GraphqlHttp.ignoreParsedErrorData)
 
 
-formatCode : String -> Cmd (Result GqlError String)
-formatCode code =
+formatCode : Version -> String -> Cmd (Result GqlError String)
+formatCode version code =
     let
         mutation =
             ApiMutation.selection identity
-                |> with (ApiMutation.formatCode { code = code })
+                |> with (ApiMutation.formatCode arguments)
+
+        arguments =
+            { code = code
+            , elmVersion = ApiScalar.Version <| Version.toString version
+            }
     in
     mutation
         |> GraphqlHttp.mutationRequest "/api"
         |> GraphqlHttp.send (Result.mapError GraphqlHttp.ignoreParsedErrorData)
 
 
-compile : Jwt -> String -> List Package -> Cmd (Result GqlError ())
-compile token elmCode packages =
+compile : Jwt -> Version -> String -> List Package -> Cmd (Result GqlError ())
+compile token elmVersion elmCode packages =
     let
         mutation =
             ApiMutation.selection (\_ -> ())
@@ -185,6 +190,7 @@ compile token elmCode packages =
         arguments =
             { elmCode = elmCode
             , packages = List.map makePackageInput packages
+            , elmVersion = ApiScalar.Version <| Version.toString elmVersion
             }
 
         makePackageInput package =
@@ -221,10 +227,17 @@ setupSocket token =
         selection
 
 
-attachToWorkspace : Jwt -> Cmd (Result GqlError ())
-attachToWorkspace token =
-    ApiMutation.selection (\_ -> ())
-        |> with ApiMutation.attachToWorkspace
+attachToWorkspace : Jwt -> Version -> Cmd (Result GqlError ())
+attachToWorkspace token version =
+    let
+        selection =
+            ApiMutation.selection (\_ -> ())
+                |> with (ApiMutation.attachToWorkspace arguments)
+
+        arguments =
+            { elmVersion = ApiScalar.Version <| Version.toString version }
+    in
+    selection
         |> GraphqlHttp.mutationRequest "/api"
         |> Jwt.withTokenHeader token
         |> GraphqlHttp.send (Result.mapError GraphqlHttp.ignoreParsedErrorData)
@@ -353,7 +366,7 @@ updateRevision token projectId revision =
         |> GraphqlHttp.send (Result.mapError GraphqlHttp.ignoreParsedErrorData)
 
 
-getDocs : List Package -> Cmd (Result GqlError (List Docs.Module))
+getDocs : List Package -> Cmd (List Docs.Module)
 getDocs packages =
     let
         selection =
@@ -371,4 +384,4 @@ getDocs packages =
     in
     selection
         |> GraphqlHttp.queryRequest "/api"
-        |> GraphqlHttp.send (Result.mapError GraphqlHttp.ignoreParsedErrorData)
+        |> GraphqlHttp.send (Result.withDefault [])

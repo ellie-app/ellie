@@ -9,6 +9,7 @@ import Elm.Compiler as Compiler
 import Elm.Docs as Docs exposing (Module)
 import Elm.Error as Error exposing (Error)
 import Elm.Package as Package exposing (Package)
+import Elm.Version as Version exposing (Version)
 import Extra.Maybe as Maybe
 import Pages.Editor.Effects.Exception as Exception exposing (Exception)
 import Pages.Editor.Effects.Inbound as Inbound exposing (Inbound)
@@ -111,6 +112,14 @@ reset token user revision defaultPackages =
     , notifications = []
     , analysis = Analysis.empty
     }
+
+
+compilerVersion : Model -> Version
+compilerVersion model =
+    model.revision
+        |> Replaceable.toMaybe
+        |> Maybe.map (Tuple.second >> .elmVersion)
+        |> Maybe.withDefault Compiler.version
 
 
 ownRevision : Model -> Bool
@@ -455,7 +464,7 @@ update msg ({ user } as model) =
 
         CompileRequested ->
             ( { model | compiling = True }
-            , Outbound.Compile model.token model.elmCode model.packages
+            , Outbound.Compile model.token (compilerVersion model) model.elmCode model.packages
             )
 
         CompileFinished error ->
@@ -508,7 +517,7 @@ update msg ({ user } as model) =
 
         FormatRequested ->
             ( model
-            , Outbound.FormatElmCode model.elmCode FormatCompleted
+            , Outbound.FormatElmCode (compilerVersion model) model.elmCode FormatCompleted
             )
 
         FormatCompleted code ->

@@ -1,4 +1,4 @@
-defmodule EllieWeb.Schema do
+defmodule EllieWeb.Graphql.Schema do
   use Absinthe.Schema
   import_types EllieWeb.Graphql.Types.Uuid
   import_types EllieWeb.Graphql.Types.Version
@@ -83,16 +83,19 @@ defmodule EllieWeb.Schema do
     end
 
     field :attach_to_workspace, non_null(:boolean) do
+      arg :elm_version, non_null(:version)
       middleware EllieWeb.Graphql.Middleware.Auth
       resolve &EllieWeb.Graphql.Resolvers.AttachToWorkspace.call/2
     end
 
     field :format_code, non_null(:string) do
+      arg :elm_version, non_null(:version)
       arg :code, non_null(:string)
       resolve &EllieWeb.Graphql.Resolvers.FormatCode.call/2
     end
 
     field :compile, non_null(:boolean) do
+      arg :elm_version, non_null(:version)
       arg :elm_code, non_null(:string)
       arg :packages, non_null(list_of(non_null(:package_input)))
       middleware EllieWeb.Graphql.Middleware.Auth

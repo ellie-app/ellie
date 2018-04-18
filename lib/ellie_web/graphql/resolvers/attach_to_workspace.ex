@@ -1,9 +1,9 @@
 defmodule EllieWeb.Graphql.Resolvers.AttachToWorkspace do
   alias Ellie.Workspace
 
-  def call(_args, %{context: %{current_user: user}}) do
+  def call(args, %{context: %{current_user: user}}) do
     Task.start(fn ->
-      {:ok, workspace} = Workspace.open(user)
+      {:ok, workspace} = Workspace.open(user, args.elm_version)
       packages = MapSet.to_list(workspace.packages)
       Absinthe.Subscription.publish(EllieWeb.Endpoint, %{packages: packages}, workspace: user.id)
     end)

@@ -10,6 +10,7 @@ module Pages.Editor.State.Setup
 
 import Data.Jwt as Jwt exposing (Jwt)
 import Data.Transition as Transition
+import Elm.Compiler as Compiler
 import Elm.Package exposing (Package)
 import Pages.Editor.Effects.Exception as Exception exposing (Exception(..))
 import Pages.Editor.Effects.Inbound as Inbound exposing (Inbound)
@@ -199,7 +200,7 @@ update msg state =
 
                 WorkspaceConnected ->
                     ( Transition.step <| Attaching attachingState
-                    , Outbound.AttachToWorkspace token
+                    , Outbound.AttachToWorkspace token Compiler.version
                     )
 
                 WorkspaceAttached packages ->

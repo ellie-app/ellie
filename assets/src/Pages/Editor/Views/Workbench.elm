@@ -2,13 +2,13 @@ module Pages.Editor.Views.Workbench exposing (..)
 
 import BoundedDeque exposing (BoundedDeque)
 import Css exposing (..)
-import Css.Foreign
 import Data.Jwt as Jwt exposing (Jwt)
 import Ellie.Ui.Button as Button
 import Ellie.Ui.Icon as Icon
 import Ellie.Ui.TextInput as TextInput
 import Ellie.Ui.Theme as Theme
 import Elm.Error as ElmError
+import Elm.Version as Version exposing (Version)
 import Html.Styled as Html exposing (Attribute, Html)
 import Html.Styled.Attributes as Attributes exposing (css)
 import Html.Styled.Events as Events
@@ -34,6 +34,7 @@ type alias Config msg =
     , onSelectErrorsPane : ErrorsPane -> msg
     , onSelectSuccessPane : SuccessPane -> msg
     , onCanDebugChange : Bool -> msg
+    , compilerVersion : Version
     , compiling : Bool
     , workbench : Workbench
     , maximized : Bool
@@ -528,7 +529,7 @@ viewInitial config =
 viewOutput : Bool -> Config msg -> Html msg
 viewOutput debug config =
     Output.view
-        [ Output.elmSource <| "http://localhost:4000/private/result?token=" ++ Jwt.toString config.token
+        [ Output.elmSource <| "http://localhost:4000/private/result?token=" ++ Jwt.toString config.token ++ "&elmVersion=" ++ Version.toString config.compilerVersion
         , Output.onLog config.onLogReceived
         , Output.debug debug
         , Output.html <| config.htmlCode

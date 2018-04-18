@@ -8,7 +8,8 @@ defmodule Ellie.Application do
       supervisor(Ellie.Repo, []),
       supervisor(EllieWeb.Endpoint, []),
       supervisor(Absinthe.Subscription, [EllieWeb.Endpoint]),
-      supervisor(Ellie.Workspace.Supervisor, []),
+      worker(Ellie.Workspace, []),
+      worker(Ellie.Elm.Platform.Impl18, []),
       worker(Ellie.Scheduler, [])
     ]
 

@@ -1,11 +1,12 @@
-defmodule Ellie.Elm.Compiler do
+defmodule Ellie.Elm.Platform.Impl19 do
   alias Ellie.Elm.Project
   alias Ellie.Elm.Name
   require Logger
 
-  @bin_path Path.expand("../../../priv/bin", __DIR__)
+  @behaviour Ellie.Elm.Platform
+  @bin_path Path.expand("../../../../priv/bin/0.19.0", __DIR__)
 
-  def init(root) do
+  def setup(root) do
     write_project!(root, %Project{}) # write default project file
     File.mkdir_p!(Path.join(root, "src"))
     with :ok <- install_by_name(root, Name.core()),
@@ -23,12 +24,14 @@ defmodule Ellie.Elm.Compiler do
     args = ["install", Name.to_string(name)]
     options = [out: :string, err: :string, dir: root]
     result = Porcelain.exec(binary, args, options)
-    Logger.debug("elm install\nexit: #{result.status}\nstdout: #{result.out}\nstderr: #{result.err}\n")
+    Logger.debug("elm install\nexit: #{inspect result}\n")
     case result do
       %Porcelain.Result{status: 0} ->
         :ok
       %Porcelain.Result{status: other} ->
         {:error, "install exited with code #{other}"}
+      {:error, reason} ->
+        {:error, reason}
     end
   end
 
@@ -54,7 +57,7 @@ defmodule Ellie.Elm.Compiler do
 
   def format(code) do
     binary = Path.join(@bin_path, "elm-format")
-    args = ["'--stdin'"]
+    args = ["--stdin"]
     options = [in: code, out: :string, err: :string]
     result = Porcelain.exec(binary, args, options)
     case result do

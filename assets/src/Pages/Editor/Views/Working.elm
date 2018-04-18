@@ -206,6 +206,7 @@ viewWorkbench model =
                 Just WorkingState.SaveRequested
             else
                 Nothing
+        , compilerVersion = WorkingState.compilerVersion model
         , compiling = model.compiling
         , saving = model.saving
         , workbench = model.workbench

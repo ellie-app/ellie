@@ -12,6 +12,7 @@ import Elm.Docs as Docs
 import Elm.Error as ElmError
 import Elm.Package as Package exposing (Package)
 import Elm.Project as Project exposing (Project)
+import Elm.Version as Version exposing (Version)
 import Pages.Editor.Types.Revision as Revision exposing (Revision)
 import Pages.Editor.Types.RevisionId as RevisionId exposing (RevisionId)
 import Pages.Editor.Types.Settings as Settings exposing (Settings)
@@ -34,8 +35,8 @@ type Outbound msg
     | AcceptTerms Jwt Int msg
     | SaveSettings Jwt Settings
     | SaveToken Jwt
-    | FormatElmCode String (String -> msg)
-    | Compile Jwt String (List Package)
+    | FormatElmCode Version String (String -> msg)
+    | Compile Jwt Version String (List Package)
     | ReloadIframe
     | Redirect String
     | Navigate String
@@ -47,7 +48,7 @@ type Outbound msg
     | Batch (List (Outbound msg))
     | Delay Float msg
     | MoveElmCursor ElmError.Position
-    | AttachToWorkspace Jwt
+    | AttachToWorkspace Jwt Version
     | GetDocs (List Package) (List Docs.Module -> msg)
     | None
 
@@ -107,8 +108,8 @@ map f outbound =
         AcceptTerms token termsVersion msg ->
             AcceptTerms token termsVersion <| f msg
 
-        FormatElmCode input callback ->
-            FormatElmCode input (callback >> f)
+        FormatElmCode version input callback ->
+            FormatElmCode version input (callback >> f)
 
         SaveToken token ->
             SaveToken token
@@ -116,8 +117,8 @@ map f outbound =
         SearchPackages query callback ->
             SearchPackages query (callback >> f)
 
-        Compile token elm packages ->
-            Compile token elm packages
+        Compile token version elm packages ->
+            Compile token version elm packages
 
         ReloadIframe ->
             ReloadIframe
@@ -125,8 +126,8 @@ map f outbound =
         Redirect url ->
             Redirect url
 
-        AttachToWorkspace token ->
-            AttachToWorkspace token
+        AttachToWorkspace token version ->
+            AttachToWorkspace token version
 
         Batch outbounds ->
             Batch <| List.map (map f) outbounds

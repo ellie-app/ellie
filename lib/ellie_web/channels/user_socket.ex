@@ -1,6 +1,6 @@
 defmodule EllieWeb.UserSocket do
   use Phoenix.Socket
-  use Absinthe.Phoenix.Socket, schema: EllieWeb.Schema
+  use Absinthe.Phoenix.Socket, schema: EllieWeb.Graphql.Schema
   alias EllieWeb.Auth
 
   transport :websocket, Phoenix.Transports.WebSocket

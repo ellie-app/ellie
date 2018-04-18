@@ -1,5 +1,6 @@
 defmodule EllieWeb.PageController do
   use EllieWeb, :controller
+  alias Ellie.Elm.Version
 
   def new_editor(conn, _params) do
     conn
@@ -24,7 +25,8 @@ defmodule EllieWeb.PageController do
   def result(conn, params) do
     with token <- Map.get(params, "token"),
       {:ok, user} <- EllieWeb.Auth.verify(token),
-      {:ok, path} <- Ellie.Workspace.result(user)
+      {:ok, version} <- Version.from_string(Map.get(params, "elmVersion", "")),
+      {:ok, path} <- Ellie.Workspace.result(user, version)
     do
       conn
       |> put_resp_content_type("application/javascript")
