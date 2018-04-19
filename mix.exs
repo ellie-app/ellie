@@ -42,6 +42,7 @@ defmodule Ellie.Mixfile do
       {:cowboy, "~> 1.0"},
       {:dataloader, "~> 1.0.0"},
       {:httpoison, "~> 1.1"},
+      {:msgpax, "~> 2.0"},
       {:murmur, "~> 1.0"},
       {:phoenix, "~> 1.3.2"},
       {:phoenix_pubsub, "~> 1.0"},

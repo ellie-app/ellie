@@ -4,7 +4,8 @@ defmodule EllieWeb.UserSocket do
   alias EllieWeb.Auth
   alias Ellie.Workspace
 
-  transport :websocket, Phoenix.Transports.WebSocket
+  transport :websocket, Phoenix.Transports.WebSocket,
+    serializer: [{EllieWeb.Serializers.Msgpack, "~> 2.0.0"}]
 
   def connect(%{ "token" => token }, socket) do
     case Auth.verify(token) do

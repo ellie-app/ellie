@@ -1,3 +1,5 @@
+import Msgpack from 'msgpack-lite'
+
 export default {
   start(app) {
     window.WebSocket = class extends WebSocket {
@@ -5,9 +7,17 @@ export default {
         if (url.indexOf('ELM_LANG_SOCKET::') === 0) {
           super(url.replace('ELM_LANG_SOCKET::', ''), protocols)
           this._isElm = true
+          this.binaryType = 'arraybuffer'
         } else {
           super(url, protocols)
         }
+      }
+
+      send(data) {
+        if (!this._isElm) {
+          return super.send(data)
+        }
+        return super.send(Msgpack.encode(JSON.parse(data)))
       }
 
       addEventListener(type, callback) {
@@ -19,9 +29,9 @@ export default {
         if (type === 'message') {
           super.addEventListener(type, (event) => {
             if (event.isTrusted) {
-              Object.defineProperty(event, 'data', { value: JSON.stringify({ type: 'Data', data: event.data }) })
+              const data = Msgpack.decode(new Uint8Array(event.data))
+              Object.defineProperty(event, 'data', { value: JSON.stringify({ type: 'Data', data }) })
             }
-
             callback(event)
           })
           return

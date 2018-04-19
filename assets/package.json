@@ -19,6 +19,7 @@
     "graphqelm": "^3.1.11",
     "jszip": "3.1.5",
     "marked": "0.3.17",
+    "msgpack-lite": "^0.1.26",
     "opbeat-js": "3.1.4",
     "phoenix": "1.3.0",
     "service-worker-loader": "^2.1.0",

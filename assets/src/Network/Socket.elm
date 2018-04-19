@@ -5,13 +5,13 @@ module Network.Socket
         , send
         )
 
-import Json.Decode as Decode exposing (Decoder)
+import Json.Decode as Decode exposing (Decoder, Value)
 import WebSocket
 
 
 type Info
     = Open
-    | Data String
+    | Data Value
     | Close
 
 
@@ -42,7 +42,7 @@ infoDecoder =
                         Decode.succeed Open
 
                     "Data" ->
-                        Decode.map Data <| Decode.field "data" Decode.string
+                        Decode.map Data <| Decode.field "data" Decode.value
 
                     _ ->
                         Decode.succeed Close
