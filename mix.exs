@@ -38,6 +38,7 @@ defmodule Ellie.Mixfile do
       {:absinthe_plug, "~> 1.4.0"},
       {:absinthe_phoenix, "~> 1.4.0"},
       {:briefly, "~> 0.3"},
+      {:combine, "~> 0.10"},
       {:cowboy, "~> 1.0"},
       {:dataloader, "~> 1.0.0"},
       {:httpoison, "~> 1.1"},

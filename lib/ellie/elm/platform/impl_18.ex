@@ -25,7 +25,7 @@ defmodule Ellie.Elm.Platform.Impl18 do
 
   def compile(options) do
     %{root: root, entry: entry, output: output} = Enum.into(options, %{})
-    GenServer.call(__MODULE__, {:elm_make, root, entry, output})
+    GenServer.call(__MODULE__, {:elm_make, root, entry, output}, :infinity)
   end
 
   def format(code) do

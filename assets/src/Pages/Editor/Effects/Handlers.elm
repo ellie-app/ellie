@@ -86,7 +86,8 @@ getRevision revisionId =
                 |> with (ApiHelpers.uuidField ApiUser.id)
     in
     query
-        |> GraphqlHttp.queryRequest "/api"
+        |> GraphqlHttp.queryRequestWithHttpGet "/api" GraphqlHttp.AlwaysGet
+        |> GraphqlHttp.withQueryParams [ ( "cache", "permanent" ) ]
         |> GraphqlHttp.send (Result.mapError GraphqlHttp.ignoreParsedErrorData)
 
 
@@ -106,7 +107,8 @@ searchPackages queryString =
                 |> with (ApiHelpers.versionField ApiPackage.version)
     in
     query
-        |> GraphqlHttp.queryRequest "/api"
+        |> GraphqlHttp.queryRequestWithHttpGet "/api" GraphqlHttp.AlwaysGet
+        |> GraphqlHttp.withQueryParams [ ( "cache", "temporary" ) ]
         |> GraphqlHttp.send (Result.mapError GraphqlHttp.ignoreParsedErrorData)
 
 
@@ -383,5 +385,6 @@ getDocs packages =
                 |> with (ApiPackage.docs Docs.selection)
     in
     selection
-        |> GraphqlHttp.queryRequest "/api"
+        |> GraphqlHttp.queryRequestWithHttpGet "/api" GraphqlHttp.AlwaysGet
+        |> GraphqlHttp.withQueryParams [ ( "cache", "permanent" ) ]
         |> GraphqlHttp.send (Result.withDefault [])

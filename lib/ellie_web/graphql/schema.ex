@@ -7,7 +7,6 @@ defmodule EllieWeb.Graphql.Schema do
   import_types EllieWeb.Graphql.Types.Elm.Docs
   import_types EllieWeb.Graphql.Types
 
-
   def middleware(middleware, %{identifier: identifier} = field, object) do
     middleware_spec = {{__MODULE__, :get_string_key}, identifier}
     Absinthe.Schema.replace_default(middleware, middleware_spec, field, object)
