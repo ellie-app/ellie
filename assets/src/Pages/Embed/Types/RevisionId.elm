@@ -25,3 +25,8 @@ editorLink { projectId, revisionNumber } =
 embedLink : RevisionId -> Url
 embedLink { projectId, revisionNumber } =
     Url.fromString <| Constants.embedBase ++ "/" ++ Uuid.toString projectId ++ "/" ++ toString revisionNumber
+
+
+outputLink : RevisionId -> Url
+outputLink { projectId, revisionNumber } =
+    Url.fromString <| Constants.serverOrigin ++ "/output/embed/" ++ Uuid.toString projectId ++ "/" ++ toString revisionNumber

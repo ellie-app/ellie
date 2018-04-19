@@ -21,6 +21,11 @@ apiBase =
     "/api"
 
 
+serverOrigin : String
+serverOrigin =
+    "%SERVER_ORIGIN%"
+
+
 editorBase : String
 editorBase =
     "%SERVER_ORIGIN%"

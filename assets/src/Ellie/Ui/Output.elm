@@ -1,4 +1,4 @@
-module Pages.Editor.Views.Output exposing (Attribute, debug, elmSource, html, onCanDebug, onLog, view)
+module Ellie.Ui.Output exposing (Attribute, debug, elmSource, html, onCanDebug, onLog, view)
 
 import Css exposing (..)
 import Css.Foreign
@@ -58,6 +58,7 @@ styles =
         , height (pct 100)
         , position relative
         , backgroundColor (hex "#fff")
+        , display block
         , Css.Foreign.children
             [ Css.Foreign.selector "iframe"
                 [ width (pct 100)

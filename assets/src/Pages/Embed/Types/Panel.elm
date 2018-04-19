@@ -8,6 +8,25 @@ type Panel
     | Debugger
 
 
+eq : Panel -> Panel -> Bool
+eq left right =
+    case ( left, right ) of
+        ( Elm, Elm ) ->
+            True
+
+        ( Html, Html ) ->
+            True
+
+        ( Output, Output ) ->
+            True
+
+        ( Debugger, Debugger ) ->
+            True
+
+        _ ->
+            False
+
+
 fromString : String -> Panel
 fromString input =
     case input of

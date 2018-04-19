@@ -5,11 +5,16 @@ defmodule EllieWeb.UserSocket do
 
   transport :websocket, Phoenix.Transports.WebSocket
 
-  def connect(params, socket) do
-    token = params["token"]
-    {:ok, user} = Auth.verify(token)
-    send(self(), :hello)
-    socket = Absinthe.Phoenix.Socket.put_options(socket, context: %{current_user: user})
+  def connect(%{ "token" => token }, socket) do
+    case Auth.verify(token) do
+      {:ok, user} ->
+        {:ok, Absinthe.Phoenix.Socket.put_options(socket, context: %{current_user: user})}
+      _ ->
+        {:error, "Not authorized"}
+    end
+  end
+
+  def connect(_params, socket) do
     {:ok, socket}
   end
 

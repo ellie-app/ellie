@@ -60,6 +60,6 @@ program config =
                         , Html.node "ellie-ui-portal" [] []
                         ]
         , init = State.init stateConfig
-        , subscriptions = State.subscriptions stateConfig
+        , subscriptions = State.subscriptions stateConfig >> Debug.log "s"
         , update = State.update stateConfig
         }

@@ -33,7 +33,7 @@ defmodule EllieWeb.Graphql.Types.Elm.Error do
   end
 
   object :elm_error_general_problem do
-    field :path, non_null(:string)
+    field :path, :string
     field :title, non_null(:string)
     field :message, non_null(list_of(non_null(:elm_error_chunk))) do
       resolve &format_message/2

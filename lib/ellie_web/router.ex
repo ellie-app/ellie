@@ -21,6 +21,7 @@ defmodule EllieWeb.Router do
   scope "/" do
     pipe_through :browser
     get "/private/result", EllieWeb.PageController, :result
+    get "/output/embed/:project_id/:revision_number", EllieWeb.PageController, :embed_result
     get "/a/terms/:version", EllieWeb.PageController, :terms
     get "/embed/:project_id/:revision_number", EllieWeb.PageController, :embed
     get "/*path", EllieWeb.PageController, :new_editor

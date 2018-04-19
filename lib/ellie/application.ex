@@ -10,6 +10,7 @@ defmodule Ellie.Application do
       supervisor(Absinthe.Subscription, [EllieWeb.Endpoint]),
       worker(Ellie.Workspace, []),
       worker(Ellie.Elm.Platform.Impl18, []),
+      worker(Ellie.Embed, []),
       worker(Ellie.Scheduler, [])
     ]
 

@@ -5,6 +5,7 @@ import Css exposing (..)
 import Data.Jwt as Jwt exposing (Jwt)
 import Ellie.Ui.Button as Button
 import Ellie.Ui.Icon as Icon
+import Ellie.Ui.Output as Output
 import Ellie.Ui.TextInput as TextInput
 import Ellie.Ui.Theme as Theme
 import Elm.Error as ElmError
@@ -15,7 +16,6 @@ import Html.Styled.Events as Events
 import Pages.Editor.State.Working exposing (ErrorsPane(..), SuccessPane(..), Workbench(..))
 import Pages.Editor.Types.Log as Log exposing (Log)
 import Pages.Editor.Types.RevisionId as RevisionId exposing (RevisionId)
-import Pages.Editor.Views.Output as Output
 import Pages.Editor.Views.Share as Share
 import Pages.Editor.Views.Workbench.Chunk as Chunk
 

@@ -1,4 +1,15 @@
-module Network.Absinthe.Subscription exposing (..)
+module Network.Absinthe.Subscription
+    exposing
+        ( ChannelStatus(..)
+        , Info(..)
+        , Logger
+        , Msg
+        , State
+        , emptyLogger
+        , init
+        , listen
+        , update
+        )
 
 import Graphqelm.Document as Document
 import Graphqelm.Operation exposing (RootSubscription)
@@ -31,6 +42,11 @@ type ChannelStatus
 
 type alias Logger =
     String -> String -> String
+
+
+emptyLogger : Logger
+emptyLogger a b =
+    b
 
 
 init : String -> Logger -> SelectionSet a RootSubscription -> State a

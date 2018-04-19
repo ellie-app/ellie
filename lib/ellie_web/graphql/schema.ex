@@ -110,6 +110,12 @@ defmodule EllieWeb.Graphql.Schema do
       middleware EllieWeb.Graphql.Middleware.Auth
       resolve &EllieWeb.Graphql.Resolvers.UpdateSettings.call/2
     end
+
+    field :run_embed, :embed_ready do
+      arg :project_id, non_null(:uuid)
+      arg :revision_number, non_null(:integer)
+      resolve &EllieWeb.Graphql.Resolvers.RunEmbed.call/2
+    end
   end
 
   subscription do
@@ -117,6 +123,17 @@ defmodule EllieWeb.Graphql.Schema do
       config fn
         _args, %{context: %{current_user: user}} -> {:ok, topic: to_string(user.id)}
         _args, _ -> {:error, "unauthorized"}
+      end
+    end
+
+    field :embed, non_null(:embed_update) do
+      arg :project_id, non_null(:uuid)
+      arg :revision_number, non_null(:integer)
+      config fn
+        %{project_id: project_id, revision_number: revision_number}, _stuff ->
+          {:ok, topic: "#{project_id}/#{revision_number}"}
+        _args, _stuff ->
+          {:error, "insufficient info"}
       end
     end
   end

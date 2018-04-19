@@ -6,12 +6,7 @@ port module Pages.Embed.Effects.Outbound
         , none
         )
 
-import Data.Jwt as Jwt exposing (Jwt)
-import Data.Uuid as Uuid exposing (Uuid)
-import Elm.Docs as Docs
-import Elm.Error as ElmError
-import Elm.Package as Package exposing (Package)
-import Elm.Project as Project exposing (Project)
+import Elm.Error as Error exposing (Error)
 import Pages.Embed.Effects.Handlers as Handlers
 import Pages.Embed.Types.Revision as Revision exposing (Revision)
 import Pages.Embed.Types.RevisionId as RevisionId exposing (RevisionId)
@@ -27,6 +22,7 @@ type alias HtmlSource =
 
 type Outbound msg
     = GetRevision RevisionId (Result Handlers.GetRevisionError Revision -> msg)
+    | RunEmbed RevisionId (Result Handlers.RunEmbedError (Maybe (Maybe Error)) -> msg)
     | Batch (List (Outbound msg))
     | None
 
@@ -46,6 +42,9 @@ map f outbound =
     case outbound of
         GetRevision id callback ->
             GetRevision id (callback >> f)
+
+        RunEmbed revisionId callback ->
+            RunEmbed revisionId (callback >> f)
 
         Batch outbounds ->
             Batch <| List.map (map f) outbounds

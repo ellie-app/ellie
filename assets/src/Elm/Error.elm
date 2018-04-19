@@ -47,7 +47,7 @@ import Graphqelm.SelectionSet exposing (SelectionSet, with)
 
 
 type Error
-    = GeneralProblem { path : String, title : String, message : List Chunk }
+    = GeneralProblem { path : Maybe String, title : String, message : List Chunk }
     | ModuleProblems (List BadModule)
 
 
