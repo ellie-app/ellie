@@ -17,8 +17,8 @@ import Html.Styled.Events as Events
 import Pages.Editor.State.Working exposing (ErrorsPane(..), SuccessPane(..), Workbench(..))
 import Pages.Editor.Types.Log as Log exposing (Log)
 import Pages.Editor.Types.RevisionId as RevisionId exposing (RevisionId)
-import Pages.Editor.Views.Share as Share
 import Pages.Editor.Views.Workbench.Chunk as Chunk
+import Pages.Editor.Views.Workbench.Share as Share
 
 
 type alias Config msg =

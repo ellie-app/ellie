@@ -95,10 +95,10 @@ view model =
                                 "Ready"
 
                             ( False, WorkingState.FinishedWithError { error } ) ->
-                                "TODO FIX ME"
+                                "Compiled with errors"
 
                             ( False, WorkingState.Finished _ ) ->
-                                "Success"
+                                "Compiled successfully"
                     }
                 ]
             ]

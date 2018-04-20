@@ -28,7 +28,6 @@ view current =
             [ viewLogo
             , viewIconButton Icon.Package "Package Manager (⇧⌘X)" Actions.packages current
             , viewIconButton Icon.Settings "Settings (⌘,)" Actions.Settings current
-            , viewIconButton Icon.Help "Help (⇧⌘H)" Actions.Help current
             ]
         , Html.div []
             [ viewIconLink Icon.Slack "https://elmlang.slack.com/#ellie"

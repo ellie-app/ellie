@@ -1,4 +1,4 @@
-module Pages.Editor.Views.Share exposing (..)
+module Pages.Editor.Views.Workbench.Share exposing (..)
 
 import Css exposing (..)
 import Data.Url as Url
@@ -59,12 +59,28 @@ view config =
             [ Html.div [ headerStyles ] [ Html.text "Embed IFrame" ]
             , CopyText.view (iframe config.revisionId)
             ]
+        , Html.div [ containerStyles ]
+            [ Html.div [ headerStyles ] [ Html.text "Preview" ]
+            , preview config.revisionId
+            ]
         ]
 
 
 iframe : RevisionId -> String
 iframe revisionId =
     "<iframe src=\"" ++ Url.toString (RevisionId.embedLink revisionId) ++ "\" style=\"width:100%; height:400px; border:0; overflow:hidden;\" sandbox=\"allow-modals allow-forms allow-popups allow-scripts allow-same-origin\"></iframe>"
+
+
+preview : RevisionId -> Html msg
+preview revisionId =
+    Html.styled Html.iframe
+        [ border3 (px 2) solid Theme.draggableBorder
+        , width (pct 100)
+        , height (px 400)
+        ]
+        [ Url.src <| RevisionId.embedLink revisionId
+        ]
+        []
 
 
 containerStyles : Attribute msg
