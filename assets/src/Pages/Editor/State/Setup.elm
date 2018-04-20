@@ -12,6 +12,7 @@ import Data.Jwt as Jwt exposing (Jwt)
 import Data.Transition as Transition
 import Elm.Compiler as Compiler
 import Elm.Package exposing (Package)
+import Extra.Maybe as Maybe
 import Pages.Editor.Effects.Exception as Exception exposing (Exception(..))
 import Pages.Editor.Effects.Inbound as Inbound exposing (Inbound)
 import Pages.Editor.Effects.Outbound as Outbound exposing (Outbound)
@@ -25,8 +26,8 @@ import Pages.Editor.Types.WorkspaceUpdate as WorkspaceUpdate exposing (Workspace
 type Model
     = Authenticating { possibleToken : Maybe Jwt, revisionId : Maybe RevisionId }
     | AcceptingTerms { latestTerms : Int, token : Jwt, user : User, revisionId : Maybe RevisionId, loading : Bool }
-    | Attaching { token : Jwt, user : User, revisionId : Maybe RevisionId }
-    | Loading { token : Jwt, user : User, revisionId : RevisionId, packages : List Package }
+    | Loading { token : Jwt, user : User, revisionId : RevisionId }
+    | Attaching { token : Jwt, user : User, revision : Maybe ( RevisionId, Revision ) }
     | Failure Exception
 
 
@@ -53,13 +54,17 @@ type Msg
     | ServerAcceptedTerms
     | WorkspaceConnected
     | WorkspaceAttached (List Package)
-    | RevisionLoaded Revision
+    | RevisionLoaded RevisionId Revision
     | ExceptionOccured Exception
     | NoOp
 
 
 update : Msg -> Model -> ( Transition, Outbound Msg )
 update msg state =
+    let
+        _ =
+            Debug.log (toString msg) state
+    in
     case state of
         Authenticating { possibleToken, revisionId } ->
             case msg of
@@ -94,21 +99,31 @@ update msg state =
                                 |> Maybe.map ((==) termsVersion)
                                 |> Maybe.withDefault False
                     in
-                    if termsVersionMatched then
-                        ( Transition.step <| Attaching { token = newToken, user = user, revisionId = revisionId }
-                        , Outbound.SaveToken newToken
-                        )
-                    else
-                        ( { latestTerms = termsVersion
-                          , token = newToken
-                          , user = user
-                          , revisionId = revisionId
-                          , loading = False
-                          }
-                            |> AcceptingTerms
-                            |> Transition.step
-                        , Outbound.SaveToken newToken
-                        )
+                    case ( termsVersionMatched, revisionId ) of
+                        ( True, Just rid ) ->
+                            ( Transition.step <| Loading { token = newToken, user = user, revisionId = rid }
+                            , Outbound.batch
+                                [ Outbound.SaveToken newToken
+                                , Outbound.GetRevision rid (RevisionLoaded rid)
+                                ]
+                            )
+
+                        ( True, Nothing ) ->
+                            ( Transition.step <| Attaching { token = newToken, user = user, revision = Nothing }
+                            , Outbound.SaveToken newToken
+                            )
+
+                        _ ->
+                            ( { latestTerms = termsVersion
+                              , token = newToken
+                              , user = user
+                              , revisionId = revisionId
+                              , loading = False
+                              }
+                                |> AcceptingTerms
+                                |> Transition.step
+                            , Outbound.SaveToken newToken
+                            )
 
                 ExceptionOccured exception ->
                     ( Transition.step <| Failure exception
@@ -158,99 +173,118 @@ update msg state =
                     )
 
                 ServerAcceptedTerms ->
-                    ( { token = state.token
-                      , revisionId = state.revisionId
-                      , user = { user | acceptedTerms = Just state.latestTerms }
-                      }
-                        |> Attaching
-                        |> Transition.step
-                    , Outbound.none
-                    )
+                    case state.revisionId of
+                        Just revisionId ->
+                            ( { token = state.token
+                              , user = { user | acceptedTerms = Just state.latestTerms }
+                              , revisionId = revisionId
+                              }
+                                |> Loading
+                                |> Transition.step
+                            , Outbound.GetRevision revisionId (RevisionLoaded revisionId)
+                            )
+
+                        Nothing ->
+                            ( { token = state.token
+                              , revision = Nothing
+                              , user = { user | acceptedTerms = Just state.latestTerms }
+                              }
+                                |> Attaching
+                                |> Transition.step
+                            , Outbound.none
+                            )
 
                 _ ->
                     ( Transition.step <| AcceptingTerms state
                     , Outbound.none
                     )
 
-        Attaching ({ token, user, revisionId } as attachingState) ->
-            case msg of
-                RouteChanged route ->
-                    case route of
-                        Route.Existing newRevisionId ->
-                            ( Transition.step <| Attaching { token = token, user = user, revisionId = Just newRevisionId }
-                            , Outbound.none
-                            )
-
-                        Route.New ->
-                            ( Transition.step <| Attaching { token = token, user = user, revisionId = Nothing }
-                            , Outbound.none
-                            )
-
-                        Route.NotFound ->
-                            case revisionId of
-                                Just rid ->
-                                    ( Transition.step <| Attaching { token = token, user = user, revisionId = Just rid }
-                                    , Outbound.Redirect <| Route.toString <| Route.Existing rid
-                                    )
-
-                                Nothing ->
-                                    ( Transition.step <| Attaching { token = token, user = user, revisionId = Nothing }
-                                    , Outbound.Redirect <| Route.toString Route.New
-                                    )
-
-                WorkspaceConnected ->
-                    ( Transition.step <| Attaching attachingState
-                    , Outbound.AttachToWorkspace token Compiler.version
-                    )
-
-                WorkspaceAttached packages ->
-                    case revisionId of
-                        Just revisionId ->
-                            ( Transition.step <| Loading { token = token, user = user, revisionId = revisionId, packages = packages }
-                            , Outbound.GetRevision revisionId RevisionLoaded
-                            )
-
-                        Nothing ->
-                            ( Transition.exit { token = token, user = user, revision = Nothing, packages = packages }
-                            , Outbound.none
-                            )
-
-                ExceptionOccured exception ->
-                    ( Transition.step <| Failure exception
-                    , Outbound.none
-                    )
-
-                _ ->
-                    ( Transition.step <| Attaching { token = token, user = user, revisionId = revisionId }
-                    , Outbound.none
-                    )
-
-        Loading { token, user, revisionId, packages } ->
+        Loading ({ token, user, revisionId } as state) ->
             case msg of
                 RouteChanged route ->
                     case route of
                         Route.Existing newRevisionId ->
                             if newRevisionId == revisionId then
-                                ( Transition.step <| Loading { token = token, user = user, revisionId = revisionId, packages = packages }
+                                ( Transition.step <| Loading state
                                 , Outbound.none
                                 )
                             else
-                                ( Transition.step <| Loading { token = token, user = user, revisionId = newRevisionId, packages = packages }
-                                , Outbound.GetRevision revisionId RevisionLoaded
+                                ( Transition.step <| Loading { state | revisionId = newRevisionId }
+                                , Outbound.GetRevision revisionId (RevisionLoaded revisionId)
                                 )
 
                         Route.New ->
-                            ( Transition.exit <| { token = token, user = user, revision = Nothing, packages = packages }
+                            ( Transition.step <| Attaching { token = token, user = user, revision = Nothing }
                             , Outbound.none
                             )
 
                         Route.NotFound ->
-                            ( Transition.step <| Loading { token = token, user = user, revisionId = revisionId, packages = packages }
+                            ( Transition.step <| Loading state
                             , Outbound.Redirect <| Route.toString <| Route.Existing revisionId
                             )
 
-                RevisionLoaded revision ->
-                    ( Transition.exit { token = token, user = user, revision = Just ( revisionId, revision ), packages = packages }
+                RevisionLoaded rid revision ->
+                    if RevisionId.eq rid state.revisionId then
+                        ( Transition.step <| Attaching { token = state.token, user = state.user, revision = Just ( rid, revision ) }
+                        , Outbound.none
+                        )
+                    else
+                        ( Transition.step <| Loading state
+                        , Outbound.none
+                        )
+
+                ExceptionOccured exception ->
+                    ( Transition.step <| Failure exception
+                    , Outbound.none
+                    )
+
+                _ ->
+                    ( Transition.step <| Loading state
+                    , Outbound.none
+                    )
+
+        Attaching ({ token, user, revision } as attachingState) ->
+            case msg of
+                RouteChanged route ->
+                    case route of
+                        Route.Existing newRevisionId ->
+                            if Maybe.eq RevisionId.eq (Maybe.map Tuple.first revision) (Just newRevisionId) then
+                                ( Transition.step <| Attaching attachingState
+                                , Outbound.none
+                                )
+                            else
+                                ( Transition.step <| Loading { token = token, user = user, revisionId = newRevisionId }
+                                , Outbound.GetRevision newRevisionId (RevisionLoaded newRevisionId)
+                                )
+
+                        Route.New ->
+                            ( Transition.step <| Attaching { attachingState | revision = Nothing }
+                            , Outbound.none
+                            )
+
+                        Route.NotFound ->
+                            case revision of
+                                Just ( rid, _ ) ->
+                                    ( Transition.step <| Attaching attachingState
+                                    , Outbound.Redirect <| Route.toString <| Route.Existing rid
+                                    )
+
+                                Nothing ->
+                                    ( Transition.step <| Attaching attachingState
+                                    , Outbound.Redirect <| Route.toString Route.New
+                                    )
+
+                WorkspaceConnected ->
+                    ( Transition.step <| Attaching attachingState
+                    , revision
+                        |> Maybe.map (Tuple.second >> .elmVersion)
+                        |> Maybe.withDefault Compiler.version
+                        |> Debug.log "ob"
+                        |> Outbound.AttachToWorkspace token
+                    )
+
+                WorkspaceAttached packages ->
+                    ( Transition.exit { token = token, user = user, revision = revision, packages = packages }
                     , Outbound.none
                     )
 
@@ -260,7 +294,7 @@ update msg state =
                     )
 
                 _ ->
-                    ( Transition.step <| Loading { token = token, user = user, revisionId = revisionId, packages = packages }
+                    ( Transition.step <| Attaching attachingState
                     , Outbound.none
                     )
 

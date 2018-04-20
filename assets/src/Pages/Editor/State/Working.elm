@@ -82,6 +82,12 @@ type alias Model =
 
 reset : Jwt -> User -> Maybe ( RevisionId, Revision ) -> List Package -> Model
 reset token user revision defaultPackages =
+    let
+        isLatestElm =
+            Version.eq
+                (revision |> Maybe.map (Tuple.second >> .elmVersion) |> Maybe.withDefault Compiler.version)
+                Compiler.version
+    in
     { elmCode =
         revision
             |> Maybe.map (Tuple.second >> .elmCode)
@@ -94,6 +100,16 @@ reset token user revision defaultPackages =
         revision
             |> Maybe.map (Tuple.second >> .packages)
             |> Maybe.withDefault defaultPackages
+    , notifications =
+        if isLatestElm then
+            []
+        else
+            [ { title = "Outdated Code"
+              , severity = Notification.Warning
+              , message = "This code was written with an older version of the Elm compiler. You can still modify the code and compile it, but you cannot save your changes."
+              , actions = []
+              }
+            ]
     , activeExample = Example.default
     , projectName = ""
     , token = token
@@ -109,7 +125,6 @@ reset token user revision defaultPackages =
     , user = user
     , workbenchRatio = 0.5
     , editorsRatio = 0.75
-    , notifications = []
     , analysis = Analysis.empty
     }
 

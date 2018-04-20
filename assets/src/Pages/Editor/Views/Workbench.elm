@@ -8,6 +8,7 @@ import Ellie.Ui.Icon as Icon
 import Ellie.Ui.Output as Output
 import Ellie.Ui.TextInput as TextInput
 import Ellie.Ui.Theme as Theme
+import Elm.Compiler as Compiler
 import Elm.Error as ElmError
 import Elm.Version as Version exposing (Version)
 import Html.Styled as Html exposing (Attribute, Html)
@@ -150,41 +151,49 @@ viewErrorsHeader : ErrorsPane -> Config msg -> Html msg
 viewErrorsHeader pane config =
     let
         actions =
-            [ if config.compiling then
-                { icon = Just Icon.Loading
-                , label = "Compiling..."
-                , action = Button.none
-                }
-              else
-                { icon = Just Icon.Play
-                , label = "Compile"
-                , action =
-                    case config.onCompile of
-                        Just onCompile ->
-                            Button.click onCompile
+            List.filterMap identity
+                [ Just
+                    { icon =
+                        if config.compiling then
+                            Just Icon.Loading
+                        else
+                            Just Icon.Play
+                    , label =
+                        if config.compiling then
+                            "Compiling..."
+                        else
+                            "Compile"
+                    , action =
+                        case ( config.compiling, config.onCompile ) of
+                            ( False, Just onCompile ) ->
+                                Button.click onCompile
 
-                        Nothing ->
-                            Button.none
-                }
-            , { label =
-                    if config.saving then
-                        "Saving..."
-                    else
-                        "Save"
-              , icon =
-                    if config.saving then
-                        Just Icon.Loading
-                    else
-                        Just Icon.Upload
-              , action =
-                    case config.onSave of
-                        Just onSave ->
-                            Button.click onSave
+                            _ ->
+                                Button.none
+                    }
+                , if Version.eq config.compilerVersion Compiler.version then
+                    Just
+                        { label =
+                            if config.saving then
+                                "Saving..."
+                            else
+                                "Save"
+                        , icon =
+                            if config.saving then
+                                Just Icon.Loading
+                            else
+                                Just Icon.Upload
+                        , action =
+                            case config.onSave of
+                                Just onSave ->
+                                    Button.click onSave
 
-                        Nothing ->
-                            Button.none
-              }
-            ]
+                                Nothing ->
+                                    Button.none
+                        }
+                  else
+                    Nothing
+                ]
 
         tabs =
             List.filterMap identity
@@ -289,33 +298,38 @@ viewFinishedHeader pane canDebug config =
         actions =
             List.filterMap identity
                 [ Just
-                    { icon = Just Icon.Play
-                    , label = "Compile"
-                    , action =
+                    { icon =
                         if config.compiling then
-                            Button.none
+                            Just Icon.Loading
                         else
-                            case config.onCompile of
-                                Just onCompile ->
-                                    Button.click onCompile
-
-                                Nothing ->
-                                    Button.none
-                    }
-                , Just
-                    { icon = Just Icon.Upload
-                    , label = "Save"
+                            Just Icon.Play
+                    , label =
+                        if config.compiling then
+                            "Compiling..."
+                        else
+                            "Compile"
                     , action =
-                        if config.saving then
-                            Button.none
-                        else
-                            case config.onSave of
-                                Just onSave ->
+                        case ( config.compiling, config.onCompile ) of
+                            ( False, Just onCompile ) ->
+                                Button.click onCompile
+
+                            _ ->
+                                Button.none
+                    }
+                , if Version.eq config.compilerVersion Compiler.version then
+                    Just
+                        { icon = Just Icon.Upload
+                        , label = "Save"
+                        , action =
+                            case ( config.saving, config.onSave ) of
+                                ( False, Just onSave ) ->
                                     Button.click onSave
 
-                                Nothing ->
+                                _ ->
                                     Button.none
-                    }
+                        }
+                  else
+                    Nothing
                 , case pane of
                     SuccessOutput ->
                         Just
