@@ -161,6 +161,7 @@ viewEditors : WorkingState.Model -> Html WorkingState.Msg
 viewEditors model =
     EditorsView.view
         { elmCode = model.elmCode
+        , analysis = model.analysis
         , onElmChange = WorkingState.ElmCodeChanged
         , onTokenChange = WorkingState.TokenChanged
         , htmlCode = model.htmlCode
@@ -170,7 +171,6 @@ viewEditors model =
         , ratio = model.editorsRatio
         , onFormat = WorkingState.FormatRequested
         , onCollapse = WorkingState.CollapseHtml
-        , onSettled = WorkingState.EditorSettled
         , vimMode = model.user.settings.vimMode
         , elmError =
             case model.workbench of

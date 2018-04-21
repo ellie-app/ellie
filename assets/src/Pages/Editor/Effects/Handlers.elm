@@ -32,7 +32,6 @@ import Ellie.Api.Query as ApiQuery
 import Ellie.Api.Scalar as ApiScalar
 import Ellie.Api.Subscription as ApiSubscription
 import Ellie.Api.Union.WorkspaceUpdate as ApiWorkspaceUpdate
-import Elm.Compiler as Compiler
 import Elm.Docs as Docs
 import Elm.Error as ElmError
 import Elm.Name as Name
@@ -42,7 +41,7 @@ import Elm.Version as Version exposing (Version)
 import Graphqelm.Field as Field
 import Graphqelm.Http as GraphqlHttp
 import Graphqelm.OptionalArgument as OptionalArgument
-import Graphqelm.SelectionSet exposing (SelectionSet(..), hardcoded, with)
+import Graphqelm.SelectionSet as SelectionSet exposing (SelectionSet(..), hardcoded, with)
 import Http
 import HttpBuilder exposing (post, withExpectJson, withJsonBody)
 import Json.Decode as Decode exposing (Decoder)
@@ -373,7 +372,7 @@ getDocs packages =
     let
         selection =
             ApiQuery.selection List.concat
-                |> with (ApiQuery.packages { packages = List.map makeArgs packages } packageSelection)
+                |> with (ApiQuery.packages { packages = List.map makeArgs packages } docsSelection)
 
         makeArgs package =
             { name = ApiScalar.Name <| Name.toString package.name
@@ -381,7 +380,13 @@ getDocs packages =
             }
 
         packageSelection =
-            ApiPackage.selection identity
+            ApiPackage.selection Package
+                |> with (ApiHelpers.nameField ApiPackage.name)
+                |> with (ApiHelpers.versionField ApiPackage.version)
+
+        docsSelection =
+            packageSelection
+                |> SelectionSet.map (\p d -> List.map ((|>) p) d)
                 |> with (ApiPackage.docs Docs.selection)
     in
     selection

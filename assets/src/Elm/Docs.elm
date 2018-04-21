@@ -39,6 +39,7 @@ web pages!
 -}
 
 import Ellie.Api.Enum.ElmDocsAssociativity as ElmDocsAssociativity
+import Ellie.Api.Helpers as Helpers
 import Ellie.Api.Object exposing (ElmDocsModule)
 import Ellie.Api.Object.ElmDocsAlias as ElmDocsAlias
 import Ellie.Api.Object.ElmDocsBinop as ElmDocsBinop
@@ -47,10 +48,11 @@ import Ellie.Api.Object.ElmDocsTag as ElmDocsTag
 import Ellie.Api.Object.ElmDocsUnion as ElmDocsUnion
 import Ellie.Api.Object.ElmDocsValue as ElmDocsValue
 import Ellie.Api.Scalar as Scalar
+import Elm.Package as Package exposing (Package)
 import Elm.Type as Type exposing (Type)
 import Extra.Result as Result
 import Graphqelm.Field as Field
-import Graphqelm.SelectionSet exposing (SelectionSet, with)
+import Graphqelm.SelectionSet exposing (SelectionSet, hardcoded, with)
 
 
 -- DOCUMENTATION
@@ -71,6 +73,7 @@ type alias Module =
     , aliases : List Alias
     , values : List Value
     , binops : List Binop
+    , package : Package
     }
 
 
@@ -194,7 +197,7 @@ type Associativity
 -- SELECTION
 
 
-selection : SelectionSet Module ElmDocsModule
+selection : SelectionSet (Package -> Module) ElmDocsModule
 selection =
     let
         selection_ =

@@ -198,9 +198,8 @@ type Msg
     | FormatCompleted String
     | CollapseHtml
     | EditorsResized Float
-    | EditorSettled
     | ExampleSelected Example
-    | TokenChanged String
+    | TokenChanged (Maybe String)
     | DocsReceived (List Module)
       -- Action stuff
     | SettingsChanged Settings
@@ -259,18 +258,20 @@ init token user revision defaultPackages =
 update : Msg -> Model -> ( Model, Outbound Msg )
 update msg ({ user } as model) =
     case msg of
-        EditorSettled ->
-            ( { model | analysis = Analysis.withCode model.elmCode model.analysis }
-            , Outbound.none
-            )
-
         DocsReceived modules ->
             ( { model | analysis = Analysis.withModules modules model.analysis }
             , Outbound.none
             )
 
         TokenChanged token ->
-            ( model, Outbound.none )
+            ( { model
+                | analysis =
+                    model.analysis
+                        |> Analysis.withCode model.elmCode
+                        |> Analysis.withToken token
+              }
+            , Outbound.none
+            )
 
         SaveRequested ->
             case toSave model of

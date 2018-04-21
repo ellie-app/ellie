@@ -5,7 +5,7 @@ const getToken = (editor) => {
   if (!token.type) {
     token = editor.getTokenAt({ line: line, ch: position.ch + 1 })
   }
-  if (token.type === 'variable') {
+  if (token.type === 'variable' || token.type === 'variable-2' || token.type === 'type') {
     return expandLeft(editor, line, token.start, token.string);
   }
   if (token.string === '.' || token.type === 'qualifier') {
@@ -36,7 +36,7 @@ const expandRight = (editor, line, end, string) => {
   if (token.string === '.' || token.type === 'qualifier') {
     return expandRight(editor, line, token.end, string + token.string)
   }
-  if (token.type === 'variable') {
+  if (token.type === 'variable' || token.type === 'variable-2' || token.type === 'type') {
     return string + token.string
   }
   return string
@@ -78,6 +78,8 @@ const debounce = (func) => {
   }
 }
 
+const STALE_TOKEN = {}
+
 const start = (app) => {
   return load().then(CodeMirror => {
     CodeMirror.registerHelper('lint', 'elm', (text, options, instance) => {
@@ -99,7 +101,7 @@ const start = (app) => {
         this._mode = this.mode || 'htmlmixed'
         delete this.mode
 
-        this._onTokenChange = this._onTokenChange.bind(this)
+        this._onCursorActivity = this._onCursorActivity.bind(this)
         this._onElmChanges = this._onElmChanges.bind(this)
         this._linterFormatDiv = document.createElement('div')
         this._ready = false
@@ -108,6 +110,7 @@ const start = (app) => {
         this._vimMode = false
         this._vimModeLoadState = 'NOT_ASKED'
         this._idleCallback = null
+        this._token = STALE_TOKEN
       }
 
       get vimMode() {
@@ -176,9 +179,9 @@ const start = (app) => {
         if (!this._instance) return
         this._instance.setOption('mode', this._mode)
         if (value === 'elm') {
-          this._setupElmEditor()
+          this._setupElmEvents()
         } else {
-          this._teardownElmEditor()
+          this._tearDownElmEvents()
         }
       }
 
@@ -191,6 +194,12 @@ const start = (app) => {
         if (!this._instance) return
         this._instance._errors = this.formatLinterMessages(value)
         this._instance.performLint()
+      }
+
+      get token() {
+        if (!this._instance) return null
+        if (this._token === STALE_TOKEN) this._token = getToken(this._instance)
+        return this._token
       }
 
       moveCursor(line, column) {
@@ -233,7 +242,7 @@ const start = (app) => {
 
         this._instance.on('changes', runDispatch)
       
-        if (this._mode === 'elm') this._setupElmEditor()
+        if (this._mode === 'elm') this._setupElmEvents()
 
         requestAnimationFrame(() => {
           this._instance.refresh()
@@ -248,32 +257,25 @@ const start = (app) => {
         }
       }
 
-      _onElmChanges() {
-        window.cancelIdleCallback(this._idleCallback)
+      _setupElmEvents() {
+        this._instance.on('cursorActivity', this._onCursorActivity)
+        this._instance.on('changes', this._onElmChanges)
+      }
+
+      _tearDownElmEvents() {
+        this._instance.off('cursorActivity', this._onCursorActivity)
+        this._instance.off('cursorActivity', this._onCursorActivity)
+      }
+
+      _onCursorActivity() {
+        this._token = STALE_TOKEN
         this._idleCallback = window.requestIdleCallback(() => {
           this._idleCallback = null
           this.dispatchEvent(new CustomEvent('settled'))
         })
       }
 
-      _onTokenChange() {
-        const token = getToken(this._instance)
-        if (token === null) return
-        const event = new CustomEvent('currentTokenChange', { detail: { token } })
-        this.dispatchEvent(event)
-      }
-
-      _setupElmEditor() {
-        if (!this._instance) return
-        this._teardownElmEditor()
-        this._instance.on('cursorActivity', this._onTokenChange)
-        this._instance.on('changes', this._onElmChanges)
-      }
-
-      _teardownElmEditor() {
-        if (!this._instance) return
-        this._instance.off('cursorActivity', this._onTokenChange)
-        this._instance.off('changes', this._onElmChanges)
+      _onElmChanges() {
       }
 
       formatLinterMessages(messages) {

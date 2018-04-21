@@ -10,13 +10,14 @@ import Elm.Error as Error exposing (Error)
 import Html.Styled as Html exposing (Attribute, Html)
 import Html.Styled.Attributes as Attributes exposing (css)
 import Html.Styled.Events as Events
+import Pages.Editor.Types.Analysis as Analysis exposing (Analysis)
 import Pages.Editor.Types.Example as Example exposing (Example)
 
 
 type alias Config msg =
     { elmCode : String
     , onElmChange : String -> msg
-    , onTokenChange : String -> msg
+    , onTokenChange : Maybe String -> msg
     , htmlCode : String
     , onHtmlChange : String -> msg
     , onResize : Float -> msg
@@ -25,8 +26,8 @@ type alias Config msg =
     , vimMode : Bool
     , onFormat : msg
     , onCollapse : msg
-    , onSettled : msg
     , elmError : Maybe Error
+    , analysis : Analysis
     }
 
 
@@ -86,7 +87,6 @@ view config =
                             [ CodeEditor.value config.elmCode
                             , CodeEditor.onChange config.onElmChange
                             , CodeEditor.onToken config.onTokenChange
-                            , CodeEditor.onSettled config.onSettled
                             , CodeEditor.mode "elm"
                             , CodeEditor.tabSize 4
                             , CodeEditor.vim config.vimMode
@@ -97,6 +97,35 @@ view config =
                             , CodeEditor.id "elm"
                             ]
                         ]
+                    , Html.styled Html.div
+                        [ height (px 24)
+                        , backgroundColor Theme.editorHeaderBackground
+                        , color Theme.primaryForeground
+                        , fontSize (px 14)
+                        , lineHeight (px 24)
+                        , padding2 zero (px 8)
+                        , flexShrink (int 0)
+                        ]
+                        []
+                        (case Analysis.hint config.analysis of
+                            Just hint ->
+                                [ Html.styled Html.span
+                                    [ fontWeight bold ]
+                                    []
+                                    [ Html.text "Docs: " ]
+                                , Html.styled Html.a
+                                    [ color Theme.accent
+                                    , fontFamily Theme.editorFontFamily
+                                    ]
+                                    [ Attributes.href hint.url
+                                    , Attributes.target "_blank"
+                                    ]
+                                    [ Html.text hint.name ]
+                                ]
+
+                            Nothing ->
+                                []
+                        )
                     ]
             , second =
                 Html.div [ containerStyles ]

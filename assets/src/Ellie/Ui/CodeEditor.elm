@@ -73,9 +73,14 @@ onChange tagger =
     Attr <| on "change" (Decode.map tagger (Decode.at [ "target", "editorValue" ] Decode.string))
 
 
-onToken : (String -> msg) -> Attribute msg
+onToken : (Maybe String -> msg) -> Attribute msg
 onToken tagger =
-    Attr <| on "currentTokenChange" (Decode.map tagger (Decode.at [ "detail", "token" ] Decode.string))
+    Decode.string
+        |> Decode.nullable
+        |> Decode.at [ "target", "token" ]
+        |> Decode.map tagger
+        |> on "settled"
+        |> Attr
 
 
 onSettled : msg -> Attribute msg
