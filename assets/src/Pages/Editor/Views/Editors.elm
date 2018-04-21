@@ -43,7 +43,7 @@ renderChunks chunks =
                     Error.Unstyled string ->
                         string
             )
-        |> String.join " "
+        |> String.join ""
 
 
 problemToLinterMessage : Error.Problem -> CodeEditor.LinterMessage

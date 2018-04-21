@@ -103,7 +103,6 @@ const start = (app) => {
 
         this._onCursorActivity = this._onCursorActivity.bind(this)
         this._onElmChanges = this._onElmChanges.bind(this)
-        this._linterFormatDiv = document.createElement('div')
         this._ready = false
         this._instance = null
         this._errors = []
@@ -280,11 +279,10 @@ const start = (app) => {
 
       formatLinterMessages(messages) {
         return messages.map(message => {
-          this._linterFormatDiv.innerHTML = message.message
           return {
             from: message.from,
             to: message.to,
-            message: this._linterFormatDiv.innerText,
+            message: message.message,
             severity: message.severity
           }
         })

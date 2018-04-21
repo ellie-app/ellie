@@ -43,6 +43,8 @@ code-editor .CodeMirror {
   padding: 12px !important;
   box-shadow: 0 2px 8px 2px rgba(0, 0, 0, 0.75);
   border-radius: 3px !important;
+  white-space: pre-line;
+  max-width: 750px !important;
 }
 
 .CodeMirror-lint-marker-warning, .CodeMirror-lint-message-warning,
