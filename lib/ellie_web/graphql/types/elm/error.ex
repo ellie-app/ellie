@@ -1,6 +1,5 @@
 defmodule EllieWeb.Graphql.Types.Elm.Error do
   use Absinthe.Schema.Notation
-  require IEx
 
   defp format_message(_, %{source: source}) do
     stuff =

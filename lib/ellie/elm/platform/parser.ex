@@ -30,4 +30,65 @@ defmodule Ellie.Elm.Platform.Parser do
 
   defp with_default(nil, a), do: a
   defp with_default(a, _a), do: a
+
+  def error_0_18_0(entry, input) do
+    errors =
+      input
+      |> String.split("\n")
+      |> Enum.flat_map(fn line ->
+        if String.starts_with?(line, "[") do
+          line
+          |> Poison.decode!()
+          |> List.foldr(%{}, fn error, by_source ->
+            case Map.get(error, "type") do
+              "error" ->
+                file = Map.get(error, "file", "src/Main.elm")
+                problem = %{
+                  "title" => Map.get(error, "tag"),
+                  "region" => Map.get(error, "subregion") || Map.get(error, "region"),
+                  "message" => [Map.get(error, "overview"), "\n\n", Map.get(error, "details")]
+                }
+                by_source
+                |> Map.put_new(file, [])
+                |> Map.update!(file, fn problems -> [problem | problems] end)
+              _ ->
+                by_source
+            end
+          end)
+          |> Enum.map(fn {file, problems} ->
+            %{
+              "name" => path_to_module(file),
+              "path" => file,
+              "problems" => problems
+            }
+          end)
+        else
+          []
+        end
+      end)
+    if Enum.empty?(errors) do
+      %{
+        "type" => "error",
+        "path" => entry,
+        "title" => "Compiler Error",
+        "message" => [input]
+      }
+    else
+      %{
+        "type" => "compile-errors",
+        "errors" => errors
+      }
+    end
+  end
+
+  defp path_to_module(input) do
+    case String.split(input, "src/") do
+      [_, local_name] ->
+        local_name
+        |> String.trim_trailing(".elm")
+        |> String.replace("/", ".")
+      _ ->
+        "Main"
+    end
+  end
 end

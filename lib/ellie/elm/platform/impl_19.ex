@@ -52,6 +52,8 @@ defmodule Ellie.Elm.Platform.Impl19 do
         end
       %Porcelain.Result{err: err, out: out, status: other} ->
         {:error, "compiler exited with code #{other}\nstdout: #{out}\nstderr:#{err}"}
+      {:error, reason} ->
+        {:error, reason}
     end
   end
 

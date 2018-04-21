@@ -61,10 +61,6 @@ type Msg
 
 update : Msg -> Model -> ( Transition, Outbound Msg )
 update msg state =
-    let
-        _ =
-            Debug.log (toString msg) state
-    in
     case state of
         Authenticating { possibleToken, revisionId } ->
             case msg of
@@ -279,7 +275,6 @@ update msg state =
                     , revision
                         |> Maybe.map (Tuple.second >> .elmVersion)
                         |> Maybe.withDefault Compiler.version
-                        |> Debug.log "ob"
                         |> Outbound.AttachToWorkspace token
                     )
 

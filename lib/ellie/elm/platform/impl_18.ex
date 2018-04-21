@@ -3,6 +3,7 @@ defmodule Ellie.Elm.Platform.Impl18 do
   alias Ellie.Elm.Version
   alias Ellie.Elm.Package
   alias Ellie.Helpers.EnumHelpers
+  alias Ellie.Elm.Platform.Parser
   use GenServer
 
   @bin_path Path.expand("../../../../priv/bin/0.18.0", __DIR__)
@@ -124,8 +125,12 @@ defmodule Ellie.Elm.Platform.Impl18 do
     case result do
       %Porcelain.Result{status: 0} ->
         {:reply, {:ok, nil}, state}
-      _ ->
-        {:reply, {:error, "failed to compile Elm 0.18.0 project"}, state}
+      %Porcelain.Result{status: 1, out: out, err: ""} ->
+        {:reply, {:ok, Parser.error_0_18_0(entry, out)}, state}
+      %Porcelain.Result{err: err} ->
+        {:reply, {:ok, Parser.error_0_18_0(entry, err)}, state}
+      {:error, reason} ->
+        {:reply, {:ok, Parser.error_0_18_0(entry, reason)}, state}
     end
   end
 end
