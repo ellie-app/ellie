@@ -1,5 +1,17 @@
 export default {
   start(app) {
+    app.ports.ellieUiOutputOut.subscribe((data) => {
+      switch (data.tag) {
+        case 'Reload':
+          requestAnimationFrame(() => {
+            document.querySelectorAll('ellie-ui-output[data-connected]').forEach((el) => {
+              el.reload()
+            })
+          })
+          return
+      }
+    })
+
     const parser = new DOMParser()
     const iframe = document.createElement('iframe')
 
@@ -176,7 +188,7 @@ export default {
         })
     }
 
-    customElements.define('ellie-pages-editor-views-output', class extends HTMLElement {
+    customElements.define('ellie-ui-output', class extends HTMLElement {
       constructor() {
         super()
         this._html = null
@@ -230,12 +242,14 @@ export default {
         window.addEventListener('message', this._onMessage)
         iframe.addEventListener('load', this._onLoad)
         this._update()
+        this.setAttribute('data-connected', '')
       }
 
       disconnectedCallback() {
         window.removeEventListener('message', this._onMessage)
         this.removeChild(iframe)
         cancelIdleCallback(this._idleCallback)
+        this.removeAttribute('data-connected')
       }
 
       reload() {

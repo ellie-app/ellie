@@ -1,4 +1,4 @@
-module Ellie.Ui.Output exposing (Attribute, debug, elmSource, html, onCanDebug, onLog, view)
+port module Ellie.Ui.Output exposing (Attribute, debug, elmSource, html, onCanDebug, onLog, reload, view)
 
 import Css exposing (..)
 import Css.Foreign
@@ -8,6 +8,15 @@ import Html.Styled.Events as Events
 import Json.Decode as Decode
 import Json.Encode as Encode
 import Pages.Editor.Types.Log as Log exposing (Log)
+
+
+port ellieUiOutputOut : Encode.Value -> Cmd msg
+
+
+reload : Cmd msg
+reload =
+    Encode.object [ ( "tag", Encode.string "Reload" ) ]
+        |> ellieUiOutputOut
 
 
 type Attribute msg
@@ -46,7 +55,7 @@ onCanDebug callback =
 
 view : List (Attribute msg) -> Html msg
 view attrs =
-    Html.node "ellie-pages-editor-views-output"
+    Html.node "ellie-ui-output"
         (styles :: List.map unAttr attrs)
         []
 

@@ -15,4 +15,5 @@ document.addEventListener('DOMContentLoaded', () => {
   NetworkSocket.start(app)
   EllieUiOutput.start(app)
   EllieUiCodeEditor.start(app)
+  EllieUiIcon.start(app)
 })

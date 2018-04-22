@@ -8,6 +8,7 @@ port module Pages.Embed.Effects.State
         , update
         )
 
+import Ellie.Ui.Output as Output
 import Json.Encode as Encode exposing (Value)
 import Network.Absinthe.Subscription as Subscription
 import Pages.Embed.Effects.Handlers as Handlers
@@ -35,6 +36,9 @@ processOutbound effect state =
             , Handlers.runEmbed revisionId
                 |> Cmd.map (callback >> UserMsg)
             )
+
+        ReloadOutput ->
+            ( state, Output.reload )
 
         GoToPosition position ->
             ( state

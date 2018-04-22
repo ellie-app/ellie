@@ -25,6 +25,7 @@ type Outbound msg
     | RunEmbed RevisionId (Result Handlers.RunEmbedError (Maybe (Maybe Error)) -> msg)
     | Batch (List (Outbound msg))
     | GoToPosition Error.Position
+    | ReloadOutput
     | None
 
 
@@ -49,6 +50,9 @@ map f outbound =
 
         RunEmbed revisionId callback ->
             RunEmbed revisionId (callback >> f)
+
+        ReloadOutput ->
+            ReloadOutput
 
         Batch outbounds ->
             Batch <| List.map (map f) outbounds

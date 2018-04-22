@@ -4,8 +4,10 @@ import Colors
 import Css exposing (..)
 import Css.Foreign
 import Data.Url as Url
+import Ellie.Ui.Button as Button
 import Ellie.Ui.CodeEditor as CodeEditor
 import Ellie.Ui.Errors as Errors
+import Ellie.Ui.Icon as Icon
 import Ellie.Ui.Logo as Logo
 import Ellie.Ui.Output as Output
 import Ellie.Ui.Theme as Theme
@@ -110,7 +112,9 @@ viewHeader revisionId current =
                     ]
                 ]
             ]
-            [ Attributes.href <| Url.toString <| RevisionId.editorLink revisionId ]
+            [ Attributes.href <| Url.toString <| RevisionId.editorLink revisionId
+            , Attributes.target "_blank"
+            ]
             [ Html.span [] [ Html.text "Edit" ]
             , Html.span
                 [ Attributes.attribute "data-extraneous" "" ]
@@ -158,6 +162,7 @@ viewContent state =
         [ height (pct 100)
         , flexShrink (int 1)
         , position relative
+        , displayFlex
         ]
         []
         [ viewOutput state
@@ -222,16 +227,71 @@ viewOutput state =
                 [ width (pct 100)
                 , height (pct 100)
                 , position relative
+                , displayFlex
+                , flexDirection column
+                , overflow hidden
                 ]
                 []
-                [ Output.view
-                    [ Output.html state.revision.data.htmlCode
-                    , Output.elmSource <| Url.toString <| RevisionId.outputLink state.revision.id
+                [ Html.styled Html.div
+                    [ height (pct 100)
+                    , position relative
+                    , flexShrink (int 1)
+                    , overflow hidden
                     ]
+                    []
+                    [ Output.view
+                        [ Output.html state.revision.data.htmlCode
+                        , Output.elmSource <| Url.toString <| RevisionId.outputLink state.revision.id
+                        , Output.onCanDebug CanDebugChanged
+                        , Output.debug (state.debug == AppState.Debugging)
+                        ]
+                    ]
+                , viewControls state
                 ]
 
         _ ->
             Html.text ""
+
+
+viewControls : WorkingState -> Html Msg
+viewControls state =
+    Html.styled Html.div
+        [ height (px 40)
+        , backgroundColor Theme.secondaryBackground
+        , width (pct 100)
+        , flexShrink (int 0)
+        , displayFlex
+        , alignItems center
+        , padding2 zero (px 12)
+        ]
+        []
+        [ Html.styled Html.div
+            [ marginRight (px 8) ]
+            []
+            [ Button.view
+                { icon = Just Icon.Reload
+                , label = "Reload"
+                , action = Button.click ReloadOutput
+                }
+            ]
+        , case state.debug of
+            AppState.DebuggerUnavailable ->
+                Html.text ""
+
+            AppState.Debugging ->
+                Button.view
+                    { icon = Just Icon.Eye
+                    , label = "View Output"
+                    , action = Button.click (ToggleDebugger False)
+                    }
+
+            AppState.NotDebugging ->
+                Button.view
+                    { icon = Just Icon.Debugger
+                    , label = "View Debugger"
+                    , action = Button.click (ToggleDebugger True)
+                    }
+        ]
 
 
 viewClickToRun : Html Msg

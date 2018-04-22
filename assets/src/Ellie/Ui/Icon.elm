@@ -46,6 +46,7 @@ type Icon
     | Warning
     | CloseAll
     | Notification
+    | Debugger
 
 
 view : Icon -> Html msg
@@ -174,6 +175,9 @@ toIdString icon =
 
         Socket ->
             "socket"
+
+        Debugger ->
+            "debugger"
 
 
 iconStyles : Attribute msg

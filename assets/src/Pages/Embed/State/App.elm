@@ -20,10 +20,17 @@ type OutputState
     | Crashed String
 
 
+type DebugState
+    = DebuggerUnavailable
+    | Debugging
+    | NotDebugging
+
+
 type alias WorkingState =
     { panel : Panel
     , revision : { id : RevisionId, data : Revision }
     , output : OutputState
+    , debug : DebugState
     }
 
 
@@ -60,8 +67,11 @@ type Msg
     | UpdateReceived EmbedUpdate
     | EmbedRunStarted
     | RunCompleted (Result RunEmbedError (Maybe (Maybe Error)))
+    | CanDebugChanged Bool
+    | ToggleDebugger Bool
     | PanelSelected Panel
     | GoToPosition Error.Position
+    | ReloadOutput
 
 
 update : Msg -> Model -> ( Model, Outbound Msg )
@@ -75,7 +85,12 @@ update msg model =
 
         ( Loading rid panel, RevisionLoaded revisionId (Ok revision) ) ->
             if RevisionId.eq rid revisionId then
-                ( Working { panel = panel, revision = { id = revisionId, data = revision }, output = NotRun }
+                ( Working
+                    { panel = panel
+                    , revision = { id = revisionId, data = revision }
+                    , output = NotRun
+                    , debug = DebuggerUnavailable
+                    }
                 , Outbound.none
                 )
             else
@@ -86,6 +101,40 @@ update msg model =
                 ( Failure, Outbound.none )
             else
                 ( model, Outbound.none )
+
+        ( Working state, ReloadOutput ) ->
+            ( model
+            , Outbound.ReloadOutput
+            )
+
+        ( Working state, CanDebugChanged canDebug ) ->
+            ( Working
+                { state
+                    | debug =
+                        if canDebug then
+                            NotDebugging
+                        else
+                            DebuggerUnavailable
+                }
+            , Outbound.none
+            )
+
+        ( Working state, ToggleDebugger open ) ->
+            ( Working
+                { state
+                    | debug =
+                        case ( open, state.debug ) of
+                            ( False, Debugging ) ->
+                                NotDebugging
+
+                            ( True, NotDebugging ) ->
+                                Debugging
+
+                            _ ->
+                                state.debug
+                }
+            , Outbound.none
+            )
 
         ( Working state, PanelSelected panel ) ->
             ( Working { state | panel = panel }
