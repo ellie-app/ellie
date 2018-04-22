@@ -34,7 +34,7 @@ defmodule EllieWeb.Graphql.Types do
   end
 
   object :revision do
-    field :project_id, non_null(:uuid)
+    field :project_id, non_null(:project_id)
     field :revision_number, non_null(:integer)
     field :title, :string
     field :elm_code, non_null(:string)

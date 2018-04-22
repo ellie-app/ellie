@@ -5,7 +5,7 @@ defmodule Ellie.Elm.Package do
 
   def docs_view_link(%Ellie.Elm.Package{} = package) do
     Application.get_env(:ellie, :package_endpoint) <>
-      "/" <>
+      "/packages/" <>
       package.name.user <>
       "/" <>
       package.name.project <>

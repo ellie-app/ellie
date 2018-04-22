@@ -4,6 +4,7 @@ defmodule EllieWeb.PageController do
   alias Ellie.Embed
   alias Ellie.Repo
   alias Ellie.Revision
+  alias Ellie.ProjectId
 
   def new_editor(conn, _params) do
     conn
@@ -40,7 +41,8 @@ defmodule EllieWeb.PageController do
   end
 
   def embed_result(conn, %{"project_id" => project_id, "revision_number" => revision_number}) do
-    with revision when not is_nil(revision) <- Repo.get_by(Revision, project_id: project_id, revision_number: revision_number),
+    with parsed_project_id <- ProjectId.from_string(project_id),
+         revision when not is_nil(revision) <- Repo.get_by(Revision, project_id: parsed_project_id, revision_number: revision_number),
          {:ok, path} <- Embed.result(revision)
     do
       conn

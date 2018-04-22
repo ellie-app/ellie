@@ -18,6 +18,7 @@ defmodule EllieWeb.Graphql.Resolvers.UpdateRevision do
           {:error, "Revision does not exist and cannot be updated"}
         else
           Repo.insert(%Revision{
+            project_id: project_id,
             revision_number: latest_revision_number + 1,
             title: Map.get(data, "title"),
             elm_code: data.elm_code,

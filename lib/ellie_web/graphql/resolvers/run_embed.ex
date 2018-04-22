@@ -2,7 +2,6 @@ defmodule EllieWeb.Graphql.Resolvers.RunEmbed do
   alias Ellie.Embed
   alias Ellie.Repo
   alias Ellie.Revision
-  alias Absinthe.Resolution.Helpers
 
   def call(%{project_id: project_id, revision_number: revision_number}, _stuff) do
     case Repo.get_by(Revision, project_id: project_id, revision_number: revision_number) do

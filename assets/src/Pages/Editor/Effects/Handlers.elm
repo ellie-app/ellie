@@ -17,7 +17,6 @@ module Pages.Editor.Effects.Handlers
         )
 
 import Data.Jwt as Jwt exposing (Jwt)
-import Data.Uuid as Uuid exposing (Uuid)
 import Ellie.Api.Enum.Theme as ApiTheme
 import Ellie.Api.Helpers as ApiHelpers
 import Ellie.Api.Mutation as ApiMutation
@@ -67,7 +66,7 @@ getRevision revisionId =
                 |> with (ApiQuery.revision arguments revisionQuery)
 
         arguments =
-            { projectId = ApiScalar.Uuid <| Uuid.toString revisionId.projectId
+            { projectId = ApiScalar.ProjectId revisionId.projectId
             , revisionNumber = revisionId.revisionNumber
             }
 
@@ -324,7 +323,7 @@ createRevision token revision =
 
         revisionSelection =
             ApiRevision.selection RevisionId
-                |> with (ApiHelpers.uuidField ApiRevision.projectId)
+                |> with (ApiHelpers.projectIdField ApiRevision.projectId)
                 |> with ApiRevision.revisionNumber
     in
     selection
@@ -333,7 +332,7 @@ createRevision token revision =
         |> GraphqlHttp.send (Result.mapError GraphqlHttp.ignoreParsedErrorData)
 
 
-updateRevision : Jwt -> Uuid -> Revision -> Cmd (Result GqlError RevisionId)
+updateRevision : Jwt -> String -> Revision -> Cmd (Result GqlError RevisionId)
 updateRevision token projectId revision =
     let
         selection =
@@ -353,12 +352,12 @@ updateRevision token projectId revision =
                         title ->
                             OptionalArgument.Present title
                 }
-            , projectId = ApiScalar.Uuid <| Uuid.toString projectId
+            , projectId = ApiScalar.ProjectId <| projectId
             }
 
         revisionSelection =
             ApiRevision.selection RevisionId
-                |> with (ApiHelpers.uuidField ApiRevision.projectId)
+                |> with (ApiHelpers.projectIdField ApiRevision.projectId)
                 |> with ApiRevision.revisionNumber
     in
     selection

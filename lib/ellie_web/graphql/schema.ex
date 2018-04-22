@@ -3,6 +3,7 @@ defmodule EllieWeb.Graphql.Schema do
   import_types EllieWeb.Graphql.Types.Uuid
   import_types EllieWeb.Graphql.Types.Version
   import_types EllieWeb.Graphql.Types.Name
+  import_types EllieWeb.Graphql.Types.ProjectId
   import_types EllieWeb.Graphql.Types.Elm.Error
   import_types EllieWeb.Graphql.Types.Elm.Docs
   import_types EllieWeb.Graphql.Types
@@ -36,7 +37,7 @@ defmodule EllieWeb.Graphql.Schema do
     end
 
     field :revision, non_null(:revision) do
-      arg :project_id, non_null(:uuid)
+      arg :project_id, non_null(:project_id)
       arg :revision_number, non_null(:integer)
       resolve &EllieWeb.Graphql.Resolvers.Revision.call/2
     end
@@ -70,7 +71,7 @@ defmodule EllieWeb.Graphql.Schema do
 
     field :update_revision, non_null(:revision) do
       arg :inputs, non_null(:revision_update_input)
-      arg :project_id, non_null(:uuid)
+      arg :project_id, non_null(:project_id)
       middleware EllieWeb.Graphql.Middleware.Auth
       resolve &EllieWeb.Graphql.Resolvers.UpdateRevision.call/2
     end
@@ -111,7 +112,7 @@ defmodule EllieWeb.Graphql.Schema do
     end
 
     field :run_embed, :embed_ready do
-      arg :project_id, non_null(:uuid)
+      arg :project_id, non_null(:project_id)
       arg :revision_number, non_null(:integer)
       resolve &EllieWeb.Graphql.Resolvers.RunEmbed.call/2
     end
@@ -126,7 +127,7 @@ defmodule EllieWeb.Graphql.Schema do
     end
 
     field :embed, non_null(:embed_update) do
-      arg :project_id, non_null(:uuid)
+      arg :project_id, non_null(:project_id)
       arg :revision_number, non_null(:integer)
       config fn
         %{project_id: project_id, revision_number: revision_number}, _stuff ->

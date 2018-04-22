@@ -20,6 +20,12 @@ uuidField =
         \(ApiScalar.Uuid string) -> Uuid.fromString string
 
 
+projectIdField : Field ApiScalar.ProjectId a -> Field String a
+projectIdField =
+    Field.map <|
+        \(ApiScalar.ProjectId string) -> string
+
+
 nameField : Field ApiScalar.Name a -> Field Name a
 nameField =
     Field.mapOrFail <|

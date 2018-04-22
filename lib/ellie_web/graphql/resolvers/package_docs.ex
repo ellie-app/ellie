@@ -16,7 +16,8 @@ defmodule EllieWeb.Graphql.Resolvers.PackageDocs do
   end
 
   defp fetch_and_save(package) do
-    case HTTPoison.get(Package.docs_data_link(package)) do
+    response = HTTPoison.get(Package.docs_data_link(package))
+    case response do
       {:ok, %HTTPoison.Response{status_code: 200, body: body}} ->
         docs = Poison.decode!(body)
         changeset = %Docs{package: package, docs_0_19_0: docs}

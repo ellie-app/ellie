@@ -7,7 +7,6 @@ port module Pages.Editor.Effects.Outbound
         )
 
 import Data.Jwt as Jwt exposing (Jwt)
-import Data.Uuid as Uuid exposing (Uuid)
 import Elm.Docs as Docs
 import Elm.Error as ElmError
 import Elm.Package as Package exposing (Package)
@@ -29,7 +28,7 @@ type alias HtmlSource =
 
 type Outbound msg
     = CreateRevision Jwt Revision (RevisionId -> Revision -> msg)
-    | UpdateRevision Jwt Uuid Revision (RevisionId -> Revision -> msg)
+    | UpdateRevision Jwt String Revision (RevisionId -> Revision -> msg)
     | GetRevision RevisionId (Revision -> msg)
     | Authenticate (Maybe Jwt) (Int -> Jwt -> User -> msg)
     | AcceptTerms Jwt Int msg

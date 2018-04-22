@@ -8,7 +8,6 @@ module Pages.Embed.Effects.Handlers
         , socket
         )
 
-import Data.Uuid as Uuid exposing (Uuid)
 import Ellie.Api.Helpers as ApiHelpers
 import Ellie.Api.Mutation as ApiMutation
 import Ellie.Api.Object.EmbedFailed as ApiEmbedFailed
@@ -45,7 +44,7 @@ getRevision revisionId =
                 |> with (ApiQuery.revision arguments revisionQuery)
 
         arguments =
-            { projectId = ApiScalar.Uuid <| Uuid.toString revisionId.projectId
+            { projectId = ApiScalar.ProjectId revisionId.projectId
             , revisionNumber = revisionId.revisionNumber
             }
 
@@ -83,7 +82,7 @@ runEmbed revisionId =
                 |> with (ApiEmbedReady.error Error.selection)
 
         arguments =
-            { projectId = ApiScalar.Uuid <| Uuid.toString revisionId.projectId
+            { projectId = ApiScalar.ProjectId revisionId.projectId
             , revisionNumber = revisionId.revisionNumber
             }
     in
@@ -100,7 +99,7 @@ socket revisionId =
                 |> with (ApiSubscription.embed arguments embedUpdateSelection)
 
         arguments =
-            { projectId = ApiScalar.Uuid <| Uuid.toString revisionId.projectId
+            { projectId = ApiScalar.ProjectId revisionId.projectId
             , revisionNumber = revisionId.revisionNumber
             }
 

@@ -13,15 +13,10 @@ type Route
     | NotFound
 
 
-uuid : Parser (Uuid -> a) a
-uuid =
-    UrlParser.map Uuid.fromString string
-
-
 parser : Parser (Route -> Route) Route
 parser =
     UrlParser.oneOf
-        [ UrlParser.map Existing <| UrlParser.map RevisionId <| uuid </> int
+        [ UrlParser.map Existing <| UrlParser.map RevisionId <| string </> int
         , UrlParser.map New <| s "new"
         ]
 
@@ -41,7 +36,7 @@ toString route =
             "/new"
 
         Existing { projectId, revisionNumber } ->
-            "/" ++ Uuid.toString projectId ++ "/" ++ String.fromInt revisionNumber
+            "/" ++ projectId ++ "/" ++ String.fromInt revisionNumber
 
         NotFound ->
             "/not-found"
