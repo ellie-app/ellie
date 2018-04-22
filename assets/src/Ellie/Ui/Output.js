@@ -69,7 +69,7 @@ export default {
         })
         return debuggerWindowProxy
       }
-      var buttonSelector = '#elm-debugger-overlay div[style="padding: 6px; cursor: pointer; text-align: center; min-width: 24ch;"]'
+      var buttonSelector = '#elm-debugger-overlay div[style*="cursor: pointer;"]'
       var controlsSelector = 'div[style*="background-color: rgb(61, 61, 61);"]'
       var styles = document.createElement('style')
       styles.textContent = '#elm-debugger-overlay > ' + controlsSelector + ' { display: none !important; }'
@@ -94,7 +94,7 @@ export default {
             tag: 'Ready',
             contents: { canDebug: document.querySelector(buttonSelector) !== null }
           }, '${window.location.origin}')
-        }, 0)
+        }, 100)
       })
     }())`
 
