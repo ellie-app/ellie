@@ -4,6 +4,7 @@ import BoundedDeque exposing (BoundedDeque)
 import Css exposing (..)
 import Data.Jwt as Jwt exposing (Jwt)
 import Ellie.Ui.Button as Button
+import Ellie.Ui.Errors as Errors
 import Ellie.Ui.Icon as Icon
 import Ellie.Ui.Output as Output
 import Ellie.Ui.TextInput as TextInput
@@ -17,7 +18,6 @@ import Html.Styled.Events as Events
 import Pages.Editor.State.Working exposing (ErrorsPane(..), SuccessPane(..), Workbench(..))
 import Pages.Editor.Types.Log as Log exposing (Log)
 import Pages.Editor.Types.RevisionId as RevisionId exposing (RevisionId)
-import Pages.Editor.Views.Workbench.Chunk as Chunk
 import Pages.Editor.Views.Workbench.Share as Share
 
 
@@ -132,7 +132,7 @@ viewContent config =
                     ]
                     [ case ( config.revisionId, pane ) of
                         ( _, ErrorsList ) ->
-                            viewErrorsList error config
+                            Errors.view { error = error, onPositionClick = config.onGoToLocation }
 
                         ( Just rid, ErrorsShare ) ->
                             Share.view
@@ -202,94 +202,6 @@ viewErrorsHeader pane config =
                 ]
     in
     viewHeader config actions tabs
-
-
-viewErrorsList : ElmError.Error -> Config msg -> Html msg
-viewErrorsList error config =
-    Html.div
-        [ css
-            [ padding2 zero (px 2)
-            , width (pct 100)
-            ]
-        ]
-        [ case error of
-            ElmError.GeneralProblem { title, message } ->
-                Html.styled Html.div
-                    [ padding (px 12)
-                    , marginBottom (px 2)
-                    , backgroundColor Theme.primaryBackground
-                    , color Theme.primaryForeground
-                    ]
-                    []
-                    [ Html.styled Html.div
-                        [ textTransform capitalize
-                        , fontSize (px 14)
-                        , fontWeight bold
-                        , color Theme.secondaryForeground
-                        , marginBottom (px 8)
-                        ]
-                        []
-                        [ Html.text title ]
-                    , Html.styled Html.div
-                        [ whiteSpace preWrap
-                        , fontSize (px 16)
-                        , fontFamily monospace
-                        ]
-                        []
-                        (List.map Chunk.view message)
-                    ]
-
-            ElmError.ModuleProblems badModules ->
-                Html.styled Html.div
-                    []
-                    []
-                    (badModules
-                        |> List.concatMap .problems
-                        |> List.map (viewProblem config)
-                    )
-        ]
-
-
-viewProblem : Config msg -> ElmError.Problem -> Html msg
-viewProblem config problem =
-    Html.div
-        [ css
-            [ padding (px 12)
-            , marginBottom (px 2)
-            , backgroundColor Theme.primaryBackground
-            , color Theme.primaryForeground
-            ]
-        ]
-        [ Html.div
-            [ css
-                [ textTransform capitalize
-                , fontSize (px 14)
-                , fontWeight bold
-                , color Theme.secondaryForeground
-                , marginBottom (px 8)
-                ]
-            ]
-            [ Html.text <| String.toLower problem.title ]
-        , Html.a
-            [ Attributes.href "javascript:void(0)"
-            , css
-                [ color Theme.accent
-                , fontSize (px 14)
-                , marginBottom (px 12)
-                , display inlineBlock
-                ]
-            , Events.onClick <| config.onGoToLocation problem.region.start
-            ]
-            [ Html.text <| "Line " ++ toString problem.region.start.line ++ ", Column " ++ toString problem.region.start.column ]
-        , Html.div
-            [ css
-                [ whiteSpace preWrap
-                , fontSize (px 16)
-                , fontFamily monospace
-                ]
-            ]
-            (List.map Chunk.view problem.message)
-        ]
 
 
 viewFinishedHeader : SuccessPane -> Bool -> Config msg -> Html msg

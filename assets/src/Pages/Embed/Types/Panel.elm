@@ -5,7 +5,6 @@ type Panel
     = Elm
     | Html
     | Output
-    | Debugger
 
 
 eq : Panel -> Panel -> Bool
@@ -18,9 +17,6 @@ eq left right =
             True
 
         ( Output, Output ) ->
-            True
-
-        ( Debugger, Debugger ) ->
             True
 
         _ ->
@@ -36,9 +32,6 @@ fromString input =
         "output" ->
             Output
 
-        "debugger" ->
-            Debugger
-
         _ ->
             Elm
 
@@ -51,9 +44,6 @@ toString panel =
 
         Output ->
             "output"
-
-        Debugger ->
-            "debugger"
 
         Elm ->
             "elm"

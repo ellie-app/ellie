@@ -5,8 +5,8 @@ defmodule Ellie.Revision do
 
   @primary_key false
   schema "revisions" do
-    field :project_id, :integer, primary_key: true
-    field :revision_number, :integer, primary_key: true, default: 0
+    field :project_id, :integer, primary_key: true, read_after_writes: true
+    field :revision_number, :integer, primary_key: true, default: 0, read_after_writes: true
     field :title, :string
     field :elm_code, :string
     field :html_code, :string

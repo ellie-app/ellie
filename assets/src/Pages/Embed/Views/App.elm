@@ -5,6 +5,7 @@ import Css exposing (..)
 import Css.Foreign
 import Data.Url as Url
 import Ellie.Ui.CodeEditor as CodeEditor
+import Ellie.Ui.Errors as Errors
 import Ellie.Ui.Logo as Logo
 import Ellie.Ui.Output as Output
 import Ellie.Ui.Theme as Theme
@@ -32,16 +33,30 @@ view model =
 
 viewLoading : Html msg
 viewLoading =
-    Html.main_ []
-        [ Html.text "loading"
+    Html.styled Html.main_
+        [ width (pct 100)
+        , height (pct 100)
+        , position relative
+        , displayFlex
+        , justifyContent center
+        , alignItems center
+        , overflow hidden
+        ]
+        []
+        [ Html.styled Html.div
+            [ maxWidth (px 300)
+            , height (px 200)
+            , width (pct 80)
+            ]
+            []
+            [ Logo.animated
+            ]
         ]
 
 
 viewFailure : Html msg
 viewFailure =
-    Html.main_ []
-        [ Html.text "failed"
-        ]
+    viewCrashed "Something went wrong while loading Ellie. If you are having trouble with your network you can try to reload. If your network is fine then I'm not sure what exactly went wrong, but any server issues have been automatically reported!"
 
 
 viewWorking : WorkingState -> Html Msg
@@ -81,7 +96,6 @@ viewHeader revisionId current =
             [ viewTab Panel.Elm current
             , viewTab Panel.Html current
             , viewTab Panel.Output current
-            , viewTab Panel.Debugger current
             ]
         , Html.styled Html.a
             [ color Theme.primaryForeground
@@ -184,28 +198,24 @@ viewOverlayed child =
 
 viewOutput : WorkingState -> Html Msg
 viewOutput state =
-    case ( panelForOutput state.panel, state.output ) of
-        ( True, AppState.NotRun ) ->
-            Html.styled Html.div
-                [ position relative
-                , width (pct 100)
-                , height (pct 100)
-                ]
-                [ Events.onClick EmbedRunStarted ]
-                [ Html.text "Click to run"
-                ]
+    case ( state.panel, state.output ) of
+        ( Panel.Output, AppState.NotRun ) ->
+            viewClickToRun
 
-        ( True, AppState.AcquiringConnection ) ->
-            Html.div [] [ Html.text "Connecting" ]
+        ( Panel.Output, AppState.AcquiringConnection ) ->
+            viewAnimatedContainer "Connecting"
 
-        ( True, AppState.Compiling ) ->
-            Html.div [] [ Html.text "Compiling" ]
+        ( Panel.Output, AppState.Compiling ) ->
+            viewAnimatedContainer "Compiling"
 
-        ( True, AppState.Crashed message ) ->
-            Html.div [] [ Html.text "Crashed" ]
+        ( Panel.Output, AppState.Crashed message ) ->
+            viewCrashed message
 
-        ( True, AppState.Finished (Just error) ) ->
-            Html.div [] [ Html.text "Errors" ]
+        ( Panel.Output, AppState.Finished (Just error) ) ->
+            Errors.view
+                { error = error
+                , onPositionClick = GoToPosition
+                }
 
         ( _, AppState.Finished Nothing ) ->
             Html.styled Html.div
@@ -216,7 +226,6 @@ viewOutput state =
                 []
                 [ Output.view
                     [ Output.html state.revision.data.htmlCode
-                    , Output.debug (Panel.eq Panel.Debugger state.panel)
                     , Output.elmSource <| Url.toString <| RevisionId.outputLink state.revision.id
                     ]
                 ]
@@ -225,17 +234,92 @@ viewOutput state =
             Html.text ""
 
 
-panelForOutput : Panel -> Bool
-panelForOutput panel =
-    case panel of
-        Panel.Output ->
-            True
+viewClickToRun : Html Msg
+viewClickToRun =
+    Html.styled Html.div
+        [ position relative
+        , width (pct 100)
+        , height (pct 100)
+        , fontSize (px 36)
+        , displayFlex
+        , alignItems center
+        , fontWeight bold
+        , color Theme.primaryForeground
+        , cursor pointer
+        , flexDirection column
+        , paddingTop (px 100)
+        ]
+        [ Events.onClick EmbedRunStarted ]
+        [ Html.styled Html.div
+            [ width (pct 80)
+            , maxWidth (px 300)
+            , height (px 200)
+            , marginBottom (px 24)
+            ]
+            []
+            [ Logo.flat ]
+        , Html.text "Click to Run"
+        ]
 
-        Panel.Debugger ->
-            True
 
-        _ ->
-            False
+viewAnimatedContainer : String -> Html msg
+viewAnimatedContainer text =
+    Html.styled Html.div
+        [ position relative
+        , width (pct 100)
+        , height (pct 100)
+        , fontSize (px 36)
+        , displayFlex
+        , alignItems center
+        , fontWeight bold
+        , color Theme.primaryForeground
+        , cursor pointer
+        , flexDirection column
+        , paddingTop (px 100)
+        ]
+        []
+        [ Html.styled Html.div
+            [ width (pct 80)
+            , maxWidth (px 300)
+            , height (px 200)
+            , marginBottom (px 24)
+            ]
+            []
+            [ Logo.animated ]
+        , Html.text text
+        ]
+
+
+viewCrashed : String -> Html msg
+viewCrashed message =
+    Html.styled Html.div
+        [ position relative
+        , width (pct 100)
+        , height (pct 100)
+        , displayFlex
+        , alignItems center
+        , justifyContent center
+        , color Theme.primaryForeground
+        , cursor pointer
+        , flexDirection column
+        , padding (px 32)
+        ]
+        []
+        [ Html.styled Html.div
+            [ fontSize (px 36)
+            , fontWeight bold
+            , marginBottom (px 24)
+            , textAlign center
+            ]
+            []
+            [ Html.text "Something went wrong!" ]
+        , Html.styled Html.div
+            [ fontSize (px 24)
+            , textAlign center
+            ]
+            []
+            [ Html.text message ]
+        ]
 
 
 

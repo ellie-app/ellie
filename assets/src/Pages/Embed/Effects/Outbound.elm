@@ -24,6 +24,7 @@ type Outbound msg
     = GetRevision RevisionId (Result Handlers.GetRevisionError Revision -> msg)
     | RunEmbed RevisionId (Result Handlers.RunEmbedError (Maybe (Maybe Error)) -> msg)
     | Batch (List (Outbound msg))
+    | GoToPosition Error.Position
     | None
 
 
@@ -40,6 +41,9 @@ none =
 map : (a -> b) -> Outbound a -> Outbound b
 map f outbound =
     case outbound of
+        GoToPosition position ->
+            GoToPosition position
+
         GetRevision id callback ->
             GetRevision id (callback >> f)
 

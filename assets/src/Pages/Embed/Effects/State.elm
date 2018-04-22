@@ -8,6 +8,7 @@ port module Pages.Embed.Effects.State
         , update
         )
 
+import Json.Encode as Encode exposing (Value)
 import Network.Absinthe.Subscription as Subscription
 import Pages.Embed.Effects.Handlers as Handlers
 import Pages.Embed.Effects.Inbound as Inbound exposing (Inbound(..))
@@ -15,6 +16,9 @@ import Pages.Embed.Effects.Outbound as Outbound exposing (Outbound(..))
 import Pages.Embed.Types.EmbedUpdate as EmbedUpdate exposing (EmbedUpdate)
 import Pages.Embed.Types.RevisionId as RevisionId exposing (RevisionId)
 import Time
+
+
+port pagesEmbedEffectsStateOut : Value -> Cmd msg
 
 
 processOutbound : Outbound msg -> State model -> ( State model, Cmd (Msg msg) )
@@ -30,6 +34,20 @@ processOutbound effect state =
             ( state
             , Handlers.runEmbed revisionId
                 |> Cmd.map (callback >> UserMsg)
+            )
+
+        GoToPosition position ->
+            ( state
+            , Encode.object
+                [ ( "tag", Encode.string "GoToPosition" )
+                , ( "contents"
+                  , Encode.list
+                        [ Encode.int position.line
+                        , Encode.int position.column
+                        ]
+                  )
+                ]
+                |> pagesEmbedEffectsStateOut
             )
 
         Outbound.Batch outbounds ->

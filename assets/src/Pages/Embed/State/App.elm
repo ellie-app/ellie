@@ -61,6 +61,7 @@ type Msg
     | EmbedRunStarted
     | RunCompleted (Result RunEmbedError (Maybe (Maybe Error)))
     | PanelSelected Panel
+    | GoToPosition Error.Position
 
 
 update : Msg -> Model -> ( Model, Outbound Msg )
@@ -105,7 +106,10 @@ update msg model =
             ( Working state, Outbound.none )
 
         ( Working state, RunCompleted (Err _) ) ->
-            ( Working { state | output = Crashed "Couldn't initiate compiler" }
+            ( Working
+                { state
+                    | output = Crashed "Compiler process failed to start. Sometimes this is because of a network connection error. If you are online, though, this was a server failure and it has been automatically reported."
+                }
             , Outbound.none
             )
 
@@ -133,6 +137,11 @@ update msg model =
 
                 _ ->
                     ( model, Outbound.none )
+
+        ( Working state, GoToPosition position ) ->
+            ( Working { state | panel = Panel.Elm }
+            , Outbound.GoToPosition position
+            )
 
         _ ->
             ( model, Outbound.none )
