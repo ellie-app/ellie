@@ -107,12 +107,19 @@ update msg state =
                     ( { state | channel = Joining (state.refId + 1), refId = state.refId + 1 }
                     , Socket.send state.url <|
                         Encode.encode 0 <|
-                            Encode.object
-                                [ ( "join_ref", Encode.null )
-                                , ( "ref", Encode.string <| toString (state.refId + 1) )
-                                , ( "topic", Encode.string "__absinthe__:control" )
-                                , ( "event", Encode.string "phx_join" )
-                                , ( "payload", Encode.object [] )
+                            -- Encode.object
+                            --     [ ( "join_ref", Encode.null )
+                            --     , ( "ref", Encode.string <| toString (state.refId + 1) )
+                            --     , ( "topic", Encode.string "__absinthe__:control" )
+                            --     , ( "event", Encode.string "phx_join" )
+                            --     , ( "payload", Encode.object [] )
+                            --     ]
+                            Encode.list
+                                [ Encode.null
+                                , Encode.string <| toString (state.refId + 1)
+                                , Encode.string "__absinthe__:control"
+                                , Encode.string "phx_join"
+                                , Encode.object []
                                 ]
                     )
 
@@ -136,18 +143,25 @@ update msg state =
                     ( { state | refId = state.refId + 1 }
                     , Socket.send state.url <|
                         Encode.encode 0 <|
-                            Encode.object
-                                [ ( "join_ref", Encode.string <| toString joinRef )
-                                , ( "ref", Encode.string <| toString (state.refId + 1) )
-                                , ( "topic", Encode.string "__absinthe__:control" )
-                                , ( "event", Encode.string "doc" )
-                                , ( "payload"
-                                  , Encode.object
-                                        [ ( "query"
-                                          , Encode.string <| Document.serializeSubscription state.document
-                                          )
-                                        ]
-                                  )
+                            -- Encode.object
+                            --     [ ( "join_ref", Encode.string <| toString joinRef )
+                            --     , ( "ref", Encode.string <| toString (state.refId + 1) )
+                            --     , ( "topic", Encode.string "__absinthe__:control" )
+                            --     , ( "event", Encode.string "doc" )
+                            --     , ( "payload"
+                            --       , Encode.object
+                            --             [ ( "query"
+                            --               , Encode.string <| Document.serializeSubscription state.document
+                            --               )
+                            --             ]
+                            --       )
+                            --     ]
+                            Encode.list
+                                [ Encode.string <| toString joinRef
+                                , Encode.string <| toString (state.refId + 1)
+                                , Encode.string "__absinthe__:control"
+                                , Encode.string "doc"
+                                , Encode.object [ ( "query", Encode.string <| Document.serializeSubscription state.document ) ]
                                 ]
                     )
 
@@ -184,12 +198,19 @@ update msg state =
             ( { state | refId = state.refId + 1 }
             , Socket.send state.url <|
                 Encode.encode 0 <|
-                    Encode.object
-                        [ ( "join_ref", Encode.null )
-                        , ( "ref", Encode.string <| toString (state.refId + 1) )
-                        , ( "topic", Encode.string "phoenix" )
-                        , ( "event", Encode.string "heartbeat" )
-                        , ( "payload", Encode.object [] )
+                    -- Encode.object
+                    --     [ ( "join_ref", Encode.null )
+                    --     , ( "ref", Encode.string <| toString (state.refId + 1) )
+                    --     , ( "topic", Encode.string "phoenix" )
+                    --     , ( "event", Encode.string "heartbeat" )
+                    --     , ( "payload", Encode.object [] )
+                    --     ]
+                    Encode.list
+                        [ Encode.null
+                        , Encode.string <| toString (state.refId + 1)
+                        , Encode.string "phoenix"
+                        , Encode.string "heartbeat"
+                        , Encode.object []
                         ]
             )
 
@@ -313,8 +334,16 @@ nonsenseRawMessage =
 rawMessageDecoder : Decoder RawMessage
 rawMessageDecoder =
     Decode.map5 RawMessage
-        (Decode.field "join_ref" (Decode.map (Maybe.andThen (String.toInt >> Result.toMaybe)) (Decode.nullable Decode.string)))
-        (Decode.field "ref" (Decode.map (Maybe.andThen (String.toInt >> Result.toMaybe)) (Decode.nullable Decode.string)))
-        (Decode.field "topic" Decode.string)
-        (Decode.field "event" Decode.string)
-        (Decode.field "payload" Decode.value)
+        (Decode.index 0 (Decode.map (Maybe.andThen (String.toInt >> Result.toMaybe)) (Decode.nullable Decode.string)))
+        (Decode.index 1 (Decode.map (Maybe.andThen (String.toInt >> Result.toMaybe)) (Decode.nullable Decode.string)))
+        (Decode.index 2 Decode.string)
+        (Decode.index 3 Decode.string)
+        (Decode.index 4 Decode.value)
+
+
+
+-- (Decode.field "join_ref" (Decode.map (Maybe.andThen (String.toInt >> Result.toMaybe)) (Decode.nullable Decode.string)))
+-- (Decode.field "ref" (Decode.map (Maybe.andThen (String.toInt >> Result.toMaybe)) (Decode.nullable Decode.string)))
+-- (Decode.field "topic" Decode.string)
+-- (Decode.field "event" Decode.string)
+-- (Decode.field "payload" Decode.value)

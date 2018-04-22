@@ -1,3 +1,5 @@
+import { requestIdleCallback, cancelIdleCallback } from 'request-idle-callback'
+
 const getToken = (editor) => {
   const position = editor.getCursor()
   const line = position.line
@@ -268,7 +270,7 @@ const start = (app) => {
 
       _onCursorActivity() {
         this._token = STALE_TOKEN
-        this._idleCallback = window.requestIdleCallback(() => {
+        this._idleCallback = requestIdleCallback(() => {
           this._idleCallback = null
           this.dispatchEvent(new CustomEvent('settled'))
         })

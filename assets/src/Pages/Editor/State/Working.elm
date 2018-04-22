@@ -248,7 +248,7 @@ init token user revision defaultPackages =
                 ( model
                 , Outbound.batch
                     [ outbound
-                    , Outbound.Delay 1000 AnimationFinished
+                    , Outbound.Delay 990 AnimationFinished
                     , Outbound.GetDocs model.packages DocsReceived
                     ]
                 )

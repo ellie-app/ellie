@@ -11,6 +11,7 @@ port module Pages.Editor.Effects.State
 import Data.Jwt as Jwt exposing (Jwt)
 import Debounce exposing (Debounce)
 import Dict exposing (Dict)
+import Ellie.Ui.Output as Output
 import Elm.Docs as Docs exposing (Module)
 import Elm.Package as Package exposing (Package)
 import Elm.Project as Project exposing (Project)
@@ -204,8 +205,7 @@ processOutbound onError effect state =
 
         ReloadIframe ->
             ( state
-            , Encode.genericUnion "ReloadIframe" []
-                |> pagesEditorEffectsStateOut
+            , Output.reload
             )
 
         Redirect url ->

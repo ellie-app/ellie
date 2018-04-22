@@ -1,3 +1,5 @@
+import { requestIdleCallback, cancelIdleCallback } from 'request-idle-callback'
+
 export default {
   start(app) {
     app.ports.ellieUiOutputOut.subscribe((data) => {
@@ -36,8 +38,9 @@ export default {
     
       // DEBUGGER
       var debuggerWindowProxy = null
+      var iframe = document.createElement('iframe')
       window.open = function () {
-        var iframe = document.createElement('iframe')
+        iframe.style.display = 'block'
         iframe.style.zIndex = 999999999
         iframe.style.width = '100%'
         iframe.style.height = '100%'
@@ -45,6 +48,7 @@ export default {
         iframe.style.top = 0
         iframe.style.left = 0
         iframe.style.border = 0
+        iframe.src = 'javascript:void(0);'
         document.body.appendChild(iframe)
         var onClose = function () {}
         debuggerWindowProxy = Object.defineProperties({}, {
@@ -53,7 +57,7 @@ export default {
           },
           close: {
             value: function () {
-              document.body.removeChild(iframe)
+              iframe.style.display = 'none'
               onClose()
             }
           },
@@ -128,6 +132,10 @@ export default {
 
     const fixHtml = (htmlCode, scriptSrc) => {
       const doc = parser.parseFromString(htmlCode, 'text/html')
+      const charset = doc.createElement('meta')
+      charset.setAttribute('charset', 'utf-8')
+      doc.head.insertBefore(charset, doc.head.children[0])
+
       const random = Math.floor(9007199254740991 * Math.random())
 
       doc.querySelectorAll('script').forEach(el => {
