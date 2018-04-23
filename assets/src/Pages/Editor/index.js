@@ -28,7 +28,7 @@ import '../../Ellie/Ui/CodeEditor.css'
 import './Views/Setup.css'
 import './Main.css'
 import Main from './Main'
-import registerServiceWorker, { ServiceWorkerNoSupportError } from 'service-worker-loader!./ServiceWorker';
+import registerServiceWorker from 'serviceworker-loader!./ServiceWorker';
 
 const Elm = require('./Main.elm')
 
