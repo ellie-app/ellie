@@ -4,6 +4,10 @@
   "repository": "https://github.com/lukewestby/ellie.git",
   "version": "1.0.0",
   "license": "BSD-3-Clause",
+  "engines": {
+    "node": "9.7.1",
+    "yarn": "1.6.0"
+  },
   "dependencies": {
     "babel-core": "6.25.0",
     "babel-loader": "7.1.1",
