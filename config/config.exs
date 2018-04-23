@@ -31,8 +31,8 @@ config :logger, :console,
   format: "$time $metadata[$level] $message\n",
   metadata: []
 
-config :porcelain, :driver, Porcelain.Driver.Goon
-config :porcelain, :goon_driver_path, Path.expand("../priv/static/bin/goon", __DIR__)
+# config :porcelain, :driver, Porcelain.Driver.Goon
+# config :porcelain, :goon_driver_path, Path.expand("../priv/static/bin/goon", __DIR__)
 
 
 config :absinthe,
