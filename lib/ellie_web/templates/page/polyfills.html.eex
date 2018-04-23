@@ -4,6 +4,6 @@
         script.src = typeof window.customElements === 'undefined' ?
             '//cdn.jsdelivr.net/npm/@webcomponents/custom-elements@1.1.0/custom-elements.min.js' :
             '//cdn.jsdelivr.net/npm/@webcomponents/custom-elements@1.1.0/src/native-shim.js'
-        document.head.appendChild(script)
+        document.head.insertBefore(script, currentScript)
     }())
 </script>
