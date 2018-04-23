@@ -6,8 +6,6 @@ defmodule Ellie.Elm.Platform.Impl18 do
   alias Ellie.Elm.Platform.Parser
   use GenServer
 
-  @bin_path Path.expand("../../../../priv/bin/0.18.0", __DIR__)
-
   @behaviour Ellie.Elm.Platform
 
   def setup(root) do
@@ -30,7 +28,7 @@ defmodule Ellie.Elm.Platform.Impl18 do
   end
 
   def format(code) do
-    binary = Path.join(@bin_path, "elm-format")
+    binary = Application.app_dir(:ellie, "priv/bin/0.18.0/elm-format")
     args = ["--stdin"]
     options = [in: code, out: :string, err: :string]
     result = Porcelain.exec(binary, args, options)
@@ -105,7 +103,7 @@ defmodule Ellie.Elm.Platform.Impl18 do
   end
 
   def handle_call({:elm_package, :init, root}, _from, state) do
-    binary = Path.join(@bin_path, "elm-package")
+    binary = Application.app_dir(:ellie, "priv/bin/0.18.0/elm-package")
     args = ["install", "--yes"]
     options = [out: :string, err: :string, dir: root]
     result = Porcelain.exec(binary, args, options)
@@ -118,7 +116,7 @@ defmodule Ellie.Elm.Platform.Impl18 do
   end
 
   def handle_call({:elm_make, root, entry, output}, _from, state) do
-    binary = Path.join(@bin_path, "elm-make")
+    binary = Application.app_dir(:ellie, "priv/bin/0.18.0/elm-make")
     args = [entry, "--report", "json", "--yes", "--debug", "--output", output]
     options = [out: :string, err: :string, dir: root]
     result = Porcelain.exec(binary, args, options)

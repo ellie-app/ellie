@@ -4,7 +4,6 @@ defmodule Ellie.Elm.Platform.Impl19 do
   require Logger
 
   @behaviour Ellie.Elm.Platform
-  @bin_path Path.expand("../../../../priv/bin/0.19.0", __DIR__)
 
   def setup(root) do
     write_project!(root, %Project{}) # write default project file
@@ -20,7 +19,7 @@ defmodule Ellie.Elm.Platform.Impl19 do
   end
 
   defp install_by_name(root, name) do
-    binary = Path.join(@bin_path, "elm")
+    binary = Application.app_dir(:ellie, "priv/bin/0.19.0/elm")
     args = ["install", Name.to_string(name)]
     options = [out: :string, err: :string, dir: root]
     result = Porcelain.exec(binary, args, options)
@@ -37,9 +36,10 @@ defmodule Ellie.Elm.Platform.Impl19 do
 
   def compile(options) do
     %{root: root, entry: entry, output: output} = Enum.into(options, %{})
-    binary = Path.join(@bin_path, "elm")
+    binary = Application.app_dir(:ellie, "priv/bin/0.19.0/elm")
     args = ["make", entry, "--debug", "--output", output, "--report", "json"]
     options = [dir: root, out: :string, err: :string]
+    require IEx; IEx.pry()
     result = Porcelain.exec(binary, args, options)
     Logger.debug("elm make\nexit: #{result.status}\nstdout: #{result.out}\nstderr: #{result.err}\n")
     case result do
@@ -58,7 +58,7 @@ defmodule Ellie.Elm.Platform.Impl19 do
   end
 
   def format(code) do
-    binary = Path.join(@bin_path, "elm-format")
+    binary = Application.app_dir(:ellie, "priv/bin/0.19.0/elm-format")
     args = ["--stdin"]
     options = [in: code, out: :string, err: :string]
     result = Porcelain.exec(binary, args, options)
