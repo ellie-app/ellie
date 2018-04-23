@@ -32,7 +32,7 @@ config :logger, :console,
   metadata: []
 
 config :porcelain, :driver, Porcelain.Driver.Goon
-config :porcelain, :goon_driver_path, Path.expand("../priv/bin/goon", __DIR__)
+config :porcelain, :goon_driver_path, Path.expand("../priv/static/bin/goon", __DIR__)
 
 
 config :absinthe,
