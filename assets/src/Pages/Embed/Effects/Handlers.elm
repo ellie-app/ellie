@@ -18,6 +18,7 @@ import Ellie.Api.Query as ApiQuery
 import Ellie.Api.Scalar as ApiScalar
 import Ellie.Api.Subscription as ApiSubscription
 import Ellie.Api.Union.EmbedUpdate as ApiEmbedUpdate
+import Ellie.Constants as Constants
 import Elm.Error as Error exposing (Error)
 import Elm.Package as Package exposing (Package)
 import Graphqelm.Http as GraphqlHttp
@@ -114,7 +115,7 @@ socket revisionId =
                 ]
     in
     Subscription.init
-        "ws://localhost:4000/api/sockets/websocket?vsn=2.0.0"
+        (Constants.socketOrigin ++ "/api/sockets/websocket?vsn=2.0.0")
         Debug.log
         -- Subscription.emptyLogger
         selection

@@ -31,6 +31,7 @@ import Ellie.Api.Query as ApiQuery
 import Ellie.Api.Scalar as ApiScalar
 import Ellie.Api.Subscription as ApiSubscription
 import Ellie.Api.Union.WorkspaceUpdate as ApiWorkspaceUpdate
+import Ellie.Constants as Constants
 import Elm.Docs as Docs
 import Elm.Error as ElmError
 import Elm.Name as Name
@@ -222,7 +223,7 @@ setupSocket token =
                 ]
     in
     Subscription.init
-        ("ws://localhost:4000/api/sockets/websocket?vsn=2.0.0&token=" ++ Jwt.toString token)
+        (Constants.socketOrigin ++ "/api/sockets/websocket?vsn=2.0.0&token=" ++ Jwt.toString token)
         Debug.log
         selection
 

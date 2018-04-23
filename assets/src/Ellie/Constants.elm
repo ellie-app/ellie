@@ -41,9 +41,9 @@ cdnBase =
     "%CDN_BASE%"
 
 
-workspaceUrl : String
-workspaceUrl =
-    "ws://localhost:1337/workspace"
+socketOrigin : String
+socketOrigin =
+    "%SOCKET_ORIGIN%"
 
 
 assetBase : String

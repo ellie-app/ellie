@@ -49,6 +49,7 @@ module.exports = {
           StringReplacePlugin.replace({
             replacements: [
               { pattern: /\%SERVER_ORIGIN\%/g, replacement: () => process.env.SERVER_HOSTNAME },
+              { pattern: /\%SOCKET_ORIGIN\%/g, replacement: () => process.env.SOCKET_ORIGIN },
               { pattern: /\%ENV\%/g, replacement: () => process.env.NODE_ENV },
               { pattern: /\%PACKAGE_SITE\%/g, replacement: () => process.env.PACKAGE_SITE },
             ]
