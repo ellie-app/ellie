@@ -11,5 +11,5 @@ pushd assets
 popd
 mix "${phoenix_ex}.digest"
 
-echo "[SKIP] 4) Downloading runtime executables"
-# mix ellie.binstall
+echo "4) Downloading runtime executables"
+mix ellie.binstall
