@@ -7,7 +7,7 @@ mix ellie.graphql
 
 echo "3) Building client applications"
 pushd assets
-yarn run build
+# yarn run build
 popd
 mix "${phoenix_ex}.digest"
 
