@@ -15,7 +15,7 @@ module.exports = {
     path: path.resolve(__dirname + '/../priv/static'),
     filename: '[name].js',
     chunkFilename: 'chunk.[name].js',
-    publicPath: '/static/'
+    publicPath: '/assets/'
   },
 
   module: {
@@ -80,7 +80,7 @@ module.exports = {
       'process.env.NODE_ENV': JSON.stringify(process.env.NODE_ENV),
     }),
     new webpack.optimize.OccurrenceOrderPlugin(),
-    new webpack.optimize.UglifyJsPlugin({ compress: true, mangle: true }),
+    // new webpack.optimize.UglifyJsPlugin({ compress: true, mangle: true }),
     new StringReplacePlugin()
   ]
 }

@@ -39,7 +39,6 @@ defmodule Ellie.Elm.Platform.Impl19 do
     binary = Application.app_dir(:ellie, "priv/bin/0.19.0/elm")
     args = ["make", entry, "--debug", "--output", output, "--report", "json"]
     options = [dir: root, out: :string, err: :string]
-    require IEx; IEx.pry()
     result = Porcelain.exec(binary, args, options)
     Logger.debug("elm make\nexit: #{result.status}\nstdout: #{result.out}\nstderr: #{result.err}\n")
     case result do

@@ -28,7 +28,6 @@ import '../../Ellie/Ui/CodeEditor.css'
 import './Views/Setup.css'
 import './Main.css'
 import Main from './Main'
-import registerServiceWorker from 'serviceworker-loader!./ServiceWorker';
 
 const Elm = require('./Main.elm')
 
@@ -48,6 +47,3 @@ document.addEventListener('DOMContentLoaded', () => {
   EffectsState.start(app)
   Main.start(app)
 })
-
-registerServiceWorker({ scope: '/' })
-  .catch((e) => { console.log(e) })

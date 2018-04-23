@@ -12,6 +12,14 @@ defmodule EllieWeb.Router do
     plug EllieWeb.Context
   end
 
+  scope "/assets" do
+    if Application.get_env(:ellie, :env) == :prod do
+      forward "/", Plug.Static, at: "/", from: :ellie, gzip: true
+    else
+      forward "/", PlugProxy, upstream: "http://localhost:8080/"
+    end
+  end
+
   scope "/api" do
     pipe_through :api
     forward "/graphiql", Absinthe.Plug.GraphiQL, schema: EllieWeb.Graphql.Schema
@@ -24,7 +32,6 @@ defmodule EllieWeb.Router do
     get "/output/embed/:project_id/:revision_number", EllieWeb.PageController, :embed_result
     get "/a/terms/:version", EllieWeb.PageController, :terms
     get "/embed/:project_id/:revision_number", EllieWeb.PageController, :embed
-    get "/ServiceWorker.js", EllieWeb.PageController, :redirect_sw
     get "/*path", EllieWeb.PageController, :new_editor
   end
 end

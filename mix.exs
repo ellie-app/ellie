@@ -49,6 +49,7 @@ defmodule Ellie.Mixfile do
       {:phoenix, "~> 1.3.2"},
       {:phoenix_pubsub, "~> 1.0"},
       {:phoenix_ecto, "~> 3.2"},
+      {:plug_proxy, "~> 0.3.0"},
       {:postgrex, ">= 0.0.0"},
       {:phoenix_html, "~> 2.10.0"},
       {:phoenix_live_reload, "~> 1.0", only: :dev},
