@@ -9,6 +9,7 @@
     "yarn": "1.6.0"
   },
   "dependencies": {
+    "@webcomponents/custom-elements": "1.1.0",
     "babel-core": "6.25.0",
     "babel-loader": "7.1.1",
     "babel-plugin-elm-pre-minify": "0.1.2",

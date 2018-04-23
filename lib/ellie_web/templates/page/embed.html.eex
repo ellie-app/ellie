@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/custom-elements/1.0.8/custom-elements.min.js"></script>
+    <%= render("polyfills.html") %>
     <script src="<%= static_path(@conn, "/assets/embed.js") %>"></script>
   </head>
   <body></body>

@@ -2,7 +2,7 @@
 <html>
   <head>
     <meta charset="utf-8" />
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/custom-elements/1.0.8/custom-elements.min.js"></script>
+    <%= render("polyfills.html") %>
     <script src="<%= static_path(@conn, "/assets/editor.js") %>"></script>
   </head>
   <body></body>
