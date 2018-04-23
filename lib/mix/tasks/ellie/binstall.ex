@@ -38,5 +38,6 @@ defmodule Mix.Tasks.Ellie.Binstall do
   defp download(url, dest) do
     File.mkdir_p!(Path.dirname(dest))
     Mix.Shell.cmd("curl -L #{url} --output #{dest}", [], fn a -> a end)
+    Mix.Shell.cmd("chmod +x #{dest}", [], fn a -> a end)
   end
 end

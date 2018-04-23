@@ -12,7 +12,7 @@ defmodule EllieWeb.PageView do
 
   defp handle_relative(conn, relative) do
     if production?() do
-      static_path(conn, relative)
+      static_path(conn, "/" <> relative)
     else
       "http://localhost:8080/" <> relative
     end
