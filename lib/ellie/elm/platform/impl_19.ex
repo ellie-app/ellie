@@ -23,7 +23,7 @@ defmodule Ellie.Elm.Platform.Impl19 do
     args = ["install", Name.to_string(name)]
     options = [out: :string, err: :string, dir: root]
     result = Porcelain.exec(binary, args, options)
-    Logger.debug("elm install\nexit: #{inspect result}\n")
+    Logger.info("elm install\nexit: #{inspect result}\n")
     case result do
       %Porcelain.Result{status: 0} ->
         :ok
@@ -40,7 +40,7 @@ defmodule Ellie.Elm.Platform.Impl19 do
     args = ["make", entry, "--debug", "--output", output, "--report", "json"]
     options = [dir: root, out: :string, err: :string]
     result = Porcelain.exec(binary, args, options)
-    Logger.debug("elm make\nexit: #{result.status}\nstdout: #{result.out}\nstderr: #{result.err}\n")
+    Logger.info("elm make\nexit: #{result.status}\nstdout: #{result.out}\nstderr: #{result.err}\n")
     case result do
       %Porcelain.Result{err: "", status: 0} ->
         {:ok, nil}
