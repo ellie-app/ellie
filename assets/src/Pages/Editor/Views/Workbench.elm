@@ -3,6 +3,7 @@ module Pages.Editor.Views.Workbench exposing (..)
 import BoundedDeque exposing (BoundedDeque)
 import Css exposing (..)
 import Data.Jwt as Jwt exposing (Jwt)
+import Ellie.Constants as Constants
 import Ellie.Ui.Button as Button
 import Ellie.Ui.Errors as Errors
 import Ellie.Ui.Icon as Icon
@@ -455,7 +456,7 @@ viewInitial config =
 viewOutput : Bool -> Config msg -> Html msg
 viewOutput debug config =
     Output.view
-        [ Output.elmSource <| "http://localhost:4000/private/result?token=" ++ Jwt.toString config.token ++ "&elmVersion=" ++ Version.toString config.compilerVersion
+        [ Output.elmSource <| Constants.serverOrigin ++ "/private/result?token=" ++ Jwt.toString config.token ++ "&elmVersion=" ++ Version.toString config.compilerVersion
         , Output.onLog config.onLogReceived
         , Output.debug debug
         , Output.html <| config.htmlCode

@@ -27,17 +27,24 @@ defmodule Mix.Tasks.Ellie.Binstall do
   end
 
   defp download_and_unpack(url, dest) do
-    dir = Path.dirname(dest)
-    File.mkdir_p!(dir)
-    Mix.Shell.cmd("curl -L #{url} --output #{dest}", [], fn a -> a end)
-    Mix.Shell.cmd("tar xvzC #{dir} -f #{dest}", [], fn a -> a end)
-    Mix.Shell.cmd("rm #{dest}", [], fn a -> a end)
-    Mix.Shell.cmd("chmod +x #{dir}/*", [], fn a -> a end)
+    if not File.exists?(dest) do
+      dir = Path.dirname(dest)
+      File.mkdir_p!(dir)
+      Mix.Shell.cmd("curl -L #{url} --output #{dest}", [], fn a -> a end)
+      Mix.Shell.cmd("tar xvzC #{dir} -f #{dest}", [], fn a -> a end)
+      Mix.Shell.cmd("chmod +x #{dir}/*", [], fn a -> a end)
+    else
+      :ok
+    end
   end
 
   defp download(url, dest) do
-    File.mkdir_p!(Path.dirname(dest))
-    Mix.Shell.cmd("curl -L #{url} --output #{dest}", [], fn a -> a end)
-    Mix.Shell.cmd("chmod +x #{dest}", [], fn a -> a end)
+    if not File.exists?(dest) do
+      File.mkdir_p!(Path.dirname(dest))
+      Mix.Shell.cmd("curl -L #{url} --output #{dest}", [], fn a -> a end)
+      Mix.Shell.cmd("chmod +x #{dest}", [], fn a -> a end)
+    else
+      :ok
+    end
   end
 end
