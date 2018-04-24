@@ -1,4 +1,7 @@
 language: generic
+before_install:
+  - sudo apt-get update -qq
+  - sudo apt-get install -qq python python-pip
 script: ./scripts/ci/test.sh
 after_success:
   - ./scripts/ci/deploy_pr.sh

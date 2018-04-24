@@ -5,8 +5,6 @@ then
     total_steps=6
     echo "Deploying app for pull request"
     echo "(1/$total_steps) Installing Gigalixir CLI"
-    apt-get update
-    apt-get install python python-pip
     pip install --user gigalixir
 
     echo "(2/$total_steps) Logging into gigalixir"
@@ -28,6 +26,4 @@ then
     
     echo "(6/$total_steps) Running database migrations"
     gigalixir migrate $app_name
-
-    gigalixir set_
 fi
