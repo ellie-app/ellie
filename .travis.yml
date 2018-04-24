@@ -1,6 +1,6 @@
 language: generic
 before_install:
-  - pip install -U gigalixir
+  - sudo pip install -U gigalixir
 script: ./scripts/ci/test.sh
 after_success:
   - ./scripts/ci/deploy_pr.sh
