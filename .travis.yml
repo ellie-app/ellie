@@ -1,3 +1,4 @@
+language: generic
 script: ./scripts/ci/test.sh
 after_success:
   - ./scripts/ci/deploy_pr.sh
