@@ -1,7 +1,7 @@
 dist: trusty
 language: generic
 before_install:
-  - pip install --user urllib3[secure] gigalixir
+  - pip install --user ndg-httpsclient urllib3[secure] gigalixir
   - sed -i -e '/^import sys$/a import urllib3.contrib.pyopenssl\nurllib3.contrib.pyopenssl.inject_into_urllib3()' `which gigalixir`
 script: ./scripts/ci/test.sh
 after_success:
