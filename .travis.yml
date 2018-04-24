@@ -1,0 +1,2 @@
+after_success:
+  - ./scripts/ci/deploy_branch.sh
