@@ -23,13 +23,7 @@ const start = (app) => {
 
       case 'SaveToken':
         const token = contents
-        if (navigator.storage && navigator.storage.persist) {
-          navigator.storage.persist().then(() => {
-            localStorage.setItem('Pages.Editor.token', token)
-          })
-        } else {
-          localStorage.setItem('Pages.Editor.token', token)
-        }
+        localStorage.setItem('Pages.Editor.token', token)
         break
 
       case 'ReloadIframe':
