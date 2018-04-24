@@ -41,19 +41,6 @@ socketOrigin =
     "%SOCKET_ORIGIN%"
 
 
-assetBase : String
-assetBase =
-    if isProduction then
-        cdnBase ++ "/assets/"
-    else
-        "/"
-
-
-asset : String -> String
-asset relative =
-    assetBase ++ relative
-
-
 sidebarWidth : number
 sidebarWidth =
     250
