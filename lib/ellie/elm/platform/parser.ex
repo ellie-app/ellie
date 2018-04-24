@@ -31,6 +31,19 @@ defmodule Ellie.Elm.Platform.Parser do
   defp with_default(nil, a), do: a
   defp with_default(a, _a), do: a
 
+  def error_0_19_0(input) do
+    input
+    |> String.split("\n")
+    |> Enum.flat_map(fn line ->
+      if String.starts_with?(line, "{") do
+        [Poison.decode!(line)]
+      else
+        []
+      end
+    end)
+    |> List.first()
+  end
+
   def error_0_18_0(entry, input) do
     errors =
       input

@@ -1,6 +1,7 @@
 defmodule Ellie.Elm.Platform.Impl19 do
   alias Ellie.Elm.Project
   alias Ellie.Elm.Name
+  alias Ellie.Elm.Platform.Parser
   require Logger
 
   @behaviour Ellie.Elm.Platform
@@ -42,13 +43,8 @@ defmodule Ellie.Elm.Platform.Impl19 do
     result = Porcelain.exec(binary, args, options)
     Logger.info("elm make\nexit: #{result.status}\nstdout: #{result.out}\nstderr: #{result.err}\n")
     case result do
-      %Porcelain.Result{err: "", status: 0} ->
-        {:ok, nil}
-      %Porcelain.Result{err: string, status: 0} ->
-        case Poison.decode(string) do
-          {:ok, error} -> {:ok, error}
-          _ -> {:error, "unparseable compiler result"}
-        end
+      %Porcelain.Result{err: err, status: 0} ->
+        {:ok, Parser.error_0_19_0(err)}
       %Porcelain.Result{err: err, out: out, status: other} ->
         {:error, "compiler exited with code #{other}\nstdout: #{out}\nstderr:#{err}"}
       {:error, reason} ->
