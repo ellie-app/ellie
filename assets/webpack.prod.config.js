@@ -48,8 +48,8 @@ module.exports = {
         loaders:  [
           StringReplacePlugin.replace({
             replacements: [
-              { pattern: /\%SERVER_ORIGIN\%/g, replacement: () => process.env.SERVER_ORIGIN },
-              { pattern: /\%SOCKET_ORIGIN\%/g, replacement: () => process.env.SOCKET_ORIGIN },
+              { pattern: /\%SERVER_ORIGIN\%/g, replacement: () => 'https://' + process.env.SERVER_HOST },
+              { pattern: /\%SOCKET_ORIGIN\%/g, replacement: () => 'wss://' + process.env.SERVER_HOST },
               { pattern: /\%ENV\%/g, replacement: () => process.env.NODE_ENV },
               { pattern: /\%PACKAGE_SITE\%/g, replacement: () => process.env.PACKAGE_SITE },
             ]
@@ -74,8 +74,6 @@ module.exports = {
 
   plugins: [
     new webpack.DefinePlugin({
-      SERVER_ORIGIN: JSON.stringify(process.env.SERVER_ORIGIN),
-      CDN_BASE: JSON.stringify(process.env.CDN_BASE),
       OPBEAT_APP_ID: JSON.stringify(process.env.OPBEAT_FRONTEND_APP_ID),
       OPBEAT_ORGANIZATION_ID: JSON.stringify(process.env.OPBEAT_ORGANIZATION_ID),
       'process.env.NODE_ENV': JSON.stringify(process.env.NODE_ENV),

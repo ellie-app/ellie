@@ -55,8 +55,8 @@ module.exports = {
         loaders: [
           StringReplacePlugin.replace({
             replacements: [
-              { pattern: /\%CDN_BASE\%/g, replacement: () => 'https://s3.us-east-2.amazonaws.com/development-cdn.ellie-app.com' },
               { pattern: /\%SERVER_ORIGIN\%/g, replacement: () => 'http://localhost:4000' },
+              { pattern: /\&SOCKET_ORIGIN\%/g, replacement: () => 'ws://localhost:4000' },
               { pattern: /\%PACKAGE_SITE\%/g, replacement: () => process.env.PACKAGE_SITE },
               { pattern: /\%ENV\%/g, replacement: () => 'development' },
             ]
@@ -79,8 +79,6 @@ module.exports = {
 
   plugins: [
     new webpack.DefinePlugin({
-      CDN_BASE: JSON.stringify('https://s3.us-east-2.amazonaws.com/development-cdn.ellie-app.com'),
-      SERVER_ORIGIN: JSON.stringify('http://localhost:4000'),
       OPBEAT_APP_ID: JSON.stringify(process.env.OPBEAT_FRONTEND_APP_ID),
       OPBEAT_ORGANIZATION_ID: JSON.stringify(process.env.OPBEAT_ORGANIZATION_ID),
       'process.env.NODE_ENV': JSON.stringify('development')

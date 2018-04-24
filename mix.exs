@@ -41,8 +41,6 @@ defmodule Ellie.Mixfile do
       {:combine, "~> 0.10"},
       {:cowboy, "~> 1.0"},
       {:dataloader, "~> 1.0.0"},
-      {:distillery, "~> 1.5.2"},
-      {:download, "~> 0.0.4"},
       {:httpoison, "~> 1.1"},
       {:msgpax, "~> 2.0"},
       {:murmur, "~> 1.0"},

@@ -36,11 +36,6 @@ embedBase =
     "%SERVER_ORIGIN%/embed"
 
 
-cdnBase : String
-cdnBase =
-    "%CDN_BASE%"
-
-
 socketOrigin : String
 socketOrigin =
     "%SOCKET_ORIGIN%"
