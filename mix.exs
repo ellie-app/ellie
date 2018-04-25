@@ -70,7 +70,7 @@ defmodule Ellie.Mixfile do
       "ecto.setup": ["ecto.create", "ecto.migrate", "run priv/repo/seeds.exs"],
       "ecto.reset": ["ecto.drop", "ecto.setup"],
       "test": ["ecto.create --quiet", "ecto.migrate", "test"],
-      "ellie.graphql": ["loadpaths", "absinthe.schema.json ./priv/graphql/schema.json", "ellie.graphqelm"]
+      "generate_schema": ["loadpaths", "absinthe.schema.json ./priv/graphql/schema.json"]
     ]
   end
 end

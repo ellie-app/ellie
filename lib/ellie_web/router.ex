@@ -16,7 +16,7 @@ defmodule EllieWeb.Router do
     if Application.get_env(:ellie, :env) == :prod do
       forward "/", Plug.Static, at: "/", from: :ellie, gzip: true
     else
-      forward "/", PlugProxy, upstream: "http://localhost:8080/"
+      forward "/", PlugProxy, upstream: "http://webpack:8080/"
     end
   end
 

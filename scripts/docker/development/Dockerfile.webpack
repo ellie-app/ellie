@@ -1,0 +1,5 @@
+FROM node
+
+RUN npm install -g yarn
+
+WORKDIR /app

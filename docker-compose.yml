@@ -1,0 +1,38 @@
+version: '3.2'
+services:
+  phoenix:
+    command: ./scripts/docker/development/run.sh
+    build:
+      dockerfile: ./scripts/docker/development/Dockerfile.phoenix
+      context: .
+      args:
+        - elm_19_url=${ELM_19_URL}
+        - package_site=${PACKAGE_SITE}
+    volumes:
+      - type: bind
+        source: .
+        target: /app
+    ports:
+      - "4000:4000"
+    depends_on:
+      - database
+  webpack:
+    command: ./scripts/docker/development/run_webpack.sh
+    build:
+      dockerfile: ./scripts/docker/development/Dockerfile.webpack
+      context: .
+    volumes:
+      - type: bind
+        source: .
+        target: /app
+    depends_on:
+      - phoenix
+    ports:
+      - "8080:8080"
+  database:
+    image: "postgres:9.5"
+    restart: always
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_PASSWORD: postgres

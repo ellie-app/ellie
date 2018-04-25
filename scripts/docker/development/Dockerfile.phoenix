@@ -1,0 +1,43 @@
+FROM elixir
+
+ARG elm_19_url
+ARG package_site
+
+ENV DEBIAN_FRONTEND=noninteractive
+
+# Install postgres-client
+RUN echo "deb http://apt.postgresql.org/pub/repos/apt/ stretch-pgdg main" >> /etc/apt/sources.list.d/pgdg.list \
+    && wget -q https://www.postgresql.org/media/keys/ACCC4CF8.asc -O - | apt-key add - \
+    && apt-get update \
+    && apt-get -yq --no-install-recommends install inotify-tools postgresql-client-9.5
+
+# Install Phoenix deps
+RUN mix local.hex --force \
+    && mix local.rebar --force \
+    && mix archive.install https://github.com/phoenixframework/archives/raw/master/phoenix_new.ez --force
+
+# Set up Elm platform
+RUN mkdir -p /tmp/ellie-bin/0.18.0 && mkdir -p /tmp/ellie-bin/0.19.0 && mkdir /elm_home
+
+ENV ELM_HOME=/elm_home
+
+ADD https://github.com/alco/goon/releases/download/v1.1.1/goon_linux_386.tar.gz /tmp/ellie-bin
+ADD https://github.com/elm-lang/elm-platform/releases/download/0.18.0-exp/elm-platform-linux-64bit.tar.gz /tmp/ellie-bin/0.18.0
+ADD https://github.com/avh4/elm-format/releases/download/0.7.0-exp/elm-format-0.18-0.7.0-exp-linux-x64.tgz /tmp/ellie-bin/0.18.0
+ADD $elm_19_url /tmp/ellie-bin/0.19.0
+
+RUN tar -xvC /tmp/ellie-bin/ -f /tmp/ellie-bin/goon_linux_386.tar.gz \
+    && tar -xvC /tmp/ellie-bin/0.18.0/ -f /tmp/ellie-bin/0.18.0/elm-platform-linux-64bit.tar.gz \
+    && tar -xvC /tmp/ellie-bin/0.18.0/ -f /tmp/ellie-bin/0.18.0/elm-format-0.18-0.7.0-exp-linux-x64.tgz \
+    && tar -xvC /tmp/ellie-bin/0.19.0/ -f /tmp/ellie-bin/0.19.0/elm.tar.gz \
+    && rm /tmp/ellie-bin/*gz \
+    && rm /tmp/ellie-bin/**/*gz \
+    && rm /tmp/ellie-bin/**/._* \
+    && chmod +x /tmp/ellie-bin/goon \
+    && chmod +x /tmp/ellie-bin/**/*
+
+WORKDIR /app
+
+ENV MIX_ENV=dev
+ENV PORT=4000
+ENV PACKAGE_SITE=$package_site

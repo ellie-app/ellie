@@ -2,7 +2,7 @@
 # yarn lockfile v1
 
 
-"@webcomponents/custom-elements@^1.1.0":
+"@webcomponents/custom-elements@1.1.0":
   version "1.1.0"
   resolved "https://registry.yarnpkg.com/@webcomponents/custom-elements/-/custom-elements-1.1.0.tgz#bcd5c3605a488ebbddf762f350944afc80bc16dc"
 

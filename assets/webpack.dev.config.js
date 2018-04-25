@@ -56,7 +56,7 @@ module.exports = {
           StringReplacePlugin.replace({
             replacements: [
               { pattern: /\%SERVER_ORIGIN\%/g, replacement: () => 'http://localhost:4000' },
-              { pattern: /\&SOCKET_ORIGIN\%/g, replacement: () => 'ws://localhost:4000' },
+              { pattern: /\%SOCKET_ORIGIN\%/g, replacement: () => 'ws://localhost:4000' },
               { pattern: /\%PACKAGE_SITE\%/g, replacement: () => process.env.PACKAGE_SITE },
               { pattern: /\%ENV\%/g, replacement: () => 'development' },
             ]
@@ -90,6 +90,7 @@ module.exports = {
     stats: { colors: true },
     historyApiFallback: true,
     port: '8080',
+    host: '0.0.0.0',
     allowedHosts: [
       'http://localhost:4000'
     ],

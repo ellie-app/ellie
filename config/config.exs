@@ -34,6 +34,9 @@ config :logger, :console,
 config :absinthe,
   schema: EllieWeb.Graphql.Schema
 
+config :porcelain, :goon_driver_path, Path.expand("../priv/bin/goon", __DIR__)
+config :porcelain, driver: Porcelain.Driver.Goon
+
 # Import environment specific config. This must remain at the bottom
 # of this file so it overrides the configuration defined above.
 import_config "#{Mix.env}.exs"
