@@ -303,9 +303,6 @@ subscriptions model =
         Attaching { token } ->
             Inbound.WorkspaceUpdates token chooseUpdate
 
-        Loading { token } ->
-            Inbound.WorkspaceUpdates token chooseUpdate
-
         _ ->
             Inbound.none
 
