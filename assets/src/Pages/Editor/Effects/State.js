@@ -3,18 +3,6 @@ const start = (app) => {
     e.returnValue = 'You have unsaved work. Are you sure you want to go?'
   }
 
-  window.WebSocket = class extends WebSocket {
-    constructor(...args) {
-      super(...args)
-      this.addEventListener('close', () => {
-        app.ports.pagesEditorEffectsStateIn.send({
-          topic: 'SocketClosed',
-          contents: this.url
-        })
-      })
-    }
-  }
-
   app.ports.pagesEditorEffectsStateOut.subscribe(({ tag, contents }) => {
     switch (tag) {
       case 'OpenInNewTab':

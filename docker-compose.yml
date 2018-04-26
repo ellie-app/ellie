@@ -31,8 +31,13 @@ services:
       - "8080:8080"
   database:
     image: "postgres:9.5"
-    restart: always
     ports:
       - "5432:5432"
     environment:
       POSTGRES_PASSWORD: postgres
+    volumes:
+      - type: bind
+        source: ./.local_tmp/postgres-data
+        target: /var/lib/postgresql/data
+        volume:
+          osxfs: delegated

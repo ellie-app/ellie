@@ -58,9 +58,10 @@ module.exports = {
             loader: 'babel-loader',
             options: {
               presets: [
-                [ 'env', { 'targets': { 'uglify': true } } ]
+                [ '@babel/preset-env', { 'targets': { 'uglify': true } } ],
+                [ '@babel/preset-stage-2', { decoratorsLegacy: true } ]
               ],
-              plugins: ['elm-pre-minify']
+              plugins: ['babel-plugin-elm-pre-minify']
             },
           },
           {

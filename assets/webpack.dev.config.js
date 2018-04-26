@@ -40,8 +40,10 @@ module.exports = {
         use: {
           loader: 'babel-loader',
           options: {
-            presets: ['es2017'],
-            plugins: ['syntax-dynamic-import'],
+            presets: [
+              '@babel/preset-env',
+              [ '@babel/preset-stage-2', { decoratorsLegacy: true } ]
+            ]
           },
         },
       },
