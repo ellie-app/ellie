@@ -8,8 +8,7 @@ use Mix.Config
 # General application configuration
 config :ellie,
   ecto_repos: [Ellie.Repo],
-  env: Mix.env,
-  package_endpoint: System.get_env("PACKAGE_SITE")
+  env: Mix.env
 
 config :ellie, Ellie.Scheduler,
   global: true,

@@ -4,7 +4,7 @@ defmodule Ellie.Elm.Package do
   defstruct name: %Ellie.Elm.Name{}, version: %Ellie.Elm.Version{}
 
   def docs_view_link(%Ellie.Elm.Package{} = package) do
-    Application.get_env(:ellie, :package_endpoint) <>
+    System.get_env("PACKAGE_SITE") <>
       "/packages/" <>
       package.name.user <>
       "/" <>

@@ -21,24 +21,40 @@ apiBase =
     "/api"
 
 
+hostname : String
+hostname =
+    "%HOSTNAME%"
+
+
+secure : Bool
+secure =
+    "%PROTOCOL%" == "https:"
+
+
 serverOrigin : String
 serverOrigin =
-    "%SERVER_ORIGIN%"
+    if secure then
+        "https://" ++ hostname
+    else
+        "http://" ++ hostname
 
 
 editorBase : String
 editorBase =
-    "%SERVER_ORIGIN%"
+    serverOrigin
 
 
 embedBase : String
 embedBase =
-    "%SERVER_ORIGIN%/embed"
+    serverOrigin ++ "/embed"
 
 
 socketOrigin : String
 socketOrigin =
-    "%SOCKET_ORIGIN%"
+    if secure then
+        "wss://" ++ hostname
+    else
+        "ws://" ++ hostname
 
 
 sidebarWidth : number

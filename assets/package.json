@@ -34,7 +34,8 @@
   "scripts": {
     "start": "yarn run watch",
     "watch": "MIX_ENV=dev webpack-dev-server --watch --config ./webpack.dev.config.js",
-    "build": "webpack --config ./webpack.prod.config.js"
+    "build": "webpack --config ./webpack.prod.config.js",
+    "graphql": "graphqelm --introspection-file ../priv/graphql/schema.json --base Ellie.Api --output elm-stuff/generated/dillonkearns/graphqelm"
   },
   "devDependencies": {
     "chokidar-cli": "^1.2.0"

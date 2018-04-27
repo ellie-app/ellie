@@ -44,7 +44,7 @@ defmodule Ellie.Search do
   end
 
   defp download() do
-    url = Application.get_env(:ellie, :package_endpoint) <> "/search.json"
+    url = System.get_env("PACKAGE_SITE") <> "/search.json"
     case HTTPoison.get(url) do
       {:ok, %HTTPoison.Response{status_code: 200, body: body}} ->
         case EnumHelpers.traverse_result(Poison.decode!(body), &Searchable.from_json/1) do

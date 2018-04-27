@@ -31,10 +31,9 @@ module.exports = {
           loader: 'babel-loader',
           options: {
             presets: [
-              ['stage-2'],
-              ['env', { 'targets': { 'uglify': true } }]
-            ],
-            plugins: ['syntax-dynamic-import']
+              [ '@babel/preset-env', { 'targets': { 'uglify': true } } ],
+              [ '@babel/preset-stage-2', { decoratorsLegacy: true } ]
+            ]
           }
         }
       },
@@ -48,6 +47,8 @@ module.exports = {
         loaders:  [
           StringReplacePlugin.replace({
             replacements: [
+              { pattern: /'\%HOSTNAME\%'/g, replacement: () => 'window.location.host' },
+              { pattern: /'\%PROTOCOL\%'/g, replacement: () => 'window.location.protocol' },
               { pattern: /\%SERVER_ORIGIN\%/g, replacement: () => 'https://' + process.env.SERVER_HOST },
               { pattern: /\%SOCKET_ORIGIN\%/g, replacement: () => 'wss://' + process.env.SERVER_HOST },
               { pattern: /\%ENV\%/g, replacement: () => process.env.NODE_ENV },
@@ -58,8 +59,7 @@ module.exports = {
             loader: 'babel-loader',
             options: {
               presets: [
-                [ '@babel/preset-env', { 'targets': { 'uglify': true } } ],
-                [ '@babel/preset-stage-2', { decoratorsLegacy: true } ]
+                [ '@babel/preset-env', { 'targets': { 'uglify': true } } ]
               ],
               plugins: ['babel-plugin-elm-pre-minify']
             },

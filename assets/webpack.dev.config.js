@@ -57,6 +57,8 @@ module.exports = {
         loaders: [
           StringReplacePlugin.replace({
             replacements: [
+              { pattern: /'\%HOSTNAME\%'/g, replacement: () => 'window.location.host' },
+              { pattern: /'\%PROTOCOL\%'/g, replacement: () => 'window.location.protocol' },
               { pattern: /\%SERVER_ORIGIN\%/g, replacement: () => 'http://localhost:4000' },
               { pattern: /\%SOCKET_ORIGIN\%/g, replacement: () => 'ws://localhost:4000' },
               { pattern: /\%PACKAGE_SITE\%/g, replacement: () => process.env.PACKAGE_SITE },
