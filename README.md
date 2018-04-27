@@ -1,20 +1,25 @@
 # Ellie
 
-To start your Phoenix server:
+## Development
 
-  * Install dependencies with `mix deps.get`
-  * Create and migrate your database with `mix ecto.create && mix ecto.migrate`
-  * Install Node.js dependencies with `cd assets && npm install`
-  * Start Phoenix endpoint with `mix phx.server`
+Ellie is a web application with an Elixir backend and an Elm frontend. It runs inside Docker.
+For development we use docker-compose to install all of the software and start up the
+various programs in the correct order. To begin developing Ellie, all you need to do is:
 
-Now you can visit [`localhost:4000`](http://localhost:4000) from your browser.
+1. Install Docker
 
-Ready to run in production? Please [check our deployment guides](http://www.phoenixframework.org/docs/deployment).
+[Official installation instructions](https://docs.docker.com/install/)
 
-## Learn more
+2. Start with docker-compose
 
-  * Official website: http://www.phoenixframework.org/
-  * Guides: http://phoenixframework.org/docs/overview
-  * Docs: https://hexdocs.pm/phoenix
-  * Mailing list: http://groups.google.com/group/phoenix-talk
-  * Source: https://github.com/phoenixframework/phoenix
+```
+$ docker-compose up
+```
+
+The first time you run this it will download the images for our base operating system, install
+all of the software for building and running, and compile everything. It attaches the project
+directory as a volume, so all of the build artifacts will be written to your file system. 
+
+> **⚠️ WARNING**
+> It's important to be careful about editor tools that modify these build artifacts! They are
+> generated on a Linux operating system and might be incompatible with your machine.

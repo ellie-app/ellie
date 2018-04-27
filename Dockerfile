@@ -1,3 +1,6 @@
+# This Dockerfile is for production. Ideally I'd like to put it in scripts/docker/production
+# but right now Ellie is deployed to zeit.co's now.sh service. now.sh can only find Dockerfiles
+# in the root of the project. Development dockerfiles are found in scripts/docker/development.
 FROM elixir:1.6
 
 ENV DEBIAN_FRONTEND=noninteractive
@@ -74,4 +77,4 @@ RUN cd /app/assets \
 
 # Run the server
 EXPOSE 4000
-CMD mix phx.server
+CMD mix do ecto.migrate, phx.server
