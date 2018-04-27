@@ -1,8 +1,5 @@
 FROM elixir
 
-ARG elm_19_url
-ARG package_site
-
 ENV DEBIAN_FRONTEND=noninteractive
 
 # Install postgres-client
@@ -11,20 +8,26 @@ RUN echo "deb http://apt.postgresql.org/pub/repos/apt/ stretch-pgdg main" >> /et
     && apt-get update \
     && apt-get -yq --no-install-recommends install inotify-tools postgresql-client-9.5
 
+# Install libsysconfcpus
+RUN git clone https://github.com/obmarg/libsysconfcpus.git /usr/local/src/libsysconfcpus \
+    && cd /usr/local/src/libsysconfcpus \
+    && ./configure \
+    && make \
+    && make install \
+    && cd / \
+    && sysconfcpus --version
+
 # Install Phoenix deps
 RUN mix local.hex --force \
     && mix local.rebar --force \
     && mix archive.install https://github.com/phoenixframework/archives/raw/master/phoenix_new.ez --force
 
 # Set up Elm platform
-RUN mkdir -p /tmp/ellie-bin/0.18.0 && mkdir -p /tmp/ellie-bin/0.19.0 && mkdir /elm_home
-
-ENV ELM_HOME=/elm_home
-
+RUN mkdir -p /tmp/ellie-bin/0.18.0 && mkdir -p /tmp/ellie-bin/0.19.0
 ADD https://github.com/alco/goon/releases/download/v1.1.1/goon_linux_386.tar.gz /tmp/ellie-bin
 ADD https://github.com/elm-lang/elm-platform/releases/download/0.18.0-exp/elm-platform-linux-64bit.tar.gz /tmp/ellie-bin/0.18.0
 ADD https://github.com/avh4/elm-format/releases/download/0.7.0-exp/elm-format-0.18-0.7.0-exp-linux-x64.tgz /tmp/ellie-bin/0.18.0
-RUN wget $elm_19_url -O /tmp/ellie-bin/0.19.0/elm
+RUN wget -q ***REMOVED*** -O /tmp/ellie-bin/0.19.0/elm
 
 RUN tar -xvC /tmp/ellie-bin/ -f /tmp/ellie-bin/goon_linux_386.tar.gz \
     && tar -xvC /tmp/ellie-bin/0.18.0/ -f /tmp/ellie-bin/0.18.0/elm-platform-linux-64bit.tar.gz \
@@ -37,6 +40,7 @@ RUN tar -xvC /tmp/ellie-bin/ -f /tmp/ellie-bin/goon_linux_386.tar.gz \
 
 WORKDIR /app
 
-ENV MIX_ENV=dev
-ENV PORT=4000
-ENV PACKAGE_SITE=$package_site
+ENV ELM_HOME=/app/priv/elm_home \
+    MIX_ENV=dev \
+    NODE_ENV=development \
+    PORT=4000

@@ -104,9 +104,9 @@ defmodule Ellie.Elm.Platform.Impl18 do
 
   def handle_call({:elm_package, :init, root}, _from, state) do
     binary = Application.app_dir(:ellie, "priv/bin/0.18.0/elm-package")
-    args = ["install", "--yes"]
+    args = ["--num", "1", binary, "install", "--yes"]
     options = [out: :string, err: :string, dir: root]
-    result = Porcelain.exec(binary, args, options)
+    result = Porcelain.exec("sysconfcpus", args, options)
     case result do
       %Porcelain.Result{status: 0} ->
         {:reply, :ok, state}
@@ -117,9 +117,9 @@ defmodule Ellie.Elm.Platform.Impl18 do
 
   def handle_call({:elm_make, root, entry, output}, _from, state) do
     binary = Application.app_dir(:ellie, "priv/bin/0.18.0/elm-make")
-    args = [entry, "--report", "json", "--yes", "--debug", "--output", output]
+    args = ["--num", "1", binary, entry, "--report", "json", "--yes", "--debug", "--output", output]
     options = [out: :string, err: :string, dir: root]
-    result = Porcelain.exec(binary, args, options)
+    result = Porcelain.exec("sysconfcpus", args, options)
     case result do
       %Porcelain.Result{status: 0} ->
         {:reply, {:ok, nil}, state}

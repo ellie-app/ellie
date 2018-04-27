@@ -31,6 +31,7 @@ elm-stuff/
 priv/graphql/
 priv/bin/
 priv/fixtures/
+priv/elm_home/
 .local_tmp/
 .DS_Store
 .env*

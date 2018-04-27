@@ -9,6 +9,15 @@ RUN curl -sL https://deb.nodesource.com/setup_9.x | bash - \
     && apt-get update \
     && apt-get install --no-install-recommends -qy build-essential nodejs yarn
 
+# Install libsysconfcpus
+RUN git clone https://github.com/obmarg/libsysconfcpus.git /usr/local/src/libsysconfcpus \
+    && cd /usr/local/src/libsysconfcpus \
+    && ./configure \
+    && make \
+    && make install \
+    && cd / \
+    && sysconfcpus --version
+
 ENV MIX_ENV=prod \
     NODE_ENV=production \
     PORT=4000

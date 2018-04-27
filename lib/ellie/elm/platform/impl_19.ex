@@ -21,9 +21,9 @@ defmodule Ellie.Elm.Platform.Impl19 do
 
   defp install_by_name(root, name) do
     binary = Application.app_dir(:ellie, "priv/bin/0.19.0/elm")
-    args = ["install", Name.to_string(name)]
+    args = ["--num", "1", binary, "install", Name.to_string(name)]
     options = [out: :string, err: :string, dir: root]
-    result = Porcelain.exec(binary, args, options)
+    result = Porcelain.exec("sysconfcpus", args, options)
     Logger.info("elm install\nexit: #{inspect result}\n")
     case result do
       %Porcelain.Result{status: 0} ->
@@ -38,9 +38,9 @@ defmodule Ellie.Elm.Platform.Impl19 do
   def compile(options) do
     %{root: root, entry: entry, output: output} = Enum.into(options, %{})
     binary = Application.app_dir(:ellie, "priv/bin/0.19.0/elm")
-    args = ["make", entry, "--debug", "--output", output, "--report", "json"]
+    args = ["--num", "1", binary, "make", entry, "--debug", "--output", output, "--report", "json"]
     options = [dir: root, out: :string, err: :string]
-    result = Porcelain.exec(binary, args, options)
+    result = Porcelain.exec("sysconfcpus", args, options)
     Logger.info("elm make\nexit: #{result.status}\nstdout: #{result.out}\nstderr: #{result.err}\n")
     case result do
       %Porcelain.Result{err: err, status: 0} ->
