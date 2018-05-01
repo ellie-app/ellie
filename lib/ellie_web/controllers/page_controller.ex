@@ -1,10 +1,10 @@
 defmodule EllieWeb.PageController do
   use EllieWeb, :controller
-  alias Ellie.Elm.Version
-  alias Ellie.Embed
+  alias Ellie.Domain.Embed
+  alias Ellie.Domain.Workspace
   alias Ellie.Repo
-  alias Ellie.Revision
-  alias Ellie.ProjectId
+  alias Ellie.Types.Revision
+  alias Ellie.Types.ProjectId
 
   def new_editor(conn, _params) do
     conn
@@ -26,15 +26,22 @@ defmodule EllieWeb.PageController do
     |> render("terms_v#{Map.get(params, "version")}.html")
   end
 
-  def result(conn, params) do
+  def result_manager(conn, params) do
     with token <- Map.get(params, "token"),
-      {:ok, user} <- EllieWeb.Auth.verify(token),
-      {:ok, version} <- Version.from_string(Map.get(params, "elmVersion", "")),
-      {:ok, path} <- Ellie.Workspace.result(user, version)
+         {:ok, user} <- EllieWeb.Auth.verify(token),
+         {:ok, {path, hash}} <- Workspace.result(user)
     do
-      conn
-      |> put_resp_content_type("application/javascript")
-      |> send_file(200, path)
+      hash_string = Integer.to_string(hash, 16)
+      if hash_string in get_req_header(conn, "if-none-match") do
+        conn
+        |> send_resp(304, "")
+        |> halt()
+      else
+        conn
+        |> put_resp_header("ETag", hash_string)
+        |> put_resp_content_type("application/javascript")
+        |> send_file(200, path)
+      end
     else
       _ -> send_chunked(conn, 404)
     end
@@ -49,8 +56,7 @@ defmodule EllieWeb.PageController do
       |> put_resp_content_type("application/javascript")
       |> send_file(200, path)
     else
-      error ->
-        IO.inspect(error)
+      _ ->
         send_chunked(conn, 404)
     end
   end

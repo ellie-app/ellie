@@ -5,7 +5,6 @@ module Pages.Editor.Effects.Handlers
         , attachToWorkspace
         , authenticate
         , compile
-        , createGist
         , createRevision
         , formatCode
         , getDocs
@@ -242,34 +241,6 @@ attachToWorkspace token version =
         |> GraphqlHttp.mutationRequest "/api"
         |> Jwt.withTokenHeader token
         |> GraphqlHttp.send (Result.mapError GraphqlHttp.ignoreParsedErrorData)
-
-
-createGist : String -> String -> String -> Project -> Cmd (Result Http.Error String)
-createGist title elm html project =
-    let
-        body =
-            Encode.object
-                [ ( "description", Encode.string title )
-                , ( "public", Encode.bool False )
-                , ( "files"
-                  , Encode.object
-                        [ ( "elm.json"
-                          , Encode.object [ ( "content", Encode.string <| Encode.encode 2 (Project.encoder project) ) ]
-                          )
-                        , ( "Main.elm"
-                          , Encode.object [ ( "content", Encode.string elm ) ]
-                          )
-                        , ( "index.html"
-                          , Encode.object [ ( "content", Encode.string html ) ]
-                          )
-                        ]
-                  )
-                ]
-    in
-    post "https://api.github.com/gists"
-        |> withJsonBody body
-        |> withExpectJson (Decode.field "html_url" Decode.string)
-        |> HttpBuilder.send identity
 
 
 updateSettings : Jwt -> Settings -> Task GqlError ()

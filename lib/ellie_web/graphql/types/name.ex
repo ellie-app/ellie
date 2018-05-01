@@ -6,13 +6,13 @@ defmodule EllieWeb.Graphql.Types.Name do
     parse &cast_from_string/1
   end
 
-  defp serialize_to_string(%Ellie.Elm.Name{user: user, project: project}) do
+  defp serialize_to_string(%Elm.Name{user: user, project: project}) do
     user <> "/" <> project
   end
 
   defp cast_from_string(%Absinthe.Blueprint.Input.String{value: value}) do
     with [user, project] <- String.split(value, "/") do
-      {:ok, %Ellie.Elm.Name{user: user, project: project}}
+      {:ok, %Elm.Name{user: user, project: project}}
     else
       _ -> :error
     end

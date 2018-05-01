@@ -3,7 +3,7 @@ defmodule Ellie.Repo.Migrations.AddDocsTable do
 
   def up do
     create table(:package_docs, primary_key: false) do
-      add :package, Ellie.Elm.Package.type, primary_key: true
+      add :package, Elm.Ecto.Package.type, primary_key: true
       add :docs_0_19_0, {:array, :map}
       timestamps()
     end

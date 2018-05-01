@@ -18,7 +18,7 @@ defmodule EllieWeb.Graphql.Types.Elm.Docs do
     field :args, good_list(:string)
     field :tags, good_list(:elm_docs_tag) do
       resolve fn union, _, _ ->
-        {:ok, Map.get(union, "tags", [])}
+        {:ok, Enum.map(union.tags, fn {name, args} -> %{name: name, args: args} end)}
       end
     end
   end
@@ -59,8 +59,8 @@ defmodule EllieWeb.Graphql.Types.Elm.Docs do
   end
 
   enum :elm_docs_associativity do
-    value :right, as: "right"
-    value :left, as: "left"
-    value :none, as: "non"
+    value :right
+    value :left
+    value :none
   end
 end

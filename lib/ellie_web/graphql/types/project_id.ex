@@ -1,6 +1,6 @@
 defmodule EllieWeb.Graphql.Types.ProjectId do
   use Absinthe.Schema.Notation
-  alias Ellie.ProjectId
+  alias Ellie.Types.ProjectId
 
   scalar :project_id, name: "ProjectId" do
     serialize &ProjectId.to_string/1

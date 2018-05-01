@@ -1,6 +1,7 @@
 defmodule EllieWeb.Graphql.Types do
   use Absinthe.Schema.Notation
   alias Ellie.Repo
+  alias Elm.Platform
 
   enum :theme do
     value :dark, as: "DARK"
@@ -11,7 +12,12 @@ defmodule EllieWeb.Graphql.Types do
     field :name, non_null(:name)
     field :version, non_null(:version)
     field :docs, non_null(list_of(non_null(:elm_docs_module))) do
-      resolve &EllieWeb.Graphql.Resolvers.PackageDocs.call/3
+      resolve fn package, _args, _ctx ->
+        case Platform.docs(package) do
+          {:ok, modules} -> {:ok, modules}
+          :error -> {:error, "Failed to load docs for package"}
+        end
+      end
     end
   end
 
@@ -84,9 +90,14 @@ defmodule EllieWeb.Graphql.Types do
     field :error, :elm_error
   end
 
+  object :workspace_error do
+    field :message, non_null(:string)
+  end
+
   union :workspace_update do
     types [:workspace_attached, :compile_completed]
     resolve_type fn
+      %{message: _}, _ -> :workspace_error
       %{packages: _}, _ -> :workspace_attached
       %{error: _}, _ -> :compile_completed
     end

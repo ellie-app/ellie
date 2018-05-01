@@ -47,3 +47,7 @@ document.addEventListener('DOMContentLoaded', () => {
   EffectsState.start(app)
   Main.start(app)
 })
+
+if(navigator.serviceWorker) {
+  navigator.serviceWorker.register('/assets/editor-sw.js', { scope: '/' })
+}

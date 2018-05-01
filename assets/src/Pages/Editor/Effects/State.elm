@@ -110,23 +110,6 @@ processOutbound onError effect state =
                 |> Cmd.map (\_ -> NoOp)
             )
 
-        CreateGist stuff callback ->
-            ( state
-            , Handlers.createGist stuff.title stuff.elm stuff.html stuff.project
-                |> Cmd.map
-                    (\result ->
-                        case result of
-                            Ok url ->
-                                UserMsg <| callback (Just url)
-
-                            Err error ->
-                                Multiple
-                                    [ UserMsg <| onError <| Exception.fromHttp error
-                                    , UserMsg <| callback Nothing
-                                    ]
-                    )
-            )
-
         SaveSettings token settings ->
             state.saveSettingsId
                 |> Maybe.map Process.kill

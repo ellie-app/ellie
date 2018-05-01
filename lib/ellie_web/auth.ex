@@ -1,5 +1,6 @@
 defmodule EllieWeb.Auth do
-  alias Ellie.{Repo, User}
+  alias Ellie.Repo
+  alias Ellie.Types.User
 
   def verify(token) do
     case Phoenix.Token.verify(EllieWeb.Endpoint, "user auth", token, max_age: :infinity) do

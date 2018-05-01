@@ -5,8 +5,6 @@ defmodule Ellie.Repo.Migrations.CreateRevisions do
   @shard_id 100
 
   def up do
-    Ellie.Elm.Version.up
-    Ellie.Elm.Package.up
     up_id_gen()
     create table(:revisions, primary_key: false) do
       add :project_id,      :bigint,                          primary_key: true, default: fragment("id_generator()")
@@ -14,8 +12,8 @@ defmodule Ellie.Repo.Migrations.CreateRevisions do
       add :title,           :string
       add :elm_code,        :text,                            null: false
       add :html_code,       :text,                            null: false
-      add :packages,        {:array, Ellie.Elm.Package.type}, null: false
-      add :elm_version,     Ellie.Elm.Version.type,           null: false
+      add :packages,        {:array, Elm.Ecto.Package.type}, null: false
+      add :elm_version,     Elm.Ecto.Version.type,           null: false
       add :terms_version,   :integer
       add :user_id,         references(:users, type: :uuid),  null: false
       timestamps(updated_at: false)
@@ -25,8 +23,6 @@ defmodule Ellie.Repo.Migrations.CreateRevisions do
   def down do
     drop_if_exists table(:revisions)
     down_id_gen()
-    Ellie.Elm.Package.down
-    Ellie.Elm.Version.down
   end
 
   defp up_id_gen() do

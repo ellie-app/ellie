@@ -132,9 +132,6 @@ export default {
 
     const fixHtml = (htmlCode, scriptSrc) => {
       const doc = parser.parseFromString(htmlCode, 'text/html')
-      const charset = doc.createElement('meta')
-      charset.setAttribute('charset', 'utf-8')
-      doc.head.insertBefore(charset, doc.head.children[0])
 
       const random = Math.floor(9007199254740991 * Math.random())
 
@@ -149,52 +146,38 @@ export default {
       const elmScript = doc.createElement('script')
       elmScript.src = scriptSrc
       doc.head.appendChild(elmScript)
+
+      const charset = doc.createElement('meta')
+      charset.setAttribute('charset', 'utf-8')
+      doc.head.insertBefore(charset, doc.head.children[0])
+
       var blob = new Blob([doc.documentElement.outerHTML], { type: 'text/html' })
       return URL.createObjectURL(blob)
     }
 
-    const urlHashMap = {}
+    // const convertStringToArrayBufferView = (string) => {
+    //   return new Promise((resolve) => {
+    //     requestIdleCallback(() => {
+    //       const length = string.length
+    //       const bytes = new Uint8Array(length)
+    //       for (var i = 0; i < length; i++) {
+    //         bytes[i] = string.charCodeAt(i)
+    //       }
+    //       resolve(bytes)
+    //     })
+    //   })
+    // }
 
-    const convertStringToArrayBufferView = (left, right) => {
-      return new Promise((resolve) => {
-        requestIdleCallback(() => {
-          let leftLength = left.length
-          let rightLength = right.length
-          let length = leftLength + rightLength
-          let bytes = new Uint8Array(leftLength + rightLength)
-          for (var i = 0; i < leftLength; i++) {
-            bytes[i] = left.charCodeAt(i)
-          }
-          for (var j = leftLength; j < length; j++) {
-              bytes[j] = right.charCodeAt(j)
-          }
-          resolve(bytes)
-        })
-      })
-    }
-
-    const convertArrayBufferToHexaDecimal = (buffer) => {
-      var data_view = new DataView(buffer)
-      var iii, len, hex = '', c
-      for(iii = 0, len = data_view.byteLength; iii < len; iii += 1) {
-        c = data_view.getUint8(iii).toString(16)
-        if (c.length < 2) c = '0' + c
-        hex += c
-      }
-      return hex
-    }
-
-    const getUrl = (html, elmSource) => {
-      return convertStringToArrayBufferView(elmSource, html)
-        .then(string => crypto.subtle.digest({name: 'SHA-512'}, string))
-        .then(result => convertArrayBufferToHexaDecimal(result))
-        .then((hash) => {
-          if (urlHashMap.hasOwnProperty(hash)) return urlHashMap[hash]
-          const url = fixHtml(html, elmSource)
-          urlHashMap[hash] = url
-          return url
-        })
-    }
+    // const convertArrayBufferToHexaDecimal = (buffer) => {
+    //   var data_view = new DataView(buffer)
+    //   var iii, len, hex = '', c
+    //   for(iii = 0, len = data_view.byteLength; iii < len; iii += 1) {
+    //     c = data_view.getUint8(iii).toString(16)
+    //     if (c.length < 2) c = '0' + c
+    //     hex += c
+    //   }
+    //   return hex
+    // }
 
     customElements.define('ellie-ui-output', class extends HTMLElement {
       constructor() {
@@ -288,11 +271,9 @@ export default {
       _update() {
         cancelIdleCallback(this._idleCallback)
         this._idleCallback = requestIdleCallback(() => {
-          getUrl(this._html, this._elmSource).then((url) => {
-            if (url === this._url) return
-            this._url = url
-            iframe.src = url
-          })
+          URL.revokeObjectURL(this._url)
+          this._url = fixHtml(this._html, this._elmSource)
+          iframe.src = this._url
         })
       }
     })

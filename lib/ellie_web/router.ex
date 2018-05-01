@@ -14,7 +14,7 @@ defmodule EllieWeb.Router do
 
   scope "/assets" do
     if Application.get_env(:ellie, :env) == :prod do
-      forward "/", Plug.Static, at: "/", from: :ellie, gzip: true
+      forward "/", Plug.Static, at: "/", from: :ellie, gzip: true, headers: %{"Service-Worker-Allowed" => "/"}
     else
       forward "/", PlugProxy, upstream: "http://webpack:8080/"
     end
@@ -28,7 +28,7 @@ defmodule EllieWeb.Router do
 
   scope "/" do
     pipe_through :browser
-    get "/private/result", EllieWeb.PageController, :result
+    get "/private/result", EllieWeb.PageController, :result_manager
     get "/output/embed/:project_id/:revision_number", EllieWeb.PageController, :embed_result
     get "/a/terms/:version", EllieWeb.PageController, :terms
     get "/embed/:project_id/:revision_number", EllieWeb.PageController, :embed

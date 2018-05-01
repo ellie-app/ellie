@@ -1,4 +1,6 @@
 defmodule EllieWeb.Graphql.Types.Version do
+  alias Elm.Version
+
   use Absinthe.Schema.Notation
 
   scalar :version, name: "Version" do
@@ -6,13 +8,13 @@ defmodule EllieWeb.Graphql.Types.Version do
     parse &cast_from_string/1
   end
 
-  defp serialize_to_string(%Ellie.Elm.Version{major: major, minor: minor, patch: patch}) do
+  defp serialize_to_string(%Elm.Version{major: major, minor: minor, patch: patch}) do
     Integer.to_string(major) <> "." <> Integer.to_string(minor) <> "." <> Integer.to_string(patch)
   end
 
   defp cast_from_string(%Absinthe.Blueprint.Input.String{value: value}) do
     with [major, minor, patch] <- String.split(value, ".") do
-      {:ok, %Ellie.Elm.Version{major: String.to_integer(major),
+      {:ok, %Version{major: String.to_integer(major),
                                minor: String.to_integer(minor),
                                patch: String.to_integer(patch)}}
     else

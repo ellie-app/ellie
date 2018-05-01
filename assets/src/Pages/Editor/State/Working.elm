@@ -69,7 +69,6 @@ type alias Model =
     , actions : Actions.Model
     , user : User
     , workbench : Workbench
-    , creatingGist : Bool
     , compiling : Bool
     , connected : Bool
     , animating : Bool
@@ -117,7 +116,6 @@ reset token user revision defaultPackages =
     , revision = Replaceable.fromMaybe revision
     , actions = Actions.Hidden
     , workbench = Ready
-    , creatingGist = False
     , compiling = False
     , saving = False
     , connected = True
@@ -224,8 +222,6 @@ type Msg
     | SaveCompleted RevisionId Revision
     | CanDebugUpdated Bool
       -- Share stuff
-    | CreateGistRequested
-    | CreateGistComplete (Maybe String)
     | DownloadZip
       -- StatusBar stuff
     | CloseNotification Notification
@@ -328,40 +324,6 @@ update msg ({ user } as model) =
                     , elm = { major = 0, minor = 19, patch = 0 }
                     }
                 }
-            )
-
-        CreateGistRequested ->
-            ( { model | creatingGist = True }
-            , Outbound.CreateGist
-                { title = model.projectName
-                , elm = model.elmCode
-                , html = model.htmlCode
-                , project =
-                    { sourceDirs = []
-                    , deps = model.packages
-                    , elm = { major = 0, minor = 19, patch = 0 }
-                    }
-                }
-                CreateGistComplete
-            )
-
-        CreateGistComplete (Just url) ->
-            ( { model
-                | creatingGist = False
-                , notifications =
-                    { title = "Gist Created"
-                    , severity = Notification.Success
-                    , message = "We created a Gist from your project. If you have popups blocked you can go directly to"
-                    , actions = [ Notification.GoToLink url ]
-                    }
-                        :: model.notifications
-              }
-            , Outbound.OpenInNewTab url
-            )
-
-        CreateGistComplete Nothing ->
-            ( { model | creatingGist = False }
-            , Outbound.none
             )
 
         ExceptionReceived exception ->

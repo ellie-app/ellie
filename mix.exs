@@ -21,7 +21,7 @@ defmodule Ellie.Mixfile do
   # Type `mix help compile.app` for more information.
   def application do
     [
-      mod: {Ellie.Application, []},
+      mod: {Ellie, []},
       extra_applications: [:logger, :runtime_tools, :porcelain]
     ]
   end

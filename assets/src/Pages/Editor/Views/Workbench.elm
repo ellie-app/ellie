@@ -28,7 +28,6 @@ type alias Config msg =
     , onExpand : msg
     , onIframeReload : msg
     , onClearLogs : msg
-    , onCreateGist : msg
     , onDownloadZip : msg
     , onGoToLocation : ElmError.Position -> msg
     , onLogSearchChanged : String -> msg
@@ -102,8 +101,7 @@ viewContent config =
 
                         ( Just rid, SuccessShare ) ->
                             Share.view
-                                { onCreateGist = config.onCreateGist
-                                , onDownloadZip = config.onDownloadZip
+                                { onDownloadZip = config.onDownloadZip
                                 , revisionId = rid
                                 }
 
@@ -137,8 +135,7 @@ viewContent config =
 
                         ( Just rid, ErrorsShare ) ->
                             Share.view
-                                { onCreateGist = config.onCreateGist
-                                , onDownloadZip = config.onDownloadZip
+                                { onDownloadZip = config.onDownloadZip
                                 , revisionId = rid
                                 }
 

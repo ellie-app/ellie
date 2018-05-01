@@ -1,5 +1,16 @@
 defmodule EllieWeb.Graphql.Schema do
+  alias Absinthe.Subscription
+  alias Absinthe.Resolution.Helpers
+  alias Ellie.Domain.Api
+  alias Ellie.Domain.Search
+  alias Ellie.Domain.Workspace
+  alias Ellie.Domain.Embed
+  alias EllieWeb.Auth
+  alias Elm.Platform
+  alias Elm.Package
+
   use Absinthe.Schema
+  import_types EllieWeb.Graphql.Types.Unit
   import_types EllieWeb.Graphql.Types.Uuid
   import_types EllieWeb.Graphql.Types.Version
   import_types EllieWeb.Graphql.Types.Name
@@ -23,98 +34,184 @@ defmodule EllieWeb.Graphql.Schema do
     [Absinthe.Middleware.Dataloader] ++ Absinthe.Plugin.defaults()
   end
 
-  def context(map) do
-    loader =
-      Dataloader.new()
-      |> Dataloader.add_source(Ellie.Elm.Docs, Ellie.Elm.Docs.data())
-    Map.put(map, :loader, loader)
-  end
-
   query do
     field :user, non_null(:user) do
       middleware EllieWeb.Graphql.Middleware.Auth
-      resolve fn _, %{context: %{current_user: current_user}} -> {:ok, current_user} end
+      resolve fn _args, %{context: %{current_user: current_user}} ->
+        {:ok, current_user}
+      end
     end
 
     field :revision, non_null(:revision) do
       arg :project_id, non_null(:project_id)
       arg :revision_number, non_null(:integer)
-      resolve &EllieWeb.Graphql.Resolvers.Revision.call/2
+      resolve fn %{project_id: project_id, revision_number: revision_number}, _ctx ->
+        case Api.retrieve_revision(project_id, revision_number) do
+          {:ok, revision} -> {:ok, revision}
+          :error -> {:error, "Could not get revision"}
+        end
+      end
     end
 
     field :package_search, non_null(list_of(non_null(:package))) do
       arg :query, non_null(:string)
-      resolve &EllieWeb.Graphql.Resolvers.SearchPackages.call/2
+      resolve fn %{query: query}, _ctx ->
+        {:ok, Search.search(query)}
+      end
     end
 
     field :packages, non_null(list_of(non_null(:package))) do
       arg :packages, non_null(list_of(non_null(:package_input)))
-      resolve fn _parent, args, _opts ->
-        mapped =
-          args.packages
-            |> Enum.map(fn p -> %Ellie.Elm.Package{name: p.name, version: p.version} end)
-        {:ok, mapped}
+      resolve fn %{packages: packages}, _ctx ->
+        {:ok, Enum.map(packages, &%Elm.Package{name: &1.name, version: &1.version})}
       end
     end
   end
 
+
   mutation do
     field :authenticate, non_null(:user_auth) do
-      resolve &EllieWeb.Graphql.Resolvers.Authenticate.call/2
+      resolve fn
+        _args, %{context: %{current_user: current_user}} ->
+          {:ok, %{user: current_user, token: Auth.sign(current_user), terms_version: 1}}
+        _args, _ctx ->
+          case Api.create_user() do
+            {:ok, user} -> {:ok, %{user: user, token: Auth.sign(user), terms_version: 1}}
+            :error -> {:error, "Failed to create user"}
+          end
+      end
     end
 
     field :create_revision, non_null(:revision) do
       arg :inputs, non_null(:revision_update_input)
       middleware EllieWeb.Graphql.Middleware.Auth
-      resolve &EllieWeb.Graphql.Resolvers.CreateRevision.call/2
+      resolve fn %{inputs: revision}, %{context: %{current_user: user}} ->
+        case Api.create_revision(user, Map.to_list(revision)) do
+          {:ok, revision} -> {:ok, revision}
+          :error -> {:error, "failed to create revision"}
+        end
+      end
     end
 
     field :update_revision, non_null(:revision) do
       arg :inputs, non_null(:revision_update_input)
       arg :project_id, non_null(:project_id)
       middleware EllieWeb.Graphql.Middleware.Auth
-      resolve &EllieWeb.Graphql.Resolvers.UpdateRevision.call/2
+      resolve fn %{inputs: inputs, project_id: project_id}, %{context: %{current_user: user}} ->
+        revision = Keyword.merge(Map.to_list(inputs), [project_id: project_id])
+        case Api.update_revision(user, revision) do
+          {:ok, revision} -> {:ok, revision}
+          :error -> {:error, "Failed to update revision"}
+        end
+      end
     end
 
-    field :accept_terms, non_null(:boolean) do
+    field :accept_terms, non_null(:unit) do
       arg :terms, non_null(:integer)
       middleware EllieWeb.Graphql.Middleware.Auth
-      resolve &EllieWeb.Graphql.Resolvers.AcceptTerms.call/2
+      resolve fn %{terms: terms}, %{context: %{current_user: user}} ->
+        case Api.accept_terms(user, terms) do
+          :ok -> {:ok, :unit}
+          :error -> {:error, "Failed to accept terms"}
+        end
+      end
     end
 
-    field :attach_to_workspace, non_null(:boolean) do
+    field :attach_to_workspace, non_null(:unit) do
       arg :elm_version, non_null(:version)
       middleware EllieWeb.Graphql.Middleware.Auth
-      resolve &EllieWeb.Graphql.Resolvers.AttachToWorkspace.call/2
+      resolve fn %{elm_version: version}, %{context: %{current_user: user}} ->
+        Task.start(fn ->
+          case Workspace.dependencies(user, version) do
+            {:ok, packages} ->
+              data = %{packages: MapSet.to_list(packages)}
+              Subscription.publish(EllieWeb.Endpoint, data, workspace: user.id)
+            :error ->
+              data = %{message: "Failed to attach to workspace"}
+              Subscription.publish(EllieWeb.Endpoint, data, workspace: user.id)
+          end
+        end)
+        {:ok, :unit}
+      end
     end
 
     field :format_code, non_null(:string) do
       arg :elm_version, non_null(:version)
       arg :code, non_null(:string)
-      resolve &EllieWeb.Graphql.Resolvers.FormatCode.call/2
+      resolve fn %{elm_version: version, code: code}, _ctx ->
+        Helpers.async(fn ->
+          case Platform.format(code, version) do
+            {:ok, code} -> {:ok, code}
+            :error -> {:error, "Failed to format code"}
+          end
+        end)
+      end
     end
 
-    field :compile, non_null(:boolean) do
+    field :compile, non_null(:unit) do
       arg :elm_version, non_null(:version)
       arg :elm_code, non_null(:string)
       arg :packages, non_null(list_of(non_null(:package_input)))
       middleware EllieWeb.Graphql.Middleware.Auth
-      resolve &EllieWeb.Graphql.Resolvers.Compile.call/2
+      resolve fn %{elm_version: elm_version, elm_code: elm_code, packages: packages}, %{context: %{current_user: user}} ->
+        real_packages =
+          packages
+          |> Enum.map(&%Package{name: &1.name, version: &1.version})
+          |> MapSet.new()
+        Task.start(fn ->
+          case Workspace.compile(user, elm_version, elm_code, real_packages) do
+            {:ok, error} ->
+              data = %{error: error}
+              Subscription.publish(EllieWeb.Endpoint, data, workspace: user.id)
+            :error ->
+              data = %{message: "Could not compile"}
+              Subscription.publish(EllieWeb.Endpoint, data, workspace: user.id)
+          end
+        end)
+        {:ok, :unit}
+      end
     end
 
-    field :update_settings, non_null(:boolean) do
+    field :update_settings, non_null(:unit) do
       arg :font_size, :string
       arg :font_family, :string
       arg :theme, :theme
       arg :vim_mode, :boolean
       middleware EllieWeb.Graphql.Middleware.Auth
-      resolve &EllieWeb.Graphql.Resolvers.UpdateSettings.call/2
+      resolve fn data, %{context: %{current_user: user}} ->
+        settings = Enum.filter(data, fn {_, v} -> not is_nil(v) end)
+        case Api.update_settings(user, settings) do
+          :ok -> {:ok, :unit}
+          :error -> {:error, "Could not update settings"}
+        end
+      end
     end
 
     field :run_embed, :embed_ready do
       arg :project_id, non_null(:project_id)
       arg :revision_number, non_null(:integer)
-      resolve &EllieWeb.Graphql.Resolvers.RunEmbed.call/2
+      resolve fn %{project_id: project_id, revision_number: revision_number}, _ctx ->
+        case Api.retrieve_revision(project_id, revision_number) do
+          nil ->
+            {:error, "no revision"}
+          revision ->
+            case Embed.compile(revision) do
+              {:finished, error} ->
+                {:ok, %{error: error}}
+              :working ->
+                {:ok, nil}
+              {:started, task_fn} ->
+                Task.start fn ->
+                  topic = "#{project_id}/#{revision_number}"
+                  case Task.await(task_fn.(), :infinity) do
+                    {:ok, error} -> Subscription.publish(EllieWeb.Endpoint, %{error: error}, embed: topic)
+                    {:error, message} -> Subscription.publish(EllieWeb.Endpoint, %{message: message}, embed: topic)
+                  end
+                end
+                {:ok, nil}
+            end
+          end
+      end
     end
   end
 

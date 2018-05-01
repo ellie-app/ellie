@@ -41,7 +41,6 @@ type Outbound msg
     | Navigate String
     | SearchPackages String (Maybe (List Package) -> msg)
     | EnableNavigationCheck Bool
-    | CreateGist { title : String, project : Project, elm : ElmSource, html : HtmlSource } (Maybe String -> msg)
     | DownloadZip { project : Project, elm : ElmSource, html : HtmlSource }
     | OpenInNewTab String
     | Batch (List (Outbound msg))
@@ -85,9 +84,6 @@ map f outbound =
 
         OpenInNewTab url ->
             OpenInNewTab url
-
-        CreateGist stuff callback ->
-            CreateGist stuff (callback >> f)
 
         SaveSettings token settings ->
             SaveSettings token settings

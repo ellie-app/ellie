@@ -36,6 +36,8 @@ config :absinthe,
 config :porcelain, :goon_driver_path, Path.expand("../priv/bin/goon", __DIR__)
 config :porcelain, driver: Porcelain.Driver.Goon
 
+config :elm, :package_site, "***REMOVED***"
+
 # Import environment specific config. This must remain at the bottom
 # of this file so it overrides the configuration defined above.
 import_config "#{Mix.env}.exs"

@@ -1,46 +1,39 @@
 defmodule EllieWeb.Graphql.Types.Elm.Error do
   use Absinthe.Schema.Notation
 
-  defp format_message(_, %{source: source}) do
-    stuff =
-      source
-        |> Map.get("message", [])
-        |> Enum.map(fn
-            string when is_binary(string) ->
-              %{string: string, style: nil}
-            a ->
-              %{
-                string: Map.get(a, "string"),
-                style: %{
-                  bold: Map.get(a, "bold"),
-                  color: Map.get(a, "color"),
-                  underline: Map.get(a, "underline")
-                }
-              }
-          end)
-    {:ok, stuff}
+  defp format_message(message) do
+    Enum.map(message, fn
+      {:unstyled, string} -> %{string: string, style: nil}
+      {:styled, style, string} -> %{string: string, style: style}
+    end)
   end
 
   union :elm_error do
     types [:elm_error_general_problem, :elm_error_module_problems]
-    resolve_type fn value, _ ->
-      case value do
-        %{"type" => "error"} -> :elm_error_general_problem
-        %{"type" => "compile-errors"} -> :elm_error_module_problems
-      end
+    resolve_type fn
+      {:general_problem, _}, _ -> :elm_error_general_problem
+      {:module_problems, _}, _ -> :elm_error_module_problems
     end
   end
 
   object :elm_error_general_problem do
-    field :path, :string
-    field :title, non_null(:string)
+    field :path, :string do
+      resolve fn {_, a}, _, _ -> {:ok, a.path} end
+    end
+    field :title, non_null(:string) do
+      resolve fn {_, a}, _, _ -> {:ok, a.title} end
+    end
     field :message, non_null(list_of(non_null(:elm_error_chunk))) do
-      resolve &format_message/2
+      resolve fn {_, a}, _, _ ->
+        {:ok, format_message(a.message)}
+      end
     end
   end
 
   object :elm_error_module_problems do
-    field :errors, non_null(list_of(non_null(:elm_error_bad_module)))
+    field :errors, non_null(list_of(non_null(:elm_error_bad_module))) do
+      resolve fn {_, a}, _, _ -> {:ok, a} end
+    end
   end
 
   object :elm_error_bad_module do
@@ -53,7 +46,7 @@ defmodule EllieWeb.Graphql.Types.Elm.Error do
     field :title, non_null(:string)
     field :region, non_null(:elm_error_region)
     field :message, non_null(list_of(non_null(:elm_error_chunk))) do
-      resolve &format_message/2
+      resolve fn problem, _args, _ctx -> {:ok, format_message(problem.message)} end
     end
   end
 
@@ -79,21 +72,21 @@ defmodule EllieWeb.Graphql.Types.Elm.Error do
   end
 
   enum :elm_error_color do
-    value :red, as: "red"
-    value :vivid_red, as: "RED"
-    value :magenta, as: "magenta"
-    value :vivid_magenta, as: "MAGENTA"
-    value :yellow, as: "yellow"
-    value :vivid_yellow, as: "YELLOW"
-    value :green, as: "green"
-    value :vivid_green, as: "GREEN"
-    value :cyan, as: "cyan"
-    value :vivid_cyan, as: "CYAN"
-    value :blue, as: "blue"
-    value :vivid_blue, as: "BLUE"
-    value :white, as: "white"
-    value :vivid_white, as: "WHITE"
-    value :black, as: "black"
-    value :vivid_black, as: "BLACK"
+    value :red
+    value :vivid_red
+    value :magenta
+    value :vivid_magenta
+    value :yellow
+    value :vivid_yellow
+    value :green
+    value :vivid_green
+    value :cyan
+    value :vivid_cyan
+    value :blue
+    value :vivid_blue
+    value :white
+    value :vivid_white
+    value :black
+    value :vivid_black
   end
 end

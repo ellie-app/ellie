@@ -12,8 +12,7 @@ import Pages.Editor.Types.RevisionId as RevisionId exposing (RevisionId)
 
 
 type alias Config msg =
-    { onCreateGist : msg
-    , onDownloadZip : msg
+    { onDownloadZip : msg
     , revisionId : RevisionId
     }
 
@@ -36,15 +35,7 @@ view config =
                 [ Html.text "Export" ]
             , Html.div
                 [ css [ displayFlex ] ]
-                [ Html.div
-                    [ css [ paddingRight (px 16) ] ]
-                    [ Button.view
-                        { icon = Just Icon.GitHub
-                        , label = "Create Gist"
-                        , action = Button.click config.onCreateGist
-                        }
-                    ]
-                , Button.view
+                [ Button.view
                     { icon = Just Icon.Zip
                     , label = "Download Zip"
                     , action = Button.click config.onDownloadZip

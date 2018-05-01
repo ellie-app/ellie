@@ -5,9 +5,9 @@ defmodule Ellie.Repo.Migrations.AddSearchablePackages do
     execute "create extension if not exists pg_trgm"
 
     create table(:searchable_packages, primary_key: false) do
-      add :name, Ellie.Elm.Name.type, primary_key: true
+      add :name, Elm.Ecto.Name.type, primary_key: true
       add :summary, :string, null: false
-      add :versions, {:array, Ellie.Elm.Version.type}, null: false
+      add :versions, {:array, Elm.Ecto.Version.type}, null: false
       timestamps(updated_at: false)
     end
 

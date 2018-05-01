@@ -2,7 +2,7 @@ defmodule EllieWeb.UserSocket do
   use Phoenix.Socket
   use Absinthe.Phoenix.Socket, schema: EllieWeb.Graphql.Schema
   alias EllieWeb.Auth
-  alias Ellie.Workspace
+  alias Ellie.Domain.Workspace
 
   transport :websocket, Phoenix.Transports.WebSocket,
     timeout: 45_000

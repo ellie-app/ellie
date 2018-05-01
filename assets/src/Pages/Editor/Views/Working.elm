@@ -189,7 +189,6 @@ viewWorkbench model =
         , onIframeReload = WorkingState.IframeReloadClicked
         , onLogSearchChanged = WorkingState.LogSearchChanged
         , onClearLogs = WorkingState.ClearLogsClicked
-        , onCreateGist = WorkingState.CreateGistRequested
         , onDownloadZip = WorkingState.DownloadZip
         , onLogReceived = WorkingState.LogReceived
         , onSelectSuccessPane = WorkingState.SuccessPaneSelected

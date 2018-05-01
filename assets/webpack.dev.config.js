@@ -13,6 +13,10 @@ module.exports = {
       'webpack-dev-server/client?http://localhost:8080/',
       path.join(__dirname, 'src/Pages/Editor/index.js')
     ],
+    'editor-sw': [
+      'webpack-dev-server/client?http://localhost:8080/',
+      path.join(__dirname, 'src/Pages/Editor/ServiceWorker.js')
+    ],
     embed: [
       'es6-promise/auto',
       'webpack-dev-server/client?http://localhost:8080/',
@@ -100,6 +104,7 @@ module.exports = {
     ],
     headers: {
       'Access-Control-Allow-Origin': '*',
+      'Service-Worker-Allowed': '/'
     },
     watchOptions: {
       aggregateTimeout: 300,
