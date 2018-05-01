@@ -15,7 +15,7 @@ defmodule Ellie.Domain.Search do
   end
 
   defp adapter() do
-    config = Application.get_env(:ellie, Ellie.Domain.Workspace, [])
-    Keyword.get(config, :adapter, Ellie.Adapters.Workspace.Local)
+    config = Application.get_env(:ellie, Ellie.Domain.Search, [])
+    Keyword.get(config, :adapter, Ellie.Adapters.Search.Ecto)
   end
 end
