@@ -2,10 +2,10 @@ defmodule Ellie.Repo.Migrations.CreateUsers do
   use Ecto.Migration
 
   def up do
-    Ellie.Settings.up
+    Ellie.Types.Settings.up()
     create table(:users, primary_key: false) do
       add :id, :uuid, primary_key: true
-      add :settings, Ellie.Settings.type, null: false
+      add :settings, Ellie.Types.Settings.type, null: false
       add :terms_version, :integer
       timestamps()
     end
@@ -13,6 +13,6 @@ defmodule Ellie.Repo.Migrations.CreateUsers do
 
   def down do
     drop_if_exists table(:users)
-    Ellie.Settings.down
+    Ellie.Types.Settings.down()
   end
 end
