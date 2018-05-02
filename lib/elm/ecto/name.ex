@@ -7,7 +7,7 @@ defmodule Elm.Ecto.Name do
     Ecto.Migration.execute """
       do $$ begin
         if not exists (select 1 from pg_type where typname = 'elm_name') then
-          create type elm_version as (
+          create type elm_name as (
             username   varchar(255),
             project    varchar(255)
           );
