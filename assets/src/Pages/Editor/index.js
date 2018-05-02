@@ -23,7 +23,6 @@ import EllieUiCopyText from '../../Ellie/Ui/CopyText'
 import EllieUiSplitPane from '../../Ellie/Ui/SplitPane'
 import EllieUiCodeEditor from '../../Ellie/Ui/CodeEditor'
 import EllieUiOutput from '../../Ellie/Ui/Output'
-import EffectsState from './Effects/State'
 import '../../Ellie/Ui/CodeEditor.css'
 import './Views/Setup.css'
 import './Main.css'
@@ -44,7 +43,6 @@ document.addEventListener('DOMContentLoaded', () => {
   EllieUiSplitPane.start(app)
   EllieUiCodeEditor.start(app)
   EllieUiOutput.start(app)
-  EffectsState.start(app)
   Main.start(app)
 })
 

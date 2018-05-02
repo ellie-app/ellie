@@ -1,13 +1,13 @@
-module Pages.Embed.Effects.Handlers
+module Pages.Embed.Effects
     exposing
-        ( GetRevisionError(..)
-        , GqlError
-        , RunEmbedError(..)
+        ( embedUpdates
         , getRevision
+        , goToPosition
         , runEmbed
-        , socket
         )
 
+import Effect.Command as Command exposing (Command)
+import Effect.Subscription as Subscription exposing (Subscription)
 import Ellie.Api.Helpers as ApiHelpers
 import Ellie.Api.Mutation as ApiMutation
 import Ellie.Api.Object.EmbedFailed as ApiEmbedFailed
@@ -21,23 +21,15 @@ import Ellie.Api.Union.EmbedUpdate as ApiEmbedUpdate
 import Ellie.Constants as Constants
 import Elm.Error as Error exposing (Error)
 import Elm.Package as Package exposing (Package)
-import Graphqelm.Http as GraphqlHttp
-import Graphqelm.SelectionSet exposing (SelectionSet(..), hardcoded, with)
-import Network.Absinthe.Subscription as Subscription
+import Graphqelm.Http
+import Graphqelm.SelectionSet as SelectionSet exposing (SelectionSet(..), hardcoded, with)
+import Json.Encode as Encode exposing (Value)
 import Pages.Embed.Types.EmbedUpdate as EmbedUpdate exposing (EmbedUpdate)
 import Pages.Embed.Types.Revision as Revision exposing (Revision)
 import Pages.Embed.Types.RevisionId as RevisionId exposing (RevisionId)
 
 
-type alias GqlError =
-    GraphqlHttp.Error ()
-
-
-type GetRevisionError
-    = GetRevisionError
-
-
-getRevision : RevisionId -> Cmd (Result GetRevisionError Revision)
+getRevision : RevisionId -> Command (Result (Graphqelm.Http.Error ()) Revision)
 getRevision revisionId =
     let
         query =
@@ -62,16 +54,14 @@ getRevision revisionId =
             ApiUser.selection identity
                 |> with (ApiHelpers.uuidField ApiUser.id)
     in
-    query
-        |> GraphqlHttp.queryRequest "/api"
-        |> GraphqlHttp.send (Result.mapError (\_ -> GetRevisionError))
+    Command.GraphqlQuery
+        "/api"
+        Nothing
+        (SelectionSet.map Ok query)
+        Err
 
 
-type RunEmbedError
-    = RunEmbedError
-
-
-runEmbed : RevisionId -> Cmd (Result RunEmbedError (Maybe (Maybe Error)))
+runEmbed : RevisionId -> Command (Result (Graphqelm.Http.Error ()) (Maybe (Maybe Error)))
 runEmbed revisionId =
     let
         selection =
@@ -87,13 +77,15 @@ runEmbed revisionId =
             , revisionNumber = revisionId.revisionNumber
             }
     in
-    selection
-        |> GraphqlHttp.mutationRequest "/api"
-        |> GraphqlHttp.send (Result.mapError (\_ -> RunEmbedError))
+    Command.GraphqlMutation
+        "/api"
+        Nothing
+        (SelectionSet.map Ok selection)
+        Err
 
 
-socket : RevisionId -> Subscription.State EmbedUpdate
-socket revisionId =
+embedUpdates : RevisionId -> Subscription EmbedUpdate
+embedUpdates revisionId =
     let
         selection =
             ApiSubscription.selection identity
@@ -114,8 +106,21 @@ socket revisionId =
                     |> ApiEmbedUpdate.onEmbedFailed
                 ]
     in
-    Subscription.init
+    Subscription.AbsintheSubscription
         (Constants.socketOrigin ++ "/api/sockets/websocket?vsn=2.0.0")
-        Debug.log
-        -- Subscription.emptyLogger
         selection
+        (\connected ->
+            if connected then
+                EmbedUpdate.Connected
+            else
+                EmbedUpdate.Disconnected
+        )
+
+
+goToPosition : Error.Position -> Command msg
+goToPosition position =
+    Command.PortSend "GoToPosition" <|
+        Encode.list
+            [ Encode.int position.line
+            , Encode.int position.column
+            ]

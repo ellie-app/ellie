@@ -97,18 +97,18 @@ view config =
                             , CodeEditor.id "elm"
                             ]
                         ]
-                    , Html.styled Html.div
-                        [ height (px 24)
-                        , backgroundColor Theme.editorHeaderBackground
-                        , color Theme.primaryForeground
-                        , fontSize (px 14)
-                        , lineHeight (px 24)
-                        , padding2 zero (px 8)
-                        , flexShrink (int 0)
-                        ]
-                        []
-                        (case Analysis.hint config.analysis of
-                            Just hint ->
+                    , case Analysis.hint config.analysis of
+                        Just hint ->
+                            Html.styled Html.div
+                                [ height (px 24)
+                                , backgroundColor Theme.editorHeaderBackground
+                                , color Theme.primaryForeground
+                                , fontSize (px 14)
+                                , lineHeight (px 24)
+                                , padding2 zero (px 8)
+                                , flexShrink (int 0)
+                                ]
+                                []
                                 [ Html.styled Html.span
                                     [ fontWeight bold ]
                                     []
@@ -123,9 +123,8 @@ view config =
                                     [ Html.text hint.name ]
                                 ]
 
-                            Nothing ->
-                                []
-                        )
+                        Nothing ->
+                            Html.text ""
                     ]
             , second =
                 Html.div [ containerStyles ]

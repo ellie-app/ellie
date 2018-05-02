@@ -46,10 +46,7 @@ defmodule EllieWeb.Graphql.Schema do
       arg :project_id, non_null(:project_id)
       arg :revision_number, non_null(:integer)
       resolve fn %{project_id: project_id, revision_number: revision_number}, _ctx ->
-        case Api.retrieve_revision(project_id, revision_number) do
-          {:ok, revision} -> {:ok, revision}
-          :error -> {:error, "Could not get revision"}
-        end
+        {:ok, Api.retrieve_revision(project_id, revision_number)}
       end
     end
 
@@ -86,7 +83,11 @@ defmodule EllieWeb.Graphql.Schema do
       arg :inputs, non_null(:revision_update_input)
       middleware EllieWeb.Graphql.Middleware.Auth
       resolve fn %{inputs: revision}, %{context: %{current_user: user}} ->
-        case Api.create_revision(user, Map.to_list(revision)) do
+        inputs =
+          revision
+          |> Map.to_list()
+          |> Keyword.update!(:packages, fn ps -> Enum.map(ps, &%Package{name: &1.name, version: &1.version}) end)
+        case Api.create_revision(user, inputs) do
           {:ok, revision} -> {:ok, revision}
           :error -> {:error, "failed to create revision"}
         end

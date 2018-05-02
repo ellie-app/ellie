@@ -429,7 +429,11 @@ viewInitial config =
             [ css [ paddingTop (px 24) ]
             ]
             [ Button.view
-                { icon = Just Icon.Loading
+                { icon =
+                    if config.compiling then
+                        Just Icon.Loading
+                    else
+                        Just Icon.Play
                 , label =
                     if config.compiling then
                         "Compiling..."

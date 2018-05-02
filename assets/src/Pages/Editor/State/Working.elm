@@ -5,15 +5,15 @@ import Data.Either as Either exposing (Either(..))
 import Data.Jwt exposing (Jwt)
 import Data.Replaceable as Replaceable exposing (Replaceable)
 import Data.Uuid as Uuid exposing (Uuid)
+import Effect.Command as Command exposing (Command)
+import Effect.Subscription as Subscription exposing (Subscription)
 import Elm.Compiler as Compiler
 import Elm.Docs as Docs exposing (Module)
 import Elm.Error as Error exposing (Error)
 import Elm.Package as Package exposing (Package)
 import Elm.Version as Version exposing (Version)
 import Extra.Maybe as Maybe
-import Pages.Editor.Effects.Exception as Exception exposing (Exception)
-import Pages.Editor.Effects.Inbound as Inbound exposing (Inbound)
-import Pages.Editor.Effects.Outbound as Outbound exposing (Outbound)
+import Pages.Editor.Effects as Effects
 import Pages.Editor.Route as Route
 import Pages.Editor.State.Actions as Actions
 import Pages.Editor.Types.Analysis as Analysis exposing (Analysis)
@@ -127,6 +127,11 @@ reset token user revision defaultPackages =
     }
 
 
+addNotification : Notification -> Model -> Model
+addNotification notification model =
+    { model | notifications = notification :: model.notifications }
+
+
 compilerVersion : Model -> Version
 compilerVersion model =
     model.revision
@@ -184,6 +189,22 @@ hasChanged model =
                 || (model.packages /= revision.packages)
 
 
+canReplaceRevision : RevisionId -> Model -> Bool
+canReplaceRevision revisionId model =
+    case model.revision of
+        Replaceable.NotAsked ->
+            True
+
+        Replaceable.Loading rid ->
+            RevisionId.eq revisionId rid
+
+        Replaceable.Replacing rid _ ->
+            RevisionId.eq revisionId rid
+
+        Replaceable.Loaded ( rid, _ ) ->
+            False
+
+
 
 -- UPDATE
 
@@ -193,7 +214,7 @@ type Msg
       ElmCodeChanged String
     | HtmlCodeChanged String
     | FormatRequested
-    | FormatCompleted String
+    | FormatCompleted (Result () String)
     | CollapseHtml
     | EditorsResized Float
     | ExampleSelected Example
@@ -208,6 +229,7 @@ type Msg
     | ActionsMsg Actions.Msg
       -- Workbench stuff
     | CompileRequested
+    | CompileFailed
     | ExpandWorkbench
     | CompileFinished (Maybe Error)
     | WorkbenchResized Float
@@ -219,44 +241,44 @@ type Msg
     | LogSearchChanged String
     | LocationSelected Error.Position
     | SaveRequested
-    | SaveCompleted RevisionId Revision
+    | SaveCompleted (Result () ( RevisionId, Revision ))
     | CanDebugUpdated Bool
       -- Share stuff
     | DownloadZip
       -- StatusBar stuff
     | CloseNotification Notification
     | CloseAllNotifications
-      -- Exception Stuff
-    | ExceptionReceived Exception
       -- Global stuff
     | RouteChanged Route.Route
-    | RevisionLoaded RevisionId Revision
+    | RevisionLoaded RevisionId (Result () Revision)
     | AnimationFinished
     | OnlineStatusChanged Bool
     | NoOp
 
 
-init : Jwt -> User -> Maybe ( RevisionId, Revision ) -> List Package -> ( Model, Outbound Msg )
+init : Jwt -> User -> Maybe ( RevisionId, Revision ) -> List Package -> ( Model, Command Msg )
 init token user revision defaultPackages =
     reset token user revision defaultPackages
         |> update CompileRequested
         |> (\( model, outbound ) ->
                 ( model
-                , Outbound.batch
+                , Command.batch
                     [ outbound
-                    , Outbound.Delay 990 AnimationFinished
-                    , Outbound.GetDocs model.packages DocsReceived
+                    , Effects.delay 990
+                        |> Command.map (\_ -> AnimationFinished)
+                    , Effects.getDocs model.packages
+                        |> Command.map DocsReceived
                     ]
                 )
            )
 
 
-update : Msg -> Model -> ( Model, Outbound Msg )
+update : Msg -> Model -> ( Model, Command Msg )
 update msg ({ user } as model) =
     case msg of
         DocsReceived modules ->
             ( { model | analysis = Analysis.withModules modules model.analysis }
-            , Outbound.none
+            , Command.none
             )
 
         TokenChanged token ->
@@ -266,31 +288,37 @@ update msg ({ user } as model) =
                         |> Analysis.withCode model.elmCode
                         |> Analysis.withToken token
               }
-            , Outbound.none
+            , Command.none
             )
 
         SaveRequested ->
             case toSave model of
                 Left revision ->
                     ( { model | saving = True }
-                    , Outbound.CreateRevision model.token revision SaveCompleted
+                    , Effects.createRevision model.token revision
+                        |> Command.map (Result.mapError (\_ -> ()))
+                        |> Command.map (Result.map (\rid -> ( rid, revision )))
+                        |> Command.map SaveCompleted
                     )
 
                 Right ( revisionId, revision ) ->
                     ( { model | saving = True }
-                    , Outbound.UpdateRevision model.token revisionId.projectId revision SaveCompleted
+                    , Effects.updateRevision model.token revisionId.projectId revision
+                        |> Command.map (Result.mapError (\_ -> ()))
+                        |> Command.map (Result.map (\rid -> ( rid, revision )))
+                        |> Command.map SaveCompleted
                     )
 
-        SaveCompleted revisionId revision ->
+        SaveCompleted (Ok ( revisionId, revision )) ->
             case Replaceable.loading model.revision of
                 Just key ->
                     if RevisionId.eq key revisionId then
                         ( { model | saving = False, revision = Replaceable.Loaded ( revisionId, revision ) }
-                        , Outbound.none
+                        , Command.none
                         )
                     else
                         ( { model | saving = False }
-                        , Outbound.none
+                        , Command.none
                         )
 
                 Nothing ->
@@ -305,89 +333,90 @@ update msg ({ user } as model) =
                             }
                                 :: model.notifications
                       }
-                    , Outbound.Navigate <| Route.toString <| Route.Existing revisionId
+                    , Effects.navigate <| Route.toString <| Route.Existing revisionId
                     )
+
+        SaveCompleted (Err _) ->
+            ( { model
+                | saving = False
+                , revision = Replaceable.reset model.revision
+              }
+                |> addNotification
+                    { title = "Saving failed"
+                    , severity = Notification.Failure
+                    , message = "Your changes could not be saved at this time. Saving should always work, so the maintainers have been notified of this issue."
+                    , actions = []
+                    }
+            , Command.none
+            )
 
         LocationSelected location ->
             ( model
-            , Outbound.MoveElmCursor location
+            , Effects.moveElmCursor location
             )
 
         DownloadZip ->
             ( model
-            , Outbound.DownloadZip
-                { elm = model.elmCode
-                , html = model.htmlCode
-                , project =
-                    { sourceDirs = []
-                    , deps = model.packages
-                    , elm = { major = 0, minor = 19, patch = 0 }
-                    }
+            , Effects.downloadZip
+                model.elmCode
+                model.htmlCode
+                { sourceDirs = []
+                , deps = model.packages
+                , elm = { major = 0, minor = 19, patch = 0 }
                 }
-            )
-
-        ExceptionReceived exception ->
-            let
-                notification =
-                    Notification.fromException exception
-            in
-            ( { model
-                | notifications = notification :: List.filter (Notification.eq notification >> not) model.notifications
-              }
-            , Outbound.none
             )
 
         CloseNotification notification ->
             ( { model
                 | notifications = List.filter (Notification.eq notification >> not) model.notifications
               }
-            , Outbound.none
+            , Command.none
             )
 
         CloseAllNotifications ->
             ( { model | notifications = [] }
-            , Outbound.none
+            , Command.none
             )
 
         ErrorsPaneSelected pane ->
             case model.workbench of
                 FinishedWithError state ->
                     ( { model | workbench = FinishedWithError { state | pane = pane } }
-                    , Outbound.none
+                    , Command.none
                     )
 
                 _ ->
-                    ( model, Outbound.none )
+                    ( model, Command.none )
 
         SuccessPaneSelected pane ->
             case model.workbench of
                 Finished state ->
                     ( { model | workbench = Finished { state | pane = pane } }
-                    , Outbound.none
+                    , Command.none
                     )
 
                 _ ->
-                    ( model, Outbound.none )
+                    ( model, Command.none )
 
         ExpandWorkbench ->
             if model.workbenchRatio < 0.05 then
                 ( { model | workbenchRatio = 0.5 }
-                , Outbound.none
+                , Command.none
                 )
             else
                 ( { model | workbenchRatio = 0 }
-                , Outbound.none
+                , Command.none
                 )
 
         LogSearchChanged logSearch ->
             case model.workbench of
                 Finished state ->
                     ( { model | workbench = Finished { state | logSearch = logSearch } }
-                    , Outbound.none
+                    , Command.none
                     )
 
                 _ ->
-                    ( model, Outbound.none )
+                    ( model, Command.none )
 
         LogReceived log ->
             case model.workbench of
@@ -400,11 +429,11 @@ update msg ({ user } as model) =
                                     , logSearch = ""
                                 }
                       }
-                    , Outbound.none
+                    , Command.none
                     )
 
                 _ ->
-                    ( model, Outbound.none )
+                    ( model, Command.none )
 
         ClearLogsClicked ->
             case model.workbench of
@@ -417,11 +446,11 @@ update msg ({ user } as model) =
                                     , logSearch = ""
                                 }
                       }
-                    , Outbound.none
+                    , Command.none
                     )
 
                 _ ->
-                    ( model, Outbound.none )
+                    ( model, Command.none )
 
         CanDebugUpdated canDebug ->
             case model.workbench of
@@ -429,20 +458,40 @@ update msg ({ user } as model) =
                     ( { model
                         | workbench = Finished { state | canDebug = canDebug }
                       }
-                    , Outbound.none
+                    , Command.none
                     )
 
                 _ ->
-                    ( model, Outbound.none )
+                    ( model, Command.none )
 
         IframeReloadClicked ->
             ( model
-            , Outbound.ReloadIframe
+            , Effects.reloadOutput
             )
 
         CompileRequested ->
             ( { model | compiling = True }
-            , Outbound.Compile model.token (compilerVersion model) model.elmCode model.packages
+            , Effects.compile model.token (compilerVersion model) model.elmCode model.packages
+                |> Command.map
+                    (\result ->
+                        case result of
+                            Ok _ ->
+                                NoOp
+
+                            Err _ ->
+                                CompileFailed
+                    )
+            )
+
+        CompileFailed ->
+            ( { model | compiling = False }
+                |> addNotification
+                    { title = "Compiling failed"
+                    , message = "Ellie was unable to compile your code. Compiling should always work, so this has been automatically reported to the maintainers."
+                    , severity = Notification.Failure
+                    , actions = []
+                    }
+            , Command.none
             )
 
         CompileFinished error ->
@@ -457,7 +506,7 @@ update msg ({ user } as model) =
                                     , logSearch = ""
                                 }
                       }
-                    , Outbound.ReloadIframe
+                    , Effects.reloadOutput
                     )
 
                 ( True, Nothing, _ ) ->
@@ -471,7 +520,7 @@ update msg ({ user } as model) =
                                 , canDebug = True
                                 }
                       }
-                    , Outbound.ReloadIframe
+                    , Effects.reloadOutput
                     )
 
                 ( True, Just error, FinishedWithError state ) ->
@@ -479,7 +528,7 @@ update msg ({ user } as model) =
                         | compiling = False
                         , workbench = FinishedWithError { state | error = error }
                       }
-                    , Outbound.none
+                    , Command.none
                     )
 
                 ( True, Just error, _ ) ->
@@ -487,20 +536,33 @@ update msg ({ user } as model) =
                         | compiling = False
                         , workbench = FinishedWithError { error = error, pane = ErrorsList }
                       }
-                    , Outbound.none
+                    , Command.none
                     )
 
                 _ ->
-                    ( model, Outbound.none )
+                    ( model, Command.none )
 
         FormatRequested ->
             ( model
-            , Outbound.FormatElmCode (compilerVersion model) model.elmCode FormatCompleted
+            , Effects.formatCode (compilerVersion model) model.elmCode
+                |> Command.map (Result.mapError (\_ -> ()))
+                |> Command.map FormatCompleted
             )
 
-        FormatCompleted code ->
+        FormatCompleted (Ok code) ->
             ( { model | elmCode = code }
-            , Outbound.none
+            , Command.none
+            )
+
+        FormatCompleted (Err _) ->
+            ( model
+                |> addNotification
+                    { title = "Formatting failed"
+                    , severity = Notification.Failure
+                    , message = "The server couldn't format your code. Formatting should always work, so the maintainers have been notified of this issue."
+                    , actions = []
+                    }
+            , Command.none
             )
 
         CollapseHtml ->
@@ -508,7 +570,7 @@ update msg ({ user } as model) =
                 { model | editorsRatio = 0.75 }
               else
                 { model | editorsRatio = 1 }
-            , Outbound.none
+            , Command.none
             )
 
         ExampleSelected example ->
@@ -521,7 +583,7 @@ update msg ({ user } as model) =
                     }
             in
             ( nextModel
-            , Outbound.EnableNavigationCheck <| hasChanged nextModel
+            , Effects.enableNavigationCheck <| hasChanged nextModel
             )
 
         PackageInstalled package ->
@@ -530,8 +592,8 @@ update msg ({ user } as model) =
                     model.packages ++ [ package ]
             in
             ( { model | packages = nextPackages }
-              -- , Outbound.GetDocs nextPackages DocsReceived
-            , Outbound.none
+            , Effects.getDocs nextPackages
+                |> Command.map DocsReceived
             )
 
         PackageUninstalled package ->
@@ -540,81 +602,108 @@ update msg ({ user } as model) =
                     List.filter ((/=) package) model.packages
             in
             ( { model | packages = nextPackages }
-              -- , Outbound.GetDocs nextPackages DocsReceived
-            , Outbound.none
+            , Effects.getDocs nextPackages
+                |> Command.map DocsReceived
             )
 
         ChangedProjectName projectName ->
             ( { model | projectName = projectName }
-            , Outbound.none
+            , Command.none
             )
 
         WorkbenchResized ratio ->
             ( { model | workbenchRatio = ratio }
-            , Outbound.none
+            , Command.none
             )
 
         EditorsResized ratio ->
             ( { model | editorsRatio = ratio }
-            , Outbound.none
+            , Command.none
             )
 
         ActionPaneSelected actions ->
             ( { model | actions = actions }
-            , Outbound.none
+            , Command.none
             )
 
         SettingsChanged settings ->
             ( { model | user = { user | settings = settings } }
-            , Outbound.SaveSettings model.token settings
+            , Effects.updateSettings model.token settings
+                |> Command.map (\_ -> NoOp)
             )
 
         AnimationFinished ->
-            ( { model | animating = False }, Outbound.none )
+            ( { model | animating = False }
+            , Command.none
+            )
 
         OnlineStatusChanged connected ->
             ( { model | connected = connected }
-            , Outbound.none
+            , Command.none
             )
 
         NoOp ->
-            ( model, Outbound.none )
+            ( model
+            , Command.none
+            )
 
         ActionsMsg actionsMsg ->
             Actions.update actionsMsg model.actions
                 |> Tuple.mapFirst (\a -> { model | actions = a })
-                |> Tuple.mapSecond (Outbound.map ActionsMsg)
+                |> Tuple.mapSecond (Command.map ActionsMsg)
 
         ElmCodeChanged code ->
             ( { model | elmCode = code }
-            , Outbound.EnableNavigationCheck <| hasChanged model
+            , Effects.enableNavigationCheck <| hasChanged model
             )
 
         HtmlCodeChanged code ->
             ( { model | htmlCode = code }
-            , Outbound.EnableNavigationCheck <| hasChanged model
+            , Effects.enableNavigationCheck <| hasChanged model
             )
 
-        RevisionLoaded revisionId revision ->
-            case model.revision of
-                Replaceable.Loading rid ->
+        RevisionLoaded revisionId result ->
+            case ( model.revision, result ) of
+                ( Replaceable.Loading rid, Ok revision ) ->
                     if rid == revisionId then
                         ( reset model.token model.user (Just ( revisionId, revision )) model.defaultPackages
-                        , Outbound.none
+                        , Command.none
                         )
                     else
-                        ( model, Outbound.none )
+                        ( model, Command.none )
 
-                Replaceable.Replacing rid _ ->
+                ( Replaceable.Replacing rid _, Ok revision ) ->
                     if rid == revisionId then
                         ( reset model.token model.user (Just ( revisionId, revision )) model.defaultPackages
-                        , Outbound.none
+                        , Command.none
                         )
                     else
-                        ( model, Outbound.none )
+                        ( model, Command.none )
+
+                ( Replaceable.Loading _, Err _ ) ->
+                    ( model
+                        |> addNotification
+                            { title = "Ellie not found"
+                            , severity = Notification.Failure
+                            , message = "The Ellie you asked for couldn't be loaded."
+                            , actions = []
+                            }
+                    , Effects.redirect <| Route.toString Route.New
+                    )
+
+                ( Replaceable.Replacing _ ( rid, _ ), Err _ ) ->
+                    ( model
+                        |> addNotification
+                            { title = "Ellie not found"
+                            , severity = Notification.Failure
+                            , message = "The Ellie you asked for couldn't be loaded."
+                            , actions = []
+                            }
+                    , Effects.redirect <| Route.toString <| Route.Existing rid
+                    )
 
                 _ ->
-                    ( model, Outbound.none )
+                    ( model, Command.none )
 
         RouteChanged route ->
             case route of
@@ -623,71 +712,90 @@ update msg ({ user } as model) =
                         Replaceable.Loaded ( rid, r ) ->
                             if newRevisionId /= rid then
                                 ( { model | revision = Replaceable.Replacing newRevisionId ( rid, r ) }
-                                , Outbound.GetRevision newRevisionId (RevisionLoaded newRevisionId)
+                                , Effects.getRevision newRevisionId
+                                    |> Command.map (Result.mapError (\_ -> ()))
+                                    |> Command.map (RevisionLoaded newRevisionId)
                                 )
                             else
-                                ( model, Outbound.none )
+                                ( model, Command.none )
 
                         Replaceable.Loading rid ->
                             if newRevisionId /= rid then
                                 ( { model | revision = Replaceable.Loading newRevisionId }
-                                , Outbound.GetRevision newRevisionId (RevisionLoaded newRevisionId)
+                                , Effects.getRevision newRevisionId
+                                    |> Command.map (Result.mapError (\_ -> ()))
+                                    |> Command.map (RevisionLoaded newRevisionId)
                                 )
                             else
-                                ( model, Outbound.none )
+                                ( model, Command.none )
 
                         Replaceable.Replacing rid entity ->
                             if newRevisionId /= rid then
                                 ( { model | revision = Replaceable.Replacing newRevisionId entity }
-                                , Outbound.GetRevision newRevisionId (RevisionLoaded newRevisionId)
+                                , Effects.getRevision newRevisionId
+                                    |> Command.map (Result.mapError (\_ -> ()))
+                                    |> Command.map (RevisionLoaded newRevisionId)
                                 )
                             else
-                                ( model, Outbound.none )
+                                ( model, Command.none )
 
                         Replaceable.NotAsked ->
                             ( { model | revision = Replaceable.Loading newRevisionId }
-                            , Outbound.GetRevision newRevisionId (RevisionLoaded newRevisionId)
+                            , Effects.getRevision newRevisionId
+                                |> Command.map (Result.mapError (\_ -> ()))
+                                |> Command.map (RevisionLoaded newRevisionId)
                             )
 
                 Route.New ->
                     case model.revision of
                         Replaceable.NotAsked ->
-                            ( model, Outbound.none )
+                            ( model, Command.none )
 
                         _ ->
                             ( reset model.token model.user Nothing model.defaultPackages
-                            , Outbound.none
+                            , Command.none
                             )
 
                 Route.NotFound ->
                     case Replaceable.toMaybe model.revision of
                         Just ( rid, _ ) ->
                             ( model
-                            , Outbound.Redirect <| Route.toString <| Route.Existing rid
+                            , Effects.redirect <| Route.toString <| Route.Existing rid
                             )
 
                         Nothing ->
                             ( model
-                            , Outbound.Redirect <| Route.toString Route.New
+                            , Effects.redirect <| Route.toString Route.New
                             )
 
 
-subscriptions : Model -> Inbound Msg
+subscriptions : Model -> Subscription Msg
 subscriptions model =
-    Inbound.batch
-        [ Inbound.map ActionsMsg <| Actions.subscriptions model.actions
-        , Inbound.WorkspaceUpdates model.token <|
-            \update ->
-                case update of
-                    WorkspaceUpdate.CompileCompleted maybeError ->
-                        CompileFinished maybeError
+    Subscription.batch
+        [ Actions.subscriptions model.actions
+            |> Subscription.map ActionsMsg
+        , Effects.workspaceUpdates model.token
+            |> Subscription.map
+                (\update ->
+                    case update of
+                        WorkspaceUpdate.CompileCompleted maybeError ->
+                            CompileFinished maybeError
 
-                    WorkspaceUpdate.Connected ->
-                        OnlineStatusChanged True
+                        WorkspaceUpdate.Connected ->
+                            OnlineStatusChanged True
 
-                    WorkspaceUpdate.Disconnected ->
-                        OnlineStatusChanged False
+                        WorkspaceUpdate.Disconnected ->
+                            OnlineStatusChanged False
 
-                    _ ->
+                        _ ->
+                            NoOp
+                )
+        , Effects.networkStatus
+            |> Subscription.map
+                (\online ->
+                    if online then
                         NoOp
+                    else
+                        OnlineStatusChanged False
+                )
         ]

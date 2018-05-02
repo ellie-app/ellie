@@ -1,21 +1,8 @@
-module Pages.Editor.Effects.Handlers
-    exposing
-        ( GqlError
-        , acceptTerms
-        , attachToWorkspace
-        , authenticate
-        , compile
-        , createRevision
-        , formatCode
-        , getDocs
-        , getRevision
-        , searchPackages
-        , setupSocket
-        , updateRevision
-        , updateSettings
-        )
+module Pages.Editor.Effects exposing (..)
 
 import Data.Jwt as Jwt exposing (Jwt)
+import Effect.Command as Command exposing (Command)
+import Effect.Subscription as Subscription exposing (Subscription)
 import Ellie.Api.Enum.Theme as ApiTheme
 import Ellie.Api.Helpers as ApiHelpers
 import Ellie.Api.Mutation as ApiMutation
@@ -32,33 +19,25 @@ import Ellie.Api.Subscription as ApiSubscription
 import Ellie.Api.Union.WorkspaceUpdate as ApiWorkspaceUpdate
 import Ellie.Constants as Constants
 import Elm.Docs as Docs
-import Elm.Error as ElmError
+import Elm.Error as Error
 import Elm.Name as Name
 import Elm.Package as Package exposing (Package)
 import Elm.Project as Project exposing (Project)
 import Elm.Version as Version exposing (Version)
 import Graphqelm.Field as Field
-import Graphqelm.Http as GraphqlHttp
+import Graphqelm.Http
 import Graphqelm.OptionalArgument as OptionalArgument
 import Graphqelm.SelectionSet as SelectionSet exposing (SelectionSet(..), hardcoded, with)
-import Http
-import HttpBuilder exposing (post, withExpectJson, withJsonBody)
 import Json.Decode as Decode exposing (Decoder)
 import Json.Encode as Encode exposing (Value)
-import Network.Absinthe.Subscription as Subscription
 import Pages.Editor.Types.Revision as Revision exposing (Revision)
 import Pages.Editor.Types.RevisionId as RevisionId exposing (RevisionId)
 import Pages.Editor.Types.Settings as Settings exposing (Settings)
 import Pages.Editor.Types.User as User exposing (User)
 import Pages.Editor.Types.WorkspaceUpdate as WorkspaceUpdate exposing (WorkspaceUpdate(..))
-import Task exposing (Task)
 
 
-type alias GqlError =
-    GraphqlHttp.Error ()
-
-
-getRevision : RevisionId -> Cmd (Result GqlError Revision)
+getRevision : RevisionId -> Command (Result (Graphqelm.Http.Error ()) Revision)
 getRevision revisionId =
     let
         query =
@@ -83,13 +62,14 @@ getRevision revisionId =
             ApiUser.selection identity
                 |> with (ApiHelpers.uuidField ApiUser.id)
     in
-    query
-        |> GraphqlHttp.queryRequestWithHttpGet "/api" GraphqlHttp.AlwaysGet
-        |> GraphqlHttp.withQueryParams [ ( "cache", "permanent" ) ]
-        |> GraphqlHttp.send (Result.mapError GraphqlHttp.ignoreParsedErrorData)
+    Command.GraphqlQuery
+        "/api"
+        Nothing
+        (SelectionSet.map Ok query)
+        Err
 
 
-searchPackages : String -> Cmd (Result GqlError (List Package))
+searchPackages : String -> Command (Result (Graphqelm.Http.Error ()) (List Package))
 searchPackages queryString =
     let
         query =
@@ -104,26 +84,20 @@ searchPackages queryString =
                 |> with (ApiHelpers.nameField ApiPackage.name)
                 |> with (ApiHelpers.versionField ApiPackage.version)
     in
-    query
-        |> GraphqlHttp.queryRequestWithHttpGet "/api" GraphqlHttp.AlwaysGet
-        |> GraphqlHttp.withQueryParams [ ( "cache", "temporary" ) ]
-        |> GraphqlHttp.send (Result.mapError GraphqlHttp.ignoreParsedErrorData)
+    Command.GraphqlQuery "/api" Nothing (SelectionSet.map Ok query) Err
 
 
-acceptTerms : Jwt -> Int -> Cmd (Result GqlError ())
+acceptTerms : Jwt -> Int -> Command (Result (Graphqelm.Http.Error ()) ())
 acceptTerms token terms =
     let
         mutation =
             ApiMutation.selection (\_ -> ())
                 |> with (ApiMutation.acceptTerms { terms = terms })
     in
-    mutation
-        |> GraphqlHttp.mutationRequest "/api"
-        |> Jwt.withTokenHeader token
-        |> GraphqlHttp.send (Result.mapError GraphqlHttp.ignoreParsedErrorData)
+    Command.GraphqlMutation "/api" (Just token) (SelectionSet.map Ok mutation) Err
 
 
-authenticate : Maybe Jwt -> Cmd (Result GqlError ( Int, Jwt, User ))
+authenticate : Maybe Jwt -> Command (Result (Graphqelm.Http.Error ()) ( Int, Jwt, User ))
 authenticate maybeToken =
     let
         mutation =
@@ -157,13 +131,10 @@ authenticate maybeToken =
                 ApiTheme.Light ->
                     Settings.Light
     in
-    mutation
-        |> GraphqlHttp.mutationRequest "/api"
-        |> ApiHelpers.withMaybe Jwt.withTokenHeader maybeToken
-        |> GraphqlHttp.send (Result.mapError GraphqlHttp.ignoreParsedErrorData)
+    Command.GraphqlMutation "/api" maybeToken (SelectionSet.map Ok mutation) Err
 
 
-formatCode : Version -> String -> Cmd (Result GqlError String)
+formatCode : Version -> String -> Command (Result (Graphqelm.Http.Error ()) String)
 formatCode version code =
     let
         mutation =
@@ -175,12 +146,10 @@ formatCode version code =
             , elmVersion = ApiScalar.Version <| Version.toString version
             }
     in
-    mutation
-        |> GraphqlHttp.mutationRequest "/api"
-        |> GraphqlHttp.send (Result.mapError GraphqlHttp.ignoreParsedErrorData)
+    Command.GraphqlMutation "/api" Nothing (SelectionSet.map Ok mutation) Err
 
 
-compile : Jwt -> Version -> String -> List Package -> Cmd (Result GqlError ())
+compile : Jwt -> Version -> String -> List Package -> Command (Result (Graphqelm.Http.Error ()) ())
 compile token elmVersion elmCode packages =
     let
         mutation =
@@ -198,14 +167,11 @@ compile token elmVersion elmCode packages =
             , version = ApiScalar.Version <| Version.toString package.version
             }
     in
-    mutation
-        |> GraphqlHttp.mutationRequest "/api"
-        |> Jwt.withTokenHeader token
-        |> GraphqlHttp.send (Result.mapError GraphqlHttp.ignoreParsedErrorData)
+    Command.GraphqlMutation "/api" (Just token) (SelectionSet.map Ok mutation) Err
 
 
-setupSocket : Jwt -> Subscription.State WorkspaceUpdate
-setupSocket token =
+workspaceUpdates : Jwt -> Subscription WorkspaceUpdate
+workspaceUpdates token =
     let
         selection =
             ApiSubscription.selection identity
@@ -217,17 +183,22 @@ setupSocket token =
                     |> with (ApiWorkspaceAttached.packages Package.selection)
                     |> ApiWorkspaceUpdate.onWorkspaceAttached
                 , ApiCompileCompleted.selection CompileCompleted
-                    |> with (ApiCompileCompleted.error ElmError.selection)
+                    |> with (ApiCompileCompleted.error Error.selection)
                     |> ApiWorkspaceUpdate.onCompileCompleted
                 ]
     in
-    Subscription.init
+    Subscription.AbsintheSubscription
         (Constants.socketOrigin ++ "/api/sockets/websocket?vsn=2.0.0&token=" ++ Jwt.toString token)
-        Debug.log
         selection
+        (\connected ->
+            if connected then
+                Connected
+            else
+                Disconnected
+        )
 
 
-attachToWorkspace : Jwt -> Version -> Cmd (Result GqlError ())
+attachToWorkspace : Jwt -> Version -> Command (Result (Graphqelm.Http.Error ()) ())
 attachToWorkspace token version =
     let
         selection =
@@ -237,13 +208,10 @@ attachToWorkspace token version =
         arguments =
             { elmVersion = ApiScalar.Version <| Version.toString version }
     in
-    selection
-        |> GraphqlHttp.mutationRequest "/api"
-        |> Jwt.withTokenHeader token
-        |> GraphqlHttp.send (Result.mapError GraphqlHttp.ignoreParsedErrorData)
+    Command.GraphqlMutation "/api" (Just token) (SelectionSet.map Ok selection) Err
 
 
-updateSettings : Jwt -> Settings -> Task GqlError ()
+updateSettings : Jwt -> Settings -> Command (Result (Graphqelm.Http.Error ()) ())
 updateSettings token settings =
     let
         selection =
@@ -264,14 +232,10 @@ updateSettings token settings =
                             ApiTheme.Light
             }
     in
-    selection
-        |> GraphqlHttp.mutationRequest "/api"
-        |> Jwt.withTokenHeader token
-        |> GraphqlHttp.toTask
-        |> Task.mapError GraphqlHttp.ignoreParsedErrorData
+    Command.GraphqlMutation "/api" (Just token) (SelectionSet.map Ok selection) Err
 
 
-createRevision : Jwt -> Revision -> Cmd (Result GqlError RevisionId)
+createRevision : Jwt -> Revision -> Command (Result (Graphqelm.Http.Error ()) RevisionId)
 createRevision token revision =
     let
         selection =
@@ -298,13 +262,10 @@ createRevision token revision =
                 |> with (ApiHelpers.projectIdField ApiRevision.projectId)
                 |> with ApiRevision.revisionNumber
     in
-    selection
-        |> GraphqlHttp.mutationRequest "/api"
-        |> Jwt.withTokenHeader token
-        |> GraphqlHttp.send (Result.mapError GraphqlHttp.ignoreParsedErrorData)
+    Command.GraphqlMutation "/api" (Just token) (SelectionSet.map Ok selection) Err
 
 
-updateRevision : Jwt -> String -> Revision -> Cmd (Result GqlError RevisionId)
+updateRevision : Jwt -> String -> Revision -> Command (Result (Graphqelm.Http.Error ()) RevisionId)
 updateRevision token projectId revision =
     let
         selection =
@@ -332,13 +293,10 @@ updateRevision token projectId revision =
                 |> with (ApiHelpers.projectIdField ApiRevision.projectId)
                 |> with ApiRevision.revisionNumber
     in
-    selection
-        |> GraphqlHttp.mutationRequest "/api"
-        |> Jwt.withTokenHeader token
-        |> GraphqlHttp.send (Result.mapError GraphqlHttp.ignoreParsedErrorData)
+    Command.GraphqlMutation "/api" (Just token) (SelectionSet.map Ok selection) Err
 
 
-getDocs : List Package -> Cmd (List Docs.Module)
+getDocs : List Package -> Command (List Docs.Module)
 getDocs packages =
     let
         selection =
@@ -360,7 +318,81 @@ getDocs packages =
                 |> SelectionSet.map (\p d -> List.map ((|>) p) d)
                 |> with (ApiPackage.docs Docs.selection)
     in
-    selection
-        |> GraphqlHttp.queryRequestWithHttpGet "/api" GraphqlHttp.AlwaysGet
-        |> GraphqlHttp.withQueryParams [ ( "cache", "permanent" ) ]
-        |> GraphqlHttp.send (Result.withDefault [])
+    Command.GraphqlQuery "/api" Nothing (SelectionSet.map identity selection) (\_ -> [])
+
+
+moveElmCursor : Error.Position -> Command msg
+moveElmCursor position =
+    Command.PortSend "MoveElmCursor" <|
+        Encode.list
+            [ Encode.int position.line
+            , Encode.int position.column
+            ]
+
+
+downloadZip : String -> String -> Project -> Command msg
+downloadZip elm html project =
+    Command.PortSend "DownloadZip" <|
+        Encode.list
+            [ Encode.string <| Encode.encode 2 (Project.encoder project)
+            , Encode.string elm
+            , Encode.string html
+            ]
+
+
+openInNewTab : String -> Command msg
+openInNewTab url =
+    Command.PortSend "OpenInNewTab" <|
+        Encode.list
+            [ Encode.string url ]
+
+
+delay : Int -> Command ()
+delay millis =
+    Command.Delay millis ()
+
+
+enableNavigationCheck : Bool -> Command msg
+enableNavigationCheck enabled =
+    Command.PortSend "EnableNavigationCheck" <|
+        Encode.list
+            [ Encode.bool enabled ]
+
+
+saveToken : Jwt -> Command msg
+saveToken token =
+    Command.PortSend "SaveToken" <|
+        Encode.list
+            [ Jwt.encoder token ]
+
+
+navigate : String -> Command msg
+navigate url =
+    Command.NewUrl url
+
+
+redirect : String -> Command msg
+redirect url =
+    Command.Redirect url
+
+
+escapePressed : Subscription ()
+escapePressed =
+    Subscription.KeyPress 27 ()
+
+
+reloadOutput : Command msg
+reloadOutput =
+    Command.ReloadOutput
+
+
+networkStatus : Subscription Bool
+networkStatus =
+    Subscription.PortReceive "NetworkStatus" <|
+        \value ->
+            case Decode.decodeValue Decode.bool value of
+                Ok result ->
+                    result
+
+                Err _ ->
+                    False

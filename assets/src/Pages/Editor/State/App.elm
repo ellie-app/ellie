@@ -9,10 +9,10 @@ module Pages.Editor.State.App
 
 import Data.Jwt as Jwt exposing (Jwt)
 import Data.Transition as Transition exposing (Transition(..))
+import Effect.Command as Command exposing (Command)
+import Effect.Subscription as Subscription exposing (Subscription)
 import Elm.Package as Package exposing (Package)
-import Pages.Editor.Effects.Exception as Exception exposing (Exception)
-import Pages.Editor.Effects.Inbound as Inbound exposing (Inbound)
-import Pages.Editor.Effects.Outbound as Outbound exposing (Outbound)
+import Pages.Editor.Effects as Effects
 import Pages.Editor.Flags as Flags exposing (Flags)
 import Pages.Editor.Route as Route exposing (Route(..))
 import Pages.Editor.State.Setup as Setup
@@ -29,22 +29,22 @@ type Model
     | Broken
 
 
-init : Flags -> Route -> ( Model, Outbound Msg )
+init : Flags -> Route -> ( Model, Command Msg )
 init flags route =
     case route of
         Route.New ->
             Setup.init flags.token Nothing
                 |> Tuple.mapFirst Setup
-                |> Tuple.mapSecond (Outbound.map SetupMsg)
+                |> Tuple.mapSecond (Command.map SetupMsg)
 
         Route.Existing revisionId ->
             Setup.init flags.token (Just revisionId)
                 |> Tuple.mapFirst Setup
-                |> Tuple.mapSecond (Outbound.map SetupMsg)
+                |> Tuple.mapSecond (Command.map SetupMsg)
 
         NotFound ->
             ( Initial flags route
-            , Outbound.Redirect <| Route.toString Route.New
+            , Effects.redirect <| Route.toString Route.New
             )
 
 
@@ -54,11 +54,11 @@ setupToWorking :
     , packages : List Package
     , user : User
     }
-    -> ( Model, Outbound Msg )
+    -> ( Model, Command Msg )
 setupToWorking { token, revision, packages, user } =
     Working.init token user revision packages
         |> Tuple.mapFirst Working
-        |> Tuple.mapSecond (Outbound.map WorkingMsg)
+        |> Tuple.mapSecond (Command.map WorkingMsg)
 
 
 type Msg
@@ -67,10 +67,9 @@ type Msg
     | RouteChanged Route
     | SetupMsg Setup.Msg
     | WorkingMsg Working.Msg
-    | ExceptionOccurred Exception
 
 
-update : Msg -> Model -> ( Model, Outbound Msg )
+update : Msg -> Model -> ( Model, Command Msg )
 update msg_ model =
     case ( model, msg_ ) of
         ( _, RouteChanged route ) ->
@@ -82,40 +81,35 @@ update msg_ model =
                     update (SetupMsg (Setup.RouteChanged route)) model
 
                 _ ->
-                    ( model, Outbound.none )
+                    ( model, Command.none )
 
         ( Setup setupState, SetupMsg msg ) ->
             case Setup.update msg setupState of
-                ( Transition.Step next, setupOutbound ) ->
+                ( Transition.Step next, setupCommand ) ->
                     ( Setup next
-                    , Outbound.map SetupMsg setupOutbound
+                    , Command.map SetupMsg setupCommand
                     )
 
-                ( Transition.Exit data, setupOutbound ) ->
+                ( Transition.Exit data, setupCommand ) ->
                     setupToWorking data
 
         ( Working workingState, WorkingMsg msg ) ->
             Working.update msg workingState
                 |> Tuple.mapFirst Working
-                |> Tuple.mapSecond (Outbound.map WorkingMsg)
-
-        ( Working workingState, ExceptionOccurred exception ) ->
-            Working.update (Working.ExceptionReceived exception) workingState
-                |> Tuple.mapFirst Working
-                |> Tuple.mapSecond (Outbound.map WorkingMsg)
+                |> Tuple.mapSecond (Command.map WorkingMsg)
 
         _ ->
-            ( model, Outbound.none )
+            ( model, Command.none )
 
 
-subscriptions : Model -> Inbound Msg
+subscriptions : Model -> Subscription Msg
 subscriptions state =
     case state of
         Setup setupState ->
-            Inbound.map SetupMsg <| Setup.subscriptions setupState
+            Subscription.map SetupMsg <| Setup.subscriptions setupState
 
         Working workingState ->
-            Inbound.map WorkingMsg <| Working.subscriptions workingState
+            Subscription.map WorkingMsg <| Working.subscriptions workingState
 
         _ ->
-            Inbound.none
+            Subscription.none

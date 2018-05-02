@@ -1,5 +1,5 @@
 const start = (app) => {
-  app.ports.pagesEmbedEffectsStateOut.subscribe(({ tag, contents }) => {
+  app.ports.outbound.subscribe(([tag, contents]) => {
     switch (tag) {
       case 'GoToPosition':
         requestAnimationFrame(() => {

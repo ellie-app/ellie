@@ -1,10 +1,10 @@
 module Pages.Embed.State.App exposing (..)
 
+import Effect.Command as Command exposing (Command)
+import Effect.Subscription as Subscription exposing (Subscription)
 import Elm.Error as Error exposing (Error)
 import Json.Decode as Decode exposing (Decoder)
-import Pages.Embed.Effects.Handlers exposing (GetRevisionError, RunEmbedError)
-import Pages.Embed.Effects.Inbound as Inbound exposing (Inbound)
-import Pages.Embed.Effects.Outbound as Outbound exposing (Outbound)
+import Pages.Embed.Effects as Effects
 import Pages.Embed.Types.EmbedUpdate as EmbedUpdate exposing (EmbedUpdate)
 import Pages.Embed.Types.Panel as Panel exposing (Panel)
 import Pages.Embed.Types.Revision as Revision exposing (Revision)
@@ -49,24 +49,26 @@ flags =
     Decode.succeed {}
 
 
-init : Flags -> Route -> ( Model, Outbound Msg )
+init : Flags -> Route -> ( Model, Command Msg )
 init flags route =
     case route of
         Route.NotFound ->
-            ( Failure, Outbound.none )
+            ( Failure, Command.none )
 
         Route.Existing revisionId panel ->
             ( Loading revisionId panel
-            , Outbound.GetRevision revisionId (RevisionLoaded revisionId)
+            , Effects.getRevision revisionId
+                |> Command.map (Result.mapError (\_ -> ()))
+                |> Command.map (RevisionLoaded revisionId)
             )
 
 
 type Msg
-    = RevisionLoaded RevisionId (Result GetRevisionError Revision)
+    = RevisionLoaded RevisionId (Result () Revision)
     | RouteChanged Route
     | UpdateReceived EmbedUpdate
     | EmbedRunStarted
-    | RunCompleted (Result RunEmbedError (Maybe (Maybe Error)))
+    | RunCompleted (Result () (Maybe (Maybe Error)))
     | CanDebugChanged Bool
     | ToggleDebugger Bool
     | PanelSelected Panel
@@ -74,14 +76,14 @@ type Msg
     | ReloadOutput
 
 
-update : Msg -> Model -> ( Model, Outbound Msg )
+update : Msg -> Model -> ( Model, Command Msg )
 update msg model =
     case ( model, msg ) of
         ( _, RouteChanged route ) ->
             init {} route
 
         ( Failure, _ ) ->
-            ( model, Outbound.none )
+            ( model, Command.none )
 
         ( Loading rid panel, RevisionLoaded revisionId (Ok revision) ) ->
             if RevisionId.eq rid revisionId then
@@ -91,20 +93,20 @@ update msg model =
                     , output = NotRun
                     , debug = DebuggerUnavailable
                     }
-                , Outbound.none
+                , Command.none
                 )
             else
-                ( model, Outbound.none )
+                ( model, Command.none )
 
         ( Loading rid panel, RevisionLoaded revisionId (Err error) ) ->
             if RevisionId.eq rid revisionId then
-                ( Failure, Outbound.none )
+                ( Failure, Command.none )
             else
-                ( model, Outbound.none )
+                ( model, Command.none )
 
         ( Working state, ReloadOutput ) ->
             ( model
-            , Outbound.ReloadOutput
+            , Command.ReloadOutput
             )
 
         ( Working state, CanDebugChanged canDebug ) ->
@@ -116,7 +118,7 @@ update msg model =
                         else
                             DebuggerUnavailable
                 }
-            , Outbound.none
+            , Command.none
             )
 
         ( Working state, ToggleDebugger open ) ->
@@ -133,84 +135,88 @@ update msg model =
                             _ ->
                                 state.debug
                 }
-            , Outbound.none
+            , Command.none
             )
 
         ( Working state, PanelSelected panel ) ->
             ( Working { state | panel = panel }
-            , Outbound.none
+            , Command.none
             )
 
         ( Working state, EmbedRunStarted ) ->
             ( Working { state | output = AcquiringConnection }
-            , Outbound.none
+            , Command.none
             )
 
         ( Working state, RunCompleted (Ok (Just error)) ) ->
             ( Working { state | output = Finished error }
-            , Outbound.none
+            , Command.none
             )
 
         ( Working state, RunCompleted (Ok Nothing) ) ->
-            ( Working state, Outbound.none )
+            ( Working state, Command.none )
 
         ( Working state, RunCompleted (Err _) ) ->
             ( Working
                 { state
                     | output = Crashed "Compiler process failed to start. Sometimes this is because of a network connection error. If you are online, though, this was a server failure and it has been automatically reported."
                 }
-            , Outbound.none
+            , Command.none
             )
 
         ( Working state, UpdateReceived embedUpdate ) ->
             case ( state.output, embedUpdate ) of
                 ( AcquiringConnection, EmbedUpdate.Connected ) ->
                     ( Working { state | output = Compiling }
-                    , Outbound.RunEmbed state.revision.id RunCompleted
+                    , Effects.runEmbed state.revision.id
+                        |> Command.map (Result.mapError (\_ -> ()))
+                        |> Command.map RunCompleted
                     )
 
                 ( Compiling, EmbedUpdate.Compiled error ) ->
                     ( Working { state | output = Finished error }
-                    , Outbound.none
+                    , Command.none
                     )
 
                 ( Compiling, EmbedUpdate.Failed message ) ->
                     ( Working { state | output = Crashed message }
-                    , Outbound.none
+                    , Command.none
                     )
 
                 ( _, EmbedUpdate.Disconnected ) ->
                     ( Working { state | output = NotRun }
-                    , Outbound.none
+                    , Command.none
                     )
 
                 _ ->
-                    ( model, Outbound.none )
+                    ( model, Command.none )
 
         ( Working state, GoToPosition position ) ->
             ( Working { state | panel = Panel.Elm }
-            , Outbound.GoToPosition position
+            , Effects.goToPosition position
             )
 
         _ ->
-            ( model, Outbound.none )
+            ( model, Command.none )
 
 
-subscriptions : Model -> Inbound Msg
+subscriptions : Model -> Subscription Msg
 subscriptions model =
     case model of
         Working state ->
-            Inbound.batch
+            Subscription.batch
                 [ case state.output of
                     AcquiringConnection ->
-                        Inbound.EmbedUpdates state.revision.id UpdateReceived
+                        Effects.embedUpdates state.revision.id
+                            |> Subscription.map UpdateReceived
 
                     Compiling ->
-                        Inbound.EmbedUpdates state.revision.id UpdateReceived
+                        Effects.embedUpdates state.revision.id
+                            |> Subscription.map UpdateReceived
 
                     _ ->
-                        Inbound.none
+                        Subscription.none
                 ]
 
         _ ->
-            Inbound.none
+            Subscription.none

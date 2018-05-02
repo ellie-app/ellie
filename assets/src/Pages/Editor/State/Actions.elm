@@ -1,8 +1,9 @@
 module Pages.Editor.State.Actions exposing (..)
 
+import Effect.Command as Command exposing (Command)
+import Effect.Subscription as Subscription exposing (Subscription)
 import Elm.Package as Package exposing (Package)
-import Pages.Editor.Effects.Inbound as Inbound exposing (Inbound)
-import Pages.Editor.Effects.Outbound as Outbound exposing (Outbound)
+import Pages.Editor.Effects as Effects
 
 
 type alias PackagesModel =
@@ -33,35 +34,37 @@ type Msg
     | SearchedPackagesReceived (Maybe (List Package))
 
 
-update : Msg -> Model -> ( Model, Outbound Msg )
+update : Msg -> Model -> ( Model, Command Msg )
 update msg model =
     case ( model, msg ) of
         ( Packages packagesModel, UserTypedInPackageSearch query ) ->
             if String.isEmpty query then
                 ( Packages { packagesModel | query = query, searchedPackages = Nothing, awaitingSearch = False }
-                , Outbound.none
+                , Command.none
                 )
             else if String.length query < 4 then
                 ( Packages { packagesModel | query = query }
-                , Outbound.none
+                , Command.none
                 )
             else
                 ( Packages { packagesModel | query = query, awaitingSearch = True }
-                , Outbound.SearchPackages query SearchedPackagesReceived
+                , Effects.searchPackages query
+                    |> Command.map Result.toMaybe
+                    |> Command.map SearchedPackagesReceived
                 )
 
         ( Packages packagesModel, SearchedPackagesReceived packages ) ->
             if packagesModel.awaitingSearch then
                 ( Packages { packagesModel | searchedPackages = packages, awaitingSearch = False }
-                , Outbound.none
+                , Command.none
                 )
             else
-                ( model, Outbound.none )
+                ( model, Command.none )
 
         _ ->
-            ( model, Outbound.none )
+            ( model, Command.none )
 
 
-subscriptions : Model -> Inbound Msg
+subscriptions : Model -> Subscription Msg
 subscriptions model =
-    Inbound.none
+    Subscription.none

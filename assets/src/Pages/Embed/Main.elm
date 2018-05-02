@@ -1,12 +1,19 @@
-module Pages.Embed.Main exposing (main)
+port module Pages.Embed.Main exposing (main)
 
-import Pages.Embed.Effects.Program as Program
+import Effect.Program as Program
+import Json.Decode exposing (Value)
 import Pages.Embed.State.App as AppState
 import Pages.Embed.Types.Route as Route
 import Pages.Embed.Views.App as AppView
 
 
-main : Program.EffectsProgram AppState.Model AppState.Msg
+port inbound : (( String, Value ) -> msg) -> Sub msg
+
+
+port outbound : ( String, Value ) -> Cmd msg
+
+
+main : Program.Program AppState.Model AppState.Msg
 main =
     Program.program
         { subscriptions = AppState.subscriptions
@@ -17,4 +24,6 @@ main =
         , url = Route.parse
         , route = AppState.RouteChanged
         , styles = AppView.styles
+        , inbound = inbound
+        , outbound = outbound
         }

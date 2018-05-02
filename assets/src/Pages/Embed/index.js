@@ -3,7 +3,7 @@ import EllieUiIcon from '../../Ellie/Ui/Icon'
 import EllieUiCodeEditor from '../../Ellie/Ui/CodeEditor'
 import EllieUiOutput from '../../Ellie/Ui/Output'
 import NetworkSocket from '../../Network/Socket'
-import PagesEmbedEffectsState from './Effects/State'
+import PagesEmbedMain from './Main'
 import '../../Ellie/Ui/CodeEditor.css'
 import '../../Ellie/Ui/Logo.css'
 import { Pages } from './Main.elm'
@@ -11,7 +11,7 @@ import { Pages } from './Main.elm'
 document.addEventListener('DOMContentLoaded', () => {
   let flags = {}
   const app = Pages.Embed.Main.fullscreen(flags)
-  PagesEmbedEffectsState.start(app)
+  PagesEmbedMain.start(app)
   NetworkSocket.start(app)
   EllieUiOutput.start(app)
   EllieUiCodeEditor.start(app)

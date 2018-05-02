@@ -31,6 +31,19 @@ toMaybe replaceable =
             Just entity
 
 
+reset : Replaceable k v -> Replaceable k v
+reset replaceable =
+    case replaceable of
+        Replacing _ entity ->
+            Loaded entity
+
+        Loaded entity ->
+            Loaded entity
+
+        _ ->
+            NotAsked
+
+
 loading : Replaceable k v -> Maybe k
 loading replaceable =
     case replaceable of

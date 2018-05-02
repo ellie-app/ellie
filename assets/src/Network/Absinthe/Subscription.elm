@@ -4,7 +4,7 @@ module Network.Absinthe.Subscription
         , Info(..)
         , Logger
         , Msg
-        , State
+        , Socket
         , emptyLogger
         , init
         , listen
@@ -22,14 +22,14 @@ import Task
 import Time
 
 
-type alias State a =
+type alias Socket =
     { connected : Bool
     , channel : ChannelStatus
     , url : String
     , refId : Int
     , docId : Maybe String
     , logger : Logger
-    , document : SelectionSet a RootSubscription
+    , document : String
     }
 
 
@@ -49,7 +49,7 @@ emptyLogger a b =
     b
 
 
-init : String -> Logger -> SelectionSet a RootSubscription -> State a
+init : String -> Logger -> SelectionSet a RootSubscription -> Socket
 init url logger doc =
     { connected = False
     , channel = Initial
@@ -57,12 +57,12 @@ init url logger doc =
     , refId = 0
     , docId = Nothing
     , logger = logger
-    , document = doc
+    , document = Document.serializeSubscription doc
     }
 
 
-type Info a
-    = Data a
+type Info
+    = Data Value
     | Status Bool
     | Control Msg
 
@@ -74,14 +74,14 @@ type Msg
     | ChannelJoined Int
     | DocRequested
     | DocSubscribed String
+    | ProblemResponse String
     | MutationComplete
     | NoOp
-    | ProblemResponse String
     | HeartbeatReceived
     | HeartbeatRequested
 
 
-update : Msg -> State a -> ( State a, Cmd Msg )
+update : Msg -> Socket -> ( Socket, Cmd Msg )
 update msg state =
     case msg of
         SocketOpened ->
@@ -107,13 +107,6 @@ update msg state =
                     ( { state | channel = Joining (state.refId + 1), refId = state.refId + 1 }
                     , Socket.send state.url <|
                         Encode.encode 0 <|
-                            -- Encode.object
-                            --     [ ( "join_ref", Encode.null )
-                            --     , ( "ref", Encode.string <| toString (state.refId + 1) )
-                            --     , ( "topic", Encode.string "__absinthe__:control" )
-                            --     , ( "event", Encode.string "phx_join" )
-                            --     , ( "payload", Encode.object [] )
-                            --     ]
                             Encode.list
                                 [ Encode.null
                                 , Encode.string <| toString (state.refId + 1)
@@ -143,25 +136,12 @@ update msg state =
                     ( { state | refId = state.refId + 1 }
                     , Socket.send state.url <|
                         Encode.encode 0 <|
-                            -- Encode.object
-                            --     [ ( "join_ref", Encode.string <| toString joinRef )
-                            --     , ( "ref", Encode.string <| toString (state.refId + 1) )
-                            --     , ( "topic", Encode.string "__absinthe__:control" )
-                            --     , ( "event", Encode.string "doc" )
-                            --     , ( "payload"
-                            --       , Encode.object
-                            --             [ ( "query"
-                            --               , Encode.string <| Document.serializeSubscription state.document
-                            --               )
-                            --             ]
-                            --       )
-                            --     ]
                             Encode.list
                                 [ Encode.string <| toString joinRef
                                 , Encode.string <| toString (state.refId + 1)
                                 , Encode.string "__absinthe__:control"
                                 , Encode.string "doc"
-                                , Encode.object [ ( "query", Encode.string <| Document.serializeSubscription state.document ) ]
+                                , Encode.object [ ( "query", Encode.string state.document ) ]
                                 ]
                     )
 
@@ -178,17 +158,17 @@ update msg state =
                 _ ->
                     ( state, Cmd.none )
 
+        ProblemResponse string ->
+            let
+                _ =
+                    state.logger "Malformed response" string
+            in
+            ( state, Cmd.none )
+
         MutationComplete ->
             ( state, Cmd.none )
 
         NoOp ->
-            ( state, Cmd.none )
-
-        ProblemResponse info ->
-            let
-                _ =
-                    state.logger "problem response" info
-            in
             ( state, Cmd.none )
 
         HeartbeatReceived ->
@@ -198,13 +178,6 @@ update msg state =
             ( { state | refId = state.refId + 1 }
             , Socket.send state.url <|
                 Encode.encode 0 <|
-                    -- Encode.object
-                    --     [ ( "join_ref", Encode.null )
-                    --     , ( "ref", Encode.string <| toString (state.refId + 1) )
-                    --     , ( "topic", Encode.string "phoenix" )
-                    --     , ( "event", Encode.string "heartbeat" )
-                    --     , ( "payload", Encode.object [] )
-                    --     ]
                     Encode.list
                         [ Encode.null
                         , Encode.string <| toString (state.refId + 1)
@@ -215,7 +188,7 @@ update msg state =
             )
 
 
-listen : State a -> Sub (Info a)
+listen : Socket -> Sub Info
 listen state =
     Sub.batch
         [ Socket.listen state.url
@@ -226,7 +199,7 @@ listen state =
         ]
 
 
-status : State a -> Socket.Info -> Info a
+status : Socket -> Socket.Info -> Info
 status state socketInfo =
     case listenHelp state socketInfo of
         Control SocketClosed ->
@@ -239,7 +212,7 @@ status state socketInfo =
             Control NoOp
 
 
-listenHelp : State a -> Socket.Info -> Info a
+listenHelp : Socket -> Socket.Info -> Info
 listenHelp state socketInfo =
     case socketInfo of
         Socket.Open ->
@@ -276,8 +249,7 @@ listenHelp state socketInfo =
                     if state.docId == Just docId then
                         let
                             decoder =
-                                Document.decoder state.document
-                                    |> Decode.field "result"
+                                Decode.field "result" Decode.value
                         in
                         case Decode.decodeValue decoder rawMessage.data of
                             Ok data ->

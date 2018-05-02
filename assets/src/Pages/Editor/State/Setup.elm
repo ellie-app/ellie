@@ -10,12 +10,12 @@ module Pages.Editor.State.Setup
 
 import Data.Jwt as Jwt exposing (Jwt)
 import Data.Transition as Transition
+import Effect.Command as Command exposing (Command)
+import Effect.Subscription as Subscription exposing (Subscription)
 import Elm.Compiler as Compiler
 import Elm.Package exposing (Package)
 import Extra.Maybe as Maybe
-import Pages.Editor.Effects.Exception as Exception exposing (Exception(..))
-import Pages.Editor.Effects.Inbound as Inbound exposing (Inbound)
-import Pages.Editor.Effects.Outbound as Outbound exposing (Outbound)
+import Pages.Editor.Effects as Effects
 import Pages.Editor.Route as Route exposing (Route(..))
 import Pages.Editor.Types.Revision as Revision exposing (Revision)
 import Pages.Editor.Types.RevisionId as RevisionId exposing (RevisionId)
@@ -28,7 +28,7 @@ type Model
     | AcceptingTerms { latestTerms : Int, token : Jwt, user : User, revisionId : Maybe RevisionId, loading : Bool }
     | Loading { token : Jwt, user : User, revisionId : RevisionId }
     | Attaching { token : Jwt, user : User, revision : Maybe ( RevisionId, Revision ) }
-    | Failure Exception
+    | Failure String
 
 
 type alias Transition =
@@ -40,26 +40,27 @@ type alias Transition =
         }
 
 
-init : Maybe Jwt -> Maybe RevisionId -> ( Model, Outbound Msg )
+init : Maybe Jwt -> Maybe RevisionId -> ( Model, Command Msg )
 init possibleToken revisionId =
     ( Authenticating { possibleToken = possibleToken, revisionId = revisionId }
-    , Outbound.Authenticate possibleToken UserPrepared
+    , Effects.authenticate possibleToken
+        |> Command.map (Result.mapError (\_ -> ()))
+        |> Command.map UserPrepared
     )
 
 
 type Msg
     = RouteChanged Route.Route
-    | UserPrepared Int Jwt User
+    | UserPrepared (Result () ( Int, Jwt, User ))
     | UserAcceptedTerms
-    | ServerAcceptedTerms
+    | ServerAcceptedTerms (Result () ())
     | WorkspaceConnected
     | WorkspaceAttached (List Package)
-    | RevisionLoaded RevisionId Revision
-    | ExceptionOccured Exception
+    | RevisionLoaded RevisionId (Result () Revision)
     | NoOp
 
 
-update : Msg -> Model -> ( Transition, Outbound Msg )
+update : Msg -> Model -> ( Transition, Command Msg )
 update msg state =
     case state of
         Authenticating { possibleToken, revisionId } ->
@@ -68,27 +69,27 @@ update msg state =
                     case route of
                         Route.Existing newRevisionId ->
                             ( Transition.step <| Authenticating { possibleToken = possibleToken, revisionId = Just newRevisionId }
-                            , Outbound.none
+                            , Command.none
                             )
 
                         Route.New ->
                             ( Transition.step <| Authenticating { possibleToken = possibleToken, revisionId = Nothing }
-                            , Outbound.none
+                            , Command.none
                             )
 
                         Route.NotFound ->
                             case revisionId of
                                 Just rid ->
                                     ( Transition.step <| Authenticating { possibleToken = possibleToken, revisionId = revisionId }
-                                    , Outbound.Redirect <| Route.toString <| Route.Existing rid
+                                    , Effects.redirect <| Route.toString <| Route.Existing rid
                                     )
 
                                 Nothing ->
                                     ( Transition.step <| Authenticating { possibleToken = possibleToken, revisionId = revisionId }
-                                    , Outbound.Redirect <| Route.toString Route.New
+                                    , Effects.redirect <| Route.toString Route.New
                                     )
 
-                UserPrepared termsVersion newToken user ->
+                UserPrepared (Ok ( termsVersion, newToken, user )) ->
                     let
                         termsVersionMatched =
                             user.acceptedTerms
@@ -98,15 +99,17 @@ update msg state =
                     case ( termsVersionMatched, revisionId ) of
                         ( True, Just rid ) ->
                             ( Transition.step <| Loading { token = newToken, user = user, revisionId = rid }
-                            , Outbound.batch
-                                [ Outbound.SaveToken newToken
-                                , Outbound.GetRevision rid (RevisionLoaded rid)
+                            , Command.batch
+                                [ Effects.saveToken newToken
+                                , Effects.getRevision rid
+                                    |> Command.map (Result.mapError (\_ -> ()))
+                                    |> Command.map (RevisionLoaded rid)
                                 ]
                             )
 
                         ( True, Nothing ) ->
                             ( Transition.step <| Attaching { token = newToken, user = user, revision = Nothing }
-                            , Outbound.SaveToken newToken
+                            , Effects.saveToken newToken
                             )
 
                         _ ->
@@ -118,17 +121,17 @@ update msg state =
                               }
                                 |> AcceptingTerms
                                 |> Transition.step
-                            , Outbound.SaveToken newToken
+                            , Effects.saveToken newToken
                             )
 
-                ExceptionOccured exception ->
-                    ( Transition.step <| Failure exception
-                    , Outbound.none
+                UserPrepared (Err _) ->
+                    ( Transition.step <| Failure "Could not authenticate user"
+                    , Command.none
                     )
 
                 _ ->
                     ( Transition.step <| Authenticating { possibleToken = possibleToken, revisionId = revisionId }
-                    , Outbound.none
+                    , Command.none
                     )
 
         AcceptingTerms ({ user } as state) ->
@@ -139,14 +142,14 @@ update msg state =
                             ( { state | revisionId = Just newRevisionId }
                                 |> AcceptingTerms
                                 |> Transition.step
-                            , Outbound.none
+                            , Command.none
                             )
 
                         Route.New ->
                             ( { state | revisionId = Nothing }
                                 |> AcceptingTerms
                                 |> Transition.step
-                            , Outbound.none
+                            , Command.none
                             )
 
                         Route.NotFound ->
@@ -155,20 +158,22 @@ update msg state =
                                 |> Transition.step
                             , case state.revisionId of
                                 Just rid ->
-                                    Outbound.Redirect <| Route.toString <| Route.Existing rid
+                                    Effects.redirect <| Route.toString <| Route.Existing rid
 
                                 Nothing ->
-                                    Outbound.Redirect <| Route.toString Route.New
+                                    Effects.redirect <| Route.toString Route.New
                             )
 
                 UserAcceptedTerms ->
                     ( { state | loading = True }
                         |> AcceptingTerms
                         |> Transition.step
-                    , Outbound.AcceptTerms state.token state.latestTerms ServerAcceptedTerms
+                    , Effects.acceptTerms state.token state.latestTerms
+                        |> Command.map (Result.mapError (\_ -> ()))
+                        |> Command.map ServerAcceptedTerms
                     )
 
-                ServerAcceptedTerms ->
+                ServerAcceptedTerms (Ok _) ->
                     case state.revisionId of
                         Just revisionId ->
                             ( { token = state.token
@@ -177,7 +182,9 @@ update msg state =
                               }
                                 |> Loading
                                 |> Transition.step
-                            , Outbound.GetRevision revisionId (RevisionLoaded revisionId)
+                            , Effects.getRevision revisionId
+                                |> Command.map (Result.mapError (\_ -> ()))
+                                |> Command.map (RevisionLoaded revisionId)
                             )
 
                         Nothing ->
@@ -187,12 +194,17 @@ update msg state =
                               }
                                 |> Attaching
                                 |> Transition.step
-                            , Outbound.none
+                            , Command.none
                             )
+
+                ServerAcceptedTerms (Err _) ->
+                    ( Transition.step <| Failure "Could not accept terms"
+                    , Command.none
+                    )
 
                 _ ->
                     ( Transition.step <| AcceptingTerms state
-                    , Outbound.none
+                    , Command.none
                     )
 
         Loading ({ token, user, revisionId } as state) ->
@@ -202,41 +214,45 @@ update msg state =
                         Route.Existing newRevisionId ->
                             if newRevisionId == revisionId then
                                 ( Transition.step <| Loading state
-                                , Outbound.none
+                                , Command.none
                                 )
                             else
                                 ( Transition.step <| Loading { state | revisionId = newRevisionId }
-                                , Outbound.GetRevision revisionId (RevisionLoaded revisionId)
+                                , Effects.getRevision revisionId
+                                    |> Command.map (Result.mapError (\_ -> ()))
+                                    |> Command.map (RevisionLoaded newRevisionId)
                                 )
 
                         Route.New ->
                             ( Transition.step <| Attaching { token = token, user = user, revision = Nothing }
-                            , Outbound.none
+                            , Command.none
                             )
 
                         Route.NotFound ->
                             ( Transition.step <| Loading state
-                            , Outbound.Redirect <| Route.toString <| Route.Existing revisionId
+                            , Effects.redirect <| Route.toString <| Route.Existing revisionId
                             )
 
-                RevisionLoaded rid revision ->
+                RevisionLoaded rid result ->
                     if RevisionId.eq rid state.revisionId then
-                        ( Transition.step <| Attaching { token = state.token, user = state.user, revision = Just ( rid, revision ) }
-                        , Outbound.none
-                        )
+                        case result of
+                            Ok revision ->
+                                ( Transition.step <| Attaching { token = state.token, user = state.user, revision = Just ( rid, revision ) }
+                                , Command.none
+                                )
+
+                            Err _ ->
+                                ( Transition.step <| Failure "Could not load revision"
+                                , Command.none
+                                )
                     else
                         ( Transition.step <| Loading state
-                        , Outbound.none
+                        , Command.none
                         )
-
-                ExceptionOccured exception ->
-                    ( Transition.step <| Failure exception
-                    , Outbound.none
-                    )
 
                 _ ->
                     ( Transition.step <| Loading state
-                    , Outbound.none
+                    , Command.none
                     )
 
         Attaching ({ token, user, revision } as attachingState) ->
@@ -246,28 +262,30 @@ update msg state =
                         Route.Existing newRevisionId ->
                             if Maybe.eq RevisionId.eq (Maybe.map Tuple.first revision) (Just newRevisionId) then
                                 ( Transition.step <| Attaching attachingState
-                                , Outbound.none
+                                , Command.none
                                 )
                             else
                                 ( Transition.step <| Loading { token = token, user = user, revisionId = newRevisionId }
-                                , Outbound.GetRevision newRevisionId (RevisionLoaded newRevisionId)
+                                , Effects.getRevision newRevisionId
+                                    |> Command.map (Result.mapError (\_ -> ()))
+                                    |> Command.map (RevisionLoaded newRevisionId)
                                 )
 
                         Route.New ->
                             ( Transition.step <| Attaching { attachingState | revision = Nothing }
-                            , Outbound.none
+                            , Command.none
                             )
 
                         Route.NotFound ->
                             case revision of
                                 Just ( rid, _ ) ->
                                     ( Transition.step <| Attaching attachingState
-                                    , Outbound.Redirect <| Route.toString <| Route.Existing rid
+                                    , Effects.redirect <| Route.toString <| Route.Existing rid
                                     )
 
                                 Nothing ->
                                     ( Transition.step <| Attaching attachingState
-                                    , Outbound.Redirect <| Route.toString Route.New
+                                    , Effects.redirect <| Route.toString Route.New
                                     )
 
                 WorkspaceConnected ->
@@ -275,36 +293,33 @@ update msg state =
                     , revision
                         |> Maybe.map (Tuple.second >> .elmVersion)
                         |> Maybe.withDefault Compiler.version
-                        |> Outbound.AttachToWorkspace token
+                        |> Effects.attachToWorkspace token
+                        |> Command.map (\_ -> NoOp)
                     )
 
                 WorkspaceAttached packages ->
                     ( Transition.exit { token = token, user = user, revision = revision, packages = packages }
-                    , Outbound.none
-                    )
-
-                ExceptionOccured exception ->
-                    ( Transition.step <| Failure exception
-                    , Outbound.none
+                    , Command.none
                     )
 
                 _ ->
                     ( Transition.step <| Attaching attachingState
-                    , Outbound.none
+                    , Command.none
                     )
 
         _ ->
-            ( Transition.step state, Outbound.none )
+            ( Transition.step state, Command.none )
 
 
-subscriptions : Model -> Inbound Msg
+subscriptions : Model -> Subscription Msg
 subscriptions model =
     case model of
         Attaching { token } ->
-            Inbound.WorkspaceUpdates token chooseUpdate
+            Effects.workspaceUpdates token
+                |> Subscription.map chooseUpdate
 
         _ ->
-            Inbound.none
+            Subscription.none
 
 
 chooseUpdate : WorkspaceUpdate -> Msg

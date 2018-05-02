@@ -11,6 +11,7 @@
     "native-modules": true,
     "dependencies": {
         "NoRedInk/elm-decode-pipeline": "3.0.0 <= v <= 3.0.0",
+        "Skinney/murmur3": "2.0.6 <= v < 3.0.0",
         "dillonkearns/graphqelm": "11.1.0 <= v < 12.0.0",
         "elm-lang/core": "5.1.1 <= v <= 5.1.1",
         "elm-lang/html": "2.0.0 <= v <= 2.0.0",
