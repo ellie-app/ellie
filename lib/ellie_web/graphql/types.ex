@@ -95,7 +95,7 @@ defmodule EllieWeb.Graphql.Types do
   end
 
   union :workspace_update do
-    types [:workspace_attached, :compile_completed]
+    types [:workspace_attached, :compile_completed, :workspace_error]
     resolve_type fn
       %{message: _}, _ -> :workspace_error
       %{packages: _}, _ -> :workspace_attached

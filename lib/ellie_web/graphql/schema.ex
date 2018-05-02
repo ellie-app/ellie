@@ -99,7 +99,11 @@ defmodule EllieWeb.Graphql.Schema do
       arg :project_id, non_null(:project_id)
       middleware EllieWeb.Graphql.Middleware.Auth
       resolve fn %{inputs: inputs, project_id: project_id}, %{context: %{current_user: user}} ->
-        revision = Keyword.merge(Map.to_list(inputs), [project_id: project_id])
+        revision =
+          inputs
+          |> Map.to_list()
+          |> Keyword.update!(:packages, fn ps -> Enum.map(ps, &%Package{name: &1.name, version: &1.version}) end)
+          |> Keyword.put(:project_id, project_id)
         case Api.update_revision(user, revision) do
           {:ok, revision} -> {:ok, revision}
           :error -> {:error, "Failed to update revision"}

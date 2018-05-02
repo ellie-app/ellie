@@ -17,6 +17,7 @@
 
 import 'es6-promise/auto'
 import NetworkSocket from '../../Network/Socket'
+import EffectProgram from '../../Effect/Program'
 import EllieUiIcon from '../../Ellie/Ui/Icon'
 import EllieUiMenu from '../../Ellie/Ui/Menu'
 import EllieUiCopyText from '../../Ellie/Ui/CopyText'
@@ -37,6 +38,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const app = Elm.Pages.Editor.Main.fullscreen(flags)
 
   NetworkSocket.start(app)
+  EffectProgram.start(app)
   EllieUiIcon.start(app)
   EllieUiMenu.start(app)
   EllieUiCopyText.start(app)

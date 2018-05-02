@@ -1,4 +1,4 @@
-module Effect.Program exposing (..)
+port module Effect.Program exposing (..)
 
 import Css exposing (..)
 import Css.Foreign
@@ -14,13 +14,17 @@ import Graphqelm.SelectionSet exposing (SelectionSet)
 import Html
 import Html.Styled as Styled
 import Json.Decode as Decode exposing (Decoder)
-import Keyboard
+import Keyboard exposing (KeyCode)
 import Murmur3
 import Navigation exposing (Location)
 import Network.Absinthe.Subscription as Absinthe
 import Process
+import Set exposing (Set)
 import Task
 import Time
+
+
+port effectProgramKeyDowns : (Decode.Value -> a) -> Sub a
 
 
 type alias Config flags route model msg =
@@ -41,11 +45,14 @@ type Msg msg
     = UserMsg msg
     | SetupSocket String String (SelectionSet msg RootSubscription)
     | SubscriptionMsg String Absinthe.Msg
+    | KeyDown String
+    | KeyUp String
     | NoOp
 
 
 type alias State =
     { sockets : Dict String Absinthe.Socket
+    , keysDown : Set String
     }
 
 
@@ -57,6 +64,7 @@ type Model model msg
 initialState : State
 initialState =
     { sockets = Dict.empty
+    , keysDown = Set.empty
     }
 
 
@@ -156,9 +164,37 @@ runCmd config state cmd =
             ( state, Cmd.none )
 
 
+keyDownDecoder : Bool -> Bool -> String -> msg -> Decoder (Msg msg)
+keyDownDecoder needsShift needsMeta key msg =
+    Decode.map3
+        (\actualKey shift meta ->
+            if shift == needsShift && meta == needsMeta && key == actualKey then
+                UserMsg msg
+            else
+                NoOp
+        )
+        (Decode.field "key" Decode.string)
+        (Decode.field "shiftKey" Decode.bool)
+        (Decode.map2 (||)
+            (Decode.field "metaKey" Decode.bool)
+            (Decode.field "ctrlKey" Decode.bool)
+        )
+
+
 runSub : Config flags route model msg -> State -> Subscription msg -> Sub (Msg msg)
 runSub config state sub =
     case sub of
+        Subscription.KeyCombo combo msg ->
+            effectProgramKeyDowns
+                (\value ->
+                    case Decode.decodeValue (keyDownDecoder combo.shift combo.meta combo.key msg) value of
+                        Ok msg ->
+                            msg
+
+                        Err _ ->
+                            NoOp
+                )
+
         Subscription.PortReceive channel callback ->
             config.inbound <|
                 \( inChannel, data ) ->
@@ -247,6 +283,16 @@ wrapUpdate config msg model =
             case msg of
                 NoOp ->
                     ( model, Cmd.none )
+
+                KeyDown key ->
+                    ( Running { state | keysDown = Set.insert key state.keysDown } m
+                    , Cmd.none
+                    )
+
+                KeyUp key ->
+                    ( Running { state | keysDown = Set.remove key state.keysDown } m
+                    , Cmd.none
+                    )
 
                 UserMsg userMsg ->
                     let

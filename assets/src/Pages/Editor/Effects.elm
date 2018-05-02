@@ -30,6 +30,7 @@ import Graphqelm.OptionalArgument as OptionalArgument
 import Graphqelm.SelectionSet as SelectionSet exposing (SelectionSet(..), hardcoded, with)
 import Json.Decode as Decode exposing (Decoder)
 import Json.Encode as Encode exposing (Value)
+import Pages.Editor.Types.EditorAction as EditorAction exposing (EditorAction)
 import Pages.Editor.Types.Revision as Revision exposing (Revision)
 import Pages.Editor.Types.RevisionId as RevisionId exposing (RevisionId)
 import Pages.Editor.Types.Settings as Settings exposing (Settings)
@@ -396,3 +397,17 @@ networkStatus =
 
                 Err _ ->
                     False
+
+
+keyCombos : Subscription EditorAction
+keyCombos =
+    Subscription.batch
+        [ Subscription.KeyCombo { meta = True, shift = True, key = "Enter" } EditorAction.Recompile
+        , Subscription.KeyCombo { meta = True, shift = True, key = "p" } EditorAction.OpenPackages
+        , Subscription.KeyCombo { meta = True, shift = True, key = "d" } EditorAction.OpenDebugger
+        , Subscription.KeyCombo { meta = True, shift = True, key = "o" } EditorAction.OpenOutput
+        , Subscription.KeyCombo { meta = True, shift = False, key = "," } EditorAction.OpenSettings
+        , Subscription.KeyCombo { meta = True, shift = True, key = "r" } EditorAction.ReloadOutput
+        , Subscription.KeyCombo { meta = True, shift = True, key = "l" } EditorAction.OpenLogs
+        , Subscription.KeyCombo { meta = True, shift = False, key = "s" } EditorAction.Save
+        ]

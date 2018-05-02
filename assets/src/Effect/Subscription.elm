@@ -7,12 +7,14 @@ import Graphqelm.Operation exposing (RootSubscription)
 import Graphqelm.SelectionSet as SelectionSet exposing (SelectionSet)
 import Json.Decode as Decode exposing (Decoder, Value)
 import Keyboard exposing (KeyCode)
+import Set exposing (Set)
 
 
 type Subscription msg
     = AbsintheSubscription String (SelectionSet msg RootSubscription) (Bool -> msg)
     | PortReceive String (Value -> msg)
     | KeyPress KeyCode msg
+    | KeyCombo { meta : Bool, shift : Bool, key : String } msg
     | Batch (List (Subscription msg))
     | None
 
@@ -40,6 +42,9 @@ eq left right =
         ( KeyPress lCode _, KeyPress rCode _ ) ->
             lCode == rCode
 
+        ( KeyCombo lCombo _, KeyCombo rCombo _ ) ->
+            True
+
         ( Batch lSubs, Batch rSubs ) ->
             if List.length lSubs == List.length rSubs then
                 List.all identity (List.map2 eq lSubs rSubs)
@@ -64,6 +69,9 @@ map f cmd =
 
         KeyPress code msg ->
             KeyPress code (f msg)
+
+        KeyCombo combo msg ->
+            KeyCombo combo (f msg)
 
         Batch subs ->
             Batch (List.map (map f) subs)

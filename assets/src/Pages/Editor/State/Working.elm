@@ -17,6 +17,7 @@ import Pages.Editor.Effects as Effects
 import Pages.Editor.Route as Route
 import Pages.Editor.State.Actions as Actions
 import Pages.Editor.Types.Analysis as Analysis exposing (Analysis)
+import Pages.Editor.Types.EditorAction as EditorAction exposing (EditorAction)
 import Pages.Editor.Types.Example as Example exposing (Example)
 import Pages.Editor.Types.Log as Log exposing (Log)
 import Pages.Editor.Types.Notification as Notification exposing (Notification)
@@ -470,18 +471,21 @@ update msg ({ user } as model) =
             )
 
         CompileRequested ->
-            ( { model | compiling = True }
-            , Effects.compile model.token (compilerVersion model) model.elmCode model.packages
-                |> Command.map
-                    (\result ->
-                        case result of
-                            Ok _ ->
-                                NoOp
+            if model.compiling then
+                ( model, Command.none )
+            else
+                ( { model | compiling = True }
+                , Effects.compile model.token (compilerVersion model) model.elmCode model.packages
+                    |> Command.map
+                        (\result ->
+                            case result of
+                                Ok _ ->
+                                    NoOp
 
-                            Err _ ->
-                                CompileFailed
-                    )
-            )
+                                Err _ ->
+                                    CompileFailed
+                        )
+                )
 
         CompileFailed ->
             ( { model | compiling = False }
@@ -774,6 +778,8 @@ subscriptions model =
     Subscription.batch
         [ Actions.subscriptions model.actions
             |> Subscription.map ActionsMsg
+        , Effects.keyCombos
+            |> Subscription.map (processEditorAction model)
         , Effects.workspaceUpdates model.token
             |> Subscription.map
                 (\update ->
@@ -799,3 +805,63 @@ subscriptions model =
                         OnlineStatusChanged False
                 )
         ]
+
+
+processEditorAction : Model -> EditorAction -> Msg
+processEditorAction model action =
+    case action of
+        EditorAction.Save ->
+            if model.connected && hasChanged model then
+                SaveRequested
+            else
+                NoOp
+
+        EditorAction.Recompile ->
+            if model.compiling then
+                NoOp
+            else
+                CompileRequested
+
+        EditorAction.OpenDebugger ->
+            case model.workbench of
+                Finished state ->
+                    if state.canDebug then
+                        SuccessPaneSelected SuccessDebug
+                    else
+                        NoOp
+
+                _ ->
+                    NoOp
+
+        EditorAction.OpenLogs ->
+            case model.workbench of
+                Finished state ->
+                    SuccessPaneSelected SuccessLogs
+
+                _ ->
+                    NoOp
+
+        EditorAction.OpenOutput ->
+            case model.workbench of
+                Finished _ ->
+                    SuccessPaneSelected SuccessOutput
+
+                FinishedWithError _ ->
+                    ErrorsPaneSelected ErrorsList
+
+                _ ->
+                    NoOp
+
+        EditorAction.OpenPackages ->
+            ActionPaneSelected Actions.packages
+
+        EditorAction.OpenSettings ->
+            ActionPaneSelected Actions.Settings
+
+        EditorAction.ReloadOutput ->
+            case model.workbench of
+                Finished _ ->
+                    IframeReloadClicked
+
+                _ ->
+                    NoOp
