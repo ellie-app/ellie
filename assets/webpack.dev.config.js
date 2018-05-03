@@ -9,16 +9,13 @@ module.exports = {
   context: __dirname,
   entry: {
     editor: [
-      'es6-promise/auto',
       'webpack-dev-server/client?http://localhost:8080/',
       path.join(__dirname, 'src/Pages/Editor/index.js')
     ],
     'editor-sw': [
-      'webpack-dev-server/client?http://localhost:8080/',
       path.join(__dirname, 'src/Pages/Editor/ServiceWorker.js')
     ],
     embed: [
-      'es6-promise/auto',
       'webpack-dev-server/client?http://localhost:8080/',
       path.join(__dirname, 'src/Pages/Embed/index.js')
     ]

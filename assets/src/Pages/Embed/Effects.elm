@@ -55,10 +55,13 @@ getRevision revisionId =
                 |> with (ApiHelpers.uuidField ApiUser.id)
     in
     Command.GraphqlQuery
-        "/api"
-        Nothing
-        (SelectionSet.map Ok query)
-        Err
+        { url = "/api"
+        , token = Nothing
+        , selection = SelectionSet.map Ok query
+        , onError = Err
+        , debounce = Nothing
+        , cache = Command.Permanent
+        }
 
 
 runEmbed : RevisionId -> Command (Result (Graphqelm.Http.Error ()) (Maybe (Maybe Error)))
@@ -78,10 +81,12 @@ runEmbed revisionId =
             }
     in
     Command.GraphqlMutation
-        "/api"
-        Nothing
-        (SelectionSet.map Ok selection)
-        Err
+        { url = "/api"
+        , token = Nothing
+        , selection = SelectionSet.map Ok selection
+        , onError = Err
+        , debounce = Nothing
+        }
 
 
 embedUpdates : RevisionId -> Subscription EmbedUpdate

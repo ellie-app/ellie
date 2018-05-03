@@ -2,7 +2,8 @@ port module Effect.Program exposing (..)
 
 import Css exposing (..)
 import Css.Foreign
-import Data.Jwt as Jwt
+import Data.Jwt as Jwt exposing (Jwt)
+import Debounce
 import Dict exposing (Dict)
 import Effect.Command as Command exposing (Command)
 import Effect.Subscription as Subscription exposing (Subscription)
@@ -41,49 +42,91 @@ type alias Config flags route model msg =
     }
 
 
+debounceConfig : (Debounce.Msg -> Msg msg) -> Debounce.Config (Msg msg)
+debounceConfig debounceMsg =
+    { strategy = Debounce.later 500
+    , transform = debounceMsg
+    }
+
+
 type Msg msg
     = UserMsg msg
     | SetupSocket String String (SelectionSet msg RootSubscription)
     | SubscriptionMsg String Absinthe.Msg
     | KeyDown String
     | KeyUp String
+    | Debounce String Debounce.Msg
     | NoOp
 
 
-type alias State =
+type alias State msg =
     { sockets : Dict String Absinthe.Socket
     , keysDown : Set String
+    , debouncers : Dict String (Debounce.Debounce (Cmd (Msg msg)))
     }
 
 
 type Model model msg
     = StartupFailure
-    | Running State model
+    | Running (State msg) model
 
 
-initialState : State
+initialState : State msg
 initialState =
     { sockets = Dict.empty
     , keysDown = Set.empty
+    , debouncers = Dict.empty
     }
 
 
-runCmd : Config flags route model msg -> State -> Command msg -> ( State, Cmd (Msg msg) )
+maybeWithToken : Maybe Jwt -> Graphqelm.Http.Request a -> Graphqelm.Http.Request a
+maybeWithToken maybeToken request =
+    case maybeToken of
+        Just token ->
+            request
+                |> Jwt.withTokenHeader token
+
+        Nothing ->
+            request
+
+
+withCaching : Command.CacheLevel -> Graphqelm.Http.Request a -> Graphqelm.Http.Request a
+withCaching cacheLevel request =
+    case cacheLevel of
+        Command.Permanent ->
+            request
+                |> Graphqelm.Http.withQueryParams [ ( "cache", "permanent" ) ]
+
+        Command.Temporary ->
+            request
+                |> Graphqelm.Http.withQueryParams [ ( "cache", "temporary" ) ]
+
+        Command.AlwaysFetch ->
+            request
+
+
+maybeWithDebounce : State msg -> Maybe String -> Cmd (Msg msg) -> ( State msg, Cmd (Msg msg) )
+maybeWithDebounce state debounce requestCmd =
+    case debounce of
+        Just name ->
+            state.debouncers
+                |> Dict.get name
+                |> Maybe.withDefault Debounce.init
+                |> Debounce.push (debounceConfig (Debounce name)) requestCmd
+                |> Tuple.mapFirst (\newDebouncer -> { state | debouncers = Dict.insert name newDebouncer state.debouncers })
+
+        Nothing ->
+            ( state, requestCmd )
+
+
+runCmd : Config flags route model msg -> State msg -> Command msg -> ( State msg, Cmd (Msg msg) )
 runCmd config state cmd =
     case cmd of
-        Command.GraphqlQuery url maybeToken selection onError ->
-            let
-                request =
-                    case maybeToken of
-                        Just token ->
-                            Graphqelm.Http.queryRequestWithHttpGet url Graphqelm.Http.AlwaysGet selection
-                                |> Jwt.withTokenHeader token
-
-                        Nothing ->
-                            Graphqelm.Http.queryRequestWithHttpGet url Graphqelm.Http.AlwaysGet selection
-            in
-            ( state
-            , Graphqelm.Http.send identity request
+        Command.GraphqlQuery { url, token, selection, onError, debounce, cache } ->
+            Graphqelm.Http.queryRequestWithHttpGet url Graphqelm.Http.AlwaysGet selection
+                |> maybeWithToken token
+                |> withCaching cache
+                |> Graphqelm.Http.send identity
                 |> Cmd.map (Result.mapError Graphqelm.Http.ignoreParsedErrorData)
                 |> Cmd.map
                     (\result ->
@@ -94,21 +137,12 @@ runCmd config state cmd =
                             Err str ->
                                 UserMsg (onError str)
                     )
-            )
+                |> maybeWithDebounce state debounce
 
-        Command.GraphqlMutation url token selection onError ->
-            let
-                request =
-                    case token of
-                        Just t ->
-                            Graphqelm.Http.mutationRequest url selection
-                                |> Jwt.withTokenHeader t
-
-                        Nothing ->
-                            Graphqelm.Http.mutationRequest url selection
-            in
-            ( state
-            , Graphqelm.Http.send identity request
+        Command.GraphqlMutation { url, token, selection, onError, debounce } ->
+            Graphqelm.Http.mutationRequest url selection
+                |> maybeWithToken token
+                |> Graphqelm.Http.send identity
                 |> Cmd.map (Result.mapError Graphqelm.Http.ignoreParsedErrorData)
                 |> Cmd.map
                     (\result ->
@@ -119,7 +153,7 @@ runCmd config state cmd =
                             Err str ->
                                 UserMsg (onError str)
                     )
-            )
+                |> maybeWithDebounce state debounce
 
         Command.PortSend channel data ->
             ( state
@@ -181,7 +215,7 @@ keyDownDecoder needsShift needsMeta key msg =
         )
 
 
-runSub : Config flags route model msg -> State -> Subscription msg -> Sub (Msg msg)
+runSub : Config flags route model msg -> State msg -> Subscription msg -> Sub (Msg msg)
 runSub config state sub =
     case sub of
         Subscription.KeyCombo combo msg ->
@@ -281,6 +315,13 @@ wrapUpdate config msg model =
 
         Running state m ->
             case msg of
+                Debounce name debounceMsg ->
+                    state.debouncers
+                        |> Dict.get name
+                        |> Maybe.map (Debounce.update (debounceConfig (Debounce name)) (Debounce.takeLast identity) debounceMsg)
+                        |> Maybe.map (Tuple.mapFirst (\debouncer -> Running { state | debouncers = Dict.insert name debouncer state.debouncers } m))
+                        |> Maybe.withDefault ( model, Cmd.none )
+
                 NoOp ->
                     ( model, Cmd.none )
 

@@ -34,9 +34,10 @@ defmodule Ellie.Adapters.Search.Ecto do
     case Platform.search() do
       {:ok, searchables} ->
         Repo.transaction fn ->
+          now = DateTime.utc_now()
           Repo.delete_all(Searchable)
           searchables
-          |> Enum.map(&Map.from_struct/1)
+          |> Enum.map(&Map.put(Map.from_struct(&1), :inserted_at, now))
           |> (&Repo.insert_all(Searchable, &1, on_conflict: :nothing)).()
           Repo.one(from s in Searchable, select: count(s.name))
         end

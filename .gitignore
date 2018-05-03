@@ -32,6 +32,7 @@ priv/graphql/
 priv/bin/
 priv/fixtures/
 priv/elm_home/
+priv/docs_table
 .local_tmp/
 .DS_Store
 .env*

@@ -778,8 +778,6 @@ subscriptions model =
     Subscription.batch
         [ Actions.subscriptions model.actions
             |> Subscription.map ActionsMsg
-        , Effects.keyCombos
-            |> Subscription.map (processEditorAction model)
         , Effects.workspaceUpdates model.token
             |> Subscription.map
                 (\update ->

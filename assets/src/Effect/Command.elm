@@ -8,9 +8,28 @@ import Graphqelm.SelectionSet as SelectionSet exposing (SelectionSet)
 import Json.Decode as Decode exposing (Decoder, Value)
 
 
+type CacheLevel
+    = Temporary
+    | Permanent
+    | AlwaysFetch
+
+
 type Command msg
-    = GraphqlQuery String (Maybe Jwt) (SelectionSet msg RootQuery) (Graphqelm.Http.Error () -> msg)
-    | GraphqlMutation String (Maybe Jwt) (SelectionSet msg RootMutation) (Graphqelm.Http.Error () -> msg)
+    = GraphqlQuery
+        { url : String
+        , token : Maybe Jwt
+        , selection : SelectionSet msg RootQuery
+        , onError : Graphqelm.Http.Error () -> msg
+        , debounce : Maybe String
+        , cache : CacheLevel
+        }
+    | GraphqlMutation
+        { url : String
+        , token : Maybe Jwt
+        , selection : SelectionSet msg RootMutation
+        , onError : Graphqelm.Http.Error () -> msg
+        , debounce : Maybe String
+        }
     | PortSend String Value
     | NewUrl String
     | Redirect String
@@ -33,15 +52,18 @@ batch =
 eq : Command msg -> Command msg -> Bool
 eq left right =
     case ( left, right ) of
-        ( GraphqlQuery lUrl lToken lSelection _, GraphqlQuery rUrl rToken rSelection _ ) ->
-            (lUrl == rUrl)
-                && (Document.serializeQuery lSelection == Document.serializeQuery rSelection)
-                && (lToken == rToken)
+        ( GraphqlQuery l, GraphqlQuery r ) ->
+            (l.url == r.url)
+                && (Document.serializeQuery l.selection == Document.serializeQuery r.selection)
+                && (l.token == r.token)
+                && (l.debounce == r.debounce)
+                && (l.cache == r.cache)
 
-        ( GraphqlMutation lUrl lToken lSelection _, GraphqlMutation rUrl rToken rSelection _ ) ->
-            (lUrl == rUrl)
-                && (Document.serializeMutation lSelection == Document.serializeMutation rSelection)
-                && (lToken == rToken)
+        ( GraphqlMutation l, GraphqlMutation r ) ->
+            (l.url == r.url)
+                && (Document.serializeMutation l.selection == Document.serializeMutation r.selection)
+                && (l.token == r.token)
+                && (l.debounce == r.debounce)
 
         ( PortSend lChannel lData, PortSend rChannel rData ) ->
             (lChannel == rChannel) && (lData == rData)
@@ -72,11 +94,24 @@ eq left right =
 map : (a -> b) -> Command a -> Command b
 map f cmd =
     case cmd of
-        GraphqlQuery url token selection onError ->
-            GraphqlQuery url token (SelectionSet.map f selection) (onError >> f)
+        GraphqlQuery stuff ->
+            GraphqlQuery
+                { url = stuff.url
+                , token = stuff.token
+                , debounce = stuff.debounce
+                , cache = stuff.cache
+                , selection = SelectionSet.map f stuff.selection
+                , onError = stuff.onError >> f
+                }
 
-        GraphqlMutation url token selection onError ->
-            GraphqlMutation url token (SelectionSet.map f selection) (onError >> f)
+        GraphqlMutation stuff ->
+            GraphqlMutation
+                { url = stuff.url
+                , token = stuff.token
+                , debounce = stuff.debounce
+                , selection = SelectionSet.map f stuff.selection
+                , onError = stuff.onError >> f
+                }
 
         PortSend channel data ->
             PortSend channel data

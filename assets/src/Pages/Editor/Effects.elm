@@ -64,10 +64,13 @@ getRevision revisionId =
                 |> with (ApiHelpers.uuidField ApiUser.id)
     in
     Command.GraphqlQuery
-        "/api"
-        Nothing
-        (SelectionSet.map Ok query)
-        Err
+        { url = "/api"
+        , token = Nothing
+        , selection = SelectionSet.map Ok query
+        , onError = Err
+        , debounce = Nothing
+        , cache = Command.Permanent
+        }
 
 
 searchPackages : String -> Command (Result (Graphqelm.Http.Error ()) (List Package))
@@ -85,7 +88,14 @@ searchPackages queryString =
                 |> with (ApiHelpers.nameField ApiPackage.name)
                 |> with (ApiHelpers.versionField ApiPackage.version)
     in
-    Command.GraphqlQuery "/api" Nothing (SelectionSet.map Ok query) Err
+    Command.GraphqlQuery
+        { url = "/api"
+        , token = Nothing
+        , selection = SelectionSet.map Ok query
+        , onError = Err
+        , debounce = Just "package-search"
+        , cache = Command.Temporary
+        }
 
 
 acceptTerms : Jwt -> Int -> Command (Result (Graphqelm.Http.Error ()) ())
@@ -95,7 +105,13 @@ acceptTerms token terms =
             ApiMutation.selection (\_ -> ())
                 |> with (ApiMutation.acceptTerms { terms = terms })
     in
-    Command.GraphqlMutation "/api" (Just token) (SelectionSet.map Ok mutation) Err
+    Command.GraphqlMutation
+        { url = "/api"
+        , token = Just token
+        , selection = SelectionSet.map Ok mutation
+        , onError = Err
+        , debounce = Nothing
+        }
 
 
 authenticate : Maybe Jwt -> Command (Result (Graphqelm.Http.Error ()) ( Int, Jwt, User ))
@@ -132,7 +148,13 @@ authenticate maybeToken =
                 ApiTheme.Light ->
                     Settings.Light
     in
-    Command.GraphqlMutation "/api" maybeToken (SelectionSet.map Ok mutation) Err
+    Command.GraphqlMutation
+        { url = "/api"
+        , token = maybeToken
+        , selection = SelectionSet.map Ok mutation
+        , onError = Err
+        , debounce = Nothing
+        }
 
 
 formatCode : Version -> String -> Command (Result (Graphqelm.Http.Error ()) String)
@@ -147,7 +169,13 @@ formatCode version code =
             , elmVersion = ApiScalar.Version <| Version.toString version
             }
     in
-    Command.GraphqlMutation "/api" Nothing (SelectionSet.map Ok mutation) Err
+    Command.GraphqlMutation
+        { url = "/api"
+        , token = Nothing
+        , selection = SelectionSet.map Ok mutation
+        , onError = Err
+        , debounce = Just "format-code"
+        }
 
 
 compile : Jwt -> Version -> String -> List Package -> Command (Result (Graphqelm.Http.Error ()) ())
@@ -168,7 +196,13 @@ compile token elmVersion elmCode packages =
             , version = ApiScalar.Version <| Version.toString package.version
             }
     in
-    Command.GraphqlMutation "/api" (Just token) (SelectionSet.map Ok mutation) Err
+    Command.GraphqlMutation
+        { url = "/api"
+        , token = Just token
+        , selection = SelectionSet.map Ok mutation
+        , onError = Err
+        , debounce = Nothing
+        }
 
 
 workspaceUpdates : Jwt -> Subscription WorkspaceUpdate
@@ -209,7 +243,13 @@ attachToWorkspace token version =
         arguments =
             { elmVersion = ApiScalar.Version <| Version.toString version }
     in
-    Command.GraphqlMutation "/api" (Just token) (SelectionSet.map Ok selection) Err
+    Command.GraphqlMutation
+        { url = "/api"
+        , token = Just token
+        , selection = SelectionSet.map Ok selection
+        , onError = Err
+        , debounce = Nothing
+        }
 
 
 updateSettings : Jwt -> Settings -> Command (Result (Graphqelm.Http.Error ()) ())
@@ -233,7 +273,13 @@ updateSettings token settings =
                             ApiTheme.Light
             }
     in
-    Command.GraphqlMutation "/api" (Just token) (SelectionSet.map Ok selection) Err
+    Command.GraphqlMutation
+        { url = "/api"
+        , token = Just token
+        , selection = SelectionSet.map Ok selection
+        , onError = Err
+        , debounce = Just "update-settings"
+        }
 
 
 createRevision : Jwt -> Revision -> Command (Result (Graphqelm.Http.Error ()) RevisionId)
@@ -263,7 +309,13 @@ createRevision token revision =
                 |> with (ApiHelpers.projectIdField ApiRevision.projectId)
                 |> with ApiRevision.revisionNumber
     in
-    Command.GraphqlMutation "/api" (Just token) (SelectionSet.map Ok selection) Err
+    Command.GraphqlMutation
+        { url = "/api"
+        , token = Just token
+        , selection = SelectionSet.map Ok selection
+        , onError = Err
+        , debounce = Nothing
+        }
 
 
 updateRevision : Jwt -> String -> Revision -> Command (Result (Graphqelm.Http.Error ()) RevisionId)
@@ -294,7 +346,13 @@ updateRevision token projectId revision =
                 |> with (ApiHelpers.projectIdField ApiRevision.projectId)
                 |> with ApiRevision.revisionNumber
     in
-    Command.GraphqlMutation "/api" (Just token) (SelectionSet.map Ok selection) Err
+    Command.GraphqlMutation
+        { url = "/api"
+        , token = Just token
+        , selection = SelectionSet.map Ok selection
+        , onError = Err
+        , debounce = Nothing
+        }
 
 
 getDocs : List Package -> Command (List Docs.Module)
@@ -319,7 +377,14 @@ getDocs packages =
                 |> SelectionSet.map (\p d -> List.map ((|>) p) d)
                 |> with (ApiPackage.docs Docs.selection)
     in
-    Command.GraphqlQuery "/api" Nothing (SelectionSet.map identity selection) (\_ -> [])
+    Command.GraphqlQuery
+        { url = "/api"
+        , token = Nothing
+        , selection = SelectionSet.map identity selection
+        , onError = always []
+        , debounce = Nothing
+        , cache = Command.Permanent
+        }
 
 
 moveElmCursor : Error.Position -> Command msg

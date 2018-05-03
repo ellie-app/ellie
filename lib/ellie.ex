@@ -22,8 +22,10 @@ defmodule Ellie do
       supervisor(Absinthe.Subscription, [EllieWeb.Endpoint]),
       worker(Ellie.Adapters.Embed.Local, []),
       worker(Ellie.Adapters.Workspace.Local, []),
-      worker(Ellie.Scheduler, [])
+      worker(Ellie.Scheduler, []),
+      worker(Task, [&Ellie.Domain.Search.reload/0], restart: :temporary)
     ]
+
 
     opts = [strategy: :one_for_one, name: Ellie.Supervisor]
     Supervisor.start_link(children, opts)

@@ -15,7 +15,6 @@
  *    topological order of module imports.
  */
 
-import 'es6-promise/auto'
 import NetworkSocket from '../../Network/Socket'
 import EffectProgram from '../../Effect/Program'
 import EllieUiIcon from '../../Ellie/Ui/Icon'

@@ -1,5 +1,3 @@
-import { requestIdleCallback, cancelIdleCallback } from "request-idle-callback";
-
 export default {
   start(app) {
     // hack until 0.19
@@ -11,15 +9,15 @@ export default {
     }
     let queue = []
     let callback = null
-    window.addEventListener('keydown', (e) => {
-      if (e.key === 'Meta' || e.key === 'Control' || e.key === 'Shift') return
-      if (shouldPreventDefault(e)) e.preventDefault()
-      queue.push(e)
-      cancelIdleCallback(callback)
-      callback = requestIdleCallback(() => {
-        queue.forEach(app.ports.effectProgramKeyDowns.send)
-        queue = []
-      })
-    })
+    // window.addEventListener('keydown', (e) => {
+    //   if (e.key === 'Meta' || e.key === 'Control' || e.key === 'Shift') return
+    //   if (shouldPreventDefault(e)) e.preventDefault()
+    //   queue.push(e)
+    //   cancelIdleCallback(callback)
+    //   callback = requestIdleCallback(() => {
+    //     queue.forEach(app.ports.effectProgramKeyDowns.send)
+    //     queue = []
+    //   })
+    // })
   }
 }

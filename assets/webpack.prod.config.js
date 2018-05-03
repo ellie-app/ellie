@@ -7,8 +7,8 @@ module.exports = {
   target: 'web',
 
   entry: {
-    editor: ['es6-promise/auto', path.join(__dirname, 'src/Pages/Editor/index.js')],
-    embed: ['es6-promise/auto', path.join(__dirname, 'src/Pages/Embed/index.js')],
+    editor: path.join(__dirname, 'src/Pages/Editor/index.js'),
+    embed: path.join(__dirname, 'src/Pages/Embed/index.js'),
   },
 
   output: {
@@ -80,7 +80,7 @@ module.exports = {
       'process.env.NODE_ENV': JSON.stringify(process.env.NODE_ENV),
     }),
     new webpack.optimize.OccurrenceOrderPlugin(),
-    // new webpack.optimize.UglifyJsPlugin({ compress: true, mangle: true }),
+    new webpack.optimize.UglifyJsPlugin({ compress: true, mangle: true }),
     new StringReplacePlugin()
   ]
 }

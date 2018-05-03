@@ -21,7 +21,6 @@
         "elm-lang/svg": "2.0.0 <= v <= 2.0.0",
         "elm-lang/websocket": "1.0.2 <= v < 2.0.0",
         "elm-tools/parser": "2.0.1 <= v < 3.0.0",
-        "fbonetti/elm-phoenix-socket": "2.2.0 <= v < 3.0.0",
         "folkertdev/elm-deque": "2.0.0 <= v < 3.0.0",
         "jinjor/elm-debounce": "2.1.2 <= v < 3.0.0",
         "krisajenkins/remotedata": "4.3.1 <= v <= 4.3.1",

@@ -1,4 +1,3 @@
-import 'es6-promise/auto'
 import EllieUiIcon from '../../Ellie/Ui/Icon'
 import EllieUiCodeEditor from '../../Ellie/Ui/CodeEditor'
 import EllieUiOutput from '../../Ellie/Ui/Output'

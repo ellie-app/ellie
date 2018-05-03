@@ -1,5 +1,3 @@
-import { requestIdleCallback, cancelIdleCallback } from 'request-idle-callback'
-
 export default {
   start(app) {
     app.ports.ellieUiOutputOut.subscribe((data) => {

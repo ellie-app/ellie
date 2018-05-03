@@ -1,5 +1,3 @@
-import { requestIdleCallback, cancelIdleCallback } from 'request-idle-callback'
-
 const getToken = (editor) => {
   const position = editor.getCursor()
   const line = position.line
