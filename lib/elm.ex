@@ -1,14 +1,14 @@
 defmodule Elm do
-  use Application
+  def start_link() do
+    Supervisor.start_link(__MODULE__, :ok, name: __MODULE__)
+  end
 
-  def start(_type, _args) do
+  def init(:ok) do
     import Supervisor.Spec
 
     children = [
       worker(Elm.Platform.Local18, [])
     ]
-
-    opts = [strategy: :one_for_one, name: Elm.Supervisor]
-    Supervisor.start_link(children, opts)
+    supervise(children, strategy: :one_for_one)
   end
 end

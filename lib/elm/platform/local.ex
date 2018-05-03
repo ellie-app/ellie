@@ -71,7 +71,8 @@ defmodule Elm.Platform.Local do
 
   defp package_site() do
     default = "http://package.elm-lang.org"
-    case Application.get_env(:elm, :package_site, default) do
+    config = Application.get_env(:ellie, Elm, [])
+    case Keyword.get(config, :package_site, default) do
       {:system, variable} when is_binary(variable) -> Map.get(System.get_env(), variable, default)
       value when is_binary(value) -> value
       _ -> default

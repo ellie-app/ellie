@@ -16,6 +16,7 @@ defmodule Ellie do
     end
 
     children = [
+      supervisor(Elm, []),
       supervisor(Ellie.Repo, []),
       supervisor(EllieWeb.Endpoint, []),
       supervisor(Absinthe.Subscription, [EllieWeb.Endpoint]),

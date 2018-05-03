@@ -38,7 +38,7 @@ defmodule Elm.Platform do
   end
 
   defp adapter() do
-    Application.get_env(:elm, Elm.Platform, [])
-    |> Keyword.get(:adapter, Elm.Platform.Local)
+    Application.get_env(:ellie, Elm, [])
+    |> Keyword.get(:platform_adapter, Elm.Platform.Local)
   end
 end
