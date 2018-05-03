@@ -13,7 +13,7 @@ config :ellie,
 config :ellie, Ellie.Scheduler,
   global: true,
   jobs: [
-    {"*/15 * * * *", {Ellie.Search, :reload, []}},
+    {"*/15 * * * *", {Ellie.Domain.Search, :reload, []}},
   ]
 
 
