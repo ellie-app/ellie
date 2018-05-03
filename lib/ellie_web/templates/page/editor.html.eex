@@ -3,6 +3,7 @@
   <head>
     <meta charset="utf-8" />
     <%= render("polyfills.html") %>
+    <%= render("config.html", conn: @conn) %>
     <script src="<%= static_path(@conn, "/assets/editor.js") %>"></script>
   </head>
   <body></body>

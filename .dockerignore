@@ -7,4 +7,7 @@ node_modules
 deps
 priv/bin
 priv/graphql
+priv/docs_table
+priv/elm_home
+priv/static
 .env

@@ -48,5 +48,5 @@ document.addEventListener('DOMContentLoaded', () => {
 })
 
 if(navigator.serviceWorker) {
-  navigator.serviceWorker.register('/assets/editor-sw.js', { scope: '/' })
+  navigator.serviceWorker.register(window.ellieConfig.serviceWorkerPath, { scope: '/' })
 }
