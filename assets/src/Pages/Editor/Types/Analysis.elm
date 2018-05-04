@@ -5,14 +5,12 @@ module Pages.Editor.Types.Analysis
         , completions
         , empty
         , hint
-        , withAdvancedToken
         , withCode
         , withModules
         , withToken
         )
 
 import Char
-import Data.MultiDict as MultiDict exposing (MultiDict)
 import Dict exposing (Dict)
 import Ellie.Ui.CodeEditor as CodeEditor exposing (Completions, Located(..), Token(..))
 import Elm.Docs exposing (Binop, Module, Union)
@@ -27,7 +25,7 @@ type Analysis
         { modules : List Module
         , imports : ImportIndex
         , tokens : TokenIndex
-        , activeHint : Maybe ( String, Hint )
+        , activeHint : Maybe Hint
         , moduleNesting : Dict String (Set String)
         , advancedToken : Located Token
         , completions : Completions
@@ -81,28 +79,13 @@ withCode elmCode (Analysis stuff) =
         }
 
 
-withToken : Maybe String -> Analysis -> Analysis
+withToken : Located Token -> Analysis -> Analysis
 withToken token ((Analysis stuff) as analysis) =
-    case ( token, stuff.activeHint ) of
-        ( Just token, Just ( current, _ ) ) ->
-            if token == current then
-                analysis
-            else
-                findHint token analysis
-
-        ( Just token, Nothing ) ->
-            findHint token analysis
-
-        _ ->
-            Analysis { stuff | activeHint = Nothing }
-
-
-withAdvancedToken : Located Token -> Analysis -> Analysis
-withAdvancedToken token ((Analysis stuff) as analysis) =
     Analysis
         { stuff
             | advancedToken = token
             , completions = buildCompletions token analysis
+            , activeHint = findHint token analysis
         }
 
 
@@ -113,12 +96,49 @@ buildCompletions (Located from to token) (Analysis analysis) =
             CodeEditor.completions (Located from to [])
 
         Qualifier qualifier ->
-            case Dict.get qualifier analysis.moduleNesting of
-                Nothing ->
-                    CodeEditor.completions (Located from to [])
+            let
+                moduleNames =
+                    analysis.moduleNesting
+                        |> Dict.get qualifier
+                        |> Maybe.map Set.toList
+                        |> Maybe.withDefault []
 
-                Just nested ->
-                    CodeEditor.completions (Located from to (Set.toList nested))
+                values =
+                    analysis.modules
+                        |> List.filter (\mod -> mod.name == qualifier)
+                        |> List.concatMap
+                            (\mod ->
+                                List.map .name mod.values
+                                    ++ List.map .name mod.unions
+                                    ++ List.concatMap (.tags >> List.map Tuple.first) mod.unions
+                                    ++ List.map .name mod.aliases
+                            )
+            in
+            CodeEditor.completions (Located from to (values ++ moduleNames))
+
+        LowercaseVar text (Just qualifier) ->
+            case List.head (List.filter (\mod -> mod.name == qualifier) analysis.modules) of
+                Just mod ->
+                    mod.values
+                        |> List.filterMap
+                            (\value ->
+                                if String.startsWith text value.name && text /= value.name then
+                                    Just value.name
+                                else
+                                    Nothing
+                            )
+                        |> Located from to
+                        |> CodeEditor.completions
+
+                Nothing ->
+                    CodeEditor.noCompletions
+
+        LowercaseVar text Nothing ->
+            analysis.tokens
+                |> Dict.keys
+                |> List.filter (\s -> String.startsWith text s && s /= text)
+                |> Located from to
+                |> CodeEditor.completions
 
         _ ->
             CodeEditor.completions (Located from to [])
@@ -131,19 +151,55 @@ completions (Analysis stuff) =
 
 hint : Analysis -> Maybe Hint
 hint (Analysis stuff) =
-    Maybe.map Tuple.second stuff.activeHint
+    stuff.activeHint
 
 
-findHint : String -> Analysis -> Analysis
-findHint token (Analysis stuff) =
-    Analysis
-        { stuff
-            | activeHint =
-                stuff.tokens
-                    |> Dict.get token
-                    |> Maybe.andThen List.head
-                    |> Maybe.map (\h -> ( token, h ))
-        }
+findHint : Located Token -> Analysis -> Maybe Hint
+findHint (Located _ _ token) (Analysis stuff) =
+    case token of
+        Unknown ->
+            Nothing
+
+        Qualifier qualifier ->
+            Nothing
+
+        UppercaseVar name qualifier ->
+            let
+                fullName =
+                    qualifier
+                        |> Maybe.map (\q -> q ++ "." ++ name)
+                        |> Maybe.withDefault name
+
+                value =
+                    Dict.get fullName stuff.tokens
+                        |> Maybe.andThen List.head
+            in
+            case value of
+                Just value ->
+                    Just value
+
+                Nothing ->
+                    stuff.modules
+                        |> List.filter (\mod -> mod.name == fullName)
+                        |> List.head
+                        |> Maybe.map
+                            (\mod ->
+                                { name = mod.name
+                                , url = moduleUrl mod
+                                }
+                            )
+
+        LowercaseVar name qualifier ->
+            qualifier
+                |> Maybe.map (\q -> Just (q ++ "." ++ name))
+                |> Maybe.withDefault (Just name)
+                |> Maybe.andThen (\n -> Dict.get n stuff.tokens)
+                |> Maybe.andThen List.head
+
+        Operator name ->
+            stuff.tokens
+                |> Dict.get name
+                |> Maybe.andThen List.head
 
 
 buildModuleNesting : List Module -> Dict String (Set String)
@@ -293,6 +349,11 @@ unionTagsToHints moduleDocs union =
 
 urlTo : Module -> String -> String
 urlTo moduleData valueName =
+    moduleUrl moduleData ++ "#" ++ valueName
+
+
+moduleUrl : Module -> String
+moduleUrl moduleData =
     "http://package.elm-lang.org/packages/"
         ++ moduleData.package.name.user
         ++ "/"
@@ -301,8 +362,6 @@ urlTo moduleData valueName =
         ++ Version.toString moduleData.package.version
         ++ "/"
         ++ dotToHyphen moduleData.name
-        ++ "#"
-        ++ valueName
 
 
 dotToHyphen : String -> String

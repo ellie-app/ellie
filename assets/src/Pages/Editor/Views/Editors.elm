@@ -17,8 +17,7 @@ import Pages.Editor.Types.Example as Example exposing (Example)
 type alias Config msg =
     { elmCode : String
     , onElmChange : String -> msg
-    , onTokenChange : Maybe String -> msg
-    , onAdvancedTokenChange : CodeEditor.Located CodeEditor.Token -> msg
+    , onTokenChange : CodeEditor.Located CodeEditor.Token -> msg
     , htmlCode : String
     , onHtmlChange : String -> msg
     , onResize : Float -> msg
@@ -87,8 +86,7 @@ view config =
                         [ CodeEditor.view
                             [ CodeEditor.value config.elmCode
                             , CodeEditor.onChange config.onElmChange
-                            , CodeEditor.onToken config.onTokenChange
-                            , CodeEditor.onAdvancedToken config.onAdvancedTokenChange
+                            , CodeEditor.onAdvancedToken config.onTokenChange
                             , CodeEditor.mode "elm"
                             , CodeEditor.tabSize 4
                             , CodeEditor.vim config.vimMode

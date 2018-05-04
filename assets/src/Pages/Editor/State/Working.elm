@@ -220,8 +220,7 @@ type Msg
     | CollapseHtml
     | EditorsResized Float
     | ExampleSelected Example
-    | TokenChanged (Maybe String)
-    | AdvancedTokenChanged (Located Token)
+    | TokenChanged (Located Token)
     | DocsReceived (List Module)
       -- Action stuff
     | SettingsChanged Settings
@@ -290,16 +289,6 @@ update msg ({ user } as model) =
                     model.analysis
                         |> Analysis.withCode model.elmCode
                         |> Analysis.withToken token
-              }
-            , Command.none
-            )
-
-        AdvancedTokenChanged token ->
-            ( { model
-                | analysis =
-                    model.analysis
-                        |> Analysis.withCode model.elmCode
-                        |> Analysis.withAdvancedToken token
               }
             , Command.none
             )

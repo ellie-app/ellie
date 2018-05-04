@@ -217,6 +217,8 @@ const start = (app) => {
       set autocomplete(value) {
         if (value === this._completions) return
         this._completions = value
+        if (this._instance === null) return
+        this._instance.showHint({ completeSingle: false })
       }
 
       moveCursor(line, column) {
