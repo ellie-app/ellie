@@ -27,7 +27,7 @@ RUN mkdir -p /tmp/ellie-bin/0.18.0 && mkdir -p /tmp/ellie-bin/0.19.0
 ADD https://github.com/alco/goon/releases/download/v1.1.1/goon_linux_386.tar.gz /tmp/ellie-bin
 ADD https://github.com/elm-lang/elm-platform/releases/download/0.18.0-exp/elm-platform-linux-64bit.tar.gz /tmp/ellie-bin/0.18.0
 ADD https://github.com/avh4/elm-format/releases/download/0.7.0-exp/elm-format-0.18-0.7.0-exp-linux-x64.tgz /tmp/ellie-bin/0.18.0
-RUN wget -q ***REMOVED*** -O /tmp/ellie-bin/0.19.0/elm
+RUN wget -q https://www.dropbox.com/s/265okv84dwfoo92/elm?dl=1 -O /tmp/ellie-bin/0.19.0/elm
 
 RUN tar -xvC /tmp/ellie-bin/ -f /tmp/ellie-bin/goon_linux_386.tar.gz \
     && tar -xvC /tmp/ellie-bin/0.18.0/ -f /tmp/ellie-bin/0.18.0/elm-platform-linux-64bit.tar.gz \

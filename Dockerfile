@@ -47,7 +47,7 @@ RUN mkdir -p /tmp/elm_bin/0.18.0 && mkdir /tmp/elm_bin/0.19.0 \
     && rm /tmp/format-0.18.0.tar.gz \
     && chmod +x /tmp/elm_bin/0.18.0/* \
     # Elm Platform 0.19
-    && wget -q ***REMOVED*** -O /tmp/elm_bin/0.19.0/elm \
+    && wget -q <REDACTED> -O /tmp/elm_bin/0.19.0/elm \
     && chmod +x /tmp/elm_bin/0.19.0/elm \
     # Elm Format 0.19 - TODO download elm-format 0.19.0 when it's ready
     && cp /tmp/elm_bin/0.18.0/elm-format /tmp/elm_bin/0.19.0/elm-format
