@@ -7,6 +7,7 @@ import Data.Replaceable as Replaceable exposing (Replaceable)
 import Data.Uuid as Uuid exposing (Uuid)
 import Effect.Command as Command exposing (Command)
 import Effect.Subscription as Subscription exposing (Subscription)
+import Ellie.Ui.CodeEditor as CodeEditor exposing (Located, Token)
 import Elm.Compiler as Compiler
 import Elm.Docs as Docs exposing (Module)
 import Elm.Error as Error exposing (Error)
@@ -220,6 +221,7 @@ type Msg
     | EditorsResized Float
     | ExampleSelected Example
     | TokenChanged (Maybe String)
+    | AdvancedTokenChanged (Located Token)
     | DocsReceived (List Module)
       -- Action stuff
     | SettingsChanged Settings
@@ -288,6 +290,16 @@ update msg ({ user } as model) =
                     model.analysis
                         |> Analysis.withCode model.elmCode
                         |> Analysis.withToken token
+              }
+            , Command.none
+            )
+
+        AdvancedTokenChanged token ->
+            ( { model
+                | analysis =
+                    model.analysis
+                        |> Analysis.withCode model.elmCode
+                        |> Analysis.withAdvancedToken token
               }
             , Command.none
             )

@@ -18,6 +18,7 @@ type alias Config msg =
     { elmCode : String
     , onElmChange : String -> msg
     , onTokenChange : Maybe String -> msg
+    , onAdvancedTokenChange : CodeEditor.Located CodeEditor.Token -> msg
     , htmlCode : String
     , onHtmlChange : String -> msg
     , onResize : Float -> msg
@@ -87,9 +88,11 @@ view config =
                             [ CodeEditor.value config.elmCode
                             , CodeEditor.onChange config.onElmChange
                             , CodeEditor.onToken config.onTokenChange
+                            , CodeEditor.onAdvancedToken config.onAdvancedTokenChange
                             , CodeEditor.mode "elm"
                             , CodeEditor.tabSize 4
                             , CodeEditor.vim config.vimMode
+                            , CodeEditor.autocomplete <| Analysis.completions config.analysis
                             , config.elmError
                                 |> Maybe.map errorToLinterMessages
                                 |> Maybe.withDefault []

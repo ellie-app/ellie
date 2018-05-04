@@ -1,12 +1,20 @@
 module Ellie.Ui.CodeEditor
     exposing
         ( Attribute
+        , Completions
         , LinterMessage
+        , Located(..)
         , Position
         , Severity(..)
+        , Token(..)
+        , autocomplete
+        , completions
         , id
         , linterMessages
         , mode
+        , noCompletions
+        , nowhere
+        , onAdvancedToken
         , onChange
         , onSettled
         , onToken
@@ -20,7 +28,7 @@ module Ellie.Ui.CodeEditor
 import Html.Styled as Html exposing (Html)
 import Html.Styled.Attributes as Attributes exposing (property)
 import Html.Styled.Events as Events exposing (on)
-import Json.Decode as Decode
+import Json.Decode as Decode exposing (Decoder)
 import Json.Encode as Encode exposing (Value)
 
 
@@ -68,6 +76,11 @@ linterMessages messages =
     Attr <| property "linterMessages" <| Encode.list <| List.map linterMessageEncoder messages
 
 
+autocomplete : Completions -> Attribute msg
+autocomplete (Completions value) =
+    Attr <| property "autocomplete" value
+
+
 onChange : (String -> msg) -> Attribute msg
 onChange tagger =
     Attr <| on "change" (Decode.map tagger (Decode.at [ "target", "editorValue" ] Decode.string))
@@ -78,6 +91,14 @@ onToken tagger =
     Decode.string
         |> Decode.nullable
         |> Decode.at [ "target", "token" ]
+        |> Decode.map tagger
+        |> on "settled"
+        |> Attr
+
+
+onAdvancedToken : (Located Token -> msg) -> Attribute msg
+onAdvancedToken tagger =
+    Decode.at [ "target", "advancedToken" ] (locatedDecoder tokenDecoder)
         |> Decode.map tagger
         |> on "settled"
         |> Attr
@@ -139,3 +160,88 @@ positionEncoder position =
         , ( "ch", Encode.int position.column )
         , ( "sticky", Encode.null )
         ]
+
+
+positionDecoder : Decoder Position
+positionDecoder =
+    Decode.map2 Position
+        (Decode.field "line" Decode.int)
+        (Decode.field "ch" Decode.int)
+
+
+type Completions
+    = Completions Value
+
+
+completions : Located (List String) -> Completions
+completions (Located from to list) =
+    case list of
+        [] ->
+            noCompletions
+
+        stuff ->
+            Completions <|
+                Encode.object
+                    [ ( "from", positionEncoder from )
+                    , ( "to", positionEncoder to )
+                    , ( "list", Encode.list <| List.map Encode.string stuff )
+                    ]
+
+
+noCompletions : Completions
+noCompletions =
+    Completions Encode.null
+
+
+type Located a
+    = Located Position Position a
+
+
+nowhere : a -> Located a
+nowhere a =
+    Located { line = 0, column = 0 } { line = 0, column = 0 } a
+
+
+locatedDecoder : Decoder a -> Decoder (Located a)
+locatedDecoder decoder =
+    Decode.map3 Located
+        (Decode.field "from" positionDecoder)
+        (Decode.field "to" positionDecoder)
+        decoder
+
+
+type Token
+    = Operator String
+    | UppercaseVar String (Maybe String)
+    | LowercaseVar String (Maybe String)
+    | Qualifier String
+    | Unknown
+
+
+tokenDecoder : Decoder Token
+tokenDecoder =
+    Decode.andThen
+        (\tipe ->
+            case tipe of
+                "Operator" ->
+                    Decode.map Operator
+                        (Decode.field "text" Decode.string)
+
+                "UppercaseVar" ->
+                    Decode.map2 UppercaseVar
+                        (Decode.field "text" Decode.string)
+                        (Decode.field "qualifier" (Decode.nullable Decode.string))
+
+                "LowercaseVar" ->
+                    Decode.map2 LowercaseVar
+                        (Decode.field "text" Decode.string)
+                        (Decode.field "qualifier" (Decode.nullable Decode.string))
+
+                "Qualifier" ->
+                    Decode.map Qualifier
+                        (Decode.field "text" Decode.string)
+
+                _ ->
+                    Decode.succeed Unknown
+        )
+        (Decode.field "type" Decode.string)

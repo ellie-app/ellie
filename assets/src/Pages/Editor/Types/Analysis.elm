@@ -2,20 +2,23 @@ module Pages.Editor.Types.Analysis
     exposing
         ( Analysis
         , Hint
+        , completions
         , empty
         , hint
+        , withAdvancedToken
         , withCode
         , withModules
         , withToken
         )
 
 import Char
+import Data.MultiDict as MultiDict exposing (MultiDict)
 import Dict exposing (Dict)
+import Ellie.Ui.CodeEditor as CodeEditor exposing (Completions, Located(..), Token(..))
 import Elm.Docs exposing (Binop, Module, Union)
 import Elm.Version as Version exposing (Version)
 import Parser exposing ((|.), (|=), Parser)
 import Parser.LanguageKit
-import Regex exposing (Regex)
 import Set exposing (Set)
 
 
@@ -25,6 +28,9 @@ type Analysis
         , imports : ImportIndex
         , tokens : TokenIndex
         , activeHint : Maybe ( String, Hint )
+        , moduleNesting : Dict String (Set String)
+        , advancedToken : Located Token
+        , completions : Completions
         }
 
 
@@ -35,15 +41,28 @@ empty =
         , imports = Dict.empty
         , tokens = Dict.empty
         , activeHint = Nothing
+        , moduleNesting = Dict.empty
+        , advancedToken = CodeEditor.nowhere CodeEditor.Unknown
+        , completions = CodeEditor.noCompletions
         }
 
 
 withModules : List Module -> Analysis -> Analysis
 withModules modules (Analysis stuff) =
+    let
+        preCompletions =
+            { stuff
+                | modules = modules
+                , tokens = buildTokenIndex stuff.imports modules
+                , moduleNesting = buildModuleNesting modules
+            }
+    in
     Analysis
-        { stuff
-            | modules = modules
-            , tokens = buildTokenIndex stuff.imports modules
+        { preCompletions
+            | completions =
+                buildCompletions
+                    stuff.advancedToken
+                    (Analysis preCompletions)
         }
 
 
@@ -78,6 +97,38 @@ withToken token ((Analysis stuff) as analysis) =
             Analysis { stuff | activeHint = Nothing }
 
 
+withAdvancedToken : Located Token -> Analysis -> Analysis
+withAdvancedToken token ((Analysis stuff) as analysis) =
+    Analysis
+        { stuff
+            | advancedToken = token
+            , completions = buildCompletions token analysis
+        }
+
+
+buildCompletions : Located Token -> Analysis -> Completions
+buildCompletions (Located from to token) (Analysis analysis) =
+    case token of
+        Unknown ->
+            CodeEditor.completions (Located from to [])
+
+        Qualifier qualifier ->
+            case Dict.get qualifier analysis.moduleNesting of
+                Nothing ->
+                    CodeEditor.completions (Located from to [])
+
+                Just nested ->
+                    CodeEditor.completions (Located from to (Set.toList nested))
+
+        _ ->
+            CodeEditor.completions (Located from to [])
+
+
+completions : Analysis -> Completions
+completions (Analysis stuff) =
+    stuff.completions
+
+
 hint : Analysis -> Maybe Hint
 hint (Analysis stuff) =
     Maybe.map Tuple.second stuff.activeHint
@@ -93,6 +144,48 @@ findHint token (Analysis stuff) =
                     |> Maybe.andThen List.head
                     |> Maybe.map (\h -> ( token, h ))
         }
+
+
+buildModuleNesting : List Module -> Dict String (Set String)
+buildModuleNesting modules =
+    List.foldl
+        (\modul dict ->
+            case String.split "." modul.name of
+                [] ->
+                    dict
+
+                [ only ] ->
+                    dict
+
+                stuff ->
+                    stuff
+                        |> List.foldl
+                            (\part ( maybeParent, output ) ->
+                                case maybeParent of
+                                    Just parent ->
+                                        ( Just (parent ++ "." ++ part)
+                                        , Dict.update parent
+                                            (\maybeNestedValues ->
+                                                case maybeNestedValues of
+                                                    Just nestedValues ->
+                                                        Just (Set.insert part nestedValues)
+
+                                                    Nothing ->
+                                                        Just (Set.singleton part)
+                                            )
+                                            output
+                                        )
+
+                                    Nothing ->
+                                        ( Just part
+                                        , output
+                                        )
+                            )
+                            ( Nothing, dict )
+                        |> Tuple.second
+        )
+        Dict.empty
+        modules
 
 
 type alias Hint =

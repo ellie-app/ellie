@@ -381,7 +381,7 @@ getDocs packages =
         { url = "/api"
         , token = Nothing
         , selection = SelectionSet.map identity selection
-        , onError = always []
+        , onError = Debug.log "e" >> always []
         , debounce = Nothing
         , cache = Command.Permanent
         }

@@ -39,7 +39,6 @@ web pages!
 -}
 
 import Ellie.Api.Enum.ElmDocsAssociativity as ElmDocsAssociativity
-import Ellie.Api.Helpers as Helpers
 import Ellie.Api.Object exposing (ElmDocsModule)
 import Ellie.Api.Object.ElmDocsAlias as ElmDocsAlias
 import Ellie.Api.Object.ElmDocsBinop as ElmDocsBinop
@@ -49,8 +48,6 @@ import Ellie.Api.Object.ElmDocsUnion as ElmDocsUnion
 import Ellie.Api.Object.ElmDocsValue as ElmDocsValue
 import Ellie.Api.Scalar as Scalar
 import Elm.Package as Package exposing (Package)
-import Elm.Type as Type exposing (Type)
-import Extra.Result as Result
 import Graphqelm.Field as Field
 import Graphqelm.SelectionSet exposing (SelectionSet, hardcoded, with)
 
@@ -95,7 +92,7 @@ type alias Alias =
     { name : String
     , comment : String
     , args : List String
-    , tipe : Type
+    , tipe : String
     }
 
 
@@ -121,7 +118,7 @@ type alias Union =
     { name : String
     , comment : String
     , args : List String
-    , tags : List ( String, List Type )
+    , tags : List ( String, List String )
     }
 
 
@@ -143,7 +140,7 @@ The `Value` would look like this:
 type alias Value =
     { name : String
     , comment : String
-    , tipe : Type
+    , tipe : String
     }
 
 
@@ -161,7 +158,7 @@ something like this:
 type alias Binop =
     { name : String
     , comment : String
-    , tipe : Type
+    , tipe : String
     , associativity : Associativity
     , precedence : Int
     }
@@ -221,26 +218,26 @@ selection =
                 |> with ElmDocsAlias.name
                 |> with ElmDocsAlias.comment
                 |> with ElmDocsAlias.args
-                |> with (Field.mapOrFail parseType ElmDocsAlias.type_)
+                |> with (Field.map (\(Scalar.ElmDocsType t) -> t) ElmDocsAlias.type_)
 
         valueSelection =
             ElmDocsValue.selection Value
                 |> with ElmDocsValue.name
                 |> with ElmDocsValue.comment
-                |> with (Field.mapOrFail parseType ElmDocsValue.type_)
+                |> with (Field.map (\(Scalar.ElmDocsType t) -> t) ElmDocsValue.type_)
 
         binopSelection =
             ElmDocsBinop.selection Binop
                 |> with ElmDocsBinop.name
                 |> with ElmDocsBinop.comment
-                |> with (Field.mapOrFail parseType ElmDocsBinop.type_)
+                |> with (Field.map (\(Scalar.ElmDocsType t) -> t) ElmDocsBinop.type_)
                 |> with (Field.map makeAssociativity ElmDocsBinop.associativity)
                 |> with ElmDocsBinop.precedence
 
         tagSelection =
             ElmDocsTag.selection (,)
                 |> with ElmDocsTag.name
-                |> with (Field.mapOrFail (Result.traverse parseType) ElmDocsTag.args)
+                |> with (Field.map (List.map (\(Scalar.ElmDocsType t) -> t)) ElmDocsTag.args)
 
         makeAssociativity a =
             case a of
@@ -252,9 +249,6 @@ selection =
 
                 ElmDocsAssociativity.None ->
                     None
-
-        parseType (Scalar.ElmDocsType t) =
-            Result.mapError toString <| Type.parse t
     in
     selection_
 

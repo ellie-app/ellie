@@ -164,6 +164,7 @@ viewEditors model =
         , analysis = model.analysis
         , onElmChange = WorkingState.ElmCodeChanged
         , onTokenChange = WorkingState.TokenChanged
+        , onAdvancedTokenChange = WorkingState.AdvancedTokenChanged
         , htmlCode = model.htmlCode
         , onHtmlChange = WorkingState.HtmlCodeChanged
         , onResize = WorkingState.EditorsResized

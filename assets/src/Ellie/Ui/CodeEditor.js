@@ -1,3 +1,5 @@
+import * as Helpers from './CodeEditor/Helpers'
+
 const getToken = (editor) => {
   const position = editor.getCursor()
   const line = position.line
@@ -50,6 +52,8 @@ const load = () => {
     import(/* webpackChunkName: "codemirror-base" */ 'codemirror/mode/htmlmixed/htmlmixed'),
     import(/* webpackChunkName: "codemirror-base" */ 'codemirror/addon/lint/lint'),
     import(/* webpackChunkName: "codemirror-base" */ 'codemirror/addon/selection/active-line'),
+    import(/* webpackChunkName: "codemirror-base" */ 'codemirror/addon/hint/show-hint'),
+    import(/* webpackChunkName: "codemirror-base", webpackMode: "eager" */ 'codemirror/addon/hint/show-hint.css'),
     import(/* webpackChunkName: "codemirror-base", webpackMode: "eager" */ 'codemirror/addon/lint/lint.css'),
     import(/* webpackChunkName: "codemirror-base", webpackMode: "eager" */ 'codemirror/theme/material.css'),
     import(/* webpackChunkName: "codemirror-base", webpackMode: "eager" */ './CodeEditor.css')
@@ -101,6 +105,7 @@ const start = (app) => {
         this._mode = this.mode || 'htmlmixed'
         delete this.mode
 
+        this._completions = null
         this._onCursorActivity = this._onCursorActivity.bind(this)
         this._onElmChanges = this._onElmChanges.bind(this)
         this._ready = false
@@ -201,6 +206,19 @@ const start = (app) => {
         return this._token
       }
 
+      get advancedToken() {
+        return Helpers.getCompletionContext(this._instance)
+      }
+
+      get autocomplete() {
+        return this._completions
+      }
+
+      set autocomplete(value) {
+        if (value === this._completions) return
+        this._completions = value
+      }
+
       moveCursor(line, column) {
         if (!this._instance) return
         this._instance.focus()
@@ -224,12 +242,16 @@ const start = (app) => {
           mode: this._mode,
           value: this._value,
           dragDrop: false,
+          hintOptions: {
+            hint: () => this._completions
+          },
           extraKeys: {
+            'Ctrl-Space': 'autocomplete',
             Tab(cm) {
               let x = ""
               for (let i = cm.getOption('indentUnit'); i > 0; i--) x += " "
               cm.replaceSelection(x)
-            }
+            },
           }
         })
 
