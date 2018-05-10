@@ -9,4 +9,4 @@ config :ellie, EllieWeb.Endpoint,
 config :ellie, Ellie.Repo,
   adapter: Ecto.Adapters.Postgres,
   ssl: true,
-  pool_size: 10
+  pool_size: 5

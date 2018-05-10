@@ -1,10 +1,13 @@
-<script>
+<script id="polyfills-loader">
     (function () {
+        var currentScript = document.getElementById('polyfills-loader')
+
         // Promise
         if (typeof window.Promise === 'undefined') {
             var script1 = document.createElement('script')
             script1.src = '//cdn.jsdelivr.net/npm/es6-promise@4.2.4/dist/es6-promise.min.js'
-            document.head.appendChild(script1)
+            document.head.insertBefore(script1, currentScript.nextSibling)
+            currentScript = script1
         }
 
         // Custom Elements
@@ -12,19 +15,22 @@
         script2.src = typeof window.customElements === 'undefined' ?
             '//cdn.jsdelivr.net/npm/@webcomponents/custom-elements@1.1.0/custom-elements.min.js' :
             '//cdn.jsdelivr.net/npm/@webcomponents/custom-elements@1.1.0/src/native-shim.js'
-        document.head.appendChild(script2)
+        document.head.insertBefore(script2, currentScript.nextSibling)
+        currentScript = script2
 
         if (typeof window.customElements !== 'undefined') {
             var script3 = document.createElement('script')
             script3.textContent = 'HTMLElement.prototype.constructor = HTMLElement;'
-            document.head.appendChild(script3)
+            document.head.insertBefore(script3, currentScript.nextSibling)
+            currentScript = script3
         }
 
         // RequestIdleCallback
         if (typeof window.requestIdleCallback === 'undefined') {
             var script4 = document.createElement('script')
             script4.src = '//cdn.jsdelivr.net/npm/request-idle-polyfill@1.0.1/dist/index.min.js'
-            document.head.appendChild(script4)
+            document.head.insertBefore(script1, currentScript.nextSibling)
+            currentScript = script4
         }
     }())
 </script>

@@ -1,3 +1,5 @@
+import builtin from 'newless'
+
 const throttleToFrame = (fn) => {
   let scheduled = false
   let args = null
@@ -13,7 +15,7 @@ const throttleToFrame = (fn) => {
 }
 
 const start = (app) => {
-  customElements.define('ellie-ui-split-pane-group', class extends HTMLElement {
+  customElements.define('ellie-ui-split-pane-group', class extends builtin(HTMLElement) {
     constructor() {
       super()
       this.onDocumentMouseMove = this.onDocumentMouseMove.bind(this)

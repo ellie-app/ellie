@@ -5,7 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1">
     <%= render("polyfills.html") %>
     <%= render("config.html", conn: @conn) %>
-    <script src="<%= static_path(@conn, "/assets/embed.js") %>"></script>
   </head>
-  <body></body>
+  <body>
+    <script src="<%= static_path(@conn, "/assets/embed.js") %>"></script>
+  </body>
 </html>

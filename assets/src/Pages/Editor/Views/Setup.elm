@@ -5,14 +5,12 @@ module Pages.Editor.Views.Setup
         )
 
 import Css exposing (..)
-import Data.Url as Url
 import Ellie.Ui.Button as Button
 import Ellie.Ui.Icon as Icon
+import Ellie.Ui.Logo as Logo
 import Ellie.Ui.Theme as Theme
 import Html.Styled as Html exposing (Html)
 import Html.Styled.Attributes as Attributes exposing (css)
-import Svg.Styled as Svg
-import Svg.Styled.Attributes as SvgAttributes
 
 
 type Stage msg
@@ -41,7 +39,14 @@ view loadingStage =
                 terms state
 
             _ ->
-                [ logo ]
+                [ Html.styled Html.div
+                    [ width (pct 80)
+                    , maxWidth (px 500)
+                    , position relative
+                    ]
+                    []
+                    [ Logo.animated ]
+                ]
 
 
 terms : { termsVersion : Int, onAccept : msg, loading : Bool } -> List (Html msg)
@@ -92,46 +97,3 @@ terms state =
             }
         ]
     ]
-
-
-logo : Html msg
-logo =
-    Svg.svg
-        []
-        [ Svg.defs []
-            [ Svg.mask [ SvgAttributes.id "clip" ]
-                [ Svg.use
-                    [ SvgAttributes.width "100%"
-                    , SvgAttributes.height "100%"
-                    , SvgAttributes.fill "#fff"
-                    , SvgAttributes.xlinkHref "#ellie-logo"
-                    , SvgAttributes.x "0"
-                    , SvgAttributes.y "0"
-                    ]
-                    []
-                ]
-            , Svg.linearGradient
-                [ SvgAttributes.id "shimmer" ]
-                [ Svg.stop [ SvgAttributes.stopColor "#fff", SvgAttributes.stopOpacity "0", SvgAttributes.offset "0%" ] []
-                , Svg.stop [ SvgAttributes.stopColor "#fff", SvgAttributes.stopOpacity "0.4", SvgAttributes.offset "50%" ] []
-                , Svg.stop [ SvgAttributes.stopColor "#fff", SvgAttributes.stopOpacity "0", SvgAttributes.offset "65%" ] []
-                ]
-            , Svg.linearGradient
-                [ SvgAttributes.id "background", SvgAttributes.gradientTransform "rotate(30) scale(2)" ]
-                [ Svg.stop [ SvgAttributes.stopColor "#FC6ECC", SvgAttributes.offset "15%" ] []
-                , Svg.stop [ SvgAttributes.stopColor "#5500FF", SvgAttributes.offset "60%" ] []
-                ]
-            ]
-        , Svg.g [ SvgAttributes.style "mask: url(#clip)" ]
-            [ Svg.rect [ SvgAttributes.width "100%", SvgAttributes.height "100%", SvgAttributes.fill "url(#background)" ] []
-            , Svg.rect
-                [ SvgAttributes.css
-                    [ width (pct 100)
-                    , height (pct 100)
-                    , property "fill" "url(#shimmer)"
-                    , property "animation" "shimmer 2s infinite cubic-bezier(0.25, 0.46, 0.45, 0.94)"
-                    ]
-                ]
-                []
-            ]
-        ]

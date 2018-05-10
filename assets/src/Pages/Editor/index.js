@@ -46,7 +46,3 @@ document.addEventListener('DOMContentLoaded', () => {
   EllieUiOutput.start(app)
   Main.start(app)
 })
-
-if(navigator.serviceWorker) {
-  navigator.serviceWorker.register(window.ellieConfig.serviceWorkerPath, { scope: '/' })
-}

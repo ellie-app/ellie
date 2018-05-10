@@ -1,3 +1,5 @@
+import builtin from 'newless'
+
 export default {
   start(app) {
     app.ports.ellieUiOutputOut.subscribe((data) => {
@@ -177,7 +179,7 @@ export default {
     //   return hex
     // }
 
-    customElements.define('ellie-ui-output', class extends HTMLElement {
+    customElements.define('ellie-ui-output', class extends builtin(HTMLElement) {
       constructor() {
         super()
         this._html = null
