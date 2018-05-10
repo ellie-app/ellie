@@ -20,7 +20,8 @@ The first time you run this it will download the images for our base operating s
 all of the software for building and running, and compile everything. It attaches the project
 directory as a volume, so all of the build artifacts will be written to your file system. 
 
-If you are using Docker for Mac you may need to add `/src` under Preferences > File Sharing.
+If you are using Docker for Mac you may need to make adjustments to your file sharing permissions
+under Preferences > File Sharing.
 
 > **⚠️ WARNING**
 > It's important to be careful about editor tools that modify these build artifacts! They are
