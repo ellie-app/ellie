@@ -13,8 +13,6 @@ services:
       - "4000:4000"
     depends_on:
       - database
-    env_file:
-      - .env.local
   webpack:
     command: ./scripts/docker/development/run_webpack.sh
     build:
