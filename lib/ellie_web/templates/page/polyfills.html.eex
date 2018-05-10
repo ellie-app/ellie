@@ -14,11 +14,17 @@
             '//cdn.jsdelivr.net/npm/@webcomponents/custom-elements@1.1.0/src/native-shim.js'
         document.head.appendChild(script2)
 
+        if (typeof window.customElements !== 'undefined') {
+            var script3 = document.createElement('script')
+            script3.textContent = 'HTMLElement.prototype.constructor = HTMLElement;'
+            document.head.appendChild(script3)
+        }
+
         // RequestIdleCallback
         if (typeof window.requestIdleCallback === 'undefined') {
-            var script3 = document.createElement('script')
-            script3.src = '//cdn.jsdelivr.net/npm/request-idle-polyfill@1.0.1/dist/index.min.js'
-            document.head.appendChild(script3)
+            var script4 = document.createElement('script')
+            script4.src = '//cdn.jsdelivr.net/npm/request-idle-polyfill@1.0.1/dist/index.min.js'
+            document.head.appendChild(script4)
         }
     }())
 </script>
