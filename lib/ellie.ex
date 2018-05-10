@@ -5,8 +5,6 @@ defmodule Ellie do
     import Supervisor.Spec
 
     if Application.get_env(:ellie, :env) == :prod do
-      IO.inspect(url_host())
-
       merge_config :ellie, EllieWeb.Endpoint,
         secret_key_base: Map.fetch!(System.get_env(), "SECRET_KEY_BASE"),
         url: [host: url_host()]

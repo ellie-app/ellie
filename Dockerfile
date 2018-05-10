@@ -31,7 +31,7 @@ RUN mix local.hex --force \
     && mix archive.install https://github.com/phoenixframework/archives/raw/master/phoenix_new.ez --force
 
 # Download Elm platform binaries
-RUN mkdir -p /tmp/elm_bin/0.18.0 && mkdir /tmp/elm_bin/0.19.0 \
+RUN mkdir -p /tmp/elm_bin/0.18.0 && mkdir -p /tmp/elm_bin/0.19.0 \
     # goon executable for Procelain Elixir library, to run executables in Elixir processes
     && wget -q https://github.com/alco/goon/releases/download/v1.1.1/goon_linux_386.tar.gz -O /tmp/goon.tar.gz \
     && tar -xvC /tmp/elm_bin -f /tmp/goon.tar.gz \
@@ -47,10 +47,15 @@ RUN mkdir -p /tmp/elm_bin/0.18.0 && mkdir /tmp/elm_bin/0.19.0 \
     && rm /tmp/format-0.18.0.tar.gz \
     && chmod +x /tmp/elm_bin/0.18.0/* \
     # Elm Platform 0.19
-    && wget -q <REDACTED> -O /tmp/elm_bin/0.19.0/elm \
-    && chmod +x /tmp/elm_bin/0.19.0/elm \
-    # Elm Format 0.19 - TODO download elm-format 0.19.0 when it's ready
-    && cp /tmp/elm_bin/0.18.0/elm-format /tmp/elm_bin/0.19.0/elm-format
+    && wget -q https://44a95588fe4cc47efd96-ec3c2a753a12d2be9f23ba16873acc23.ssl.cf2.rackcdn.com/linux-64.tar.gz -O /tmp/platform-0.19.0.tar.gz \
+    && tar -xvC /tmp/elm_bin/0.19.0 -f /tmp/platform-0.19.0.tar.gz \
+    && rm /tmp/platform-0.19.0.tar.gz \
+    && chmod +x /tmp/elm_bin/0.19.0/* \
+    # Elm Format 0.19
+    && wget -q https://github.com/avh4/elm-format/releases/download/0.8.0-alpha-elm019rc1-rc1/elm-format-0.19-0.8.0-alpha-elm019rc1-rc1-linux-x64.tgz -O /tmp/format-0.19.0.tar.gz \
+    && tar -xvC /tmp/elm_bin/0.19.0 -f /tmp/format-0.19.0.tar.gz \
+    && rm /tmp/format-0.19.0.tar.gz \
+    && chmod +x /tmp/elm_bin/0.19.0/*
 
 # Load source code
 ADD . /app
@@ -69,9 +74,9 @@ RUN mix deps.get \
 
 # Install node dependencies, compile production Elm apps, and generate digested assets
 RUN cd /app/assets \
-    && yarn install \
-    && yarn run graphql \
-    && yarn run build \
+    && npm install \
+    && npm run graphql \
+    && npm run build \
     && cd /app \
     && mix phx.digest
 

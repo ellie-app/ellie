@@ -15,7 +15,7 @@ defmodule Ellie.Repo.Migrations.CreateRevisions do
       add :packages,        {:array, Elm.Ecto.Package.type}, null: false
       add :elm_version,     Elm.Ecto.Version.type,           null: false
       add :terms_version,   :integer
-      add :user_id,         references(:users, type: :uuid),  null: false
+      add :user_id,         references(:users, type: :uuid)
       timestamps(updated_at: false)
     end
   end

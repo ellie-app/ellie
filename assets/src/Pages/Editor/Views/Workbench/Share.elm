@@ -14,25 +14,28 @@ import Pages.Editor.Types.RevisionId as RevisionId exposing (RevisionId)
 type alias Config msg =
     { onDownloadZip : msg
     , revisionId : RevisionId
+    , hasUnsavedChanges : Bool
     }
 
 
 view : Config msg -> Html msg
 view config =
-    Html.div
-        [ css
-            [ position absolute
-            , top zero
-            , left zero
-            , width (pct 100)
-            , height (pct 100)
-            , backgroundColor Theme.secondaryBackground
-            , padding (px 16)
-            ]
+    Html.styled Html.div
+        [ position absolute
+        , top zero
+        , left zero
+        , width (pct 100)
+        , height (pct 100)
+        , backgroundColor Theme.secondaryBackground
+        , padding (px 16)
         ]
-        [ Html.div [ containerStyles ]
-            [ Html.div [ headerStyles ]
-                [ Html.text "Export" ]
+        []
+        [ if config.hasUnsavedChanges then
+            container [ warning ]
+          else
+            Html.text ""
+        , container
+            [ heading "Export"
             , Html.div
                 [ css [ displayFlex ] ]
                 [ Button.view
@@ -42,18 +45,45 @@ view config =
                     }
                 ]
             ]
-        , Html.div [ containerStyles ]
-            [ Html.div [ headerStyles ] [ Html.text "Share on Medium (Embed.ly)" ]
+        , container
+            [ heading "Share on Medium (Embed.ly)"
             , CopyText.view <| Url.toString <| RevisionId.editorLink config.revisionId
             ]
-        , Html.div [ containerStyles ]
-            [ Html.div [ headerStyles ] [ Html.text "Embed IFrame" ]
+        , container
+            [ heading "Embed IFrame"
             , CopyText.view (iframe config.revisionId)
             ]
-        , Html.div [ containerStyles ]
-            [ Html.div [ headerStyles ] [ Html.text "Preview" ]
+        , container
+            [ heading "Preview"
             , preview config.revisionId
             ]
+        ]
+
+
+warning : Html msg
+warning =
+    Html.styled Html.div
+        [ padding (px 12)
+        , backgroundColor Theme.primaryBackground
+        , displayFlex
+        , alignItems center
+        , justifyContent flexStart
+        ]
+        []
+        [ Html.styled Html.div
+            [ color Theme.warning
+            , width (px 20)
+            , height (px 20)
+            , marginRight (px 16)
+            ]
+            []
+            [ Icon.view Icon.Warning ]
+        , Html.styled Html.div
+            [ color Theme.primaryForeground
+            , fontSize (px 16)
+            ]
+            []
+            [ Html.text "You have unsaved changes" ]
         ]
 
 
@@ -65,25 +95,26 @@ iframe revisionId =
 preview : RevisionId -> Html msg
 preview revisionId =
     Html.styled Html.iframe
-        [ border3 (px 2) solid Theme.draggableBorder
-        , width (pct 100)
-        , height (px 400)
+        [ width (pct 100)
+        , height (px 500)
+        , border3 (px 2) solid Theme.draggableBorder
+        , position relative
+        , zIndex (int 1)
         ]
-        [ Url.src <| RevisionId.embedLink revisionId
-        ]
+        [ Url.src <| RevisionId.embedLink revisionId ]
         []
 
 
-containerStyles : Attribute msg
-containerStyles =
-    css
-        [ paddingBottom (px 16)
-        ]
+container : List (Html msg) -> Html msg
+container =
+    Html.styled Html.div
+        [ paddingBottom (px 16) ]
+        []
 
 
-headerStyles : Attribute msg
-headerStyles =
-    css
+heading : String -> Html msg
+heading content =
+    Html.styled Html.div
         [ fontSize (px 14)
         , color Theme.primaryForeground
         , fontWeight bold
@@ -91,3 +122,5 @@ headerStyles =
         , paddingBottom (px 8)
         , textTransform uppercase
         ]
+        []
+        [ Html.text content ]

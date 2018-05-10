@@ -37,7 +37,7 @@ config :porcelain, :goon_driver_path, Path.expand("../priv/bin/goon", __DIR__)
 config :porcelain, driver: Porcelain.Driver.Goon
 
 config :ellie, Elm,
-  package_site: "<REDACTED>"
+  package_site: "https://alpha.elm-lang.org"
 
 # Import environment specific config. This must remain at the bottom
 # of this file so it overrides the configuration defined above.

@@ -43,6 +43,7 @@ type alias Config msg =
     , saving : Bool
     , htmlCode : String
     , revisionId : Maybe RevisionId
+    , hasUnsavedChanges : Bool
     }
 
 
@@ -103,6 +104,7 @@ viewContent config =
                             Share.view
                                 { onDownloadZip = config.onDownloadZip
                                 , revisionId = rid
+                                , hasUnsavedChanges = config.hasUnsavedChanges
                                 }
 
                         _ ->
@@ -137,6 +139,7 @@ viewContent config =
                             Share.view
                                 { onDownloadZip = config.onDownloadZip
                                 , revisionId = rid
+                                , hasUnsavedChanges = config.hasUnsavedChanges
                                 }
 
                         _ ->

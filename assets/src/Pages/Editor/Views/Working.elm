@@ -35,46 +35,41 @@ view model =
         ]
         [ viewStyles model
         , Html.viewIf model.animating <|
-            Html.div
-                [ css
-                    [ position absolute
-                    , width (pct 100)
-                    , height (pct 100)
-                    , zIndex (int 1)
-                    , backgroundColor Colors.darkGray
-                    , property "animation-name" "setup-vanish"
-                    , property "animation-duration" "0.4s"
-                    , property "animation-delay" "0.6s"
-                    , property "animation-fill-mode" "normal"
-                    ]
-                ]
-                [ SetupView.view SetupView.Opening
-                ]
-        , Html.div
-            [ css
-                [ displayFlex
+            Html.styled Html.div
+                [ position absolute
+                , width (pct 100)
                 , height (pct 100)
+                , zIndex (int 1)
+                , backgroundColor Colors.darkGray
+                , property "animation-name" "setup-vanish"
+                , property "animation-duration" "0.4s"
+                , property "animation-delay" "0.6s"
+                , property "animation-fill-mode" "normal"
                 ]
+                []
+                [ SetupView.view SetupView.Opening ]
+        , Html.styled Html.div
+            [ displayFlex
+            , height (pct 100)
             ]
+            []
             [ SidebarView.view model.actions
-            , Html.div
-                [ css
-                    [ displayFlex
-                    , flexDirection column
-                    , height (pct 100)
-                    , width (pct 100)
-                    , position relative
-                    , overflow hidden
-                    ]
+            , Html.styled Html.div
+                [ displayFlex
+                , flexDirection column
+                , height (pct 100)
+                , width (pct 100)
+                , position relative
+                , overflow hidden
                 ]
-                [ Html.div
-                    [ css
-                        [ displayFlex
-                        , position relative
-                        , width (pct 100)
-                        , height (pct 100)
-                        ]
+                []
+                [ Html.styled Html.div
+                    [ displayFlex
+                    , position relative
+                    , width (pct 100)
+                    , height (pct 100)
                     ]
+                    []
                     [ viewActions model
                     , viewWorkspace model
                     , NotificationsView.view
@@ -112,13 +107,12 @@ viewActions model =
             Html.text ""
 
         _ ->
-            Html.div
-                [ css
-                    [ width (px 360)
-                    , borderRight3 (px 2) solid Theme.staticBorder
-                    , flexShrink (int 0)
-                    ]
+            Html.styled Html.div
+                [ width (px 360)
+                , borderRight3 (px 2) solid Theme.staticBorder
+                , flexShrink (int 0)
                 ]
+                []
                 [ case model.actions of
                     ActionsState.Packages packagesModel ->
                         PackagesView.view
@@ -213,6 +207,7 @@ viewWorkbench model =
         , htmlCode = model.htmlCode
         , token = model.token
         , revisionId = Maybe.map Tuple.first <| Replaceable.toMaybe model.revision
+        , hasUnsavedChanges = WorkingState.hasChanged model
         }
 
 

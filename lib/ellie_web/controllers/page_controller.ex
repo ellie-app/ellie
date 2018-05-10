@@ -47,17 +47,27 @@ defmodule EllieWeb.PageController do
     end
   end
 
-  def embed_result(conn, %{"project_id" => project_id, "revision_number" => revision_number}) do
-    with parsed_project_id <- ProjectId.from_string(project_id),
-         revision when not is_nil(revision) <- Repo.get_by(Revision, project_id: parsed_project_id, revision_number: revision_number),
-         {:ok, path} <- Embed.result(revision)
-    do
+  def embed_manager(conn, %{"project_id" => project_id, "revision_number" => revision_number}) do
+    etag = "#{project_id}-#{revision_number}"
+    if etag in get_req_header(conn, "if-none-match") do
       conn
-      |> put_resp_content_type("application/javascript")
-      |> send_file(200, path)
+      |> send_resp(304, "")
+      |> halt()
     else
-      _ ->
-        send_chunked(conn, 404)
+      with parsed_project_id <- ProjectId.from_string(project_id),
+           revision when not is_nil(revision) <- Repo.get_by(Revision, project_id: parsed_project_id, revision_number: revision_number),
+           {:ok, path} <- Embed.result(revision)
+      do
+        conn
+        |> delete_resp_header("cache-control")
+        |> put_resp_header("cache-control", "public, max-age=600")
+        |> put_resp_header("ETag", etag)
+        |> put_resp_content_type("application/javascript")
+        |> send_file(200, path)
+        |> halt()
+      else
+        _ -> send_chunked(conn, 404)
+      end
     end
   end
 
