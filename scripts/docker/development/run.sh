@@ -2,6 +2,9 @@
 
 set -e
 
+export MIX_ENV=prod
+export NODE_ENV=development
+
 mkdir -p /app/priv/bin/
 mkdir -p /app/priv/elm_home
 cp -r /tmp/ellie-bin/* /app/priv/bin/

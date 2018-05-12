@@ -44,6 +44,4 @@ RUN tar -xvC /tmp/ellie-bin/ -f /tmp/ellie-bin/goon_linux_386.tar.gz \
 WORKDIR /app
 
 ENV ELM_HOME=/app/priv/elm_home \
-    MIX_ENV=dev \
-    NODE_ENV=development \
     PORT=4000

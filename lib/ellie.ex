@@ -35,11 +35,15 @@ defmodule Ellie do
   end
 
   defp url_host() do
-    "NOW_URL"
-    |> System.get_env()
-    |> with_default("0.0.0.0")
-    |> String.replace("https://", "")
-    |> String.replace("http://", "")
+    case System.get_env("HOSTNAME") do
+      nil ->
+        System.get_env("NOW_URL")
+        |> with_default("0.0.0.0")
+        |> String.replace("https://", "")
+        |> String.replace("http://", "")
+      hostname ->
+        hostname
+    end
   end
 
   defp with_default(nil, a), do: a

@@ -12,6 +12,14 @@ defmodule EllieWeb.Endpoint do
     plug Phoenix.CodeReloader
   end
 
+  # if Application.get_env(:ellie, :env) == :prod do
+    plug Plug.Static,
+      at: "/assets",
+      from: :ellie,
+      gzip: true,
+      headers: %{"Service-Worker-Allowed" => "/"}
+  # end
+
   plug Plug.Logger
 
   plug Plug.Parsers,

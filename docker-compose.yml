@@ -11,6 +11,8 @@ services:
         target: /app
     ports:
       - "4000:4000"
+      - "9000:9000"
+      - "4369:4369"
     depends_on:
       - database
   webpack:

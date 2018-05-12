@@ -1,6 +1,8 @@
 const path = require("path")
 const webpack = require('webpack')
 const StringReplacePlugin = require('string-replace-webpack-plugin')
+const ManifestPlugin = require('webpack-manifest-plugin')
+const CompressionPlugin = require('compression-webpack-plugin')
 
 module.exports = {
   cache: true,
@@ -13,8 +15,8 @@ module.exports = {
 
   output: {
     path: path.resolve(__dirname + '/../priv/static'),
-    filename: '[name].js',
-    chunkFilename: 'chunk.[name].js',
+    filename: '[name]-[chunkhash].js',
+    chunkFilename: 'chunk.[name]-[chunkhash].js',
     publicPath: '/assets/'
   },
 
@@ -80,7 +82,27 @@ module.exports = {
       'process.env.NODE_ENV': JSON.stringify(process.env.NODE_ENV),
     }),
     new webpack.optimize.OccurrenceOrderPlugin(),
-    new webpack.optimize.UglifyJsPlugin({ compress: true, mangle: true }),
-    new StringReplacePlugin()
+    new webpack.optimize.UglifyJsPlugin({
+      compress: true,
+      mangle: true,
+      warningsFilter: () => false
+    }),
+    new StringReplacePlugin(),
+    new ManifestPlugin({
+      generate: (_, files) => {
+        return {
+          version: 1,
+          latest: files.reduce((memo, next) => {
+            if (next.isInitial) {
+              memo['assets/' + next.name] = next.path.substr(1)
+            }
+            return memo
+          }, {})
+        }
+      }
+    }),
+    new CompressionPlugin({
+      test: /\.js$/
+    }),
   ]
 }
