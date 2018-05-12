@@ -2,7 +2,7 @@
 
 set -e
 
-export MIX_ENV=prod
+export MIX_ENV=dev
 export NODE_ENV=development
 
 mkdir -p /app/priv/bin/

@@ -12,6 +12,7 @@ module Pages.Editor.Types.Analysis
 
 import Char
 import Dict exposing (Dict)
+import Ellie.Constants as Constants
 import Ellie.Ui.CodeEditor as CodeEditor exposing (Completions, Located(..), Token(..))
 import Elm.Docs exposing (Binop, Module, Union)
 import Elm.Version as Version exposing (Version)
@@ -354,7 +355,8 @@ urlTo moduleData valueName =
 
 moduleUrl : Module -> String
 moduleUrl moduleData =
-    "http://package.elm-lang.org/packages/"
+    Constants.packageSite
+        ++ "/"
         ++ moduleData.package.name.user
         ++ "/"
         ++ moduleData.package.name.project
