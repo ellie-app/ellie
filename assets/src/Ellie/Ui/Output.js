@@ -1,4 +1,4 @@
-import builtin from 'newless'
+import CustomElements from '../../Platform/CustomElements'
 
 export default {
   start(app) {
@@ -179,7 +179,7 @@ export default {
     //   return hex
     // }
 
-    customElements.define('ellie-ui-output', class extends builtin(HTMLElement) {
+    CustomElements.define('ellie-ui-output', (HTMLElement) => class extends HTMLElement {
       constructor() {
         super()
         this._html = null

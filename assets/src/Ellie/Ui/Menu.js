@@ -1,8 +1,8 @@
-import builtin from 'newless'
+import CustomElements from '../../Platform/CustomElements'
 
 export default {
   start(app) {
-    customElements.define('ellie-ui-menu', class extends builtin(HTMLElement) {
+    CustomElements.define('ellie-ui-menu', (HTMLElement) => class extends HTMLElement {
       constructor() {
         super()
         this._isOpen = false

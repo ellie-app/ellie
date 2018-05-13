@@ -1,5 +1,5 @@
+import CustomElements from '../../Platform/CustomElements'
 import * as Helpers from './CodeEditor/Helpers'
-import builtin from 'newless'
 
 const getToken = (editor) => {
   const position = editor.getCursor()
@@ -91,7 +91,7 @@ const start = (app) => {
       return instance._errors || []
     })
 
-    customElements.define('code-editor', class CodeEditor extends builtin(HTMLElement) {
+    CustomElements.define('code-editor', (HTMLElement) => class CodeEditor extends HTMLElement {
       constructor() {
         super()
         this._value = this.editorValue || ''

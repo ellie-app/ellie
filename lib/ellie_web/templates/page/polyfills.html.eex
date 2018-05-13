@@ -10,27 +10,12 @@
             currentScript = script1
         }
 
-        // Custom Elements
-        var script2 = document.createElement('script')
-        script2.src = typeof window.customElements === 'undefined' ?
-            '//cdn.jsdelivr.net/npm/@webcomponents/custom-elements@1.1.0/custom-elements.min.js' :
-            '//cdn.jsdelivr.net/npm/@webcomponents/custom-elements@1.1.0/src/native-shim.js'
-        document.head.insertBefore(script2, currentScript.nextSibling)
-        currentScript = script2
-
-        if (typeof window.customElements !== 'undefined') {
-            var script3 = document.createElement('script')
-            script3.textContent = 'HTMLElement.prototype.constructor = HTMLElement;'
-            document.head.insertBefore(script3, currentScript.nextSibling)
-            currentScript = script3
-        }
-
         // RequestIdleCallback
         if (typeof window.requestIdleCallback === 'undefined') {
-            var script4 = document.createElement('script')
-            script4.src = '//cdn.jsdelivr.net/npm/request-idle-polyfill@1.0.1/dist/index.min.js'
-            document.head.insertBefore(script1, currentScript.nextSibling)
-            currentScript = script4
+            var script2 = document.createElement('script')
+            script2.src = '//cdn.jsdelivr.net/npm/request-idle-polyfill@1.0.1/dist/index.min.js'
+            document.head.insertBefore(script2, currentScript.nextSibling)
+            currentScript = script2
         }
     }())
 </script>

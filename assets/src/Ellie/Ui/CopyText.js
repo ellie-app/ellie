@@ -1,8 +1,8 @@
-import builtin from 'newless'
+import CustomElements from '../../Platform/CustomElements'
 
 export default {
   start(app) {
-    customElements.define('ellie-ui-copy-text', class extends builtin(HTMLElement) {
+    CustomElements.define('ellie-ui-copy-text', (HTMLElement) => class extends HTMLElement {
       constructor() {
         super()
         this._timeout = null
