@@ -54,7 +54,7 @@ terms state =
     [ Html.styled Html.div
         [ padding (px 16)
         , color Theme.primaryForeground
-        , fontSize (px 18)
+        , fontSize (px 24)
         , textAlign center
         ]
         []
@@ -68,7 +68,7 @@ terms state =
         , Html.text " to continue."
         ]
     , Html.styled Html.div
-        [ width (px 532)
+        [ width (px 700)
         , maxWidth (pct 100)
         , position relative
         , padding (px 16)
