@@ -1,21 +1,13 @@
 module Pages.Editor.View exposing (styles, view)
 
-import Colors
 import Css exposing (..)
 import Css.Foreign
-import Ellie.Constants as Constants
-import Ellie.Ui.CodeEditor as CodeEditor
-import Ellie.Ui.SplitPane as SplitPane
 import Ellie.Ui.Theme as Theme
 import Html.Styled as Html exposing (Attribute, Html)
 import Html.Styled.Attributes exposing (css)
-import Pages.Editor.State.Actions as ActionsState
 import Pages.Editor.State.App as AppState exposing (Model(..))
 import Pages.Editor.State.Setup as SetupState
-import Pages.Editor.Views.Editors as EditorsView
-import Pages.Editor.Views.Packages as PackagesView
 import Pages.Editor.Views.Setup as SetupView
-import Pages.Editor.Views.Sidebar as SidebarView
 import Pages.Editor.Views.Working as WorkingView
 
 

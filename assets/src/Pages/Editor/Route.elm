@@ -1,7 +1,6 @@
 module Pages.Editor.Route exposing (Route(..), parse, toString)
 
 import Data.Url.Parser as UrlParser exposing ((</>), Parser, int, s, string)
-import Data.Uuid as Uuid exposing (Uuid)
 import Extra.String as String
 import Navigation
 import Pages.Editor.Types.RevisionId as RevisionId exposing (RevisionId)

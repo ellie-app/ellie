@@ -124,8 +124,12 @@ embedUpdates revisionId =
 
 goToPosition : Error.Position -> Command msg
 goToPosition position =
-    Command.PortSend "GoToPosition" <|
-        Encode.list
-            [ Encode.int position.line
-            , Encode.int position.column
-            ]
+    Command.PortSend
+        { channel = "GoToPosition"
+        , debounce = Nothing
+        , data =
+            Encode.list
+                [ Encode.int position.line
+                , Encode.int position.column
+                ]
+        }

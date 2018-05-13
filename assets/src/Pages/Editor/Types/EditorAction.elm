@@ -9,4 +9,5 @@ type EditorAction
     | Recompile
     | ReloadOutput
     | OpenLogs
+    | RecoverCrash
     | Save

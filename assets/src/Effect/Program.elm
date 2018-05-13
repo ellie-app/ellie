@@ -33,7 +33,7 @@ type alias Config flags route model msg =
     , url : Location -> route
     , route : route -> msg
     , flags : Decoder flags
-    , update : msg -> model -> ( model, Command msg )
+    , update : flags -> msg -> model -> ( model, Command msg )
     , view : model -> Styled.Html msg
     , styles : List Css.Foreign.Snippet
     , subscriptions : model -> Subscription msg
@@ -66,9 +66,9 @@ type alias State msg =
     }
 
 
-type Model model msg
+type Model flags model msg
     = StartupFailure
-    | Running (State msg) model
+    | Running (State msg) flags model
 
 
 initialState : State msg
@@ -155,10 +155,9 @@ runCmd config state cmd =
                     )
                 |> maybeWithDebounce state debounce
 
-        Command.PortSend channel data ->
-            ( state
-            , config.outbound ( channel, data )
-            )
+        Command.PortSend stuff ->
+            config.outbound ( stuff.channel, stuff.data )
+                |> maybeWithDebounce state stuff.debounce
 
         Command.NewUrl url ->
             ( state
@@ -286,7 +285,7 @@ runSub config state sub =
             Sub.none
 
 
-wrapInit : Config flags route model msg -> Decode.Value -> Location -> ( Model model msg, Cmd (Msg msg) )
+wrapInit : Config flags route model msg -> Decode.Value -> Location -> ( Model flags model msg, Cmd (Msg msg) )
 wrapInit config flagsValue location =
     case Decode.decodeValue config.flags flagsValue of
         Ok flags ->
@@ -297,7 +296,7 @@ wrapInit config flagsValue location =
                 ( state, cmd ) =
                     runCmd config initialState userCmd
             in
-            ( Running state userModel
+            ( Running state flags userModel
             , cmd
             )
 
@@ -307,49 +306,50 @@ wrapInit config flagsValue location =
             )
 
 
-wrapUpdate : Config flags route model msg -> Msg msg -> Model model msg -> ( Model model msg, Cmd (Msg msg) )
+wrapUpdate : Config flags route model msg -> Msg msg -> Model flags model msg -> ( Model flags model msg, Cmd (Msg msg) )
 wrapUpdate config msg model =
     case model of
         StartupFailure ->
             ( model, Cmd.none )
 
-        Running state m ->
+        Running state flags m ->
             case msg of
                 Debounce name debounceMsg ->
                     state.debouncers
                         |> Dict.get name
                         |> Maybe.map (Debounce.update (debounceConfig (Debounce name)) (Debounce.takeLast identity) debounceMsg)
-                        |> Maybe.map (Tuple.mapFirst (\debouncer -> Running { state | debouncers = Dict.insert name debouncer state.debouncers } m))
+                        |> Maybe.map (Tuple.mapFirst (\debouncer -> Running { state | debouncers = Dict.insert name debouncer state.debouncers } flags m))
                         |> Maybe.withDefault ( model, Cmd.none )
 
                 NoOp ->
                     ( model, Cmd.none )
 
                 KeyDown key ->
-                    ( Running { state | keysDown = Set.insert key state.keysDown } m
+                    ( Running { state | keysDown = Set.insert key state.keysDown } flags m
                     , Cmd.none
                     )
 
                 KeyUp key ->
-                    ( Running { state | keysDown = Set.remove key state.keysDown } m
+                    ( Running { state | keysDown = Set.remove key state.keysDown } flags m
                     , Cmd.none
                     )
 
                 UserMsg userMsg ->
                     let
                         ( userModel, userCmd ) =
-                            config.update userMsg m
+                            config.update flags userMsg m
 
                         ( newState, cmd ) =
                             runCmd config state userCmd
                     in
-                    ( Running newState userModel
+                    ( Running newState flags userModel
                     , cmd
                     )
 
                 SetupSocket key url selection ->
                     ( Running
                         { state | sockets = Dict.insert key (Absinthe.init url Debug.log selection) state.sockets }
+                        flags
                         m
                     , Cmd.none
                     )
@@ -363,6 +363,7 @@ wrapUpdate config msg model =
                             in
                             ( Running
                                 { state | sockets = Dict.insert key newSocket state.sockets }
+                                flags
                                 m
                             , Cmd.map (SubscriptionMsg key) socketCmd
                             )
@@ -371,13 +372,13 @@ wrapUpdate config msg model =
                             ( model, Cmd.none )
 
 
-wrapView : Config flags route model msg -> Model model msg -> Html.Html (Msg msg)
+wrapView : Config flags route model msg -> Model flags model msg -> Html.Html (Msg msg)
 wrapView config model =
     case model of
         StartupFailure ->
-            Html.text ""
+            Html.text "Couldn't decode the flags"
 
-        Running _ m ->
+        Running _ _ m ->
             Styled.toUnstyled <|
                 Styled.styled Styled.div
                     [ height (pct 100) ]
@@ -388,21 +389,21 @@ wrapView config model =
                     ]
 
 
-wrapSubscriptions : Config flags route model msg -> Model model msg -> Sub (Msg msg)
+wrapSubscriptions : Config flags route model msg -> Model flags model msg -> Sub (Msg msg)
 wrapSubscriptions config model =
     case model of
         StartupFailure ->
             Sub.none
 
-        Running state m ->
+        Running state _ m ->
             runSub config state (config.subscriptions m)
 
 
-type alias Program model msg =
-    Platform.Program Decode.Value (Model model msg) (Msg msg)
+type alias Program flags model msg =
+    Platform.Program Decode.Value (Model flags model msg) (Msg msg)
 
 
-program : Config flags route model msg -> Program model msg
+program : Config flags route model msg -> Program flags model msg
 program config =
     Navigation.programWithFlags (config.url >> config.route >> UserMsg)
         { init = wrapInit config

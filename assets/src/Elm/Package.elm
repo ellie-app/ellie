@@ -3,7 +3,9 @@ module Elm.Package
         ( Package
         , codeLink
         , compare
+        , decoder
         , docsLink
+        , encoder
         , selection
         , toInputObject
         , toString
@@ -17,12 +19,29 @@ import Ellie.Api.Scalar as ApiScalar
 import Elm.Name as Name exposing (Name)
 import Elm.Version as Version exposing (Version)
 import Graphqelm.SelectionSet exposing (SelectionSet, with)
+import Json.Decode as Decode exposing (Decoder)
+import Json.Encode as Encode exposing (Value)
 
 
 type alias Package =
     { name : Name
     , version : Version
     }
+
+
+decoder : Decoder Package
+decoder =
+    Decode.map2 Package
+        (Decode.field "name" Name.decoder)
+        (Decode.field "version" Version.decoder)
+
+
+encoder : Package -> Value
+encoder package =
+    Encode.object
+        [ ( "name", Name.encoder package.name )
+        , ( "version", Version.encoder package.version )
+        ]
 
 
 toString : Package -> String

@@ -50,13 +50,14 @@ init flags route =
 
 setupToWorking :
     { token : Jwt
+    , recovery : Maybe Revision
     , revision : Maybe ( RevisionId, Revision )
     , packages : List Package
     , user : User
     }
     -> ( Model, Command Msg )
-setupToWorking { token, revision, packages, user } =
-    Working.init token user revision packages
+setupToWorking { token, recovery, revision, packages, user } =
+    Working.init token user recovery revision packages
         |> Tuple.mapFirst Working
         |> Tuple.mapSecond (Command.map WorkingMsg)
 
@@ -69,8 +70,8 @@ type Msg
     | WorkingMsg Working.Msg
 
 
-update : Msg -> Model -> ( Model, Command Msg )
-update msg_ model =
+update : Flags -> Msg -> Model -> ( Model, Command Msg )
+update flags msg_ model =
     case ( model, msg_ ) of
         ( _, RouteChanged route ) ->
             case model of
@@ -78,7 +79,7 @@ update msg_ model =
                     init flags route
 
                 Setup setupState ->
-                    update (SetupMsg (Setup.RouteChanged route)) model
+                    update flags (SetupMsg (Setup.RouteChanged route)) model
 
                 _ ->
                     ( model, Command.none )
@@ -91,7 +92,13 @@ update msg_ model =
                     )
 
                 ( Transition.Exit data, setupCommand ) ->
-                    setupToWorking data
+                    setupToWorking
+                        { token = data.token
+                        , recovery = flags.recovery
+                        , revision = data.revision
+                        , packages = data.packages
+                        , user = data.user
+                        }
 
         ( Working workingState, WorkingMsg msg ) ->
             Working.update msg workingState

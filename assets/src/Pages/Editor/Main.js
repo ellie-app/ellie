@@ -1,16 +1,24 @@
 export default {
   flags(current) {
+    const recovery = localStorage.getItem('Pages.Editor.recovery')
     return Object.assign({}, current, {
-      token: localStorage.getItem('Pages.Editor.token')
+      token: localStorage.getItem('Pages.Editor.token'),
+      recovery: recovery ? JSON.parse(recovery) : null
     })
   },
   start(app) {
-    const preventNavigation = (e) => {
-      e.returnValue = 'You have unsaved work. Are you sure you want to go?'
-    }
-
     window.addEventListener('online', () => app.ports.inbound.send(['NetworkStatus', true]))
     window.addEventListener('offline', () => app.ports.inbound.send(['NetworkStatus', false]))
+
+    let acknowledgedReload = false
+    const preventNavigation = (e) => {
+      e.returnValue = 'You have unsaved work. Are you sure you want to go?'
+      acknowledgedReload = true
+    }
+
+    window.addEventListener('unload', () => {
+      if (acknowledgedReload) localStorage.removeItem('Pages.Editor.recovery')
+    })
   
     app.ports.outbound.subscribe(([tag, contents]) => {
       switch (tag) {
@@ -24,9 +32,10 @@ export default {
           localStorage.setItem('Pages.Editor.token', token)
           break
   
-        case 'EnableNavigationCheck':
-          const [enabled] = contents
-          if (enabled) window.addEventListener('beforeunload', preventNavigation)
+        case 'UpdateRecoveryRevision':
+          const [data] = contents
+          localStorage.setItem('Pages.Editor.recovery', JSON.stringify(data))
+          if (data !== null) window.addEventListener('beforeunload', preventNavigation)
           else window.removeEventListener('beforeunload', preventNavigation)
           break
   

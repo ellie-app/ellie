@@ -30,7 +30,11 @@ type Command msg
         , onError : Graphqelm.Http.Error () -> msg
         , debounce : Maybe String
         }
-    | PortSend String Value
+    | PortSend
+        { channel : String
+        , data : Value
+        , debounce : Maybe String
+        }
     | NewUrl String
     | Redirect String
     | Delay Int msg
@@ -65,8 +69,8 @@ eq left right =
                 && (l.token == r.token)
                 && (l.debounce == r.debounce)
 
-        ( PortSend lChannel lData, PortSend rChannel rData ) ->
-            (lChannel == rChannel) && (lData == rData)
+        ( PortSend l, PortSend r ) ->
+            (l.channel == r.channel) && (l.data == r.data) && (l.debounce == r.debounce)
 
         ( NewUrl lUrl, NewUrl rUrl ) ->
             lUrl == rUrl
@@ -113,8 +117,8 @@ map f cmd =
                 , onError = stuff.onError >> f
                 }
 
-        PortSend channel data ->
-            PortSend channel data
+        PortSend stuff ->
+            PortSend stuff
 
         NewUrl url ->
             NewUrl url

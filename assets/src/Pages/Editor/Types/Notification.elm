@@ -7,11 +7,13 @@ module Pages.Editor.Types.Notification
         )
 
 import Data.Url as Url exposing (Url)
+import Pages.Editor.Types.EditorAction as EditorAction exposing (EditorAction)
 
 
 type Action
     = CopyLink Url
     | GoToLink String
+    | PerformAction String EditorAction
 
 
 type Severity

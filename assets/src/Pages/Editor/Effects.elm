@@ -24,6 +24,7 @@ import Elm.Name as Name
 import Elm.Package as Package exposing (Package)
 import Elm.Project as Project exposing (Project)
 import Elm.Version as Version exposing (Version)
+import Extra.Json.Encode as Encode
 import Graphqelm.Field as Field
 import Graphqelm.Http
 import Graphqelm.OptionalArgument as OptionalArgument
@@ -389,28 +390,38 @@ getDocs packages =
 
 moveElmCursor : Error.Position -> Command msg
 moveElmCursor position =
-    Command.PortSend "MoveElmCursor" <|
-        Encode.list
-            [ Encode.int position.line
-            , Encode.int position.column
-            ]
+    Command.PortSend
+        { channel = "MoveElmCursor"
+        , debounce = Nothing
+        , data =
+            Encode.list
+                [ Encode.int position.line
+                , Encode.int position.column
+                ]
+        }
 
 
 downloadZip : String -> String -> Project -> Command msg
 downloadZip elm html project =
-    Command.PortSend "DownloadZip" <|
-        Encode.list
-            [ Encode.string <| Encode.encode 2 (Project.encoder project)
-            , Encode.string elm
-            , Encode.string html
-            ]
+    Command.PortSend
+        { channel = "DownloadZip"
+        , debounce = Nothing
+        , data =
+            Encode.list
+                [ Encode.string <| Encode.encode 2 (Project.encoder project)
+                , Encode.string elm
+                , Encode.string html
+                ]
+        }
 
 
 openInNewTab : String -> Command msg
 openInNewTab url =
-    Command.PortSend "OpenInNewTab" <|
-        Encode.list
-            [ Encode.string url ]
+    Command.PortSend
+        { channel = "OpenInNewTab"
+        , debounce = Nothing
+        , data = Encode.list [ Encode.string url ]
+        }
 
 
 delay : Int -> Command ()
@@ -418,18 +429,13 @@ delay millis =
     Command.Delay millis ()
 
 
-enableNavigationCheck : Bool -> Command msg
-enableNavigationCheck enabled =
-    Command.PortSend "EnableNavigationCheck" <|
-        Encode.list
-            [ Encode.bool enabled ]
-
-
 saveToken : Jwt -> Command msg
 saveToken token =
-    Command.PortSend "SaveToken" <|
-        Encode.list
-            [ Jwt.encoder token ]
+    Command.PortSend
+        { channel = "SaveToken"
+        , debounce = Nothing
+        , data = Encode.list [ Jwt.encoder token ]
+        }
 
 
 navigate : String -> Command msg
@@ -476,3 +482,12 @@ keyCombos =
         , Subscription.KeyCombo { meta = True, shift = True, key = "l" } EditorAction.OpenLogs
         , Subscription.KeyCombo { meta = True, shift = False, key = "s" } EditorAction.Save
         ]
+
+
+updateRecoveryRevision : Maybe Revision -> Command msg
+updateRecoveryRevision revision =
+    Command.PortSend
+        { channel = "UpdateRecoveryRevision"
+        , data = Encode.list [ Encode.maybeNull Revision.localStorageEncoder revision ]
+        , debounce = Just "UpdateRecoveryRevision"
+        }

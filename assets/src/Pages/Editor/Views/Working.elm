@@ -3,16 +3,12 @@ module Pages.Editor.Views.Working exposing (view)
 import Colors
 import Css exposing (..)
 import Css.Foreign
-import Data.Entity as Entity
 import Data.Replaceable as Replaceable
-import Ellie.Ui.Button as Button
-import Ellie.Ui.Icon as Icon
 import Ellie.Ui.SplitPane as SplitPane
 import Ellie.Ui.Theme as Theme
 import Extra.Html as Html
 import Html.Styled as Html exposing (Attribute, Html)
 import Html.Styled.Attributes exposing (css)
-import Html.Styled.Events as Events
 import Pages.Editor.State.Actions as ActionsState
 import Pages.Editor.State.Working as WorkingState
 import Pages.Editor.Views.Editors as EditorsView
@@ -75,6 +71,7 @@ view model =
                     , NotificationsView.view
                         { onClose = WorkingState.CloseNotification
                         , onCloseAll = WorkingState.CloseAllNotifications
+                        , onEditorAction = WorkingState.EditorActionPerformed
                         , notifications = model.notifications
                         }
                     ]
@@ -211,6 +208,7 @@ viewWorkbench model =
         }
 
 
+viewStyles : WorkingState.Model -> Html msg
 viewStyles model =
     Css.Foreign.global
         [ Css.Foreign.selector ":root"

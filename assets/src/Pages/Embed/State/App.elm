@@ -76,8 +76,8 @@ type Msg
     | ReloadOutput
 
 
-update : Msg -> Model -> ( Model, Command Msg )
-update msg model =
+update : Flags -> Msg -> Model -> ( Model, Command Msg )
+update flags msg model =
     case ( model, msg ) of
         ( _, RouteChanged route ) ->
             init {} route

@@ -13,7 +13,7 @@ port inbound : (( String, Value ) -> msg) -> Sub msg
 port outbound : ( String, Value ) -> Cmd msg
 
 
-main : Program.Program AppState.Model AppState.Msg
+main : Program.Program AppState.Flags AppState.Model AppState.Msg
 main =
     Program.program
         { subscriptions = AppState.subscriptions

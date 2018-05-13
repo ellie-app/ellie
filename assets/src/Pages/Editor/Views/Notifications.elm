@@ -3,17 +3,20 @@ module Pages.Editor.Views.Notifications exposing (..)
 import Css exposing (..)
 import Css.Foreign
 import Data.Url as Url exposing (Url)
+import Ellie.Ui.Button as Button
 import Ellie.Ui.CopyText as CopyText
 import Ellie.Ui.Icon as Icon
 import Ellie.Ui.Theme as Theme
 import Html.Styled as Html exposing (Attribute, Html)
 import Html.Styled.Attributes as Attributes exposing (css)
 import Html.Styled.Events as Events
+import Pages.Editor.Types.EditorAction as EditorAction exposing (EditorAction)
 import Pages.Editor.Types.Notification as Notification exposing (Notification)
 
 
 type alias Config msg =
     { onClose : Notification -> msg
+    , onEditorAction : EditorAction -> msg
     , onCloseAll : msg
     , notifications : List Notification
     }
@@ -75,12 +78,12 @@ viewNotification config notification =
           else
             Html.div
                 [ css [ paddingTop (px 12) ] ]
-                (List.map viewAction notification.actions)
+                (List.map (viewAction config) notification.actions)
         ]
 
 
-viewAction : Notification.Action -> Html msg
-viewAction action =
+viewAction : Config msg -> Notification.Action -> Html msg
+viewAction config action =
     case action of
         Notification.CopyLink url ->
             CopyText.view <| Url.toString url
@@ -97,6 +100,15 @@ viewAction action =
                     ]
                     [ Html.text url
                     ]
+                ]
+
+        Notification.PerformAction label action ->
+            Html.div []
+                [ Button.view
+                    { icon = Nothing
+                    , label = label
+                    , action = Button.click <| config.onEditorAction action
+                    }
                 ]
 
 
