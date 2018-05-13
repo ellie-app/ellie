@@ -28,6 +28,7 @@
     "style-loader": "0.18.2",
     "svg-inline-loader": "0.8.0",
     "sw-toolbox": "3.6.0",
+    "uglify-js": "git+https://github.com/mishoo/UglifyJS2.git#harmony-v2.8.22",
     "webpack": "3.3.0",
     "webpack-dev-server": "2.5.1",
     "webpack-manifest-plugin": "2.0.2"

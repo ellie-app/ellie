@@ -14,7 +14,9 @@ defmodule EllieWeb.Router do
 
   if Application.get_env(:ellie, :env) == :dev do
     scope "/assets" do
-      forward "/", PlugProxy, upstream: "http://webpack:8080/"
+      forward "/", PlugProxy,
+        upstream: "http://webpack:8080/",
+        connect_timeout: :infinity
     end
   end
 

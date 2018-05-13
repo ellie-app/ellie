@@ -8,10 +8,10 @@ const setup = () => {
   }
 
   if (typeof window.customElements === 'undefined') {
-    polyfillPromise = import('@webcomponents/custom-elements')
+    polyfillPromise = import(/* webpackChunkName: "custom-elements-polyfill" */ '@webcomponents/custom-elements')
       .then(() => builtin(window.HTMLElement))
   } else {
-    polyfillPromise = import('@webcomponents/custom-elements/src/native-shim')
+    polyfillPromise = import(/* webpackChunkName: "custom-elements-native-shim" */ '@webcomponents/custom-elements/src/native-shim')
       .then(() => {
         window.HTMLElement.prototype.constructor = window.HTMLElement
         return builtin(window.HTMLElement)

@@ -85,7 +85,8 @@ module.exports = {
     new webpack.optimize.UglifyJsPlugin({
       compress: true,
       mangle: true,
-      warningsFilter: () => false
+      warningsFilter: () => false,
+      exclude: /custom-elements-native-shim/
     }),
     new StringReplacePlugin(),
     new ManifestPlugin({

@@ -77,8 +77,7 @@ RUN cd /app/assets \
     && npm install \
     && npm run graphql \
     && npm run build \
-    && cd /app \
-    && mix phx.digest
+    && cd /app
 
 # Run the server
 EXPOSE 4000
