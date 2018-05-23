@@ -20,6 +20,8 @@ defmodule EllieWeb.ResultController do
         |> halt()
       else
         conn
+        |> delete_resp_header("cache-control")
+        |> put_resp_header("cache-control", "private, must-revalidate")
         |> put_resp_header("etag", etag)
         |> put_resp_content_type("application/javascript")
         |> send_file(200, path)
