@@ -8,7 +8,6 @@ import Pages.Embed.Effects as Effects
 import Pages.Embed.Types.EmbedUpdate as EmbedUpdate exposing (EmbedUpdate)
 import Pages.Embed.Types.Panel as Panel exposing (Panel)
 import Pages.Embed.Types.Revision as Revision exposing (Revision)
-import Pages.Embed.Types.RevisionId as RevisionId exposing (RevisionId)
 import Pages.Embed.Types.Route as Route exposing (Route)
 
 
@@ -28,7 +27,7 @@ type DebugState
 
 type alias WorkingState =
     { panel : Panel
-    , revision : { id : RevisionId, data : Revision }
+    , revision : { id : Revision.Id, data : Revision }
     , output : OutputState
     , debug : DebugState
     }
@@ -36,7 +35,7 @@ type alias WorkingState =
 
 type Model
     = Failure
-    | Loading RevisionId Panel
+    | Loading Revision.Id Panel
     | Working WorkingState
 
 
@@ -64,7 +63,7 @@ init flags route =
 
 
 type Msg
-    = RevisionLoaded RevisionId (Result () Revision)
+    = RevisionLoaded Revision.Id (Result () Revision)
     | RouteChanged Route
     | UpdateReceived EmbedUpdate
     | EmbedRunStarted
@@ -86,7 +85,7 @@ update flags msg model =
             ( model, Command.none )
 
         ( Loading rid panel, RevisionLoaded revisionId (Ok revision) ) ->
-            if RevisionId.eq rid revisionId then
+            if rid == revisionId then
                 ( Working
                     { panel = panel
                     , revision = { id = revisionId, data = revision }
@@ -99,7 +98,7 @@ update flags msg model =
                 ( model, Command.none )
 
         ( Loading rid panel, RevisionLoaded revisionId (Err error) ) ->
-            if RevisionId.eq rid revisionId then
+            if rid == revisionId then
                 ( Failure, Command.none )
             else
                 ( model, Command.none )

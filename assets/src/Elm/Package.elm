@@ -14,7 +14,7 @@ module Elm.Package
 import Ellie.Api.Helpers as ApiHelpers
 import Ellie.Api.InputObject as ApiInputObject
 import Ellie.Api.Object as ApiObject
-import Ellie.Api.Object.Package as ApiPackage
+import Ellie.Api.Object.ElmPackage as ApiPackage
 import Ellie.Api.Scalar as ApiScalar
 import Elm.Name as Name exposing (Name)
 import Elm.Version as Version exposing (Version)
@@ -79,15 +79,15 @@ codeLink { name, version } =
         ++ Version.toString version
 
 
-selection : SelectionSet Package ApiObject.Package
+selection : SelectionSet Package ApiObject.ElmPackage
 selection =
     ApiPackage.selection Package
         |> with (ApiHelpers.nameField ApiPackage.name)
         |> with (ApiHelpers.versionField ApiPackage.version)
 
 
-toInputObject : Package -> ApiInputObject.PackageInput
+toInputObject : Package -> ApiInputObject.ElmPackageInput
 toInputObject package =
-    { name = ApiScalar.Name <| Name.toString package.name
-    , version = ApiScalar.Version <| Version.toString package.version
+    { name = ApiScalar.ElmName <| Name.toString package.name
+    , version = ApiScalar.ElmVersion <| Version.toString package.version
     }

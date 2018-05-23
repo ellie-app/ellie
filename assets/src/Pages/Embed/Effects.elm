@@ -13,7 +13,6 @@ import Ellie.Api.Mutation as ApiMutation
 import Ellie.Api.Object.EmbedFailed as ApiEmbedFailed
 import Ellie.Api.Object.EmbedReady as ApiEmbedReady
 import Ellie.Api.Object.Revision as ApiRevision
-import Ellie.Api.Object.User as ApiUser
 import Ellie.Api.Query as ApiQuery
 import Ellie.Api.Scalar as ApiScalar
 import Ellie.Api.Subscription as ApiSubscription
@@ -26,10 +25,9 @@ import Graphqelm.SelectionSet as SelectionSet exposing (SelectionSet(..), hardco
 import Json.Encode as Encode exposing (Value)
 import Pages.Embed.Types.EmbedUpdate as EmbedUpdate exposing (EmbedUpdate)
 import Pages.Embed.Types.Revision as Revision exposing (Revision)
-import Pages.Embed.Types.RevisionId as RevisionId exposing (RevisionId)
 
 
-getRevision : RevisionId -> Command (Result (Graphqelm.Http.Error ()) Revision)
+getRevision : Revision.Id -> Command (Result (Graphqelm.Http.Error ()) Revision)
 getRevision revisionId =
     let
         query =
@@ -37,8 +35,7 @@ getRevision revisionId =
                 |> with (ApiQuery.revision arguments revisionQuery)
 
         arguments =
-            { projectId = ApiScalar.ProjectId revisionId.projectId
-            , revisionNumber = revisionId.revisionNumber
+            { id = ApiScalar.ProjectId revisionId
             }
 
         revisionQuery =
@@ -48,11 +45,6 @@ getRevision revisionId =
                 |> with (ApiRevision.packages Package.selection)
                 |> with (ApiHelpers.defaultField "" ApiRevision.title)
                 |> with (ApiHelpers.versionField ApiRevision.elmVersion)
-                |> with (ApiRevision.user userQuery)
-
-        userQuery =
-            ApiUser.selection identity
-                |> with (ApiHelpers.uuidField ApiUser.id)
     in
     Command.GraphqlQuery
         { url = "/api"
@@ -64,7 +56,7 @@ getRevision revisionId =
         }
 
 
-runEmbed : RevisionId -> Command (Result (Graphqelm.Http.Error ()) (Maybe (Maybe Error)))
+runEmbed : Revision.Id -> Command (Result (Graphqelm.Http.Error ()) (Maybe (Maybe Error)))
 runEmbed revisionId =
     let
         selection =
@@ -76,8 +68,7 @@ runEmbed revisionId =
                 |> with (ApiEmbedReady.error Error.selection)
 
         arguments =
-            { projectId = ApiScalar.ProjectId revisionId.projectId
-            , revisionNumber = revisionId.revisionNumber
+            { id = ApiScalar.ProjectId revisionId
             }
     in
     Command.GraphqlMutation
@@ -89,7 +80,7 @@ runEmbed revisionId =
         }
 
 
-embedUpdates : RevisionId -> Subscription EmbedUpdate
+embedUpdates : Revision.Id -> Subscription EmbedUpdate
 embedUpdates revisionId =
     let
         selection =
@@ -97,8 +88,7 @@ embedUpdates revisionId =
                 |> with (ApiSubscription.embed arguments embedUpdateSelection)
 
         arguments =
-            { projectId = ApiScalar.ProjectId revisionId.projectId
-            , revisionNumber = revisionId.revisionNumber
+            { id = ApiScalar.ProjectId revisionId
             }
 
         embedUpdateSelection =

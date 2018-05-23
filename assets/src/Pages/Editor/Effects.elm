@@ -3,16 +3,13 @@ module Pages.Editor.Effects exposing (..)
 import Data.Jwt as Jwt exposing (Jwt)
 import Effect.Command as Command exposing (Command)
 import Effect.Subscription as Subscription exposing (Subscription)
-import Ellie.Api.Enum.Theme as ApiTheme
 import Ellie.Api.Helpers as ApiHelpers
 import Ellie.Api.Mutation as ApiMutation
 import Ellie.Api.Object.CompileCompleted as ApiCompileCompleted
-import Ellie.Api.Object.Package as ApiPackage
+import Ellie.Api.Object.ElmPackage as ApiPackage
 import Ellie.Api.Object.Revision as ApiRevision
-import Ellie.Api.Object.Settings as ApiSettings
-import Ellie.Api.Object.User as ApiUser
-import Ellie.Api.Object.UserAuth as ApiUserAuth
 import Ellie.Api.Object.WorkspaceAttached as ApiWorkspaceAttached
+import Ellie.Api.Object.WorkspaceError as ApiWorkspaceError
 import Ellie.Api.Query as ApiQuery
 import Ellie.Api.Scalar as ApiScalar
 import Ellie.Api.Subscription as ApiSubscription
@@ -25,7 +22,6 @@ import Elm.Package as Package exposing (Package)
 import Elm.Project as Project exposing (Project)
 import Elm.Version as Version exposing (Version)
 import Extra.Json.Encode as Encode
-import Graphqelm.Field as Field
 import Graphqelm.Http
 import Graphqelm.OptionalArgument as OptionalArgument
 import Graphqelm.SelectionSet as SelectionSet exposing (SelectionSet(..), hardcoded, with)
@@ -33,13 +29,11 @@ import Json.Decode as Decode exposing (Decoder)
 import Json.Encode as Encode exposing (Value)
 import Pages.Editor.Types.EditorAction as EditorAction exposing (EditorAction)
 import Pages.Editor.Types.Revision as Revision exposing (Revision)
-import Pages.Editor.Types.RevisionId as RevisionId exposing (RevisionId)
-import Pages.Editor.Types.Settings as Settings exposing (Settings)
 import Pages.Editor.Types.User as User exposing (User)
 import Pages.Editor.Types.WorkspaceUpdate as WorkspaceUpdate exposing (WorkspaceUpdate(..))
 
 
-getRevision : RevisionId -> Command (Result (Graphqelm.Http.Error ()) Revision)
+getRevision : Revision.Id -> Command (Result (Graphqelm.Http.Error ()) Revision)
 getRevision revisionId =
     let
         query =
@@ -47,9 +41,7 @@ getRevision revisionId =
                 |> with (ApiQuery.revision arguments revisionQuery)
 
         arguments =
-            { projectId = ApiScalar.ProjectId revisionId.projectId
-            , revisionNumber = revisionId.revisionNumber
-            }
+            { id = ApiScalar.ProjectId revisionId }
 
         revisionQuery =
             ApiRevision.selection Revision
@@ -58,11 +50,6 @@ getRevision revisionId =
                 |> with (ApiRevision.packages Package.selection)
                 |> with (ApiHelpers.defaultField "" ApiRevision.title)
                 |> with (ApiHelpers.versionField ApiRevision.elmVersion)
-                |> with (ApiRevision.user userQuery)
-
-        userQuery =
-            ApiUser.selection identity
-                |> with (ApiHelpers.uuidField ApiUser.id)
     in
     Command.GraphqlQuery
         { url = "/api"
@@ -99,67 +86,8 @@ searchPackages queryString =
         }
 
 
-acceptTerms : Jwt -> Int -> Command (Result (Graphqelm.Http.Error ()) ())
-acceptTerms token terms =
-    let
-        mutation =
-            ApiMutation.selection (\_ -> ())
-                |> with (ApiMutation.acceptTerms { terms = terms })
-    in
-    Command.GraphqlMutation
-        { url = "/api"
-        , token = Just token
-        , selection = SelectionSet.map Ok mutation
-        , onError = Err
-        , debounce = Nothing
-        }
-
-
-authenticate : Maybe Jwt -> Command (Result (Graphqelm.Http.Error ()) ( Int, Jwt, User ))
-authenticate maybeToken =
-    let
-        mutation =
-            ApiMutation.selection identity
-                |> with (ApiMutation.authenticate authSelection)
-
-        authSelection =
-            ApiUserAuth.selection (,,)
-                |> with ApiUserAuth.termsVersion
-                |> with (Field.map Jwt.fromString ApiUserAuth.token)
-                |> with (ApiUserAuth.user userSelection)
-
-        userSelection =
-            ApiUser.selection User
-                |> with (ApiHelpers.uuidField ApiUser.id)
-                |> with (ApiUser.settings settingsSelection)
-                |> with ApiUser.termsVersion
-
-        settingsSelection =
-            ApiSettings.selection Settings
-                |> with ApiSettings.fontSize
-                |> with ApiSettings.fontFamily
-                |> with (Field.map makeTheme ApiSettings.theme)
-                |> with ApiSettings.vimMode
-
-        makeTheme theme =
-            case theme of
-                ApiTheme.Dark ->
-                    Settings.Dark
-
-                ApiTheme.Light ->
-                    Settings.Light
-    in
-    Command.GraphqlMutation
-        { url = "/api"
-        , token = maybeToken
-        , selection = SelectionSet.map Ok mutation
-        , onError = Err
-        , debounce = Nothing
-        }
-
-
-formatCode : Version -> String -> Command (Result (Graphqelm.Http.Error ()) String)
-formatCode version code =
+formatCode : Jwt -> Version -> String -> Command (Result (Graphqelm.Http.Error ()) String)
+formatCode token version code =
     let
         mutation =
             ApiMutation.selection identity
@@ -167,12 +95,12 @@ formatCode version code =
 
         arguments =
             { code = code
-            , elmVersion = ApiScalar.Version <| Version.toString version
+            , elmVersion = ApiScalar.ElmVersion <| Version.toString version
             }
     in
     Command.GraphqlMutation
         { url = "/api"
-        , token = Nothing
+        , token = Just token
         , selection = SelectionSet.map Ok mutation
         , onError = Err
         , debounce = Just "format-code"
@@ -189,12 +117,12 @@ compile token elmVersion elmCode packages =
         arguments =
             { elmCode = elmCode
             , packages = List.map makePackageInput packages
-            , elmVersion = ApiScalar.Version <| Version.toString elmVersion
+            , elmVersion = ApiScalar.ElmVersion <| Version.toString elmVersion
             }
 
         makePackageInput package =
-            { name = ApiScalar.Name <| Name.toString package.name
-            , version = ApiScalar.Version <| Version.toString package.version
+            { name = ApiScalar.ElmName <| Name.toString package.name
+            , version = ApiScalar.ElmVersion <| Version.toString package.version
             }
     in
     Command.GraphqlMutation
@@ -203,6 +131,19 @@ compile token elmVersion elmCode packages =
         , selection = SelectionSet.map Ok mutation
         , onError = Err
         , debounce = Nothing
+        }
+
+
+authenticate : Command (Result (Graphqelm.Http.Error ()) Jwt)
+authenticate =
+    Command.GraphqlMutation
+        { url = "/api"
+        , token = Nothing
+        , onError = Err
+        , debounce = Nothing
+        , selection =
+            ApiMutation.selection (Jwt.fromString >> Ok)
+                |> with ApiMutation.authenticate
         }
 
 
@@ -221,6 +162,9 @@ workspaceUpdates token =
                 , ApiCompileCompleted.selection CompileCompleted
                     |> with (ApiCompileCompleted.error Error.selection)
                     |> ApiWorkspaceUpdate.onCompileCompleted
+                , ApiWorkspaceError.selection (\_ -> Disconnected)
+                    |> with ApiWorkspaceError.message
+                    |> ApiWorkspaceUpdate.onWorkspaceError
                 ]
     in
     Subscription.AbsintheSubscription
@@ -242,7 +186,7 @@ attachToWorkspace token version =
                 |> with (ApiMutation.attachToWorkspace arguments)
 
         arguments =
-            { elmVersion = ApiScalar.Version <| Version.toString version }
+            { elmVersion = ApiScalar.ElmVersion <| Version.toString version }
     in
     Command.GraphqlMutation
         { url = "/api"
@@ -253,38 +197,17 @@ attachToWorkspace token version =
         }
 
 
-updateSettings : Jwt -> Settings -> Command (Result (Graphqelm.Http.Error ()) ())
-updateSettings token settings =
-    let
-        selection =
-            ApiMutation.selection (\_ -> ())
-                |> with (ApiMutation.updateSettings (\_ -> arguments))
-
-        arguments =
-            { fontSize = OptionalArgument.Present settings.fontSize
-            , fontFamily = OptionalArgument.Present settings.fontFamily
-            , vimMode = OptionalArgument.Present settings.vimMode
-            , theme =
-                OptionalArgument.Present <|
-                    case settings.theme of
-                        Settings.Dark ->
-                            ApiTheme.Dark
-
-                        Settings.Light ->
-                            ApiTheme.Light
-            }
-    in
-    Command.GraphqlMutation
-        { url = "/api"
-        , token = Just token
-        , selection = SelectionSet.map Ok selection
-        , onError = Err
-        , debounce = Just "update-settings"
+updateUser : User -> Command a
+updateUser user =
+    Command.PortSend
+        { channel = "UpdateUser"
+        , debounce = Nothing
+        , data = Encode.list [ User.localStorageEncoder user ]
         }
 
 
-createRevision : Jwt -> Revision -> Command (Result (Graphqelm.Http.Error ()) RevisionId)
-createRevision token revision =
+createRevision : Jwt -> Int -> Revision -> Command (Result (Graphqelm.Http.Error ()) Revision.Id)
+createRevision token termsVersion revision =
     let
         selection =
             ApiMutation.selection identity
@@ -295,6 +218,7 @@ createRevision token revision =
                 { elmCode = revision.elmCode
                 , htmlCode = revision.htmlCode
                 , packages = List.map Package.toInputObject revision.packages
+                , termsVersion = termsVersion
                 , title =
                     case revision.title of
                         "" ->
@@ -306,46 +230,8 @@ createRevision token revision =
             }
 
         revisionSelection =
-            ApiRevision.selection RevisionId
-                |> with (ApiHelpers.projectIdField ApiRevision.projectId)
-                |> with ApiRevision.revisionNumber
-    in
-    Command.GraphqlMutation
-        { url = "/api"
-        , token = Just token
-        , selection = SelectionSet.map Ok selection
-        , onError = Err
-        , debounce = Nothing
-        }
-
-
-updateRevision : Jwt -> String -> Revision -> Command (Result (Graphqelm.Http.Error ()) RevisionId)
-updateRevision token projectId revision =
-    let
-        selection =
-            ApiMutation.selection identity
-                |> with (ApiMutation.updateRevision arguments revisionSelection)
-
-        arguments =
-            { inputs =
-                { elmCode = revision.elmCode
-                , htmlCode = revision.htmlCode
-                , packages = List.map Package.toInputObject revision.packages
-                , title =
-                    case revision.title of
-                        "" ->
-                            OptionalArgument.Absent
-
-                        title ->
-                            OptionalArgument.Present title
-                }
-            , projectId = ApiScalar.ProjectId <| projectId
-            }
-
-        revisionSelection =
-            ApiRevision.selection RevisionId
-                |> with (ApiHelpers.projectIdField ApiRevision.projectId)
-                |> with ApiRevision.revisionNumber
+            ApiRevision.selection identity
+                |> with (ApiHelpers.projectIdField ApiRevision.id)
     in
     Command.GraphqlMutation
         { url = "/api"
@@ -364,8 +250,8 @@ getDocs packages =
                 |> with (ApiQuery.packages { packages = List.map makeArgs packages } docsSelection)
 
         makeArgs package =
-            { name = ApiScalar.Name <| Name.toString package.name
-            , version = ApiScalar.Version <| Version.toString package.version
+            { name = ApiScalar.ElmName <| Name.toString package.name
+            , version = ApiScalar.ElmVersion <| Version.toString package.version
             }
 
         packageSelection =

@@ -2,14 +2,13 @@ module Pages.Embed.Types.Route exposing (Route(..), parse, toString)
 
 import Data.Url.Parser as UrlParser exposing ((</>), (<?>), Parser, int, map, s, string)
 import Data.Url.Parser.Query as QueryParser
-import Extra.String as String
 import Navigation
 import Pages.Embed.Types.Panel as Panel exposing (Panel(..))
-import Pages.Embed.Types.RevisionId as RevisionId exposing (RevisionId)
+import Pages.Embed.Types.Revision as Revision exposing (Revision)
 
 
 type Route
-    = Existing RevisionId Panel
+    = Existing Revision.Id Panel
     | NotFound
 
 
@@ -20,14 +19,9 @@ panel =
         |> QueryParser.map (Result.withDefault Elm)
 
 
-revisionId : Parser (RevisionId -> a) a
-revisionId =
-    UrlParser.map RevisionId <| string </> int
-
-
 parser : Parser (Route -> Route) Route
 parser =
-    UrlParser.map Existing <| s "embed" </> revisionId <?> panel
+    UrlParser.map Existing <| s "embed" </> string <?> panel
 
 
 parse : Navigation.Location -> Route
@@ -41,8 +35,8 @@ parse location =
 toString : Route -> String
 toString route =
     case route of
-        Existing { projectId, revisionNumber } panel ->
-            "/embed/" ++ projectId ++ "/" ++ String.fromInt revisionNumber ++ "?panel=" ++ Panel.toString panel
+        Existing id panel ->
+            "/embed/" ++ id ++ "?panel=" ++ Panel.toString panel
 
         NotFound ->
             "/embed/not-found"

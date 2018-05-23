@@ -25,7 +25,6 @@ view model =
                 SetupState.AcceptingTerms state ->
                     { termsVersion = state.latestTerms
                     , onAccept = SetupState.UserAcceptedTerms
-                    , loading = state.loading
                     }
                         |> SetupView.AcceptingTerms
                         |> SetupView.view

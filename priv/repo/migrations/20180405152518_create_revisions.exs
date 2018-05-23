@@ -5,27 +5,6 @@ defmodule Ellie.Repo.Migrations.CreateRevisions do
   @shard_id 100
 
   def up do
-    up_id_gen()
-    create table(:revisions, primary_key: false) do
-      add :project_id,      :bigint,                          primary_key: true, default: fragment("id_generator()")
-      add :revision_number, :integer,                         primary_key: true
-      add :title,           :string
-      add :elm_code,        :text,                            null: false
-      add :html_code,       :text,                            null: false
-      add :packages,        {:array, Elm.Ecto.Package.type}, null: false
-      add :elm_version,     Elm.Ecto.Version.type,           null: false
-      add :terms_version,   :integer
-      add :user_id,         references(:users, type: :uuid)
-      timestamps(updated_at: false)
-    end
-  end
-
-  def down do
-    drop_if_exists table(:revisions)
-    down_id_gen()
-  end
-
-  defp up_id_gen() do
     execute "create sequence id_generator_sequence;"
 
     execute """
@@ -44,9 +23,21 @@ defmodule Ellie.Repo.Migrations.CreateRevisions do
       end;
       $$ language plpgsql;
     """
+
+    create table(:revisions, primary_key: false) do
+      add :id,              :bigint,                         primary_key: true, default: fragment("id_generator()")
+      add :title,           :string
+      add :elm_code,        :text,                           null: false
+      add :html_code,       :text,                           null: false
+      add :packages,        {:array, Elm.Ecto.Package.type}, null: false
+      add :elm_version,     Elm.Ecto.Version.type,           null: false
+      add :terms_version,   :integer
+      timestamps(updated_at: false)
+    end
   end
 
-  defp down_id_gen() do
+  def down do
+    drop_if_exists table(:revisions)
     execute "drop sequence if exists id_generator_sequence;"
     execute "drop function if exists id_generator(bigint);"
   end

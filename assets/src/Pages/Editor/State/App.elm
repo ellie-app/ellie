@@ -13,12 +13,11 @@ import Effect.Command as Command exposing (Command)
 import Effect.Subscription as Subscription exposing (Subscription)
 import Elm.Package as Package exposing (Package)
 import Pages.Editor.Effects as Effects
-import Pages.Editor.Flags as Flags exposing (Flags)
 import Pages.Editor.Route as Route exposing (Route(..))
 import Pages.Editor.State.Setup as Setup
 import Pages.Editor.State.Working as Working
+import Pages.Editor.Types.Flags as Flags exposing (Flags)
 import Pages.Editor.Types.Revision as Revision exposing (Revision)
-import Pages.Editor.Types.RevisionId as RevisionId exposing (RevisionId)
 import Pages.Editor.Types.User as User exposing (User)
 
 
@@ -31,14 +30,18 @@ type Model
 
 init : Flags -> Route -> ( Model, Command Msg )
 init flags route =
+    let
+        user =
+            Maybe.withDefault User.default flags.user
+    in
     case route of
         Route.New ->
-            Setup.init flags.token Nothing
+            Setup.init user Nothing flags.latestTerms
                 |> Tuple.mapFirst Setup
                 |> Tuple.mapSecond (Command.map SetupMsg)
 
         Route.Existing revisionId ->
-            Setup.init flags.token (Just revisionId)
+            Setup.init user (Just revisionId) flags.latestTerms
                 |> Tuple.mapFirst Setup
                 |> Tuple.mapSecond (Command.map SetupMsg)
 
@@ -51,7 +54,7 @@ init flags route =
 setupToWorking :
     { token : Jwt
     , recovery : Maybe Revision
-    , revision : Maybe ( RevisionId, Revision )
+    , revision : Maybe ( Revision.Id, Revision )
     , packages : List Package
     , user : User
     }

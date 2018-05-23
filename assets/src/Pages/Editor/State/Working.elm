@@ -1,10 +1,8 @@
 module Pages.Editor.State.Working exposing (..)
 
 import BoundedDeque exposing (BoundedDeque)
-import Data.Either as Either exposing (Either(..))
 import Data.Jwt exposing (Jwt)
 import Data.Replaceable as Replaceable exposing (Replaceable)
-import Data.Uuid as Uuid exposing (Uuid)
 import Effect.Command as Command exposing (Command)
 import Effect.Subscription as Subscription exposing (Subscription)
 import Ellie.Ui.CodeEditor as CodeEditor exposing (Located, Token)
@@ -13,7 +11,6 @@ import Elm.Docs as Docs exposing (Module)
 import Elm.Error as Error exposing (Error)
 import Elm.Package as Package exposing (Package)
 import Elm.Version as Version exposing (Version)
-import Extra.Maybe as Maybe
 import Pages.Editor.Effects as Effects
 import Pages.Editor.Route as Route
 import Pages.Editor.State.Actions as Actions
@@ -23,8 +20,6 @@ import Pages.Editor.Types.Example as Example exposing (Example)
 import Pages.Editor.Types.Log as Log exposing (Log)
 import Pages.Editor.Types.Notification as Notification exposing (Notification)
 import Pages.Editor.Types.Revision as Revision exposing (Revision)
-import Pages.Editor.Types.RevisionId as RevisionId exposing (RevisionId)
-import Pages.Editor.Types.Settings as Settings exposing (Settings)
 import Pages.Editor.Types.User as User exposing (User)
 import Pages.Editor.Types.WorkspaceUpdate as WorkspaceUpdate exposing (WorkspaceUpdate)
 
@@ -66,7 +61,7 @@ type alias Model =
     , token : Jwt
     , activeExample : Example
     , defaultPackages : List Package
-    , revision : Replaceable RevisionId Revision
+    , revision : Replaceable Revision.Id Revision
     , saving : Bool
     , actions : Actions.Model
     , user : User
@@ -82,7 +77,7 @@ type alias Model =
     }
 
 
-reset : Jwt -> User -> Maybe Revision -> Maybe ( RevisionId, Revision ) -> List Package -> Model
+reset : Jwt -> User -> Maybe Revision -> Maybe ( Revision.Id, Revision ) -> List Package -> Model
 reset token user recovery revision defaultPackages =
     let
         isLatestElm =
@@ -102,9 +97,12 @@ reset token user recovery revision defaultPackages =
         revision
             |> Maybe.map (Tuple.second >> .packages)
             |> Maybe.withDefault defaultPackages
+    , projectName =
+        revision
+            |> Maybe.map (Tuple.second >> .title)
+            |> Maybe.withDefault ""
     , notifications = []
     , activeExample = Example.default
-    , projectName = ""
     , token = token
     , defaultPackages = defaultPackages
     , revision = Replaceable.fromMaybe revision
@@ -155,16 +153,6 @@ compilerVersion model =
         |> Maybe.withDefault Compiler.version
 
 
-ownRevision : Model -> Bool
-ownRevision model =
-    case Replaceable.toMaybe model.revision of
-        Just ( rid, revision ) ->
-            Maybe.eq Uuid.eq revision.userId (Just model.user.id)
-
-        Nothing ->
-            False
-
-
 toRevision : Model -> Revision
 toRevision model =
     { elmCode = model.elmCode
@@ -172,22 +160,7 @@ toRevision model =
     , packages = model.packages
     , title = model.projectName
     , elmVersion = Compiler.version
-    , userId = Just model.user.id
     }
-
-
-toSave : Model -> Either Revision ( RevisionId, Revision )
-toSave model =
-    case Replaceable.toMaybe model.revision of
-        Just ( rid, _ ) ->
-            if ownRevision model then
-                Right
-                    ( rid, toRevision model )
-            else
-                Left <| toRevision model
-
-        Nothing ->
-            Left <| toRevision model
 
 
 hasChanged : Model -> Bool
@@ -206,17 +179,17 @@ hasChanged model =
                 || (model.projectName /= revision.title)
 
 
-canReplaceRevision : RevisionId -> Model -> Bool
+canReplaceRevision : Revision.Id -> Model -> Bool
 canReplaceRevision revisionId model =
     case model.revision of
         Replaceable.NotAsked ->
             True
 
         Replaceable.Loading rid ->
-            RevisionId.eq revisionId rid
+            revisionId == rid
 
         Replaceable.Replacing rid _ ->
-            RevisionId.eq revisionId rid
+            revisionId == rid
 
         Replaceable.Loaded ( rid, _ ) ->
             False
@@ -238,7 +211,7 @@ type Msg
     | TokenChanged (Located Token)
     | DocsReceived (List Module)
       -- Action stuff
-    | SettingsChanged Settings
+    | SettingsChanged User.Settings
     | ChangedProjectName String
     | PackageInstalled Package
     | PackageUninstalled Package
@@ -258,7 +231,7 @@ type Msg
     | LogSearchChanged String
     | LocationSelected Error.Position
     | SaveRequested
-    | SaveCompleted (Result () ( RevisionId, Revision ))
+    | SaveCompleted (Result () ( Revision.Id, Revision ))
     | CanDebugUpdated Bool
       -- Share stuff
     | DownloadZip
@@ -267,7 +240,7 @@ type Msg
     | CloseAllNotifications
       -- Global stuff
     | RouteChanged Route.Route
-    | RevisionLoaded RevisionId (Result () Revision)
+    | RevisionLoaded Revision.Id (Result () Revision)
     | AnimationFinished
     | OnlineStatusChanged Bool
     | CrashRecovered Revision
@@ -275,7 +248,7 @@ type Msg
     | NoOp
 
 
-init : Jwt -> User -> Maybe Revision -> Maybe ( RevisionId, Revision ) -> List Package -> ( Model, Command Msg )
+init : Jwt -> User -> Maybe Revision -> Maybe ( Revision.Id, Revision ) -> List Package -> ( Model, Command Msg )
 init token user recovery revision defaultPackages =
     reset token user recovery revision defaultPackages
         |> update CompileRequested
@@ -316,27 +289,24 @@ update msg ({ user } as model) =
                 )
 
             SaveRequested ->
-                case toSave model of
-                    Left revision ->
+                case model.user.acceptedTerms of
+                    Just acceptedTerms ->
                         ( { model | saving = True }
-                        , Effects.createRevision model.token revision
+                        , model
+                            |> toRevision
+                            |> Effects.createRevision model.token acceptedTerms
                             |> Command.map (Result.mapError (\_ -> ()))
-                            |> Command.map (Result.map (\rid -> ( rid, revision )))
+                            |> Command.map (Result.map (\rid -> ( rid, toRevision model )))
                             |> Command.map SaveCompleted
                         )
 
-                    Right ( revisionId, revision ) ->
-                        ( { model | saving = True }
-                        , Effects.updateRevision model.token revisionId.projectId revision
-                            |> Command.map (Result.mapError (\_ -> ()))
-                            |> Command.map (Result.map (\rid -> ( rid, revision )))
-                            |> Command.map SaveCompleted
-                        )
+                    Nothing ->
+                        ( model, Command.none )
 
             SaveCompleted (Ok ( revisionId, revision )) ->
                 case Replaceable.loading model.revision of
                     Just key ->
-                        if RevisionId.eq key revisionId then
+                        if key == revisionId then
                             ( { model | saving = False, revision = Replaceable.Loaded ( revisionId, revision ) }
                             , Command.none
                             )
@@ -353,7 +323,7 @@ update msg ({ user } as model) =
                                 { title = "Saved!"
                                 , severity = Notification.Success
                                 , message = "Your changes have been saved. You can share them using this link:"
-                                , actions = [ Notification.CopyLink <| RevisionId.editorLink revisionId ]
+                                , actions = [ Notification.CopyLink <| Revision.editorLink revisionId ]
                                 }
                                     :: model.notifications
                           }
@@ -571,7 +541,7 @@ update msg ({ user } as model) =
 
             FormatRequested ->
                 ( model
-                , Effects.formatCode (compilerVersion model) model.elmCode
+                , Effects.formatCode model.token (compilerVersion model) model.elmCode
                     |> Command.map (Result.mapError (\_ -> ()))
                     |> Command.map FormatCompleted
                 )
@@ -651,8 +621,7 @@ update msg ({ user } as model) =
 
             SettingsChanged settings ->
                 ( { model | user = { user | settings = settings } }
-                , Effects.updateSettings model.token settings
-                    |> Command.map (\_ -> NoOp)
+                , Effects.updateUser { user | settings = settings }
                 )
 
             AnimationFinished ->

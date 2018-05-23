@@ -1,9 +1,9 @@
-defmodule EllieWeb.Graphql.Types.Version do
+defmodule EllieWeb.Graphql.Types.Elm.Version do
   alias Elm.Version
 
   use Absinthe.Schema.Notation
 
-  scalar :version, name: "Version" do
+  scalar :elm_version, name: "ElmVersion" do
     serialize &serialize_to_string/1
     parse &cast_from_string/1
   end

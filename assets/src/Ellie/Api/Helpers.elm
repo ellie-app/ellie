@@ -1,6 +1,5 @@
 module Ellie.Api.Helpers exposing (..)
 
-import Data.Uuid as Uuid exposing (Uuid)
 import Ellie.Api.Scalar as ApiScalar
 import Elm.Name as Name exposing (Name)
 import Elm.Version as Version exposing (Version)
@@ -8,16 +7,15 @@ import Graphqelm.Field as Field exposing (Field)
 import Graphqelm.Http exposing (Request)
 
 
-versionField : Field ApiScalar.Version a -> Field Version a
+versionField : Field ApiScalar.ElmVersion a -> Field Version a
 versionField =
     Field.mapOrFail <|
-        \(ApiScalar.Version string) -> Version.fromString string
+        \(ApiScalar.ElmVersion string) -> Version.fromString string
 
 
-uuidField : Field ApiScalar.Uuid a -> Field Uuid a
-uuidField =
-    Field.map <|
-        \(ApiScalar.Uuid string) -> Uuid.fromString string
+unitField : Field ApiScalar.Unit a -> Field () a
+unitField =
+    Field.map <| \_ -> ()
 
 
 projectIdField : Field ApiScalar.ProjectId a -> Field String a
@@ -26,10 +24,10 @@ projectIdField =
         \(ApiScalar.ProjectId string) -> string
 
 
-nameField : Field ApiScalar.Name a -> Field Name a
+nameField : Field ApiScalar.ElmName a -> Field Name a
 nameField =
     Field.mapOrFail <|
-        \(ApiScalar.Name string) -> Name.fromString string
+        \(ApiScalar.ElmName string) -> Name.fromString string
 
 
 defaultField : a -> Field (Maybe a) b -> Field a b

@@ -1,6 +1,5 @@
 module Pages.Embed.Views.App exposing (styles, view)
 
-import Colors
 import Css exposing (..)
 import Css.Foreign
 import Data.Url as Url
@@ -17,7 +16,6 @@ import Html.Styled.Events as Events
 import Pages.Embed.State.App as AppState exposing (Model(..), Msg(..), OutputState, WorkingState)
 import Pages.Embed.Types.Panel as Panel exposing (Panel)
 import Pages.Embed.Types.Revision as Revision exposing (Revision)
-import Pages.Embed.Types.RevisionId as RevisionId exposing (RevisionId)
 
 
 view : Model -> Html Msg
@@ -77,7 +75,7 @@ viewWorking state =
         ]
 
 
-viewHeader : RevisionId -> Panel -> Html Msg
+viewHeader : Revision.Id -> Panel -> Html Msg
 viewHeader revisionId current =
     Html.styled Html.header
         [ height (px 40)
@@ -112,7 +110,7 @@ viewHeader revisionId current =
                     ]
                 ]
             ]
-            [ Attributes.href <| Url.toString <| RevisionId.editorLink revisionId
+            [ Attributes.href <| Url.toString <| Revision.editorLink revisionId
             , Attributes.target "_blank"
             ]
             [ Html.span [] [ Html.text "Edit" ]
@@ -241,7 +239,7 @@ viewOutput state =
                     []
                     [ Output.view
                         [ Output.html state.revision.data.htmlCode
-                        , Output.elmSource <| Url.toString <| RevisionId.outputLink state.revision.id
+                        , Output.elmSource <| Url.toString <| Revision.outputLink state.revision.id
                         , Output.onCanDebug CanDebugChanged
                         , Output.debug (state.debug == AppState.Debugging)
                         ]

@@ -16,7 +16,7 @@ import Html.Styled.Attributes as Attributes exposing (css)
 type Stage msg
     = Authenticating
     | Attaching
-    | AcceptingTerms { termsVersion : Int, onAccept : msg, loading : Bool }
+    | AcceptingTerms { termsVersion : Int, onAccept : msg }
     | Loading
     | Opening
 
@@ -49,7 +49,7 @@ view loadingStage =
                 ]
 
 
-terms : { termsVersion : Int, onAccept : msg, loading : Bool } -> List (Html msg)
+terms : { termsVersion : Int, onAccept : msg } -> List (Html msg)
 terms state =
     [ Html.styled Html.div
         [ padding (px 16)
@@ -81,17 +81,38 @@ terms state =
             , position relative
             , height (px 400)
             ]
-            [ Attributes.src "/a/terms/1"
+            [ Attributes.src <| "/a/terms/" ++ toString state.termsVersion
             ]
             []
         ]
+    , Html.styled Html.div
+        [ padding (px 16)
+        , color Theme.primaryForeground
+        , fontSize (px 18)
+        , textAlign center
+        , width (px 700)
+        , maxWidth (pct 100)
+        ]
+        []
+        [ Html.text "Ellie does not collect any personal information. All code posted to Ellie is public, licensed MIT. "
+        , Html.text "Do not post proprietary or personally identifiable information on Ellie. "
+        , Html.text "Report abuse or request removal of personal information at "
+        , Html.styled Html.a
+            [ color Theme.accent ]
+            [ Attributes.href <| "mailto:ellie@lukewestby.com" ]
+            [ Html.text "ellie@lukewestby.com" ]
+        , Html.text ". See our "
+        , Html.styled Html.a
+            [ color Theme.accent ]
+            [ Attributes.href <| "/a/terms/" ++ toString state.termsVersion ++ "#privacy"
+            , Attributes.target "_blank"
+            ]
+            [ Html.text "Privacy Policy" ]
+        , Html.text " for more details."
+        ]
     , Html.div []
         [ Button.view
-            { icon =
-                if state.loading then
-                    Just Icon.Loading
-                else
-                    Just Icon.Success
+            { icon = Just Icon.Success
             , label = "Accept Terms"
             , action = Button.click state.onAccept
             }

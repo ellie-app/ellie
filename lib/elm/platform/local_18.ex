@@ -12,50 +12,51 @@ defmodule Elm.Platform.Local18 do
 
   @spec setup(Path.t) :: {:ok, Project.t} | :error
   def setup(root) do
-    if File.exists?(root) do
-      :error
-    else
-      case GenServer.call(__MODULE__, {:elm_package, :init, root}, :infinity) do
-        :ok ->
-          project_json = read_project!(root)
-          updated = Map.put(project_json, "source-directories", ["src"])
-          write_project!(updated, root)
-          File.mkdir_p!(Path.join(root, "src"))
-          project = %Project{
-            elm_version: Version.create(0, 18, 0),
-            dependencies: decode_deps_map!(Map.fetch!(project_json, "dependencies"))
-          }
-          {:ok, project}
-        :error ->
-          :error
-      end
+    case GenServer.call(__MODULE__, {:elm_package, :init, root}, :infinity) do
+      :ok ->
+        project_json = read_project!(root)
+        updated = Map.put(project_json, "source-directories", ["src"])
+        write_project!(updated, root)
+        File.mkdir_p!(Path.join(root, "src"))
+        case decode_deps_map!(Map.fetch!(project_json, "dependencies")) do
+          {:ok, dependencies} ->
+            project = %Project{
+              elm_version: Version.create(0, 18, 0),
+              dependencies: dependencies
+            }
+            {:ok, project}
+          _error ->
+            :error
+        end
+      :error ->
+        :error
     end
   end
 
   @spec compile(Path.t, [source: String.t, project: Project.t, output: Path.t]) :: {:ok, Error.t | nil} | :error
-  def compile(root, source: source, project: project, output: output) do
-    setup_result =
-      if not project_exists?(root) do
-        with {:ok, _} <- setup(root),
-             :ok <- apply_deps(root, project)
-        do
-          :ok
-        else
-          error -> error
-        end
-      else
-        :ok
-      end
+  def compile(root, options) do
+    source = Keyword.fetch!(options, :source)
+    project = Keyword.fetch!(options, :project)
+    output = Keyword.fetch!(options, :output)
 
-    case setup_result do
-      :ok ->
-        File.rm_rf!(Path.join(root, "src"))
-        entry = Parser.module_path(source)
-        File.mkdir_p!(Path.join([root, "src", Path.dirname(entry)]))
-        File.write!(Path.join([root, "src", entry]), source)
-        error = GenServer.call(__MODULE__, {:elm_make, root, entry, output}, :infinity)
-        {:ok, error}
-      error -> error
+    if project_exists?(root) do
+      root
+      |> read_project!()
+      |> Map.put("dependencies", make_deps_map(project.dependencies))
+      |> write_project!(root)
+      File.rm_rf!(Path.join([root, "elm-stuff", "exact-dependencies.json"]))
+
+      File.rm_rf!(Path.join(root, "src"))
+
+      entry = Path.join("src", Parser.module_path(source))
+
+      File.mkdir_p!(Path.join([root, Path.dirname(entry)]))
+      File.write!(Path.join([root, entry]), source)
+
+      error = GenServer.call(__MODULE__, {:elm_make, root, entry, output}, :infinity)
+      {:ok, error}
+    else
+      :error
     end
   end
 
@@ -114,19 +115,6 @@ defmodule Elm.Platform.Local18 do
   end
 
   # Helpers
-
-  defp apply_deps(root, project) do
-    if project_exists?(root) do
-      root
-      |> read_project!()
-      |> Map.put("dependencies", make_deps_map(project.dependencies))
-      |> write_project!(root)
-      File.rm_rf!(Path.join([root, "elm-stuff", "exact-dependencies.json"]))
-      :ok
-    else
-      :error
-    end
-  end
 
   defp project_exists?(root) do
     root
@@ -231,7 +219,7 @@ defmodule Elm.Platform.Local18 do
       gp = %Error.GeneralProblem{
         path: entry,
         title: "Compiler Error",
-        message: {:unstyled, input}
+        message: [{:unstyled, input}]
       }
 
       {:general_problem, gp}

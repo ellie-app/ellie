@@ -1,7 +1,7 @@
-defmodule EllieWeb.Graphql.Middleware.Auth do
+defmodule EllieWeb.Graphql.Middleware.RequireWorkspace do
   @behaviour Absinthe.Middleware
 
-  def call(resolution = %{context: %{current_user: _}}, _config) do
+  def call(resolution = %{context: %{workspace: _}}, _config) do
     resolution
   end
 

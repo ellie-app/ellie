@@ -1,6 +1,7 @@
 defmodule Ellie.Adapters.Embed.Local do
   alias Elm.Platform
   alias Elm.Project
+  alias Ellie.Types.ProjectId
   alias Ellie.Types.Revision
   use Agent
 
@@ -9,7 +10,7 @@ defmodule Ellie.Adapters.Embed.Local do
   def result(%Revision{} = revision) do
     case get_entry(revision) do
       {:finished, nil} ->
-        output = Path.join([@base_path, to_string(revision.project_id), to_string(revision.revision_number), "embed.js"])
+        output = Path.join([@base_path, ProjectId.to_string(revision.id), "embed.js"])
         if File.exists?(output) do
           {:ok, output}
         else
@@ -36,7 +37,7 @@ defmodule Ellie.Adapters.Embed.Local do
   end
 
   defp do_compile(revision) do
-    root = Path.join(@base_path, "#{revision.project_id}/#{revision.revision_number}")
+    root = Path.join(@base_path, ProjectId.to_string(revision.id))
     File.rm_rf!(root)
     File.mkdir_p!(root)
 
@@ -65,10 +66,10 @@ defmodule Ellie.Adapters.Embed.Local do
   end
 
   defp get_entry(revision) do
-    Agent.get __MODULE__, fn state -> Map.get(state, {revision.project_id, revision.revision_number}) end
+    Agent.get __MODULE__, fn state -> Map.get(state, revision.id) end
   end
 
   defp put_entry(revision, status) do
-    Agent.update __MODULE__, fn state -> Map.put(state, {revision.project_id, revision.revision_number}, status) end
+    Agent.update __MODULE__, fn state -> Map.put(state, revision.id, status) end
   end
 end

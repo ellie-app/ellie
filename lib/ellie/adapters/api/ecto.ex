@@ -1,104 +1,115 @@
 defmodule Ellie.Adapters.Api.Ecto do
-  import Ecto.Query
   alias Ellie.Repo
-  alias Elm.Package
   alias Elm.Version
+  alias Elm.Package
+  alias Elm.Name
+  alias Ellie.Helpers.EnumHelpers
   alias Ellie.Types.Revision
+  alias Ellie.Types.Redirect
   alias Ellie.Types.ProjectId
-  alias Ellie.Types.Settings
-  alias Ellie.Types.User
+  alias Data.Functor
+  alias ExAws.S3
+
 
   @behaviour Ellie.Domain.Api
 
-  def accept_terms(user, terms_version) do
-    changeset = Ecto.Changeset.change(user, terms_version: terms_version)
-    case Repo.update(changeset) do
-      {:ok, _} -> :ok
-      {:error, _} -> :error
-    end
-  end
-
-  @spec update_settings(User.t, Keyword.t) :: :ok | :error
-  def update_settings(user, settings) do
-    changeset = Ecto.Changeset.change(user, settings: struct(user.settings, settings))
-    case Repo.update(changeset) do
-      {:ok, _} -> :ok
-      {:error, _} -> :error
-    end
-  end
-
-  @type new_revision :: [title: String.t | nil, elm_code: String.t, html_code: String.t, packages: list(Package.t)]
-  @spec create_revision(User.t, new_revision) :: {:ok, Revision.t} | :error
-  def create_revision(user, data) do
-    case user.terms_version do
-      nil ->
-        :error
-      terms_version ->
-        result =
-          data
-          |> Keyword.put(:elm_version, Version.create(0, 19, 0))
-          |> Keyword.put(:terms_version, terms_version)
-          |> Keyword.put(:user, user)
-          |> Keyword.to_list()
-          |> (&Kernel.struct(Revision, &1)).()
-          |> Repo.insert()
-        case result do
-          {:ok, revision} -> {:ok, revision}
-          _ -> :error
-        end
-    end
-  end
-
-  @type updated_revision :: [
-    project_id: ProjectId.t,
-    title: String.t | nil,
-    elm_code: String.t,
-    html_code: String.t,
-    packages: list(Package.t)
-  ]
-  @spec update_revision(User.t, updated_revision) :: {:ok, Revision.t} | :error
-  def update_revision(user, data) do
-    case user.terms_version do
-      nil ->
-        :error
-      terms_version ->
-        project_id =
-          Keyword.fetch!(data, :project_id)
-        latest_revision_number =
-          Revision
-          |> where([r], r.project_id == ^project_id)
-          |> select([r], max(r.revision_number))
-          |> Repo.one()
-        if is_nil(latest_revision_number) do
-          :error
-        else
-          result =
-            data
-            |> Keyword.put(:revision_number, latest_revision_number + 1)
-            |> Keyword.put(:elm_version, Version.create(0, 19, 0))
-            |> Keyword.put(:terms_version, terms_version)
-            |> Keyword.put(:user, user)
-            |> Keyword.to_list()
-            |> (&Kernel.struct(Revision, &1)).()
-            |> Repo.insert()
-          case result do
-            {:ok, revision} -> {:ok, revision}
-            _ -> :error
-          end
-        end
+  @spec create_revision(Ellie.Domain.Api.new_revision) :: {:ok, Revision.t} | :error
+  def create_revision(data) do
+    result =
+      data
+      |> Keyword.put(:elm_version, Version.create(0, 19, 0))
+      |> Keyword.to_list()
+      |> (&Kernel.struct(Revision, &1)).()
+      |> Repo.insert()
+    case result do
+      {:ok, revision} -> {:ok, revision}
+      _ -> :error
     end
   end
 
   @spec retrieve_revision(ProjectId.t, integer) :: Revision.t | nil
   def retrieve_revision(project_id, revision_number) do
-    Repo.get_by(Revision, project_id: project_id, revision_number: revision_number)
+    redirect =
+      Redirect
+      |> Repo.get_by(project_id: project_id, revision_number: revision_number)
+      |> Repo.preload(:revision)
+      |> Functor.map(&(&1.revision))
+    case redirect do
+      nil -> mirror_from_s3(project_id, revision_number)
+      revision -> revision
+    end
   end
 
-  @spec create_user() :: {:ok, User.t} | :error
-  def create_user() do
-    case Repo.insert(%User{settings: Settings.default()}) do
-      {:ok, user} -> {:ok, user}
+  @spec retrieve_revision(ProjectId.t) :: Revision.t | nil
+  def retrieve_revision(id) do
+    Repo.get(Revision, id)
+  end
+
+  defp parse_package([name_string, version_string]) do
+    with {:ok, name} <- Name.from_string(name_string),
+         {:ok, version} <- Version.from_string(version_string)
+    do
+      {:ok, %Package{name: name, version: version}}
+    else
       _ -> :error
+    end
+  end
+  defp parse_package(_), do: :error
+
+  defp mirror_from_s3(project_id, revision_number) do
+    endpoint = Keyword.get(
+      Application.get_env(:ellie, Ellie.Domain.Api, []),
+      :legacy_revisions_endpoint,
+      "https://s3.us-east-2.amazonaws.com/development-cdn.ellie-app.com/revisions"
+    )
+
+    url = "#{endpoint}/#{ProjectId.to_string(project_id)}/#{revision_number}.json"
+
+    with {:ok, %HTTPoison.Response{status_code: 200, body: body}} <- HTTPoison.get(url),
+         {:ok, revision_data} <- Poison.decode(body),
+         {:ok, package_combos} <- Map.fetch(revision_data, "packages"),
+         {:ok, packages} <- EnumHelpers.traverse_result(package_combos, &parse_package/1),
+         {:ok, html_code} <- Map.fetch(revision_data, "htmlCode"),
+         {:ok, elm_code} <- Map.fetch(revision_data, "elmCode"),
+         {:ok, %{"projectId"=>project_id_string, "revisionNumber"=>revision_number}} <- Map.fetch(revision_data, "id"),
+         title <- Map.get(revision_data, "title"),
+         terms_version <- Map.get(revision_data, "acceptedTerms")
+    do
+      result =
+        Repo.transaction fn ->
+          revision = %Revision{
+            html_code: html_code,
+            elm_code: elm_code,
+            title: title,
+            elm_version: Version.create(0, 18, 0),
+            packages: packages,
+            terms_version: terms_version
+          }
+
+          inserted = Repo.insert!(revision)
+
+          redirect = %Redirect{
+            project_id: ProjectId.from_string(project_id_string),
+            revision_number: revision_number,
+            revision: inserted
+          }
+
+          Repo.insert!(redirect)
+
+          inserted
+        end
+      case result do
+        {:ok, saved_revision} ->
+          saved_revision
+        _error ->
+          # TODO LOG ERROR
+          nil
+      end
+    else
+      error ->
+        # TODO LOG ERROR
+        IO.inspect(error)
+        nil
     end
   end
 end

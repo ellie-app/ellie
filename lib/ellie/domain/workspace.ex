@@ -1,30 +1,36 @@
 defmodule Ellie.Domain.Workspace do
-  alias Ellie.Types.User
   alias Elm.Version
+  alias Data.Uuid
 
-  @callback dependencies(user :: User.t, version :: Version.t) :: {:ok, MapSet.t(Package.t)} | :error
-  @callback compile(user :: User.t, version :: Version.t, elm_code :: String.t, packages :: MapSet.t(Package.t)) :: {:ok, Error.t | nil} | :error
-  @callback result(user :: User.t) :: {:ok, {Path.t, String.t}} | :error
-  @callback cleanup_after(user :: User.t, process :: pid) :: :unit
+  @callback create() :: {:ok, Uuid.t} | :error
+  @callback watch(id :: Uuid.t, process :: pid) :: :unit
+  @callback dependencies(id :: Uuid.t, version :: Version.t) :: {:ok, MapSet.t(Package.t)} | :error
+  @callback compile(id :: Uuid.t, version :: Version.t, elm_code :: String.t, packages :: MapSet.t(Package.t)) :: {:ok, Error.t | nil} | :error
+  @callback result(id :: Uuid.t) :: {:ok, {Path.t, String.t}} | :error
 
-  @spec dependencies(user :: User.t, version :: Version.t) :: {:ok, MapSet.t(Package.t)} | :error
-  def dependencies(user, version) do
-    adapter().dependencies(user, version)
+  @spec create() :: {:ok, Uuid.t} | :error
+  def create() do
+    adapter().create()
   end
 
-  @spec compile(user :: User.t, version :: Version.t, elm_code :: String.t, packages :: list(Package.t)) :: {:ok, Error.t | nil} | :error
-  def compile(user, version, elm_code, packages) do
-    adapter().compile(user, version, elm_code, packages)
+  @spec watch(id :: Uuid.t, process :: pid) :: :unit
+  def watch(id, process) do
+    adapter().watch(id, process)
   end
 
-  @spec result(user :: User.t) :: {:ok, {Path.t, String.t}} | :error
-  def result(user) do
-    adapter().result(user)
+  @spec dependencies(id :: Uuid.t, version :: Version.t) :: {:ok, MapSet.t(Package.t)} | :error
+  def dependencies(id, version) do
+    adapter().dependencies(id, version)
   end
 
-  @spec cleanup_after(user :: User.t, process :: pid) :: :unit
-  def cleanup_after(user, process) do
-    adapter().cleanup_after(user, process)
+  @spec compile(id :: Uuid.t, version :: Version.t, elm_code :: String.t, packages :: list(Package.t)) :: {:ok, Error.t | nil} | :error
+  def compile(id, version, elm_code, packages) do
+    adapter().compile(id, version, elm_code, packages)
+  end
+
+  @spec result(id :: Uuid.t) :: {:ok, {Path.t, String.t}} | :error
+  def result(id) do
+    adapter().result(id)
   end
 
   defp adapter() do

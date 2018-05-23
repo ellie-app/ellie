@@ -13,6 +13,7 @@ defmodule Ellie.Types.ProjectId do
 
   @type t :: integer
 
+  @spec to_string(value :: t) :: String.t
   def to_string(input) when is_integer(input) do
     serialize_help(input, "")
   end
@@ -45,6 +46,7 @@ defmodule Ellie.Types.ProjectId do
     end)
   end
 
+  @spec from_string(value :: String.t) :: t
   def from_string(value) when is_binary(value) do
     if String.ends_with?(value, "a1") do
       from_string_v1(value)

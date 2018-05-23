@@ -1,4 +1,4 @@
-defmodule Ellie.Repo.Migrations.AddSearchablePackages do
+defmodule Ellie.Repo.Migrations.CreateSearchablePackages do
   use Ecto.Migration
 
   def up do

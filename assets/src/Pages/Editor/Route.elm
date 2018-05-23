@@ -1,22 +1,31 @@
 module Pages.Editor.Route exposing (Route(..), parse, toString)
 
 import Data.Url.Parser as UrlParser exposing ((</>), Parser, int, s, string)
-import Extra.String as String
 import Navigation
-import Pages.Editor.Types.RevisionId as RevisionId exposing (RevisionId)
+import Pages.Editor.Types.Revision as Revision exposing (Revision)
 
 
 type Route
     = New
-    | Existing RevisionId
+    | Existing Revision.Id
     | NotFound
+
+
+revisionId : Parser (Revision.Id -> a) a
+revisionId =
+    UrlParser.custom "REVISION_ID" <|
+        \string ->
+            if String.endsWith "a1" string then
+                Just string
+            else
+                Nothing
 
 
 parser : Parser (Route -> Route) Route
 parser =
     UrlParser.oneOf
-        [ UrlParser.map Existing <| UrlParser.map RevisionId <| string </> int
-        , UrlParser.map New <| s "new"
+        [ UrlParser.map New <| s "new"
+        , UrlParser.map Existing revisionId
         ]
 
 
@@ -34,8 +43,8 @@ toString route =
         New ->
             "/new"
 
-        Existing { projectId, revisionNumber } ->
-            "/" ++ projectId ++ "/" ++ String.fromInt revisionNumber
+        Existing revisionId ->
+            "/" ++ revisionId
 
         NotFound ->
             "/not-found"

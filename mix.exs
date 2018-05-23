@@ -52,10 +52,15 @@ defmodule Ellie.Mixfile do
       {:postgrex, ">= 0.0.0"},
       {:phoenix_html, "~> 2.10.0"},
       {:phoenix_live_reload, "~> 1.0", only: :dev},
+      {:phoenix_markdown, "~> 1.0"},
       {:poison, "~> 3.1"},
       {:porcelain, "~> 2.0.3"},
       {:quantum, "~> 2.2"},
-      {:timex, "~> 3.0"}
+      {:timex, "~> 3.0"},
+      {:ex_aws, "~> 2.0"},
+      {:ex_aws_s3, "~> 2.0"},
+      {:hackney, "~> 1.9"},
+      {:sweet_xml, "~> 0.6"},
     ]
   end
 

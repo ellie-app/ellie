@@ -8,12 +8,12 @@ import Ellie.Ui.Icon as Icon
 import Ellie.Ui.Theme as Theme
 import Html.Styled as Html exposing (Attribute, Html)
 import Html.Styled.Attributes as Attributes exposing (css)
-import Pages.Editor.Types.RevisionId as RevisionId exposing (RevisionId)
+import Pages.Editor.Types.Revision as Revision exposing (Revision)
 
 
 type alias Config msg =
     { onDownloadZip : msg
-    , revisionId : RevisionId
+    , revisionId : Revision.Id
     , hasUnsavedChanges : Bool
     }
 
@@ -47,7 +47,7 @@ view config =
             ]
         , container
             [ heading "Share on Medium (Embed.ly)"
-            , CopyText.view <| Url.toString <| RevisionId.editorLink config.revisionId
+            , CopyText.view <| Url.toString <| Revision.editorLink config.revisionId
             ]
         , container
             [ heading "Embed IFrame"
@@ -87,12 +87,12 @@ warning =
         ]
 
 
-iframe : RevisionId -> String
+iframe : Revision.Id -> String
 iframe revisionId =
-    "<iframe src=\"" ++ Url.toString (RevisionId.embedLink revisionId) ++ "\" style=\"width:100%; height:400px; border:0; overflow:hidden;\" sandbox=\"allow-modals allow-forms allow-popups allow-scripts allow-same-origin\"></iframe>"
+    "<iframe src=\"" ++ Url.toString (Revision.embedLink revisionId) ++ "\" style=\"width:100%; height:400px; border:0; overflow:hidden;\" sandbox=\"allow-modals allow-forms allow-popups allow-scripts allow-same-origin\"></iframe>"
 
 
-preview : RevisionId -> Html msg
+preview : Revision.Id -> Html msg
 preview revisionId =
     Html.styled Html.iframe
         [ width (pct 100)
@@ -101,7 +101,7 @@ preview revisionId =
         , position relative
         , zIndex (int 1)
         ]
-        [ Url.src <| RevisionId.embedLink revisionId ]
+        [ Url.src <| Revision.embedLink revisionId ]
         []
 
 

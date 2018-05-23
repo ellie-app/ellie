@@ -27,7 +27,7 @@ defmodule EllieWeb do
 
   def view do
     quote do
-      use Phoenix.View, root: "lib/ellie_web/templates", namespace: EllieWeb
+      use Phoenix.View, root: "lib/ellie_web/templates", pattern: "**/*", namespace: EllieWeb
       use Phoenix.HTML
       import EllieWeb.Router.Helpers
       import EllieWeb.ErrorHelpers

@@ -18,7 +18,7 @@ import Html.Styled.Attributes as Attributes exposing (css)
 import Html.Styled.Events as Events
 import Pages.Editor.State.Working exposing (ErrorsPane(..), SuccessPane(..), Workbench(..))
 import Pages.Editor.Types.Log as Log exposing (Log)
-import Pages.Editor.Types.RevisionId as RevisionId exposing (RevisionId)
+import Pages.Editor.Types.Revision as Revision exposing (Revision)
 import Pages.Editor.Views.Workbench.Share as Share
 
 
@@ -42,7 +42,7 @@ type alias Config msg =
     , token : Jwt
     , saving : Bool
     , htmlCode : String
-    , revisionId : Maybe RevisionId
+    , revisionId : Maybe Revision.Id
     , hasUnsavedChanges : Bool
     }
 
@@ -460,7 +460,7 @@ viewInitial config =
 viewOutput : Bool -> Config msg -> Html msg
 viewOutput debug config =
     Output.view
-        [ Output.elmSource <| Constants.serverOrigin ++ "/private/result?token=" ++ Jwt.toString config.token ++ "&elmVersion=" ++ Version.toString config.compilerVersion
+        [ Output.elmSource <| Constants.serverOrigin ++ "/r/workspace?token=" ++ Jwt.toString config.token ++ "&elmVersion=" ++ Version.toString config.compilerVersion
         , Output.onLog config.onLogReceived
         , Output.debug debug
         , Output.html <| config.htmlCode

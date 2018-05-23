@@ -6,7 +6,7 @@ import Ellie.Ui.TextInput as TextInput
 import Ellie.Ui.Theme as Theme
 import Html.Styled as Html exposing (Attribute, Html)
 import Html.Styled.Attributes exposing (css, src)
-import Pages.Editor.Types.Settings as Settings exposing (Settings)
+import Pages.Editor.Types.User as User exposing (Settings)
 
 
 type alias Config msg =

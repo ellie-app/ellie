@@ -1,13 +1,10 @@
 module Effect.Subscription exposing (..)
 
-import Data.Jwt as Jwt exposing (Jwt)
 import Graphqelm.Document as Document
-import Graphqelm.Http
 import Graphqelm.Operation exposing (RootSubscription)
 import Graphqelm.SelectionSet as SelectionSet exposing (SelectionSet)
 import Json.Decode as Decode exposing (Decoder, Value)
 import Keyboard exposing (KeyCode)
-import Set exposing (Set)
 
 
 type Subscription msg

@@ -16,6 +16,8 @@ config :ellie, Ellie.Scheduler,
     {"*/15 * * * *", {Ellie.Domain.Search, :reload, []}},
   ]
 
+config :phoenix, :template_engines,
+  md: PhoenixMarkdown.Engine
 
 # Configures the endpoint
 config :ellie, EllieWeb.Endpoint,

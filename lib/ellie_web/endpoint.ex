@@ -2,7 +2,7 @@ defmodule EllieWeb.Endpoint do
   use Phoenix.Endpoint, otp_app: :ellie
   use Absinthe.Phoenix.Endpoint
 
-  socket "/api/sockets", EllieWeb.UserSocket
+  socket "/api/sockets", EllieWeb.Graphql.Socket
 
   # Code reloading can be explicitly enabled under the
   # :code_reloader configuration of your endpoint.
@@ -12,13 +12,13 @@ defmodule EllieWeb.Endpoint do
     plug Phoenix.CodeReloader
   end
 
-  # if Application.get_env(:ellie, :env) == :prod do
+  if Application.get_env(:ellie, :env) == :prod do
     plug Plug.Static,
       at: "/assets",
       from: :ellie,
       gzip: true,
       headers: %{"Service-Worker-Allowed" => "/"}
-  # end
+  end
 
   plug Plug.Logger
 
@@ -30,13 +30,8 @@ defmodule EllieWeb.Endpoint do
   plug Plug.MethodOverride
   plug Plug.Head
 
-  # The session will be stored in the cookie and signed,
-  # this means its contents can be read but not tampered with.
-  # Set :encryption_salt if you would also like to encrypt it.
-  plug Plug.Session,
-    store: :cookie,
-    key: "_ellie_key",
-    signing_salt: "/6z/nQGX"
+  plug :clear_cookies, []
+
 
   plug EllieWeb.Router
 
@@ -53,5 +48,12 @@ defmodule EllieWeb.Endpoint do
     else
       {:ok, config}
     end
+  end
+
+  def clear_cookies(conn, _opts) do
+    fetched = fetch_cookies(conn)
+    Enum.reduce(fetched.req_cookies, fetched, fn {k, _}, c ->
+      delete_resp_cookie(c, k)
+    end)
   end
 end

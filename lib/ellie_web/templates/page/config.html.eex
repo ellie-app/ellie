@@ -1,5 +1,3 @@
 <script>
-    window.ellieConfig = {
-        serviceWorkerPath: '<%= static_path(@conn, "/assets/editor-sw.js") %>'
-    }
+    window.ellieConfig = {}
 </script>

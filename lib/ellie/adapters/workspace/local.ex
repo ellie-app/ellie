@@ -4,8 +4,9 @@ defmodule Ellie.Adapters.Workspace.Local do
   alias Elm.Package
   alias Elm.Project
   alias Elm.Error
-  alias Ellie.Types.User
+  alias Data.Uuid
   use GenServer
+
 
   defstruct [:location, :packages, :elm_hash, :error, :version]
 
@@ -13,9 +14,20 @@ defmodule Ellie.Adapters.Workspace.Local do
 
   @behaviour Ellie.Domain.Workspace
 
-  @spec result(user :: User.t) :: {:ok, {Path.t, String.t}} | :error
-  def result(user) do
-    case get(user) do
+  @spec create() :: {:ok, Uuid.t} | :error
+  def create() do
+    {:ok, Uuid.new()}
+  end
+
+  @spec watch(id :: Uuid.t, process :: pid) :: :unit
+  def watch(id, process) do
+    GenServer.cast(__MODULE__, {:cleanup_after, id, process})
+    :unit
+  end
+
+  @spec result(id :: Uuid.t) :: {:ok, {Path.t, String.t}} | :error
+  def result(id) do
+    case get(id) do
       nil ->
         :error
       current ->
@@ -28,21 +40,21 @@ defmodule Ellie.Adapters.Workspace.Local do
     end
   end
 
-  @spec dependencies(user :: User.t, version :: Version.t) :: {:ok, MapSet.t(Package.t)} | :error
-  def dependencies(user, version) do
-    case open(user, version) do
+  @spec dependencies(id :: Uuid.t, version :: Version.t) :: {:ok, MapSet.t(Package.t)} | :error
+  def dependencies(id, version) do
+    case open(id, version) do
       :ok ->
-        {:ok, get(user).packages}
+        {:ok, get(id).packages}
       :error ->
         :error
     end
   end
 
-  @spec compile(user :: User.t, version :: Version.t, elm_code :: String.t, packages :: MapSet.t(Package.t)) :: {:ok, Error.t | nil} | :error
-  def compile(user, version, elm_code, packages) do
-    case open(user, version) do
+  @spec compile(id :: Uuid.t, version :: Version.t, elm_code :: String.t, packages :: MapSet.t(Package.t)) :: {:ok, Error.t | nil} | :error
+  def compile(id, version, elm_code, packages) do
+    case open(id, version) do
       :ok ->
-        workspace = get(user)
+        workspace = get(id)
         new_elm_hash = Murmur.hash_x64_128(elm_code)
         elm_changed = new_elm_hash != workspace.elm_hash
         packages_changed = not MapSet.equal?(packages, workspace.packages)
@@ -62,7 +74,7 @@ defmodule Ellie.Adapters.Workspace.Local do
         case compile_result do
           {:ok, error} ->
             updated_workspace = %{workspace | elm_hash: new_elm_hash, error: error, packages: packages}
-            put(user, updated_workspace)
+            put(id, updated_workspace)
             {:ok, error}
           :error ->
             :error
@@ -72,33 +84,28 @@ defmodule Ellie.Adapters.Workspace.Local do
     end
   end
 
-  @spec cleanup_after(user :: User.t, process :: pid) :: :unit
-  def cleanup_after(user, pid) do
-    GenServer.cast(__MODULE__, {:cleanup_after, user.id, pid})
-    :unit
-  end
-
   # HELPERS
 
-  defp location_for_user(user) do
-    Path.expand("../../../../.local_tmp/workspaces/#{user.id}", __DIR__)
+  defp location_for_id(id) do
+    Path.expand("../../../../.local_tmp/workspaces/#{Uuid.to_string(id)}", __DIR__)
   end
 
-  defp open(user, version) do
-    current = get(user)
+  defp open(id, version) do
+    current = get(id)
     case current do
-      nil -> open_help(user, version)
+      nil -> open_help(id, version)
       workspace ->
         if workspace.version == version && File.exists?(workspace.location) do
           :ok
         else
-          open_help(user, version)
+          open_help(id, version)
         end
     end
   end
 
-  defp open_help(user, version) do
-    location = location_for_user(user)
+  defp open_help(id, version) do
+    IO.inspect(id)
+    location = location_for_id(id)
     File.rm_rf!(location)
     File.mkdir_p!(location)
     case Platform.setup(location, version) do
@@ -110,19 +117,19 @@ defmodule Ellie.Adapters.Workspace.Local do
           elm_hash: "",
           error: nil
         }
-        put(user, workspace)
+        put(id, workspace)
         :ok
       _ ->
         :error
     end
   end
 
-  defp get(user) do
-    GenServer.call(__MODULE__, {:get, user.id})
+  defp get(id) do
+    GenServer.call(__MODULE__, {:get, id})
   end
 
-  defp put(user, workspace) do
-    GenServer.cast(__MODULE__, {:put, user.id, workspace})
+  defp put(id, workspace) do
+    GenServer.cast(__MODULE__, {:put, id, workspace})
   end
 
   # SERVER
@@ -149,11 +156,11 @@ defmodule Ellie.Adapters.Workspace.Local do
   end
 
   def handle_info({:DOWN, _ref, :process, pid, _reason}, state) do
-    with {:ok, user_id} <- Map.fetch(state.monitors, pid),
-      {:ok, workspace} <- Map.fetch(state.workspaces, user_id)
+    with {:ok, id} <- Map.fetch(state.monitors, pid),
+      {:ok, workspace} <- Map.fetch(state.workspaces, id)
     do
       File.rm_rf!(workspace.location)
-      state = %{workspaces: Map.delete(state.workspaces, user_id), monitors: Map.delete(state.monitors, pid)}
+      state = %{workspaces: Map.delete(state.workspaces, id), monitors: Map.delete(state.monitors, pid)}
       {:noreply, state}
     else
       _ -> {:noreply, state}

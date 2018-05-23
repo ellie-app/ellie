@@ -2,9 +2,9 @@ port module Pages.Editor.Main exposing (main)
 
 import Effect.Program as Program
 import Json.Decode exposing (Value)
-import Pages.Editor.Flags as Flags exposing (Flags)
 import Pages.Editor.Route as Route
 import Pages.Editor.State.App as AppState
+import Pages.Editor.Types.Flags as Flags exposing (Flags)
 import Pages.Editor.View as View
 
 

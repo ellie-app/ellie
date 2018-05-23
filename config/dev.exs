@@ -30,3 +30,6 @@ config :ellie, Ellie.Repo,
   hostname: "database",
   port: 5432,
   pool_size: 10
+
+config :ellie, Ellie.Domain.Api,
+  legacy_revisions_endpoint: "https://s3.us-east-2.amazonaws.com/development-cdn.ellie-app.com/revisions"

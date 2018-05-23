@@ -3,6 +3,14 @@ module Extra.Json.Decode exposing (..)
 import Json.Decode as Decode exposing (Decoder)
 
 
+withDefault : a -> Decoder a -> Decoder a
+withDefault default decoder =
+    Decode.oneOf
+        [ decoder
+        , Decode.succeed default
+        ]
+
+
 either : Decoder x -> Decoder a -> Decoder (Result x a)
 either x a =
     Decode.field "tag" Decode.string

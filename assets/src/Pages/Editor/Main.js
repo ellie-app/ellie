@@ -1,9 +1,11 @@
 export default {
   flags(current) {
     const recovery = localStorage.getItem('Pages.Editor.recovery')
+    const user = localStorage.getItem('Pages.Editor.user')
     return Object.assign({}, current, {
-      token: localStorage.getItem('Pages.Editor.token'),
-      recovery: recovery ? JSON.parse(recovery) : null
+      recovery: recovery ? JSON.parse(recovery) : null,
+      user: user ? JSON.parse(user) : null,
+      latestTerms: 2
     })
   },
   start(app) {
@@ -27,9 +29,9 @@ export default {
           window.open(url, '_blank')
           break
   
-        case 'SaveToken':
-          const [token] = contents
-          localStorage.setItem('Pages.Editor.token', token)
+        case 'UpdateUser':
+          const [user] = contents
+          localStorage.setItem('Pages.Editor.user', JSON.stringify(user))
           break
   
         case 'UpdateRecoveryRevision':

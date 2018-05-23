@@ -1,7 +1,7 @@
-defmodule EllieWeb.Graphql.Types.Name do
+defmodule EllieWeb.Graphql.Types.Elm.Name do
   use Absinthe.Schema.Notation
 
-  scalar :name, name: "Name" do
+  scalar :elm_name, name: "ElmName" do
     serialize &serialize_to_string/1
     parse &cast_from_string/1
   end

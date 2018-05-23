@@ -1,80 +1,31 @@
 defmodule EllieWeb.PageController do
   use EllieWeb, :controller
-  alias Ellie.Domain.Embed
-  alias Ellie.Domain.Workspace
-  alias Ellie.Repo
-  alias Ellie.Types.Revision
+  alias Ellie.Domain.Api
   alias Ellie.Types.ProjectId
 
-  def new_editor(conn, _params) do
-    conn
-    |> render("editor.html")
-  end
+  def new_editor(conn, _params), do: render(conn, "editor.html")
 
-  def existing_editor(conn, _params) do
-    conn
-    |> render("editor.html")
-  end
+  def existing_editor_old(conn, params), do: old_id_scheme_redirect(:existing_editor, :new_editor, conn, params)
+  def existing_editor(conn, _params), do: render(conn, "editor.html")
 
-  def embed(conn, _params) do
-    conn
-    |> render("embed.html")
-  end
+  def embed_old(conn, params), do: old_id_scheme_redirect(:embed, :embed, conn, params)
+  def embed(conn, _params), do: render(conn, "embed.html")
 
-  def terms(conn, params) do
-    conn
-    |> render("terms_v#{Map.get(params, "version")}.html")
-  end
+  def terms(conn, params), do: render(conn, "terms/v#{Map.get(params, "version")}/index.html")
 
-  def result_manager(conn, params) do
-    with token <- Map.get(params, "token"),
-         {:ok, user} <- EllieWeb.Auth.verify(token),
-         {:ok, {path, hash}} <- Workspace.result(user)
+  defp old_id_scheme_redirect(redirection, not_found, conn, %{ "project_id" => project_id_param, "revision_number" => revision_number_param }) do
+    with project_id <- ProjectId.from_string(project_id_param),
+         {revision_number, _} <- Integer.parse(revision_number_param),
+         revision when not is_nil(revision) <- Api.retrieve_revision(project_id, revision_number)
     do
-      hash_string = Integer.to_string(hash, 16)
-      if hash_string in get_req_header(conn, "if-none-match") do
-        conn
-        |> send_resp(304, "")
-        |> halt()
-      else
-        conn
-        |> put_resp_header("ETag", hash_string)
-        |> put_resp_content_type("application/javascript")
-        |> send_file(200, path)
-      end
-    else
-      _ -> send_chunked(conn, 404)
-    end
-  end
-
-  def embed_manager(conn, %{"project_id" => project_id, "revision_number" => revision_number}) do
-    etag = "#{project_id}-#{revision_number}"
-    if etag in get_req_header(conn, "if-none-match") do
       conn
-      |> send_resp(304, "")
+      |> put_status(:moved_permanently)
+      |> redirect(to: page_path(conn, redirection, ProjectId.to_string(revision.id)))
       |> halt()
     else
-      with parsed_project_id <- ProjectId.from_string(project_id),
-           revision when not is_nil(revision) <- Repo.get_by(Revision, project_id: parsed_project_id, revision_number: revision_number),
-           {:ok, path} <- Embed.result(revision)
-      do
-        conn
-        |> delete_resp_header("cache-control")
-        |> put_resp_header("cache-control", "public, max-age=600")
-        |> put_resp_header("ETag", etag)
-        |> put_resp_content_type("application/javascript")
-        |> send_file(200, path)
-        |> halt()
-      else
-        _ -> send_chunked(conn, 404)
-      end
+      _ -> redirect(conn, to: page_path(conn, not_found, []))
     end
   end
 
-  def redirect_sw(conn, _params) do
-    case HTTPoison.get("http://localhost:8080/ServiceWorker.js") do
-      { :ok, response } -> conn |> put_resp_content_type("application/javascript") |> send_resp(response.status_code, response.body)
-      { :error, _error } -> conn |> put_status(:bad_gateway) |> halt()
-    end
-  end
+  defp old_id_scheme_redirect(_redirection, _not_found, conn, _params), do: conn
 end
