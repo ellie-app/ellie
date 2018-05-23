@@ -13,7 +13,8 @@ config :ellie,
 config :ellie, Ellie.Scheduler,
   global: true,
   jobs: [
-    {"*/15 * * * *", {Ellie.Domain.Search, :reload, []}},
+    {"*/15 * * * *", {Ellie.Jobs.ReloadSearch, :run, []}},
+    {"@daily", {Ellie.Jobs.CleanupLogs, :run, []}}
   ]
 
 config :phoenix, :template_engines,
@@ -38,8 +39,9 @@ config :absinthe,
 config :porcelain, :goon_driver_path, Path.expand("../priv/bin/goon", __DIR__)
 config :porcelain, driver: Porcelain.Driver.Goon
 
-config :ellie, Elm,
-  package_site: "https://alpha.elm-lang.org"
+config :sentry,
+  included_environments: [:prod],
+  environment_name: Mix.env
 
 # Import environment specific config. This must remain at the bottom
 # of this file so it overrides the configuration defined above.

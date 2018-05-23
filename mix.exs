@@ -22,7 +22,7 @@ defmodule Ellie.Mixfile do
   def application do
     [
       mod: {Ellie, []},
-      extra_applications: [:logger, :runtime_tools, :porcelain]
+      extra_applications: [:logger, :runtime_tools, :porcelain, :sentry]
     ]
   end
 
@@ -38,12 +38,10 @@ defmodule Ellie.Mixfile do
       {:absinthe, "~> 1.4.0"},
       {:absinthe_plug, "~> 1.4.0"},
       {:absinthe_phoenix, "~> 1.4.0"},
-      {:briefly, "~> 0.3"},
       {:combine, "~> 0.10"},
       {:cowboy, "~> 1.0"},
       {:dataloader, "~> 1.0.0"},
       {:httpoison, "~> 1.1"},
-      {:msgpax, "~> 2.0"},
       {:murmur, "~> 1.0"},
       {:phoenix, "~> 1.3.2"},
       {:phoenix_pubsub, "~> 1.0"},
@@ -57,10 +55,8 @@ defmodule Ellie.Mixfile do
       {:porcelain, "~> 2.0.3"},
       {:quantum, "~> 2.2"},
       {:timex, "~> 3.0"},
-      {:ex_aws, "~> 2.0"},
-      {:ex_aws_s3, "~> 2.0"},
-      {:hackney, "~> 1.9"},
       {:sweet_xml, "~> 0.6"},
+      {:sentry, "~> 6.2.1"}
     ]
   end
 

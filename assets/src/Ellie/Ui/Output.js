@@ -69,8 +69,8 @@ export default {
         })
         return debuggerWindowProxy
       }
-      var buttonSelector = '#elm-debugger-overlay div[style*="cursor: pointer;"]'
-      var controlsSelector = 'div[style*="background-color: rgb(61, 61, 61);"]'
+      var buttonSelector = '#elm-debugger-overlay div[style*="cursor: pointer;"], .elm-mini-controls-button'
+      var controlsSelector = 'div[style*="background-color: rgb(61, 61, 61);"], .elm-mini-controls'
       var styles = document.createElement('style')
       styles.textContent = '#elm-debugger-overlay > ' + controlsSelector + ' { display: none !important; }'
       document.head.appendChild(styles)

@@ -355,8 +355,7 @@ urlTo moduleData valueName =
 
 moduleUrl : Module -> String
 moduleUrl moduleData =
-    Constants.packageSite
-        ++ "/"
+    "http://package.elm-lang.org/packages/"
         ++ moduleData.package.name.user
         ++ "/"
         ++ moduleData.package.name.project

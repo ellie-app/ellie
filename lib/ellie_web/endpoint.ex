@@ -1,6 +1,7 @@
 defmodule EllieWeb.Endpoint do
   use Phoenix.Endpoint, otp_app: :ellie
   use Absinthe.Phoenix.Endpoint
+  use Sentry.Phoenix.Endpoint
 
   socket "/api/sockets", EllieWeb.Graphql.Socket
 

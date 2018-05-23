@@ -150,7 +150,7 @@ defmodule EllieWeb.Graphql.Schema do
                 Task.start fn ->
                   case Task.await(task_fn.(), :infinity) do
                     {:ok, error} -> Subscription.publish(EllieWeb.Endpoint, %{error: error}, embed: ProjectId.to_string(id))
-                    {:error, message} -> Subscription.publish(EllieWeb.Endpoint, %{message: message}, embed: ProjectId.to_string(id))
+                    :error -> Subscription.publish(EllieWeb.Endpoint, %{message: "Could not compile"}, embed: ProjectId.to_string(id))
                   end
                 end
                 {:ok, nil}

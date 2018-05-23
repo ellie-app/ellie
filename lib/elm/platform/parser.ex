@@ -76,6 +76,98 @@ defmodule Elm.Platform.Parser do
   end
 
   defp docs_decoder() do
+    Decode.one_of([
+      docs_decoder_18(),
+      docs_decoder_19()
+    ])
+  end
+
+  defp docs_decoder_18() do
+    cased =
+      Decode.succeed(Function.curry(&{&1, &2}))
+      |> Decode.and_map(Decode.index(0, Decode.string))
+      |> Decode.and_map(Decode.index(1, Decode.list(Decode.string)))
+
+    associativity =
+      Decode.and_then(Decode.string, fn
+        "left" -> Decode.succeed :left
+        "non" -> Decode.succeed :none
+        "right" -> Decode.succeed :right
+        _ -> Decode.fail "expecting one of the following values: left, non, right"
+      end)
+
+    fix =
+      Decode.one_of([
+        Decode.succeed(Function.curry(&{&1, &2}))
+        |> Decode.and_map(Decode.field("associativity", associativity))
+        |> Decode.and_map(Decode.field("precedence", Decode.integer)),
+        Decode.succeed(nil)
+      ])
+
+    value =
+      Decode.succeed(Function.curry(&%{name: &1, comment: &2, type: &3, fix: &4}))
+      |> Decode.and_map(Decode.field("name", Decode.string))
+      |> Decode.and_map(Decode.field("comment", Decode.string))
+      |> Decode.and_map(Decode.field("type", Decode.string))
+      |> Decode.and_map(fix)
+
+    union =
+      Decode.succeed(Function.curry(&%{name: &1, comment: &2, args: &3, cases: &4}))
+      |> Decode.and_map(Decode.field("name", Decode.string))
+      |> Decode.and_map(Decode.field("comment", Decode.string))
+      |> Decode.and_map(Decode.field("args", Decode.list(Decode.string)))
+      |> Decode.and_map(Decode.field("cases", Decode.list(cased)))
+
+    aliasd =
+      Decode.succeed(Function.curry(&%{name: &1, comment: &2, args: &3, type: &4}))
+      |> Decode.and_map(Decode.field("name", Decode.string))
+      |> Decode.and_map(Decode.field("comment", Decode.string))
+      |> Decode.and_map(Decode.field("args", Decode.list(Decode.string)))
+      |> Decode.and_map(Decode.field("type", Decode.string))
+
+    old_docs =
+      Decode.succeed(Function.curry(&%{name: &1, comment: &2, aliases: &3, types: &4, values: &5}))
+      |> Decode.and_map(Decode.field("name", Decode.string))
+      |> Decode.and_map(Decode.field("comment", Decode.string))
+      |> Decode.and_map(Decode.field("aliases", Decode.list(aliasd)))
+      |> Decode.and_map(Decode.field("types", Decode.list(union)))
+      |> Decode.and_map(Decode.field("values", Decode.list(value)))
+
+    Decode.map(old_docs, &convert_old_docs/1)
+  end
+
+  defp convert_old_docs(old_docs) do
+    %Module{
+      name: old_docs.name,
+      comment: old_docs.comment,
+      unions: Enum.map(old_docs.types, fn t ->
+        %Union{
+          name: t.name,
+          comment: t.comment,
+          args: t.args,
+          tags: t.cases
+        }
+      end),
+      aliases: Enum.map(old_docs.aliases, fn a ->
+        %Alias{
+          name: a.name,
+          comment: a.comment,
+          args: a.args,
+          type: a.type
+        }
+      end),
+      values:
+        old_docs.values
+        |> Enum.filter(fn v -> is_nil(v.fix) end)
+        |> Enum.map(fn v -> %Value{name: v.name, comment: v.comment, type: v.type} end),
+      binops:
+        old_docs.values
+        |> Enum.filter(fn v -> not is_nil(v.fix) end)
+        |> Enum.map(fn v -> %Binop{name: v.name, comment: v.name, type: v.type, associativity: elem(v.fix, 0), precedence: elem(v.fix, 1)} end)
+    }
+  end
+
+  defp docs_decoder_19() do
     associativity =
       Decode.and_then(Decode.string, fn
         "left" -> Decode.succeed :left

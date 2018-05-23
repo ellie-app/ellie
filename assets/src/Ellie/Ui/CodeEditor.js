@@ -53,8 +53,8 @@ const load = () => {
     import(/* webpackChunkName: "codemirror-base" */ 'codemirror/mode/htmlmixed/htmlmixed'),
     import(/* webpackChunkName: "codemirror-base" */ 'codemirror/addon/lint/lint'),
     import(/* webpackChunkName: "codemirror-base" */ 'codemirror/addon/selection/active-line'),
-    import(/* webpackChunkName: "codemirror-base" */ 'codemirror/addon/hint/show-hint'),
-    import(/* webpackChunkName: "codemirror-base", webpackMode: "eager" */ 'codemirror/addon/hint/show-hint.css'),
+    // import(/* webpackChunkName: "codemirror-base" */ 'codemirror/addon/hint/show-hint'),
+    // import(/* webpackChunkName: "codemirror-base", webpackMode: "eager" */ 'codemirror/addon/hint/show-hint.css'),
     import(/* webpackChunkName: "codemirror-base", webpackMode: "eager" */ 'codemirror/addon/lint/lint.css'),
     import(/* webpackChunkName: "codemirror-base", webpackMode: "eager" */ 'codemirror/theme/material.css'),
     import(/* webpackChunkName: "codemirror-base", webpackMode: "eager" */ './CodeEditor.css')
@@ -218,8 +218,8 @@ const start = (app) => {
       set autocomplete(value) {
         if (value === this._completions) return
         this._completions = value
-        if (this._instance === null) return
-        this._instance.showHint({ completeSingle: false })
+        // if (this._instance === null) return
+        // this._instance.showHint({ completeSingle: false })
       }
 
       moveCursor(line, column) {
@@ -245,9 +245,6 @@ const start = (app) => {
           mode: this._mode,
           value: this._value,
           dragDrop: false,
-          hintOptions: {
-            hint: () => this._completions
-          },
           extraKeys: {
             'Ctrl-Space': 'autocomplete',
             Tab(cm) {

@@ -356,7 +356,7 @@ update msg ({ user } as model) =
                     model.htmlCode
                     { sourceDirs = []
                     , deps = model.packages
-                    , elm = { major = 0, minor = 19, patch = 0 }
+                    , elm = Compiler.version
                     }
                 )
 

@@ -12,6 +12,13 @@ defmodule Elm.Platform do
   @callback docs(Package.t) :: {:ok, list(Docs.Module.t)} | :error
   @callback search() :: {:ok, list(Searchable.t)} | :error
 
+  @latest_version Version.create(0, 18, 0)
+
+  @spec latest_version() :: Version.t
+  def latest_version() do
+    @latest_version
+  end
+
   @spec setup(root :: Path.t, version :: Version.t) :: {:ok, Project.t} | :error
   def setup(root, version) do
     adapter().setup(root, version)

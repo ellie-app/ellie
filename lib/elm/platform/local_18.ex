@@ -160,6 +160,7 @@ defmodule Elm.Platform.Local18 do
   end
 
   def parse_error(entry, input) do
+    IO.inspect(input)
     errors =
       input
       |> String.split("\n")
@@ -172,10 +173,10 @@ defmodule Elm.Platform.Local18 do
               "error" ->
                 file = Map.get(error, "file", "src/Main.elm")
                 top_key =
-                  if Map.has_key?(error, "subregion") do
-                    "subregion"
-                  else
+                  if is_nil(Map.get(error, "subregion")) do
                     "region"
+                  else
+                    "subregion"
                   end
                 region =
                   %Error.Region{
@@ -224,7 +225,7 @@ defmodule Elm.Platform.Local18 do
 
       {:general_problem, gp}
     else
-      {:module_problems, errors}
+      IO.inspect({:module_problems, errors})
     end
   end
 

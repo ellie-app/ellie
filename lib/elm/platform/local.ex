@@ -48,7 +48,7 @@ defmodule Elm.Platform.Local do
   end
 
   def search() do
-    url = package_site() <> "/search.json"
+    url = "http://package.elm-lang.org/all-packages"
     with {:ok, %HTTPoison.Response{status_code: 200, body: body}} <- HTTPoison.get(url),
          {:ok, searchables} <- Parser.searchables_json(body)
     do
@@ -59,23 +59,12 @@ defmodule Elm.Platform.Local do
   end
 
   defp docs_url(package) do
-    package_site() <>
-      "/packages/" <>
+    "http://package.elm-lang.org/packages/" <>
       package.name.user <>
       "/" <>
       package.name.project <>
       "/" <>
       Version.to_string(package.version) <>
       "/docs.json"
-  end
-
-  defp package_site() do
-    default = "http://package.elm-lang.org"
-    config = Application.get_env(:ellie, Elm, [])
-    case Keyword.get(config, :package_site, default) do
-      {:system, variable} when is_binary(variable) -> Map.get(System.get_env(), variable, default)
-      value when is_binary(value) -> value
-      _ -> default
-    end
   end
 end

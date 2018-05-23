@@ -4,6 +4,8 @@ defmodule Ellie do
   def start(_type, _args) do
     import Supervisor.Spec
 
+    Application.put_env(:sentry, :dsn, System.get_env("SENTRY_DSN"))
+
     if Application.get_env(:ellie, :env) == :prod do
       merge_config :ellie, EllieWeb.Endpoint,
         secret_key_base: Map.fetch!(System.get_env(), "SECRET_KEY_BASE"),
@@ -24,6 +26,7 @@ defmodule Ellie do
       worker(Task, [&Ellie.Domain.Search.reload/0], restart: :temporary)
     ]
 
+    :ok = :error_logger.add_report_handler(Sentry.Logger)
 
     opts = [strategy: :one_for_one, name: Ellie.Supervisor]
     Supervisor.start_link(children, opts)

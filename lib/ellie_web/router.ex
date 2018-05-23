@@ -38,6 +38,8 @@ defmodule EllieWeb.Router do
 
   scope "/" do
     pipe_through :browser
+    get "/new", EllieWeb.PageController, :new_editor
+
     get "/a/terms/:version", EllieWeb.PageController, :terms
 
     get "/embed/:project_id/:revision_number", EllieWeb.PageController, :embed_old

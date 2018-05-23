@@ -41,21 +41,14 @@ defmodule Ellie.Adapters.Embed.Local do
     File.rm_rf!(root)
     File.mkdir_p!(root)
 
-    result =
-      Platform.compile(root, [
-        source: revision.elm_code,
-        output: "embed.js",
-        project: %Project{
-          dependencies: revision.packages,
-          elm_version: revision.elm_version
-        }
-      ])
-
-    case result do
-      {:ok, error} ->
-        put_entry(revision, {:finished, error})
-        {:ok, error}
-      :error ->
+    with {:ok, _p} <- Platform.setup(root, revision.elm_version),
+         project <- %Project{dependencies: revision.packages, elm_version: revision.elm_version},
+         {:ok, error} <- Platform.compile(root, [source: revision.elm_code, output: "embed.js", project: project])
+    do
+      put_entry(revision, {:finished, error})
+      {:ok, error}
+    else
+      _ ->
         put_entry(revision, :failed)
         :error
     end

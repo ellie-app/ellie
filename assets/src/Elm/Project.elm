@@ -42,16 +42,28 @@ type alias Project =
 
 encoder : Project -> Value
 encoder project =
-    Encode.object
-        [ ( "type", Encode.string "browser" )
-        , ( "source-directories", Encode.list <| List.map Encode.string project.sourceDirs )
-        , ( "elm-version", Version.encoder project.elm )
-        , ( "dependencies", encodeDeps project.deps )
-        , ( "test-dependencies", Encode.object [] )
-        , ( "do-not-edit-this-by-hand"
-          , Encode.object [ ( "transitive-dependencies", Encode.object [] ) ]
-          )
-        ]
+    if project.elm == { major = 0, minor = 18, patch = 0 } then
+        Encode.object
+            [ ( "version", Encode.string "1.0.0" )
+            , ( "summary", Encode.string "helpful summary of your project, less than 80 characers" )
+            , ( "repository", Encode.string "https://github.com/user/project.git" )
+            , ( "license", Encode.string "MIT" )
+            , ( "source-directories", Encode.list <| List.map Encode.string project.sourceDirs )
+            , ( "exposed-modules", Encode.list [] )
+            , ( "dependencies", encodeDeps project.deps )
+            , ( "elm-version", Encode.string "0.18.0 <= v < 0.19.0" )
+            ]
+    else
+        Encode.object
+            [ ( "type", Encode.string "application" )
+            , ( "source-directories", Encode.list <| List.map Encode.string project.sourceDirs )
+            , ( "elm-version", Version.encoder project.elm )
+            , ( "dependencies", encodeDeps project.deps )
+            , ( "test-dependencies", Encode.object [] )
+            , ( "do-not-edit-this-by-hand"
+              , Encode.object [ ( "transitive-dependencies", Encode.object [] ) ]
+              )
+            ]
 
 
 encodeDeps : List Package -> Value

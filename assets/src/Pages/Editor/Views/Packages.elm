@@ -131,8 +131,7 @@ viewInstalledPackage onUninstall ({ name, version } as package) =
                 Button.link
                     { external = True
                     , href =
-                        Constants.packageSite
-                            ++ "/packages/"
+                        "http://package.elm-lang.org/packages/"
                             ++ name.user
                             ++ "/"
                             ++ name.project

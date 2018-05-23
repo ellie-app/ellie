@@ -10,7 +10,7 @@ type alias Example =
 
 default : Example
 default =
-    counter
+    helloWorld
 
 
 helloWorld : Example
@@ -63,7 +63,6 @@ counter =
 """
     , elm = """module Main exposing (main)
 
-import Browser
 import Html exposing (Html, text, button, div)
 import Html.Events exposing (onClick)
 
@@ -96,15 +95,15 @@ view : Model -> Html Msg
 view model =
     div []
         [ button [ onClick Increment ] [ text "+1" ]
-        , div [] [ text <| String.fromInt model.count ]
+        , div [] [ text <| toString model.count ]
         , button [ onClick Decrement ] [ text "-1" ]
         ]
 
 
-main : Program () Model Msg
+main : Program Never Model Msg
 main =
-    Browser.sandbox
-        { init = initialModel
+    Html.beginnerProgram
+        { model = initialModel
         , view = view
         , update = update
         }

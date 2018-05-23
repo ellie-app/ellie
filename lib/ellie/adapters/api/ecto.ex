@@ -3,13 +3,12 @@ defmodule Ellie.Adapters.Api.Ecto do
   alias Elm.Version
   alias Elm.Package
   alias Elm.Name
+  alias Elm.Platform
   alias Ellie.Helpers.EnumHelpers
   alias Ellie.Types.Revision
   alias Ellie.Types.Redirect
   alias Ellie.Types.ProjectId
   alias Data.Functor
-  alias ExAws.S3
-
 
   @behaviour Ellie.Domain.Api
 
@@ -17,7 +16,7 @@ defmodule Ellie.Adapters.Api.Ecto do
   def create_revision(data) do
     result =
       data
-      |> Keyword.put(:elm_version, Version.create(0, 19, 0))
+      |> Keyword.put(:elm_version, Platform.latest_version)
       |> Keyword.to_list()
       |> (&Kernel.struct(Revision, &1)).()
       |> Repo.insert()
