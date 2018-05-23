@@ -133,7 +133,9 @@ defmodule Elm.Platform.Parser do
       |> Decode.and_map(Decode.field("types", Decode.list(union)))
       |> Decode.and_map(Decode.field("values", Decode.list(value)))
 
-    Decode.map(old_docs, &convert_old_docs/1)
+    old_docs
+    |> Decode.map(&convert_old_docs/1)
+    |> Decode.list()
   end
 
   defp convert_old_docs(old_docs) do

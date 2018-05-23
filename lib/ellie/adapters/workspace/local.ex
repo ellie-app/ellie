@@ -104,7 +104,6 @@ defmodule Ellie.Adapters.Workspace.Local do
   end
 
   defp open_help(id, version) do
-    IO.inspect(id)
     location = location_for_id(id)
     File.rm_rf!(location)
     File.mkdir_p!(location)

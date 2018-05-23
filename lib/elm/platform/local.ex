@@ -25,6 +25,12 @@ defmodule Elm.Platform.Local do
 
   @dets_path String.to_charlist(Path.join([:code.priv_dir(:ellie), "docs_table"]))
 
+  defp render_json_error({:field, field, e}), do: "At field #{field}: #{render_json_error(e)}"
+  defp render_json_error({:index, index, e}), do: "At index #{index}: #{render_json_error(e)}"
+  defp render_json_error({:one_of, es}), do: es |> Enum.map(&render_json_error/1) |> Enum.join(", ")
+  defp render_json_error({:failure, message, _value}), do: message
+  defp render_json_error(_), do: "IDK"
+
   def docs(package) do
     {:ok, table} = :dets.open_file(:docs_table, file: @dets_path)
     case :dets.lookup(table, package) do
@@ -32,7 +38,6 @@ defmodule Elm.Platform.Local do
         :dets.close(table)
         {:ok, modules}
       _ ->
-        IO.inspect(docs_url(package))
         with {:ok, %HTTPoison.Response{status_code: 200, body: body}} <- HTTPoison.get(docs_url(package)),
              {:ok, modules} <- Parser.docs_json(body)
         do
@@ -40,6 +45,9 @@ defmodule Elm.Platform.Local do
           :dets.close(table)
           {:ok, modules}
         else
+          {:error, json_error} ->
+            IO.inspect(render_json_error(json_error))
+            :error
           error ->
             IO.inspect(error)
             :error
@@ -65,6 +73,6 @@ defmodule Elm.Platform.Local do
       package.name.project <>
       "/" <>
       Version.to_string(package.version) <>
-      "/docs.json"
+      "/documentation.json"
   end
 end

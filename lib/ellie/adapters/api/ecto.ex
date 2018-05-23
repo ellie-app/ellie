@@ -105,9 +105,8 @@ defmodule Ellie.Adapters.Api.Ecto do
           nil
       end
     else
-      error ->
+      _error ->
         # TODO LOG ERROR
-        IO.inspect(error)
         nil
     end
   end

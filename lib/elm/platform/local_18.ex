@@ -160,7 +160,6 @@ defmodule Elm.Platform.Local18 do
   end
 
   def parse_error(entry, input) do
-    IO.inspect(input)
     errors =
       input
       |> String.split("\n")
@@ -225,7 +224,7 @@ defmodule Elm.Platform.Local18 do
 
       {:general_problem, gp}
     else
-      IO.inspect({:module_problems, errors})
+      {:module_problems, errors}
     end
   end
 
