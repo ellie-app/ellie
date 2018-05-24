@@ -18,6 +18,7 @@ type Stage msg
     | Attaching
     | AcceptingTerms { termsVersion : Int, onAccept : msg }
     | Loading
+    | Failure
     | Opening
 
 
@@ -38,6 +39,9 @@ view loadingStage =
             AcceptingTerms state ->
                 terms state
 
+            Failure ->
+                failure
+
             _ ->
                 [ Html.styled Html.div
                     [ width (pct 80)
@@ -47,6 +51,28 @@ view loadingStage =
                     []
                     [ Logo.animated ]
                 ]
+
+
+failure : List (Html msg)
+failure =
+    [ Html.styled Html.div
+        [ width (pct 80)
+        , maxWidth (px 500)
+        , position relative
+        , color Theme.secondaryForeground
+        , marginBottom (px 24)
+        ]
+        []
+        [ Logo.flat ]
+    , Html.styled Html.div
+        [ width (pct 80)
+        , maxWidth (px 500)
+        , color Theme.primaryForeground
+        , fontSize (px 24)
+        ]
+        []
+        [ Html.text "Something went wrong while setting up Ellie! Things may work if you reload and try again, but in case they don't this issue has been reported to the maintainers automatically." ]
+    ]
 
 
 terms : { termsVersion : Int, onAccept : msg } -> List (Html msg)

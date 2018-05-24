@@ -33,6 +33,9 @@ view model =
                 SetupState.Attaching _ ->
                     SetupView.view SetupView.Attaching
 
+                SetupState.Failure _ ->
+                    SetupView.view SetupView.Failure
+
                 _ ->
                     SetupView.view SetupView.Loading
 

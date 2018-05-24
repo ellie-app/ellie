@@ -25,7 +25,7 @@ defmodule EllieWeb.Graphql.Schema do
   import_types EllieWeb.Graphql.Types.EmbedUpdate
 
   def plugins do
-    [EllieWeb.Graphql.Plugins.Sentry] ++ Absinthe.Plugin.defaults()
+    Absinthe.Plugin.defaults() ++ [EllieWeb.Graphql.Plugins.Sentry]
   end
 
   query do

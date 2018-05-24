@@ -16,6 +16,10 @@ defmodule EllieWeb.Router do
     plug EllieWeb.Graphql.Context
   end
 
+  pipeline :oembed do
+    plug :accepts, ["json"]
+  end
+
   if Application.get_env(:ellie, :env) == :dev do
     scope "/assets" do
       forward "/", PlugProxy,
@@ -36,8 +40,14 @@ defmodule EllieWeb.Router do
     get "/embed/:id", EllieWeb.ResultController, :embed
   end
 
+  scope "/oembed" do
+    pipe_through :oembed
+    get "/", EllieWeb.OembedController, :oembed
+  end
+
   scope "/" do
     pipe_through :browser
+
     get "/new", EllieWeb.PageController, :new_editor
 
     get "/a/terms/:version", EllieWeb.PageController, :terms
