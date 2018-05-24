@@ -54,7 +54,7 @@ defmodule Elm.Platform.Local do
   end
 
   def search() do
-    url = "http://package.elm-lang.org/all-packages"
+    url = "https://alpha.elm-lang.org/search.json"
     with {:ok, %HTTPoison.Response{status_code: 200, body: body}} <- HTTPoison.get(url),
          {:ok, searchables} <- Parser.searchables_json(body)
     do
@@ -65,12 +65,12 @@ defmodule Elm.Platform.Local do
   end
 
   defp docs_url(package) do
-    "http://package.elm-lang.org/packages/" <>
+    "https://alpha.elm-lang.org/packages/" <>
       package.name.user <>
       "/" <>
       package.name.project <>
       "/" <>
       Version.to_string(package.version) <>
-      "/documentation.json"
+      "/docs.json"
   end
 end

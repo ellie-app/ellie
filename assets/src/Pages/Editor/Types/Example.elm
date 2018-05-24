@@ -63,6 +63,7 @@ counter =
 """
     , elm = """module Main exposing (main)
 
+import Browser
 import Html exposing (Html, button, div, text)
 import Html.Events exposing (onClick)
 
@@ -95,15 +96,15 @@ view : Model -> Html Msg
 view model =
     div []
         [ button [ onClick Increment ] [ text "+1" ]
-        , div [] [ text <| toString model.count ]
+        , div [] [ text <| String.fromInt model.count ]
         , button [ onClick Decrement ] [ text "-1" ]
         ]
 
 
-main : Program Never Model Msg
+main : Program () Model Msg
 main =
-    Html.beginnerProgram
-        { model = initialModel
+    Browser.sandbox
+        { init = initialModel
         , view = view
         , update = update
         }

@@ -82,4 +82,4 @@ RUN cd /app/assets \
 # Run the server
 RUN echo "Running Ellie on ${SERVER_HOST}"
 EXPOSE 4000
-CMD mix do ecto.create, ecto.migrate, phx.server
+CMD mix do ecto.migrate, phx.server
