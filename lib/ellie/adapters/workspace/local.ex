@@ -178,7 +178,10 @@ defmodule Ellie.Adapters.Workspace.Local do
     with {:ok, id} <- Map.fetch(state.monitors, pid),
       {:ok, workspace} <- Map.fetch(state.workspaces, id)
     do
-      File.rm_rf!(workspace.location)
+      # no ! because this can fail if a user disconnects as an operation is progress
+      # but it's okay because we have a job to sweep through and catch orphaned directories
+      File.rm_rf(workspace.location)
+
       state = %{workspaces: Map.delete(state.workspaces, id), monitors: Map.delete(state.monitors, pid)}
       {:noreply, state}
     else
