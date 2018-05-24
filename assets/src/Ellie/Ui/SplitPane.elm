@@ -1,6 +1,5 @@
 module Ellie.Ui.SplitPane exposing (..)
 
-import Colors
 import Css exposing (..)
 import Css.Foreign
 import Ellie.Ui.Theme as Theme

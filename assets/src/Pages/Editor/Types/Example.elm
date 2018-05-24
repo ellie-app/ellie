@@ -15,7 +15,7 @@ default =
 
 helloWorld : Example
 helloWorld =
-    { label = "Hello World (Static Page)"
+    { label = "Hello World"
     , elm = """module Main exposing (main)
 
 import Html exposing (Html)
@@ -45,7 +45,7 @@ main =
 
 counter : Example
 counter =
-    { label = "Counter (Sandbox)"
+    { label = "Counter"
     , html = """<html>
 <head>
   <style>
@@ -63,7 +63,7 @@ counter =
 """
     , elm = """module Main exposing (main)
 
-import Html exposing (Html, text, button, div)
+import Html exposing (Html, button, div, text)
 import Html.Events exposing (onClick)
 
 

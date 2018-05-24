@@ -32,4 +32,4 @@ config :ellie, Ellie.Repo,
   pool_size: 10
 
 config :ellie, Ellie.Domain.Api,
-  legacy_revisions_endpoint: "https://s3.us-east-2.amazonaws.com/development-cdn.ellie-app.com/revisions"
+  legacy_revisions_endpoint: "https://d10mybsezhhof0.cloudfront.net/revisions"

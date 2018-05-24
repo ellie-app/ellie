@@ -1,6 +1,5 @@
 module Ellie.Ui.CopyText exposing (view)
 
-import Colors
 import Css exposing (..)
 import Ellie.Ui.Icon as Icon
 import Ellie.Ui.Theme as Theme
