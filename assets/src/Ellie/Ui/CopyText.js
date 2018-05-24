@@ -47,7 +47,7 @@ export default {
           selection.removeAllRanges()
           this._note.textContent = 'Copied to Clipboard'
         } else {
-          this._note.textContent = '⌘C to Copy'
+          this._note.textContent = 'Ctrl/Cmd + C to Copy'
         }
         clearTimeout(this._timeout)
         this._timeout = setTimeout(() => {

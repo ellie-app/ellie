@@ -26,13 +26,13 @@ view current =
         ]
         [ Html.div []
             [ viewLogo
-            , viewIconButton Icon.Package "Package Manager (⇧⌘X)" Actions.packages current
-            , viewIconButton Icon.Settings "Settings (⌘,)" Actions.Settings current
+            , viewIconButton Icon.Package "Package Manager" Actions.packages current
+            , viewIconButton Icon.Settings "Settings" Actions.Settings current
             ]
         , Html.div []
             [ viewIconLink Icon.Slack "https://elmlang.slack.com/#ellie"
-            , viewIconLink Icon.GithubProjects "https://github.com/lukewestby/ellie/projects"
-            , viewIconLink Icon.GitHub "https://github.com/lukewestby/ellie"
+            , viewIconLink Icon.GithubProjects "https://github.com/ellie-app/ellie/projects"
+            , viewIconLink Icon.GitHub "https://github.com/ellie-app/ellie"
             ]
         ]
 
