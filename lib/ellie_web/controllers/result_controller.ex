@@ -13,7 +13,7 @@ defmodule EllieWeb.ResultController do
          {:ok, workspace} <- Uuid.parse(workspace_string),
          {:ok, {path, hash}} <- Workspace.result(workspace)
     do
-      etag = "w/" <> Integer.to_string(hash, 16)
+      etag = "W/" <> Integer.to_string(hash, 16)
       if etag in get_req_header(conn, "if-none-match") do
         conn
         |> send_resp(304, "")
