@@ -19,7 +19,7 @@ defmodule Ellie.Jobs.CleanupLogs do
   end
 
   defp get_old_issue_ids() do
-    url = "https://sentry.io/api/0/projects/ellie/ellie/issues/?query=age:%2B26d&statsPeriod="
+    url = "https://sentry.io/api/0/projects/ellie/ellie/issues/?query=age:%2B6d&statsPeriod="
     with {:ok, %HTTPoison.Response{status_code: 200, body: body}} <- HTTPoison.get(url, headers()),
          {:ok, data} <- Poison.decode(body)
     do

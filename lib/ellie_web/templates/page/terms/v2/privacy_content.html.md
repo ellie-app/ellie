@@ -27,8 +27,7 @@ that purpose.
 
 Ellie also collects information about your browser and the particular actions you were attempting whenever an error occurs on our Service ("Error Data").
 This Log Data may include information such as your computer's Internet Protocol ("IP") address, browser type, browser version, the pages of our Service that you visit,
-the time and date of your visit, and other statistics. Error Data is securely stored by https://sentry.io/ and is manually
-removed when it is 27 days old.
+the time and date of your visit, and other statistics. Error Data is securely stored by https://sentry.io/ and is manually removed when it is 7 days old.
 
 ### Cookies
 

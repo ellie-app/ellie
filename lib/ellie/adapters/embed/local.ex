@@ -9,9 +9,10 @@ defmodule Ellie.Adapters.Embed.Local do
 
   def result(%Revision{} = revision) do
     case get_entry(revision) do
-      {:finished, nil} ->
+      {:finished, nil, _last_access} ->
         output = Path.join([@base_path, ProjectId.to_string(revision.id), "embed.js"])
         if File.exists?(output) do
+          put_entry(revision, {:finished, nil, :os.system_time(:second)})
           {:ok, output}
         else
           :error
@@ -26,7 +27,8 @@ defmodule Ellie.Adapters.Embed.Local do
       :working ->
         :working
 
-      {:finished, error} ->
+      {:finished, error, _last_access} ->
+        put_entry(revision, {:finished, nil, :os.system_time(:second)})
         {:finished, error}
 
       _ ->
@@ -34,6 +36,29 @@ defmodule Ellie.Adapters.Embed.Local do
         task = fn -> Task.async fn -> do_compile(revision) end end
         {:started, task}
     end
+  end
+
+  def cleanup(minutes_old) do
+    @base_path
+    |> File.ls!()
+    |> Enum.map(&ProjectId.from_string/1)
+    |> Enum.each(fn id ->
+      root = Path.join(@base_path, ProjectId.to_string(id))
+      case get_entry_by_id(id) do
+        nil ->
+          File.rm_rf!(root)
+          :ok
+        {:finished, _error, last_accessed} ->
+          if :os.system_time(:second) - last_accessed >= minutes_old * 60 do
+            File.rm_rf!(root)
+            delete_entry_by_id(id)
+          end
+          :ok
+        _ ->
+          :ok
+      end
+    end)
+    :unit
   end
 
   defp do_compile(revision) do
@@ -45,7 +70,7 @@ defmodule Ellie.Adapters.Embed.Local do
          project <- %Project{dependencies: revision.packages, elm_version: revision.elm_version},
          {:ok, error} <- Platform.compile(root, [source: revision.elm_code, output: "embed.js", project: project])
     do
-      put_entry(revision, {:finished, error})
+      put_entry(revision, {:finished, error, :os.system_time(:second)})
       {:ok, error}
     else
       _ ->
@@ -62,7 +87,15 @@ defmodule Ellie.Adapters.Embed.Local do
     Agent.get __MODULE__, fn state -> Map.get(state, revision.id) end
   end
 
+  defp get_entry_by_id(id) do
+    Agent.get __MODULE__, fn state -> Map.get(state, id) end
+  end
+
   defp put_entry(revision, status) do
     Agent.update __MODULE__, fn state -> Map.put(state, revision.id, status) end
+  end
+
+  defp delete_entry_by_id(id) do
+    Agent.update __MODULE__, fn state -> Map.delete(state, id) end
   end
 end

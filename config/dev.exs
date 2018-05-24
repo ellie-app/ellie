@@ -30,6 +30,3 @@ config :ellie, Ellie.Repo,
   hostname: "database",
   port: 5432,
   pool_size: 10
-
-config :ellie, Ellie.Domain.Api,
-  legacy_revisions_endpoint: "https://d10mybsezhhof0.cloudfront.net/revisions"

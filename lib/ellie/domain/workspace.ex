@@ -7,6 +7,7 @@ defmodule Ellie.Domain.Workspace do
   @callback dependencies(id :: Uuid.t, version :: Version.t) :: {:ok, MapSet.t(Package.t)} | :error
   @callback compile(id :: Uuid.t, version :: Version.t, elm_code :: String.t, packages :: MapSet.t(Package.t)) :: {:ok, Error.t | nil} | :error
   @callback result(id :: Uuid.t) :: {:ok, {Path.t, String.t}} | :error
+  @callback cleanup() :: :unit
 
   @spec create() :: {:ok, Uuid.t} | :error
   def create() do
@@ -16,6 +17,11 @@ defmodule Ellie.Domain.Workspace do
   @spec watch(id :: Uuid.t, process :: pid) :: :unit
   def watch(id, process) do
     adapter().watch(id, process)
+  end
+
+  @spec cleanup() :: :unit
+  def cleanup() do
+    adapter().cleanup()
   end
 
   @spec dependencies(id :: Uuid.t, version :: Version.t) :: {:ok, MapSet.t(Package.t)} | :error

@@ -48,6 +48,7 @@ export default {
         iframe.style.top = 0
         iframe.style.left = 0
         iframe.style.border = 0
+        iframe.style.backgroundColor = '#fff';
         iframe.src = 'javascript:void(0);'
         document.body.appendChild(iframe)
         var onClose = function () {}

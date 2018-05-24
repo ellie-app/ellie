@@ -14,7 +14,9 @@ config :ellie, Ellie.Scheduler,
   global: true,
   jobs: [
     {"*/15 * * * *", {Ellie.Jobs.ReloadSearch, :run, []}},
-    {"@daily", {Ellie.Jobs.CleanupLogs, :run, []}}
+    {"@daily", {Ellie.Jobs.CleanupLogs, :run, []}},
+    {"*/30 * * * *", {Ellie.Jobs.CleanupEmbeds, :run, []}},
+    {"*/30 * * * *", {Ellie.Jobs.CleanupWorkspaces, :run, []}}
   ]
 
 config :phoenix, :template_engines,
@@ -37,6 +39,9 @@ config :porcelain, driver: Porcelain.Driver.Goon
 config :sentry,
   included_environments: [:prod],
   environment_name: Mix.env
+
+config :ellie, Ellie.Domain.Api,
+  legacy_revisions_endpoint: "https://d10mybsezhhof0.cloudfront.net/revisions"
 
 # Import environment specific config. This must remain at the bottom
 # of this file so it overrides the configuration defined above.

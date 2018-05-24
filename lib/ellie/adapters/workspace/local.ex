@@ -12,6 +12,8 @@ defmodule Ellie.Adapters.Workspace.Local do
 
   # API
 
+  @basepath Path.expand("../../../../.local_tmp/workspaces", __DIR__)
+
   @behaviour Ellie.Domain.Workspace
 
   @spec create() :: {:ok, Uuid.t} | :error
@@ -22,6 +24,20 @@ defmodule Ellie.Adapters.Workspace.Local do
   @spec watch(id :: Uuid.t, process :: pid) :: :unit
   def watch(id, process) do
     GenServer.cast(__MODULE__, {:cleanup_after, id, process})
+    :unit
+  end
+
+  @spec cleanup() :: :unit
+  def cleanup() do
+    @basepath
+    |> File.ls!()
+    |> Enum.each(fn uuid_string ->
+      with {:ok, id} <- Uuid.parse(uuid_string),
+           nil <- get(id)
+      do
+        File.rm_rf!(location_for_id(id))
+      end
+    end)
     :unit
   end
 
@@ -87,7 +103,7 @@ defmodule Ellie.Adapters.Workspace.Local do
   # HELPERS
 
   defp location_for_id(id) do
-    Path.expand("../../../../.local_tmp/workspaces/#{Uuid.to_string(id)}", __DIR__)
+    Path.join(@basepath, Uuid.to_string(id))
   end
 
   defp open(id, version) do
