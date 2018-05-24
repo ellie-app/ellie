@@ -152,7 +152,8 @@ export default {
       charset.setAttribute('charset', 'utf-8')
       doc.head.insertBefore(charset, doc.head.children[0])
 
-      var blob = new Blob([doc.documentElement.outerHTML], { type: 'text/html' })
+      const finalHtml = '<!DOCTYPE html>' + doc.documentElement.outerHTML
+      var blob = new Blob([finalHtml], { type: 'text/html' })
       return URL.createObjectURL(blob)
     }
 
