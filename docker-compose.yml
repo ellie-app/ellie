@@ -1,0 +1,44 @@
+version: '3.2'
+services:
+  phoenix:
+    command: ./scripts/docker/development/run.sh
+    build:
+      dockerfile: ./scripts/docker/development/Dockerfile.phoenix
+      context: .
+    volumes:
+      - type: bind
+        source: .
+        target: /app
+    ports:
+      - "4000:4000"
+      - "9000:9000"
+      - "4369:4369"
+    depends_on:
+      - database
+    env_file:
+      - ./.env.local
+  webpack:
+    command: ./scripts/docker/development/run_webpack.sh
+    build:
+      dockerfile: ./scripts/docker/development/Dockerfile.webpack
+      context: .
+    volumes:
+      - type: bind
+        source: .
+        target: /app
+    depends_on:
+      - phoenix
+    ports:
+      - "8080:8080"
+  database:
+    image: "postgres:9.5"
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_PASSWORD: postgres
+    volumes:
+      - type: bind
+        source: ./.local_tmp/postgres-data
+        target: /var/lib/postgresql/data
+        volume:
+          osxfs: delegated

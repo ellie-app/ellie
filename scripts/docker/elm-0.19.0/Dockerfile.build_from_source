@@ -1,0 +1,15 @@
+FROM ubuntu:latest
+
+WORKDIR /usr/local/src
+
+RUN apt-get update \
+    && apt-get -yq install git haskell-platform unzip
+
+CMD git clone https://github.com/elm-lang/elm-compiler \
+    && cd elm-compiler \
+    && cabal sandbox init \
+    && cabal update \
+    && cabal install --force-reinstalls \
+    && cabal configure \
+    && cabal build \
+    && bash

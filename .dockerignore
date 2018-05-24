@@ -1,0 +1,13 @@
+.elixir_ls
+.local_tmp
+.vscode
+_build
+elm-stuff
+node_modules
+deps
+priv/bin
+priv/graphql
+priv/docs_table
+priv/elm_home
+priv/static
+.env

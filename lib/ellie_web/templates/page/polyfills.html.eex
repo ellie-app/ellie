@@ -1,0 +1,21 @@
+<script id="polyfills-loader">
+    (function () {
+        var currentScript = document.getElementById('polyfills-loader')
+
+        // Promise
+        if (typeof window.Promise === 'undefined') {
+            var script1 = document.createElement('script')
+            script1.src = '//cdn.jsdelivr.net/npm/es6-promise@4.2.4/dist/es6-promise.min.js'
+            document.head.insertBefore(script1, currentScript.nextSibling)
+            currentScript = script1
+        }
+
+        // RequestIdleCallback
+        if (typeof window.requestIdleCallback === 'undefined') {
+            var script2 = document.createElement('script')
+            script2.src = '//cdn.jsdelivr.net/npm/request-idle-polyfill@1.0.1/dist/index.min.js'
+            document.head.insertBefore(script2, currentScript.nextSibling)
+            currentScript = script2
+        }
+    }())
+</script>
