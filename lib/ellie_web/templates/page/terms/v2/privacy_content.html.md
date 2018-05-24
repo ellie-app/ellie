@@ -1,6 +1,6 @@
 # Privacy Policy
 
-Last updated: May 25, 2018
+Last updated: May 24, 2018
 
 Ellie is fully capable of respecting your data privacy while providing its service. Ellie does not intentionally collect _any_ personal data from you. Even so, we still want you to feel confident in our ability to respect your privacy, so this document outlines who we are, what data we do collect, and how it is used.
 
