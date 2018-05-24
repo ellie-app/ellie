@@ -38,7 +38,7 @@ config :porcelain, driver: Porcelain.Driver.Goon
 
 config :sentry,
   included_environments: [:prod],
-  environment_name: :prod
+  environment_name: Mix.env
 
 config :ellie, Ellie.Domain.Api,
   legacy_revisions_endpoint: "https://d10mybsezhhof0.cloudfront.net/revisions"
