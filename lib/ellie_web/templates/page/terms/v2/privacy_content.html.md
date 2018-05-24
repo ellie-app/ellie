@@ -50,9 +50,9 @@ Just as we don't store any personal data for our own use, we will never collect 
 - [Google Cloud Platform](https://cloud.google.com) (data storage)
 - [Sentry](https://sentry.io) (error reporting)
 
-Each of these third party data processors must only process your personal data in compliance with our privacy policy. These data processors also must sufficiently safeguard data we send to them. All of these external data processors are based in the United States. Google Cloud Platform and Sentry are certified compliant with EU-US Privacy Shield, and ZEIT has applied for the same certification.
+Each of these third party data processors must only process your personal data in compliance with our privacy policy. These data processors also must sufficiently safeguard data we send to them. All of these external data processors are based in the United States. Google Cloud Platform and Sentry are certified compliant with EU-US Privacy Shield, and ZEIT has applied for the same certification. Our database is located in the state of Oregon, USA. Our web server is in the state of California, USA.
 
-All data shared with Ellie is public and can be made available to law enforcement. Ellie does not collect access logs, so all the data we might be compelled to share is spelled out in the section "Data Ellie collects"
+All data shared with Ellie is public and can be made available to law enforcement. Ellie does not collect access logs, so all the data we might be compelled to share is spelled out in the section "Data Ellie collects".
 
 ## Cookies and other tracking technologies
 
@@ -68,4 +68,4 @@ Once again, Ellie does not intentionally collect any personal data from you. Eve
 
 Ellie routinely downloads package information from the public Elm package registry at http://package.elm-lang.org. If you are pursuing the removal of personal information related to the contents of a package from the registry we will gladly assist you by purging your information from any caches of package information.
 
-You may contact Ellie with a data request at ellie@lukewestby.com or using the form at https://ellie.gdprform.io/
+You may contact Ellie with a data request at ellie@lukewestby.com or using the form at https://ellie.gdprform.io/.
