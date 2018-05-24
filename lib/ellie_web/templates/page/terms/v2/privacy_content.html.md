@@ -2,98 +2,70 @@
 
 Last updated: May 25, 2018
 
-Ellie ("Ellie", "us", "we", or "our") operates the https://ellie-app.com website (the "Service").
+Ellie is fully capable of respecting your data privacy while providing its service. Ellie does not intentionally collect _any_ personal data from you. Even so, we still want you to feel confident in our ability to respect your privacy, so this document outlines who we are, what data we do collect, and how it is used.
 
-This page informs you of our policies regarding the collection, use and disclosure of Personal Information when you use our Service.
+## Ellie's creators and operators
 
-We do not intentionally collect Personal Information except for specific user support purposes. Content posted using our Service is public and licensed under the MIT license.
-You may request removal of Personal Information regardless of whether you originally shared it by emailing ellie@lukewestby.com.
+Ellie is the sole property of Luke Westby. Luke operates Ellie from the state of California in the United States. Luke can be reached for inquiries regarding ellie at the email address ellie@lukewestby.com. Ellie is open source and supported by the Elm language community. The source code for Ellie is located at https://github.com/lukewestby/ellie.
 
-We will not use or share your information with anyone except as described in this Privacy Policy.
+## Data Ellie collects
 
-We use your Personal Information for providing and improving the Service. By using the Service, you agree to the collection and use of information in accordance with this policy. Unless otherwise defined in this Privacy Policy, terms used in this Privacy Policy have the same meanings as in our Terms and Conditions, accessible at https://ellie-app.com/a/terms/2
+Ellie does not collect any personal data.
 
-## Information We Collect
+When interacting with Ellie you may submit the following information for storage on our servers:
 
-### Publicly Accessible Code
+- Code written in the Elm programming language
+- Code written in the HTML, JavaScript, and CSS programming languages
+- A short description of the code
+- A selection of publicly accessible packages from http://package.elm-lang.org
 
-We collect and store any information you share through our Service. This includes Elm code, HTML code, packages selected from package.elm-lang.org, and a title you may optionally
-provide for a shareable code example ("Example"). We do not require that any of these contain Personal Information or otherwise proprietary information. We encourage you not
-to include such information in an Example. You may submit a request to remove any Example that you or anyone else may have submitted if you believe it contains Personal Information
-about you or someone else. Ellie serves as a public repository of examples for the Elm programming language, and it is important to us that it remains safe for all in fulfilling
-that purpose.
+Ellie is not a complicated service, and we do not need to collect more than this to provide that service. In order to protect your privacy you should not submit personal information in any of these fields. Every submission to Ellie is publicly accessible by design!
 
-### Error Reporting
+In addition to the information you may submit to our servers, the following information is stored in your browser:
 
-Ellie also collects information about your browser and the particular actions you were attempting whenever an error occurs on our Service ("Error Data").
-This Log Data may include information such as your computer's Internet Protocol ("IP") address, browser type, browser version, the pages of our Service that you visit,
-the time and date of your visit, and other statistics. Error Data is securely stored by https://sentry.io/ and is manually removed when it is 7 days old.
+- Visual settings, like font size and font family
+- A local backup of the code you write, in order to recover from crashes
 
-### Cookies
+This data is stored directly in your browser and never sent to our servers or any third party service. It contains no directly identifying information and can be cleared as easily as deleting your browsing history.
 
-Ellie does not use cookies. Your browser may include cookies added by versions of Ellie operating prior to this version of the Privacy Policy, but versions of the
-Service operating under this agreement attempt to remove old cookies.
+Lastly, when an error occurs in our software we log that information with a third party service, [Sentry](https://sentry.io). These logs do not contain IP addresses, but may contain information about what browser you are using in addition to the code, description, and packages that you submitted. This information is permanently deleted after 6 days in Sentry's servers.
 
-### Other In-browser Storage
+## User-generated content and third party links
 
-Ellie makes use of web browsers' [Local Storage](https://developer.mozilla.org/en-US/docs/Web/API/Storage/LocalStorage) to store user settings and favorite Examples. This data
-is never transferred to Ellie's servers or any third party and can be easily deleted by using the data deletion features of your web browser.
+Ellie's purpose is to share and serve user-submitted executable code. We cannot possibly review all code shared with Ellie, so be advised that code shared with Ellie may be malicious or contain abusive and inappropriate content. If you discover an Example shared with Ellie that does contain malicious content you can report it to ellie@lukewestby.com and we will act to correct the situation as quickly as possible. Our terms of service explicitly forbid the use of Ellie for malicious or illegal purposes, and we take these requests very seriously.
 
-- (Google Chrome Desktop)[https://support.google.com/chrome/answer/2392709?co=GENIE.Platform%3DDesktop&hl=en]
-- (Google Chrome Android)[https://support.google.com/chrome/answer/95589?co=GENIE.Platform%3DAndroid&hl=en-GB]
-- (Firefox)[https://support.mozilla.org/en-US/kb/delete-browsing-search-download-history-firefox]
-- (Safari Desktop)[https://support.apple.com/guide/safari/clear-your-browsing-history-sfri47acf5d6/mac]
-- (Safari Mobile)[https://support.apple.com/en-us/HT201265]
-- (Microsoft Edge)[https://support.microsoft.com/en-us/help/10607/microsoft-edge-view-delete-browser-history]
-- (Microsoft Internet Explorer)[https://support.microsoft.com/en-us/help/17438/windows-internet-explorer-view-delete-browsing-history]
+**Never submit passwords or personal information to a form shared on Ellie!**
 
-### Do Not Track
+In addition to user content, Ellie may also include links to third party websites in its user interface. These links are not subject to Ellie's privacy policy and are there for your convenience in discovering information related to Ellie, like source code and community discussions. These include, but are not limited to, https://github.com, https://slack.com, https://zeit.co, and https://youtube.com.
 
-Ellie does not track users or integrate with any third party service that tracks users. It is fully compliant by default.
+## Usage of Ellie by minors
 
-### Service Providers
+Ellie is not intended for use and may not be used by children under the age of 13. Children under the age of 18 must use Ellie with the permission and supervision of a parent or legal guardian. Ellie has no way of enforcing permission for children under the age of 18, and does not intend to collect any information from children just as it does not intend to collect personal information from anyone. If you discover that your child's information has been shared on Ellie please contact us at ellie@lukewestby.com or using the form at https://ellie.gdprform.io/ and we will ensure your child's information is removed.
 
-Ellie is hosted on https://zeit.co. All internet traffic to Ellie is routed through servers managed by https://zeit.co. In order to provide the Service,
-code is transiently stored on Zeit servers, but is deleted upon detecting that your browser has disconnected from the server. The servers hosting Ellie are located in San Francisco, 
-California, USA. Ellie stores data and backups in https://cloud.google.com/. Ellie's Google Cloud database is located in The Dalles, Oregon, USA. Ellie provides
-public Elm packages hosted on http://package.elm-lang.org for use in Examples. Ellie may download and store any data provided by http://package.elm-lang.org for any
-amount of time in either Zeit servers or Google Cloud databases as described in this section, but you may request that this data be cleared by sending an email to
-ellie@lukewestby.com. Ellie downloads the entire list of packages on http://package.elm-lang.org at least once per day.
+## Sharing data with third parties
 
-### Compliance With Laws
+Just as we don't store any personal data for our own use, we will never collect and sell your personal data to another party! We do use the services of the following external data processors, although, once again, we do not collect or store personal data, including IP addresses
 
-We will disclose your Personal Information where required to do so by law or subpoena or if we believe that such action is necessary to comply with the law and the reasonable requests of law enforcement or to protect the security or integrity of our Service.
+- [ZEIT Now](https://zeit.co) (application hosting)
+- [Google Cloud Platform](https://cloud.google.com) (data storage)
+- [Sentry](https://sentry.io) (error reporting)
 
-### Security
+Each of these third party data processors must only process your personal data in compliance with our privacy policy. These data processors also must sufficiently safeguard data we send to them. All of these external data processors are based in the United States. Google Cloud Platform and Sentry are certified compliant with EU-US Privacy Shield, and ZEIT has applied for the same certification.
 
-Security is important to us, and we strive to implement and maintain reasonable, acceptable security procedures and practices appropriate to the nature of the information we store, in order to protect it from unauthorized access, destruction, use, modification, or disclosure.
+All data shared with Ellie is public and can be made available to law enforcement. Ellie does not collect access logs, so all the data we might be compelled to share is spelled out in the section "Data Ellie collects"
 
-### International Transfer
+## Cookies and other tracking technologies
 
-All data is stored in the United States. If you are located outside the United States please note that information you submit to Ellie will be transfered to 
-and processed in the United States. Your consent to this Privacy Policy followed by your submission of such information represents your agreement to that transfer.
+Ellie does not use cookies, does not track users, and perform any form of advertising or retargeting for third parties. Previous versions of Ellie _did_ use cookies, though. While we have configured the server to attempt to delete them it is not always possible to succeed in doing so. You can use your browser's settings to delete any cookies Ellie may have stored prior to issuing this Privacy Policy and they will not be reintroduced.
 
-### User Content and Third Party Sites
+## Changes to this policy
 
-Ellie hosts and serves arbitrary executable code to your browser. Code distributed by Ellie is licensed under the MIT license and we are not liable for any harm or malicious intent
-in code submitted by users. Such issues that may arise include links to other sites and forms requesting your information. Use caution when interacting with code shared on Ellie.
-If you discover an Example that appears malicious, you may report it and request that it be removed by emailing ellie@lukewestby.com. We have no control over, and assume no 
-responsibility for the content, privacy policies or practices of any third party sites or services.
+We may change this privacy policy. Whenever a new user comes to Ellie they are prompted to accept our terms of service and privacy policy before using the service. If you have already accepted this policy, you will be prompted to accept it again when it changes. We will also always include a summary of what has changed in the new version of the terms of service and privacy policy going forward.
 
-### Children's Privacy
+## Requests regarding data on Ellie
 
-Only persons age 13 or older have permission to access our Service. Our Service does not address anyone under the age of 13 ("Children"). We do not knowingly collect personally 
-identifiable information from children under 13. If you are a parent or guardian and you learn that your Children have provided us with Personal Information, please contact us at 
-ellie@lukewestby.com. If we become aware that we have collected Personal Information from a children under age 13 without verification of parental consent, we take steps to remove that information from our servers.
+Once again, Ellie does not intentionally collect any personal data from you. Even so, all data on Ellie is public. You may request us to send you a summary of any data you feel is relevant to you as a user. If you find that you have shared personal data on Ellie, inadvertently or otherwise, you have a right to request that it be removed. You may also request the removal of data that appears to be abusive, innapropriate, or illegal.
 
-### Changes To This Privacy Policy
+Ellie routinely downloads package information from the public Elm package registry at http://package.elm-lang.org. If you are pursuing the removal of personal information related to the contents of a package from the registry we will gladly assist you by purging your information from any caches of package information.
 
-This Privacy Policy is effective as of May 25, 2018 and will remain in effect except with respect to any changes in its provisions in the future, which will be in effect immediately after being posted on this page.
-
-We reserve the right to update or change our Privacy Policy at any time and you should check this Privacy Policy periodically. Your continued use of the Service after we post any modifications to the Privacy Policy on this page will constitute your acknowledgment of the modifications and your consent to abide and be bound by the modified Privacy Policy.
-
-If we make any changes to this Privacy Policy, we will notify you by requesting that you agree to the new policy before using the Service.
-
-### Contact Us
-
-If you have any questions about this Privacy Policy, please contact ellie@lukewestby.com
+You may contact Ellie with a data request at ellie@lukewestby.com or using the form at https://ellie.gdprform.io/

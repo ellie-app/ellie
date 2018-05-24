@@ -39,26 +39,30 @@ defmodule Ellie.Adapters.Embed.Local do
   end
 
   def cleanup(minutes_old) do
-    @base_path
-    |> File.ls!()
-    |> Enum.map(&ProjectId.from_string/1)
-    |> Enum.each(fn id ->
-      root = Path.join(@base_path, ProjectId.to_string(id))
-      case get_entry_by_id(id) do
-        nil ->
-          File.rm_rf!(root)
-          :ok
-        {:finished, _error, last_accessed} ->
-          if :os.system_time(:second) - last_accessed >= minutes_old * 60 do
+    if File.exists?(@base_path) do
+      @base_path
+      |> File.ls!()
+      |> Enum.map(&ProjectId.from_string/1)
+      |> Enum.each(fn id ->
+        root = Path.join(@base_path, ProjectId.to_string(id))
+        case get_entry_by_id(id) do
+          nil ->
             File.rm_rf!(root)
-            delete_entry_by_id(id)
-          end
-          :ok
-        _ ->
-          :ok
-      end
-    end)
-    :unit
+            :ok
+          {:finished, _error, last_accessed} ->
+            if :os.system_time(:second) - last_accessed >= minutes_old * 60 do
+              File.rm_rf!(root)
+              delete_entry_by_id(id)
+            end
+            :ok
+          _ ->
+            :ok
+        end
+      end)
+      :unit
+    else
+      :unit
+    end
   end
 
   defp do_compile(revision) do

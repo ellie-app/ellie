@@ -1,6 +1,7 @@
 const path = require('path')
 const webpack = require('webpack')
 const StringReplacePlugin = require('string-replace-webpack-plugin')
+const CopyPlugin = require('copy-webpack-plugin')
 
 module.exports = {
   cache: true,
@@ -88,6 +89,7 @@ module.exports = {
       OPBEAT_ORGANIZATION_ID: JSON.stringify(process.env.OPBEAT_ORGANIZATION_ID),
       'process.env.NODE_ENV': JSON.stringify('development')
     }),
+    new CopyPlugin(['images/*'])
   ],
 
   devServer: {

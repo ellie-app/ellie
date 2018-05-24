@@ -3,6 +3,7 @@ const webpack = require('webpack')
 const StringReplacePlugin = require('string-replace-webpack-plugin')
 const ManifestPlugin = require('webpack-manifest-plugin')
 const CompressionPlugin = require('compression-webpack-plugin')
+const CopyPlugin = require('copy-webpack-plugin')
 
 module.exports = {
   cache: true,
@@ -105,5 +106,6 @@ module.exports = {
     new CompressionPlugin({
       test: /\.js$/
     }),
+    new CopyPlugin(['images/*'])
   ]
 }

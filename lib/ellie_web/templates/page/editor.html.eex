@@ -2,6 +2,7 @@
 <html>
   <head>
     <meta charset="utf-8" />
+    <link rel="icon" href="<%= static_path(@conn, "/assets/images/favicon.ico") %>" />
     <%= render("polyfills.html") %>
     <%= render("config.html", conn: @conn) %>
   </head>

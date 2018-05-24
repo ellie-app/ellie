@@ -29,16 +29,20 @@ defmodule Ellie.Adapters.Workspace.Local do
 
   @spec cleanup() :: :unit
   def cleanup() do
-    @basepath
-    |> File.ls!()
-    |> Enum.each(fn uuid_string ->
-      with {:ok, id} <- Uuid.parse(uuid_string),
-           nil <- get(id)
-      do
-        File.rm_rf!(location_for_id(id))
-      end
-    end)
-    :unit
+    if File.exists?(@basepath) do
+      @basepath
+      |> File.ls!()
+      |> Enum.each(fn uuid_string ->
+        with {:ok, id} <- Uuid.parse(uuid_string),
+            nil <- get(id)
+        do
+          File.rm_rf!(location_for_id(id))
+        end
+      end)
+      :unit
+    else
+      :unit
+    end
   end
 
   @spec result(id :: Uuid.t) :: {:ok, {Path.t, String.t}} | :error
