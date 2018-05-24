@@ -25,7 +25,7 @@ view config =
             , height (px 32)
             , borderTop3 (px 2) solid Theme.staticBorder
             , flexShrink zero
-            , justifyContent flexEnd
+            , justifyContent spaceBetween
             , alignItems center
             , displayFlex
             , backgroundColor Theme.primaryBackground
@@ -33,17 +33,31 @@ view config =
             , position relative
             ]
         ]
-        [ Html.div
-            [ css
+        [ Html.div []
+            [ Html.styled Html.a
+                [ color Theme.primaryForeground
+                , textDecoration none
+                , fontSize (px 16)
+                ]
+                [ Attributes.href "https://zeit.co"
+                , Attributes.target "_blank"
+                ]
+                [ Html.text "Hosted on ▲ ZEIT Now" ]
+            ]
+        , Html.styled Html.div
+            [ displayFlex
+            , justifyContent center
+            , alignItems center
+            ]
+            []
+            [ Html.styled Html.div
                 [ color Theme.primaryForeground
                 , fontSize (px 16)
                 , paddingRight (px 16)
                 ]
-            ]
-            [ Html.text config.compileStatus
-            ]
-        , Html.div
-            [ css
+                []
+                [ Html.text config.compileStatus ]
+            , Html.styled Html.div
                 [ width (px 20)
                 , height (px 20)
                 , color <|
@@ -52,41 +66,37 @@ view config =
                     else
                         Theme.connectionStatusDisconnected
                 ]
-            , Attributes.title "Server connection status"
-            ]
-            [ Icon.view Icon.Socket
-            ]
-        , Html.div
-            [ css
+                [ Attributes.title "Server connection status" ]
+                [ Icon.view Icon.Socket ]
+            , Html.styled Html.div
                 [ displayFlex
                 , alignItems center
                 , paddingLeft (px 16)
                 , color Theme.primaryForeground
                 ]
-            , Attributes.title <|
-                toString config.notificationCount
-                    ++ " notification"
-                    ++ (if config.notificationCount == 1 then
-                            ""
-                        else
-                            "s"
-                       )
-            ]
-            [ Html.div
-                [ css
+                [ Attributes.title <|
+                    toString config.notificationCount
+                        ++ " notification"
+                        ++ (if config.notificationCount == 1 then
+                                ""
+                            else
+                                "s"
+                           )
+                ]
+                [ Html.styled Html.div
                     [ width (px 20)
                     , height (px 20)
                     , color Theme.primaryForeground
                     ]
+                    []
+                    [ Icon.view Icon.Notification ]
+                , if config.notificationCount > 0 then
+                    Html.styled Html.div
+                        [ paddingLeft (px 4) ]
+                        []
+                        [ Html.text <| toString config.notificationCount ]
+                  else
+                    Html.text ""
                 ]
-                [ Icon.view Icon.Notification
-                ]
-            , if config.notificationCount > 0 then
-                Html.div
-                    [ css [ paddingLeft (px 4) ]
-                    ]
-                    [ Html.text <| toString config.notificationCount ]
-              else
-                Html.text ""
             ]
         ]
