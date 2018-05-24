@@ -4,7 +4,7 @@ defmodule Ellie do
   def start(_type, _args) do
     import Supervisor.Spec
 
-    Application.put_env(:sentry, :dsn, System.get_env("SENTRY_DSN"))
+    Application.put_env(:sentry, :dsn, Map.get(System.get_env(), "SENTRY_DSN", ""))
 
     if Application.get_env(:ellie, :env) == :prod do
       merge_config :ellie, EllieWeb.Endpoint,
