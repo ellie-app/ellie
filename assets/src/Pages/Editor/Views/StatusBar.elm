@@ -33,9 +33,15 @@ view config =
             , position relative
             ]
         ]
-        [ Html.div []
+        [ Html.styled Html.div
+            [ displayFlex
+            , justifyContent center
+            , alignItems center
+            ]
+            []
             [ Html.styled Html.a
-                [ color Theme.primaryForeground
+                [ marginRight (px 16)
+                , color Theme.primaryForeground
                 , textDecoration none
                 , fontSize (px 16)
                 ]
@@ -43,6 +49,21 @@ view config =
                 , Attributes.target "_blank"
                 ]
                 [ Html.text "Hosted on ▲ ZEIT Now" ]
+            , Html.styled Html.a
+                [ marginRight (px 16)
+                , color Theme.primaryForeground
+                , textDecoration none
+                , fontSize (px 16)
+                ]
+                [ Attributes.href "/a/terms/2#privacy" ]
+                [ Html.text "Privacy" ]
+            , Html.styled Html.a
+                [ color Theme.primaryForeground
+                , textDecoration none
+                , fontSize (px 16)
+                ]
+                [ Attributes.href "/a/terms/2#terms" ]
+                [ Html.text "Terms" ]
             ]
         , Html.styled Html.div
             [ displayFlex
