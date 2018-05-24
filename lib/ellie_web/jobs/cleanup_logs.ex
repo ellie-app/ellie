@@ -1,4 +1,4 @@
-defmodule Ellie.Jobs.CleanupLogs do
+defmodule EllieWeb.Jobs.CleanupLogs do
   alias Ellie.Helpers.EnumHelpers
 
   def run() do

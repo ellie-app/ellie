@@ -24,6 +24,10 @@ defmodule EllieWeb.Graphql.Schema do
   import_types EllieWeb.Graphql.Types.WorkspaceUpdate
   import_types EllieWeb.Graphql.Types.EmbedUpdate
 
+  def plugins do
+    [EllieWeb.Graphql.Plugins.Sentry] ++ Absinthe.Plugin.defaults()
+  end
+
   query do
     field :revision, non_null(:revision) do
       arg :id, non_null(:project_id)

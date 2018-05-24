@@ -12,9 +12,19 @@ defmodule EllieWeb.Graphql.Context do
          {:ok, workspace_string} <- Token.verify(auth_token),
          {:ok, workspace} <- Uuid.parse(workspace_string)
     do
-      put_private(conn, :absinthe, %{context: %{workspace: workspace}})
+      put_private(conn, :absinthe, %{
+        context: %{
+          workspace: workspace,
+          original: Map.get(conn.params, "query")
+        }
+      })
     else
-      _ -> conn
+      _ ->
+        put_private(conn, :absinthe, %{
+          context: %{
+            original: Map.get(conn.params, "query")
+          }
+        })
     end
   end
 end

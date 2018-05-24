@@ -1,4 +1,4 @@
-defmodule Ellie.Jobs.CleanupEmbeds do
+defmodule EllieWeb.Jobs.CleanupEmbeds do
   def run() do
     Ellie.Domain.Embed.cleanup(30)
   end

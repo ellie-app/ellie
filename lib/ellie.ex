@@ -22,7 +22,7 @@ defmodule Ellie do
       supervisor(Absinthe.Subscription, [EllieWeb.Endpoint]),
       worker(Ellie.Adapters.Embed.Local, []),
       worker(Ellie.Adapters.Workspace.Local, []),
-      worker(Ellie.Scheduler, []),
+      worker(EllieWeb.Scheduler, []),
       worker(Task, [&Ellie.Domain.Search.reload/0], restart: :temporary)
     ]
 

@@ -10,13 +10,13 @@ config :ellie,
   ecto_repos: [Ellie.Repo],
   env: Mix.env
 
-config :ellie, Ellie.Scheduler,
+config :ellie, EllieWeb.Scheduler,
   global: true,
   jobs: [
-    {"*/15 * * * *", {Ellie.Jobs.ReloadSearch, :run, []}},
-    {"@daily", {Ellie.Jobs.CleanupLogs, :run, []}},
-    {"*/30 * * * *", {Ellie.Jobs.CleanupEmbeds, :run, []}},
-    {"*/30 * * * *", {Ellie.Jobs.CleanupWorkspaces, :run, []}}
+    {"*/15 * * * *", {EllieWeb.Jobs.ReloadSearch, :run, []}},
+    {"@daily",       {EllieWeb.Jobs.CleanupLogs, :run, []}},
+    {"*/30 * * * *", {EllieWeb.Jobs.CleanupEmbeds, :run, []}},
+    {"*/30 * * * *", {EllieWeb.Jobs.CleanupWorkspaces, :run, []}}
   ]
 
 config :phoenix, :template_engines,
@@ -38,7 +38,7 @@ config :porcelain, driver: Porcelain.Driver.Goon
 
 config :sentry,
   included_environments: [:prod],
-  environment_name: Mix.env
+  environment_name: :prod
 
 config :ellie, Ellie.Domain.Api,
   legacy_revisions_endpoint: "https://d10mybsezhhof0.cloudfront.net/revisions"
