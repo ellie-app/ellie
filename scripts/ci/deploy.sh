@@ -81,7 +81,7 @@ if [[ $branch_name == "master" ]]; then
         exit 1;
     fi
 
-    echo '{ "name": "ellie-production", "alias": "ellie-app.com", "scale": "bru1": { "min": 0, "max": 0 }, "sfo1": { "min": 1, "max": 1 } }' > ./now.json
+    echo '{ "name": "ellie-production", "alias": "ellie-app.com", "scale": { "bru1": { "min": 0, "max": 0 }, "sfo1": { "min": 1, "max": 1 } } }' > ./now.json
 
     now -t $now_token \
         -A ./now.json \
