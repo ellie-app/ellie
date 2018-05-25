@@ -18,6 +18,21 @@ do
             shift;
             ;;
 
+        --heroku_token)
+            shift;
+            if test $# -gt 0; then
+                if [[ "$1" =~ ^--.* ]]; then
+                    echo "now token not specified with --heroku_token flag";
+                    exit 1;
+                fi
+                heroku_token=$1;
+            else
+                echo "now token not specified with --heroku_token flag";
+                exit 1;
+            fi
+            shift;
+            ;;
+
         --release_hook)
             shift;
             if test $# -gt 0; then
@@ -104,18 +119,26 @@ if [[ $branch_name == "master" ]]; then
 
     # remove deployments that are more than 2 behind
     now -t $now_token ls --all ellie-production | grep DOCKER | awk '{ print $2 }' | tail -n +3 | xargs now rm --yes
-else 
+else
+    if [[ -z $heroku_token ]]; then
+        echo "ERROR: --heroku_token is required on branch deploys";
+        exit 1;
+    fi
+
     app_name=ellie-test-$branch_name
     echo '{ "name": "'"$app_name"'", "alias": "'"$app_name"'.now.sh" }' > ./now.json
 
     previous_deployment=$(now alias ls | grep $app_name | awk '{ print $1 }')
 
+    now -t $now_token secrets rm staging-db --yes
+    now -t $now_token secrets add staging-db "$(HEROKU_API_KEY=$heroku_token heroku config:get DATABASE_URL --app=ellie-staging-db)"
+
     now -t $now_token \
         -A ./now.json
         -e SECRET_KEY_BASE=@secret-key-base \
         -e DATABASE_URL=@staging-db \
-        -e SENTRY_DSN= \
-        -e SENTRY_API_KEY= \
+        -e SENTRY_DSN=@sentry-dsn \
+        -e SENTRY_API_KEY=@sentry-api-key \
         ellie-app/ellie#$branch_name
 
     now -t $now_token -A ./now.json alias
