@@ -4,6 +4,6 @@ install: scripts/ci/install.sh
 script: scripts/ci/test.sh
 deploy:
   provider: script
-  script: scripts/ci/deploy.sh --branch $TRAVIS_BRANCH
+  script: scripts/ci/deploy.sh --branch $TRAVIS_BRANCH --commit_hash $TRAVIS_COMMIT --now_token $NOW_TOKEN --release_hook $SENTRY_WEBHOOK
   on:
     all_branches: true
