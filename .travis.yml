@@ -1,3 +1,10 @@
-dist: trusty
+sudo: false
 language: generic
-script: ./scripts/ci/test.sh
+install: scripts/ci/install.sh
+script: scripts/ci/test.sh
+deploy:
+  provider: script
+  script: scripts/ci/deploy.sh --branch $TRAVIS_BRANCH
+addons:
+  apt:
+    sources:
