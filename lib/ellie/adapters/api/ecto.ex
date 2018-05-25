@@ -26,22 +26,24 @@ defmodule Ellie.Adapters.Api.Ecto do
     end
   end
 
+  @spec retrieve_revision(ProjectId.t) :: Revision.t | nil
+  def retrieve_revision(id) do
+    Repo.get(Revision, id)
+  end
+
   @spec retrieve_revision(ProjectId.t, integer) :: Revision.t | nil
   def retrieve_revision(project_id, revision_number) do
-    redirect =
-      Redirect
-      |> Repo.get_by(project_id: project_id, revision_number: revision_number)
-      |> Repo.preload(:revision)
-      |> Functor.map(&(&1.revision))
-    case redirect do
+    case retrieve_revision_from_redirect(project_id, revision_number) do
       nil -> mirror_from_s3(project_id, revision_number)
       revision -> revision
     end
   end
 
-  @spec retrieve_revision(ProjectId.t) :: Revision.t | nil
-  def retrieve_revision(id) do
-    Repo.get(Revision, id)
+  defp retrieve_revision_from_redirect(project_id, revision_number) do
+    Redirect
+    |> Repo.get_by(project_id: project_id, revision_number: revision_number)
+    |> Repo.preload(:revision)
+    |> Functor.map(&(&1.revision))
   end
 
   defp parse_package([name_string, version_string]) do
@@ -102,7 +104,10 @@ defmodule Ellie.Adapters.Api.Ecto do
           saved_revision
         _error ->
           # TODO LOG ERROR
-          nil
+          # The transaction can fail because someone has already downloaded and
+          # inserted the revision. If that is the case then we can look for it one
+          # more time
+          retrieve_revision_from_redirect(project_id, revision_number)
       end
     else
       _error ->
