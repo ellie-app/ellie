@@ -95,7 +95,7 @@ if [[ $branch_name == "master" ]]; then
     curl $release_hook \
         -X POST \
         -H 'Content-Type: application/json' \
-        -d '{"version": "$commit_hash"}'
+        -d '{"version": "'"$commit_hash"'"}'
 else 
     now -t $now_token \
         -e SECRET_KEY_BASE=@secret-key-base \
