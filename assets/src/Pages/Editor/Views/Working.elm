@@ -186,6 +186,7 @@ viewWorkbench model =
         , onSelectErrorsPane = WorkingState.ErrorsPaneSelected
         , onGoToLocation = WorkingState.LocationSelected
         , onCanDebugChange = WorkingState.CanDebugUpdated
+        , onRuntimeException = WorkingState.RuntimExceptionOccured
         , onCompile =
             if model.connected then
                 Just WorkingState.CompileRequested

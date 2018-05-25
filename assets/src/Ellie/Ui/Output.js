@@ -267,7 +267,7 @@ export default {
             this._onReady()
             return
           case 'RuntimeException':
-            this.dispatchEvent(new CustomEvent('runtimeException', { detail: d.data.contents.message }))
+            this.dispatchEvent(new CustomEvent('runtimeException', { detail: e.data.contents.message }))
         }
       }
 

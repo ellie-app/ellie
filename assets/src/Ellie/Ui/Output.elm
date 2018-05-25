@@ -1,4 +1,4 @@
-port module Ellie.Ui.Output exposing (Attribute, debug, elmSource, html, onCanDebug, onLog, reload, view)
+port module Ellie.Ui.Output exposing (Attribute, debug, elmSource, html, onCanDebug, onLog, onRuntimeException, reload, view)
 
 import Css exposing (..)
 import Css.Foreign
@@ -58,6 +58,11 @@ view attrs =
     Html.node "ellie-ui-output"
         (styles :: List.map unAttr attrs)
         []
+
+
+onRuntimeException : (String -> msg) -> Attribute msg
+onRuntimeException callback =
+    Attr <| Events.on "runtimeException" <| Decode.map callback <| Decode.field "detail" Decode.string
 
 
 styles : Html.Attribute msg

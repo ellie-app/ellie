@@ -34,6 +34,7 @@ type alias Config msg =
     , onLogReceived : Log -> msg
     , onSelectErrorsPane : ErrorsPane -> msg
     , onSelectSuccessPane : SuccessPane -> msg
+    , onRuntimeException : String -> msg
     , onCanDebugChange : Bool -> msg
     , compilerVersion : Version
     , compiling : Bool
@@ -465,6 +466,7 @@ viewOutput debug config =
         , Output.debug debug
         , Output.html <| config.htmlCode
         , Output.onCanDebug config.onCanDebugChange
+        , Output.onRuntimeException config.onRuntimeException
         ]
 
 

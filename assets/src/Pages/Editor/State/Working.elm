@@ -233,6 +233,7 @@ type Msg
     | SaveRequested
     | SaveCompleted (Result () ( Revision.Id, Revision ))
     | CanDebugUpdated Bool
+    | RuntimExceptionOccured String
       -- Share stuff
     | DownloadZip
       -- StatusBar stuff
@@ -270,6 +271,17 @@ update : Msg -> Model -> ( Model, Command Msg )
 update msg ({ user } as model) =
     withRecoveryUpdate <|
         case msg of
+            RuntimExceptionOccured message ->
+                ( model
+                    |> addNotification
+                        { title = "Exception Thrown in Output"
+                        , severity = Notification.Failure
+                        , message = message
+                        , actions = []
+                        }
+                , Command.none
+                )
+
             EditorActionPerformed action ->
                 update (fromEditorAction model action) model
 
