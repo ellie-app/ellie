@@ -95,12 +95,15 @@ if [[ $branch_name == "master" ]]; then
 
     now -t $now_token -A ./now.json alias
 
-    rm ./now.json
-
     curl $release_hook \
         -X POST \
         -H 'Content-Type: application/json' \
         -d '{"version": "'"$commit_hash"'"}'
+
+    rm ./now.json
+
+    # remove deployments that are more than 2 behind
+    now -t $now_token ls --all ellie-production | grep DOCKER | awk '{ print $2 }' | tail -n +3 | xargs now rm --yes
 else 
     app_name=ellie-test-$branch_name
     echo '{ "name": "'"$app_name"'", "alias": "'"$app_name"'.now.sh" }' > ./now.json
