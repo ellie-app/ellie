@@ -9,11 +9,7 @@ defmodule EllieWeb.PageController do
   def existing_editor(conn, _params), do: render(conn, "editor.html")
 
   def embed_old(conn, params), do: old_id_scheme_redirect(:embed, :embed, conn, params)
-  def embed(conn, _params) do
-    conn
-    |> put_resp_header("X-Frame-Options", "ALLOWALL")
-    |> render("embed.html")
-  end
+  def embed(conn, _params), do: render(conn, "embed.html")
 
   def terms(conn, params), do: render(conn, "terms/v#{Map.get(params, "version")}/index.html")
 

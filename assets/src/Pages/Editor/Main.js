@@ -5,7 +5,7 @@ export default {
     return Object.assign({}, current, {
       recovery: recovery ? JSON.parse(recovery) : null,
       user: user ? JSON.parse(user) : null,
-      latestTerms: 2
+      latestTerms: window.ellieConfig.latestTerms
     })
   },
   start(app) {

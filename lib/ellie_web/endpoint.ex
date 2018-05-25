@@ -52,9 +52,18 @@ defmodule EllieWeb.Endpoint do
   end
 
   def clear_cookies(conn, _opts) do
-    fetched = fetch_cookies(conn)
-    Enum.reduce(fetched.req_cookies, fetched, fn {k, _}, c ->
-      delete_resp_cookie(c, k)
-    end)
+    conn
+    |> fetch_cookies()
+    |> delete_cookie_if_present("_ga", domain: ".ellie-app.com", path: "/", http_only: false, secure: false)
+    |> delete_cookie_if_present("_gid", domain: ".ellie-app.com", path: "/", http_only: false, secure: false)
+    |> delete_cookie_if_present("ownedProjects", domain: ".ellie-app.com", path: "/", http_only: true, secure: true)
+  end
+
+  defp delete_cookie_if_present(conn, key, opts) do
+    if Map.has_key?(conn.req_cookies, key) do
+      delete_resp_cookie(conn, key, opts)
+    else
+      conn
+    end
   end
 end
