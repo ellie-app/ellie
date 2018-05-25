@@ -128,7 +128,7 @@ else
     app_name=ellie-test-$branch_name
     echo '{ "name": "'"$app_name"'", "alias": "'"$app_name"'.now.sh" }' > ./now.json
 
-    previous_deployment=$(now alias ls | grep $app_name | awk '{ print $1 }')
+    previous_deployment=$(now -t $now_token alias ls | grep $app_name | awk '{ print $1 }')
 
     now -t $now_token secrets rm staging-db --yes
     now -t $now_token secrets add staging-db "$(HEROKU_API_KEY=$heroku_token heroku config:get DATABASE_URL --app=ellie-staging-db)"
