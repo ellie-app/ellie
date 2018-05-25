@@ -118,7 +118,7 @@ if [[ $branch_name == "master" ]]; then
     rm ./now.json
 
     # remove deployments that are more than 2 behind
-    now -t $now_token ls --all ellie-production | grep DOCKER | awk '{ print $2 }' | tail -n +3 | xargs now rm --yes
+    now -t $now_token ls --all ellie-production | grep DOCKER | awk '{ print $2 }' | tail -n +3 | xargs now -t $now_token rm --yes
 else
     if [[ -z $heroku_token ]]; then
         echo "ERROR: --heroku_token is required on branch deploys";
@@ -146,6 +146,6 @@ else
     rm ./now.json
     
     if [[ -n $previous_deployment ]]; then
-        now -t $now_token rm $previous_deployment;
+        now -t $now_token rm --yes $previous_deployment;
     fi
 fi
