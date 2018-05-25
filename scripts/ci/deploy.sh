@@ -16,7 +16,7 @@ do
                 exit 1;
             fi
             shift;
-
+            ;;
 
         --release_hook)
             shift;
@@ -31,6 +31,7 @@ do
                 exit 1;
             fi
             shift;
+            ;;
 
         --branch)
             shift;
@@ -45,6 +46,7 @@ do
                 exit 1;
             fi
             shift;
+            ;;
         
         --commit_hash)
             shift;
@@ -58,7 +60,8 @@ do
                 echo "commit hash not specified with --commit_hash flag";
                 exit 1;
             fi
-            shift;  
+            shift; 
+            ;; 
     esac
 done
 
