@@ -5,6 +5,5 @@ script: scripts/ci/test.sh
 deploy:
   provider: script
   script: scripts/ci/deploy.sh --branch $TRAVIS_BRANCH
-addons:
-  apt:
-    sources:
+  on:
+    all_branches: true
