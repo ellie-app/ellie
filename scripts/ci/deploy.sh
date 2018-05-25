@@ -81,7 +81,10 @@ if [[ $branch_name == "master" ]]; then
         exit 1;
     fi
 
+    echo '{ "name": "ellie-production", "alias": "ellie-app.com", "scale": "bru1": { "min": 0, "max": 0 }, "sfo1": { "min": 1, "max": 1 } }' > ./now.json
+
     now -t $now_token \
+        -A ./now.json \
         -e SECRET_KEY_BASE=@secret-key-base \
         -e DATABASE_URL=@production-db \
         -e SENTRY_DSN=@sentry-dsn \
@@ -90,17 +93,26 @@ if [[ $branch_name == "master" ]]; then
         -n ellie-production \
         ellie-app/ellie
 
-    now -t $now_token alias ellie-production ellie-app.com
+    now -t $now_token -A ./now.json alias
+
+    rm ./now.json
 
     curl $release_hook \
         -X POST \
         -H 'Content-Type: application/json' \
         -d '{"version": "'"$commit_hash"'"}'
 else 
+    echo '{ "name": "ellie-test-'"$branch_name"'", "alias": "ellie-test'"$branch_name"'.now.sh" }' > ./now.json
+
     now -t $now_token \
+        -A ./now.json
         -e SECRET_KEY_BASE=@secret-key-base \
         -e DATABASE_URL=@staging-db \
         -e SENTRY_DSN= \
         -e SENTRY_API_KEY= \
         ellie-app/ellie#$branch_name
+
+    now -t $now_token -A ./now.json alias
+
+    rm ./now.json
 fi
