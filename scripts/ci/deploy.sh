@@ -118,7 +118,7 @@ if [[ $branch_name == "master" ]]; then
     rm ./now.json
 
     # remove deployments that are more than 2 behind
-    now -t $now_token ls --all ellie-production | grep DOCKER | awk '{ print $2 }' | tail -n +3 | xargs -I {} sh -c 'echo "y" | now -t "'"$now_token"'" rm {}'
+    now -t $now_token ls --all ellie-production | grep DOCKER | awk '{ print $2 }' | tail -n +3 | xargs -I {} sh -c 'echo "y" | now -t '"$now_token"' rm {}'
 
 else
     if [[ -z $heroku_token ]]; then
