@@ -6,10 +6,14 @@ defmodule EllieWeb.PageController do
   def new_editor(conn, _params), do: render(conn, "editor.html")
 
   def existing_editor_old(conn, params), do: old_id_scheme_redirect(:existing_editor, :new_editor, conn, params)
-  def existing_editor(conn, params), do: render(conn, "editor.html")
+  def existing_editor(conn, _params), do: render(conn, "editor.html")
 
   def embed_old(conn, params), do: old_id_scheme_redirect(:embed, :embed, conn, params)
-  def embed(conn, _params), do: render(conn, "embed.html")
+  def embed(conn, _params) do
+    conn
+    |> put_resp_header("X-Frame-Options", "ALLOWALL")
+    |> render("embed.html")
+  end
 
   def terms(conn, params), do: render(conn, "terms/v#{Map.get(params, "version")}/index.html")
 
