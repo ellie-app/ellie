@@ -88,6 +88,13 @@ export default {
         }
       })
 
+      window.addEventListener('error', function (e) {
+        parent.postMessage({
+          tag: 'RuntimeException',
+          contents: { message: e.message }
+        }, '${window.location.origin}')
+      })
+
       // READY
       document.addEventListener('DOMContentLoaded', function () {
         setTimeout(function () {
@@ -259,6 +266,8 @@ export default {
             this.dispatchEvent(new CustomEvent('canDebug', { detail: e.data.contents.canDebug }))
             this._onReady()
             return
+          case 'RuntimeException':
+            this.dispatchEvent(new CustomEvent('runtimeException', { detail: d.data.contents.message }))
         }
       }
 
