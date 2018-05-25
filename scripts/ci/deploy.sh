@@ -102,7 +102,10 @@ if [[ $branch_name == "master" ]]; then
         -H 'Content-Type: application/json' \
         -d '{"version": "'"$commit_hash"'"}'
 else 
-    echo '{ "name": "ellie-test-'"$branch_name"'", "alias": "ellie-test'"$branch_name"'.now.sh" }' > ./now.json
+    app_name=ellie-test-$branch_name
+    echo '{ "name": "'"$app_name"'", "alias": "'"$app_name"'.now.sh" }' > ./now.json
+
+    previous_deployment=$(now alias ls | grep $app_name | awk '{ print $1 }')
 
     now -t $now_token \
         -A ./now.json
@@ -115,4 +118,8 @@ else
     now -t $now_token -A ./now.json alias
 
     rm ./now.json
+    
+    if [[ -n $previous_deployment ]]; then
+        now -t $now_token rm $previous_deployment;
+    fi
 fi
