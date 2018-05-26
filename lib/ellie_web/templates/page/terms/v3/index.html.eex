@@ -50,10 +50,10 @@
             read more about this cookie in our <a href="#privacy">Privacy Notice</a>.
         </div>
         <div id="terms">
-            <%= render("terms/v2/terms_content.html") %>
+            <%= render("terms/v3/terms_content.html") %>
         </div>
         <div id="privacy">
-            <%= render("terms/v2/privacy_content.html") %>
+            <%= render("terms/v3/privacy_content.html") %>
         </div>
     </main>
      <script>
