@@ -42,7 +42,6 @@ type alias Config msg =
     , maximized : Bool
     , token : Jwt
     , saving : Bool
-    , htmlCode : String
     , revisionId : Maybe Revision.Id
     , hasUnsavedChanges : Bool
     }
@@ -77,7 +76,7 @@ viewContent config =
         Ready ->
             viewInitial config
 
-        Finished { pane, logs, logSearch, canDebug } ->
+        Finished { pane, logs, logSearch, canDebug, renderedHtml } ->
             Html.div
                 [ css
                     [ displayFlex
@@ -96,7 +95,7 @@ viewContent config =
                         , displayFlex
                         ]
                     ]
-                    [ viewOutput (pane == SuccessDebug && canDebug) config
+                    [ viewOutput (pane == SuccessDebug && canDebug) renderedHtml config
                     , case ( config.revisionId, pane ) of
                         ( _, SuccessLogs ) ->
                             viewLogs logSearch logs config
@@ -458,13 +457,13 @@ viewInitial config =
         ]
 
 
-viewOutput : Bool -> Config msg -> Html msg
-viewOutput debug config =
+viewOutput : Bool -> String -> Config msg -> Html msg
+viewOutput debug htmlCode config =
     Output.view
         [ Output.elmSource <| Constants.serverOrigin ++ "/r/workspace?token=" ++ Jwt.toString config.token ++ "&elmVersion=" ++ Version.toString config.compilerVersion
         , Output.onLog config.onLogReceived
         , Output.debug debug
-        , Output.html <| config.htmlCode
+        , Output.html htmlCode
         , Output.onCanDebug config.onCanDebugChange
         , Output.onRuntimeException config.onRuntimeException
         ]

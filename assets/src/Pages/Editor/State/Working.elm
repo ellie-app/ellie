@@ -38,6 +38,7 @@ type Workbench
         , pane : SuccessPane
         , logSearch : String
         , canDebug : Bool
+        , renderedHtml : String
         }
 
 
@@ -513,6 +514,7 @@ update msg ({ user } as model) =
                                     { state
                                         | logs = BoundedDeque.empty 50
                                         , logSearch = ""
+                                        , renderedHtml = model.htmlCode
                                     }
                           }
                         , Effects.reloadOutput
@@ -527,6 +529,7 @@ update msg ({ user } as model) =
                                     , pane = SuccessOutput
                                     , logSearch = ""
                                     , canDebug = True
+                                    , renderedHtml = model.htmlCode
                                     }
                           }
                         , Effects.reloadOutput

@@ -202,7 +202,6 @@ viewWorkbench model =
         , saving = model.saving
         , workbench = model.workbench
         , maximized = model.workbenchRatio < 0.05
-        , htmlCode = model.htmlCode
         , token = model.token
         , revisionId = Maybe.map Tuple.first <| Replaceable.toMaybe model.revision
         , hasUnsavedChanges = WorkingState.hasChanged model
