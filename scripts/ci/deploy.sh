@@ -131,7 +131,6 @@ else
     echo -e "${green}--> CONFIGURING NOW CLI"
     app_name=ellie-test-$branch_name
     echo '{ "name": "'"$app_name"'", "alias": "'"$app_name"'.now.sh" }' > ./now.json
-    cat ./now.json
 
     echo -e "${green}--> SETING UP DATABASE ON HEROKU"
     existing_app=$(HEROKU_API_KEY=$heroku_token heroku apps | grep $app_name)
