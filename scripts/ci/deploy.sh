@@ -119,34 +119,40 @@ if [[ $branch_name == "master" ]]; then
 
     # remove deployments that are more than 2 behind
     now -t $now_token ls --all ellie-production | grep DOCKER | awk '{ print $2 }' | tail -n +3 | xargs -I {} sh -c 'echo "y" | now -t '"$now_token"' rm {}'
-
 else
+    green='\033[0;32m'
+
+    echo -e "${green}--> CHECKING COMMAND LINE ARGUMENTS"
     if [[ -z $heroku_token ]]; then
         echo "ERROR: --heroku_token is required on branch deploys";
         exit 1;
     fi
 
+    echo -e "${green}--> CONFIGURING NOW CLI"
     app_name=ellie-test-$branch_name
     echo '{ "name": "'"$app_name"'", "alias": "'"$app_name"'.now.sh" }' > ./now.json
 
-    previous_deployment=$(now -t $now_token alias ls | grep $app_name | awk '{ print $1 }')
+    echo -e "${green}--> SETING UP DATABASE ON HEROKU"
+    existing_app=$(HEROKU_API_KEY=$heroku_token heroku apps | grep $app_name)
+    if [[ -z $existing_app ]]; then
+        HEROKU_API_KEY=$heroku_token heroku apps:create --app=$app_name --addons heroku-postgresql:hobby-dev
+    fi
+    raw_database_url=$(HEROKU_API_KEY=$heroku_token heroku config:get DATABASE_URL --app=$app_name)
+    database_url=${raw_database_url//postgres:\/\//"ecto://"}
 
-    echo "y" | now -t $now_token secrets rm staging-db
-    now -t $now_token secrets add staging-db "$(HEROKU_API_KEY=$heroku_token heroku config:get DATABASE_URL --app=ellie-staging-db)"
-
+    echo -e "${green}--> DEPLOYING TO NOW.SH"
     now -t $now_token \
-        -A ./now.json
+        -A ./now.json \
+        -n $app_name \
         -e SECRET_KEY_BASE=@secret-key-base \
-        -e DATABASE_URL=@staging-db \
+        -e DATABASE_URL=$database_url \
         -e SENTRY_DSN=@sentry-dsn \
         -e SENTRY_API_KEY=@sentry-api-key \
+        -e HOSTNAME=$app_name.now.sh \
         ellie-app/ellie#$branch_name
-
     now -t $now_token -A ./now.json alias
-
     rm ./now.json
-    
-    if [[ -n $previous_deployment ]]; then
-        now -t $now_token rm --yes $previous_deployment;
-    fi
+
+    echo -e "${green}--> CLEANING UP OLD DEPLOYMENTS"
+    now -t $now_token ls --all $app_name | grep DOCKER | awk '{ print $2 }' | tail -n +2 | xargs -I {} sh -c 'echo "y" | now -t '"$now_token"' rm {}'
 fi
