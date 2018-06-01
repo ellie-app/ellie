@@ -14,7 +14,7 @@ config :ellie, EllieWeb.Scheduler,
   global: true,
   jobs: [
     {"*/15 * * * *", {EllieWeb.Jobs.ReloadSearch, :run, []}},
-    {"@daily",       {EllieWeb.Jobs.CleanupLogs, :run, []}},
+    {"*/60 * * * *", {EllieWeb.Jobs.CleanupLogs, :run, []}},
     {"*/30 * * * *", {EllieWeb.Jobs.CleanupEmbeds, :run, []}},
     {"*/30 * * * *", {EllieWeb.Jobs.CleanupWorkspaces, :run, []}}
   ]
