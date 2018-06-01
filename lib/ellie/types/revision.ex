@@ -1,10 +1,11 @@
 defmodule Ellie.Types.Revision do
   alias Elm.Ecto.Package
   alias Elm.Ecto.Version
+  alias Ellie.Types.PrettyId
   use Ecto.Schema
   import Ecto.Changeset
 
-  @primary_key {:id, :integer, autogenerate: false, read_after_writes: true}
+  @primary_key {:id, PrettyId, autogenerate: false, read_after_writes: true}
   schema "revisions" do
     field :title, :string
     field :elm_code, :string
