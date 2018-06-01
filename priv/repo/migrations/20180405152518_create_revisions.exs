@@ -1,5 +1,6 @@
 defmodule Ellie.Repo.Migrations.CreateRevisions do
   use Ecto.Migration
+  alias Ellie.Types.PrettyId
 
   @our_epoch 1_524_347_380_348
   @shard_id 100
@@ -25,7 +26,7 @@ defmodule Ellie.Repo.Migrations.CreateRevisions do
     """
 
     create table(:revisions, primary_key: false) do
-      add :id,              :bigint,                         primary_key: true, default: fragment("id_generator()")
+      add :id,              PrettyId.type,                   primary_key: true, default: fragment("id_generator()")
       add :title,           :string
       add :elm_code,        :text,                           null: false
       add :html_code,       :text,                           null: false

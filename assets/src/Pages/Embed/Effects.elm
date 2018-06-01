@@ -35,7 +35,7 @@ getRevision revisionId =
                 |> with (ApiQuery.revision arguments revisionQuery)
 
         arguments =
-            { id = ApiScalar.ProjectId revisionId
+            { id = ApiScalar.PrettyId revisionId
             }
 
         revisionQuery =
@@ -68,7 +68,7 @@ runEmbed revisionId =
                 |> with (ApiEmbedReady.error Error.selection)
 
         arguments =
-            { id = ApiScalar.ProjectId revisionId
+            { id = ApiScalar.PrettyId revisionId
             }
     in
     Command.GraphqlMutation
@@ -88,7 +88,7 @@ embedUpdates revisionId =
                 |> with (ApiSubscription.embed arguments embedUpdateSelection)
 
         arguments =
-            { id = ApiScalar.ProjectId revisionId
+            { id = ApiScalar.PrettyId revisionId
             }
 
         embedUpdateSelection =

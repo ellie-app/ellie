@@ -6,7 +6,7 @@ defmodule EllieWeb.Graphql.Schema do
   alias Ellie.Domain.Search
   alias Ellie.Domain.Workspace
   alias Ellie.Domain.Embed
-  alias Ellie.Types.ProjectId
+  alias Ellie.Types.PrettyId
   alias EllieWeb.Token
   alias Elm.Platform
 
@@ -19,7 +19,7 @@ defmodule EllieWeb.Graphql.Schema do
   import_types EllieWeb.Graphql.Types.Elm.Package
   import_types EllieWeb.Graphql.Types.Elm.Error
   import_types EllieWeb.Graphql.Types.Elm.Docs
-  import_types EllieWeb.Graphql.Types.ProjectId
+  import_types EllieWeb.Graphql.Types.PrettyId
   import_types EllieWeb.Graphql.Types.Revision
   import_types EllieWeb.Graphql.Types.WorkspaceUpdate
   import_types EllieWeb.Graphql.Types.EmbedUpdate
@@ -153,8 +153,8 @@ defmodule EllieWeb.Graphql.Schema do
               {:started, task_fn} ->
                 Task.start fn ->
                   case Task.await(task_fn.(), :infinity) do
-                    {:ok, error} -> Subscription.publish(EllieWeb.Endpoint, %{error: error}, embed: ProjectId.to_string(id))
-                    :error -> Subscription.publish(EllieWeb.Endpoint, %{message: "Could not compile"}, embed: ProjectId.to_string(id))
+                    {:ok, error} -> Subscription.publish(EllieWeb.Endpoint, %{error: error}, embed: to_string(id))
+                    :error -> Subscription.publish(EllieWeb.Endpoint, %{message: "Could not compile"}, embed: to_string(id))
                   end
                 end
                 {:ok, nil}
@@ -176,7 +176,7 @@ defmodule EllieWeb.Graphql.Schema do
       arg :id, non_null(:project_id)
       config fn
         %{id: id}, _stuff ->
-          {:ok, topic: ProjectId.to_string(id)}
+          {:ok, topic: to_string(id)}
         _args, _stuff ->
           {:error, "Insufficient info"}
       end

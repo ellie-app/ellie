@@ -1,7 +1,7 @@
 defmodule EllieWeb.PageController do
   use EllieWeb, :controller
   alias Ellie.Domain.Api
-  alias Ellie.Types.ProjectId
+  alias Ellie.Types.PrettyId
 
   def new_editor(conn, _params), do: render(conn, "editor.html")
 
@@ -14,13 +14,13 @@ defmodule EllieWeb.PageController do
   def terms(conn, params), do: render(conn, "terms/v#{Map.get(params, "version")}/index.html")
 
   defp old_id_scheme_redirect(redirection, not_found, conn, %{ "project_id" => project_id_param, "revision_number" => revision_number_param }) do
-    with project_id <- ProjectId.from_string(project_id_param),
+    with {:ok, project_id} <- PrettyId.cast(project_id_param),
          {revision_number, _} <- Integer.parse(revision_number_param),
          revision when not is_nil(revision) <- Api.retrieve_revision(project_id, revision_number)
     do
       conn
       |> put_status(:moved_permanently)
-      |> redirect(to: page_path(conn, redirection, ProjectId.to_string(revision.id)))
+      |> redirect(to: page_path(conn, redirection, to_string(revision.id)))
       |> halt()
     else
       _ -> redirect(conn, to: page_path(conn, not_found, []))

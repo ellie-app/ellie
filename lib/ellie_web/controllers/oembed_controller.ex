@@ -1,6 +1,6 @@
 defmodule EllieWeb.OembedController do
   use EllieWeb, :controller
-  alias Ellie.Types.ProjectId
+  alias Ellie.Types.PrettyId
   alias Ellie.Domain.Api
 
   def oembed(conn, %{"url" => url} = params) do
@@ -26,7 +26,7 @@ defmodule EllieWeb.OembedController do
 
   defp for_legacy_url(conn, project_id_string, revision_number_string, params) do
     with {revision_number, _str} <- Integer.parse(revision_number_string),
-         project_id <- ProjectId.from_string(project_id_string),
+         {:ok, project_id} <- PrettyId.cast(project_id_string),
          revision when not is_nil(revision) <- Api.retrieve_revision(project_id, revision_number)
     do
       render conn, "index.json",
@@ -42,16 +42,15 @@ defmodule EllieWeb.OembedController do
   end
 
   defp for_current_url(conn, id_string, params) do
-    case Api.retrieve_revision(ProjectId.from_string(id_string)) do
-      nil ->
-        conn
-        |> send_resp(404, "")
-        |> halt()
-      revision ->
-        render conn, "index.json",
-          revision: revision,
-          width: Map.get(params, "width", 800),
-          height: Map.get(params, "height", 400)
+    with {:ok, id} <- PrettyId.cast(id_string),
+         revision when not is_nil(revision) <- Api.retrieve_revision(id)
+    do
+      render conn, "index.json",
+        revision: revision,
+        width: Map.get(params, "width", 800),
+        height: Map.get(params, "height", 400)
+    else
+      _ -> send_resp(conn, 404, "")
     end
   end
 end

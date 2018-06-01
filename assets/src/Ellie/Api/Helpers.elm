@@ -18,10 +18,10 @@ unitField =
     Field.map <| \_ -> ()
 
 
-projectIdField : Field ApiScalar.ProjectId a -> Field String a
+projectIdField : Field ApiScalar.PrettyId a -> Field String a
 projectIdField =
     Field.map <|
-        \(ApiScalar.ProjectId string) -> string
+        \(ApiScalar.PrettyId string) -> string
 
 
 nameField : Field ApiScalar.ElmName a -> Field Name a

@@ -41,7 +41,7 @@ getRevision revisionId =
                 |> with (ApiQuery.revision arguments revisionQuery)
 
         arguments =
-            { id = ApiScalar.ProjectId revisionId }
+            { id = ApiScalar.PrettyId revisionId }
 
         revisionQuery =
             ApiRevision.selection Revision

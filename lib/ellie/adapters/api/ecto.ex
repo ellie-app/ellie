@@ -7,7 +7,7 @@ defmodule Ellie.Adapters.Api.Ecto do
   alias Ellie.Helpers.EnumHelpers
   alias Ellie.Types.Revision
   alias Ellie.Types.Redirect
-  alias Ellie.Types.ProjectId
+  alias Ellie.Types.PrettyId
   alias Data.Functor
 
   @behaviour Ellie.Domain.Api
@@ -26,12 +26,12 @@ defmodule Ellie.Adapters.Api.Ecto do
     end
   end
 
-  @spec retrieve_revision(ProjectId.t) :: Revision.t | nil
+  @spec retrieve_revision(PrettyId.t) :: Revision.t | nil
   def retrieve_revision(id) do
     Repo.get(Revision, id)
   end
 
-  @spec retrieve_revision(ProjectId.t, integer) :: Revision.t | nil
+  @spec retrieve_revision(PrettyId.t, integer) :: Revision.t | nil
   def retrieve_revision(project_id, revision_number) do
     case retrieve_revision_from_redirect(project_id, revision_number) do
       nil -> mirror_from_s3(project_id, revision_number)
@@ -64,7 +64,7 @@ defmodule Ellie.Adapters.Api.Ecto do
       "https://s3.us-east-2.amazonaws.com/development-cdn.ellie-app.com/revisions"
     )
 
-    url = "#{endpoint}/#{ProjectId.to_string(project_id)}/#{revision_number}.json"
+    url = "#{endpoint}/#{to_string(project_id)}/#{revision_number}.json"
 
     with {:ok, %HTTPoison.Response{status_code: 200, body: body}} <- HTTPoison.get(url),
          {:ok, revision_data} <- Poison.decode(body),
@@ -73,6 +73,7 @@ defmodule Ellie.Adapters.Api.Ecto do
          {:ok, html_code} <- Map.fetch(revision_data, "htmlCode"),
          {:ok, elm_code} <- Map.fetch(revision_data, "elmCode"),
          {:ok, %{"projectId"=>project_id_string, "revisionNumber"=>revision_number}} <- Map.fetch(revision_data, "id"),
+         {:ok, project_id} <- PrettyId.cast(project_id_string),
          title <- Map.get(revision_data, "title"),
          terms_version <- Map.get(revision_data, "acceptedTerms")
     do
@@ -90,7 +91,7 @@ defmodule Ellie.Adapters.Api.Ecto do
           inserted = Repo.insert!(revision)
 
           redirect = %Redirect{
-            project_id: ProjectId.from_string(project_id_string),
+            project_id: project_id,
             revision_number: revision_number,
             revision: inserted
           }

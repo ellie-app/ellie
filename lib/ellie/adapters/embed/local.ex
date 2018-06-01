@@ -1,8 +1,9 @@
 defmodule Ellie.Adapters.Embed.Local do
   alias Elm.Platform
   alias Elm.Project
-  alias Ellie.Types.ProjectId
+  alias Ellie.Types.PrettyId
   alias Ellie.Types.Revision
+  alias Ellie.Helpers.EnumHelpers
   use Agent
 
   @base_path Path.expand("../../../../.local_tmp/embeds", __DIR__)
@@ -10,7 +11,7 @@ defmodule Ellie.Adapters.Embed.Local do
   def result(%Revision{} = revision) do
     case get_entry(revision) do
       {:finished, nil, _last_access} ->
-        output = Path.join([@base_path, ProjectId.to_string(revision.id), "embed.js"])
+        output = Path.join([@base_path, to_string(revision.id), "embed.js"])
         if File.exists?(output) do
           put_entry(revision, {:finished, nil, :os.system_time(:second)})
           {:ok, output}
@@ -42,31 +43,37 @@ defmodule Ellie.Adapters.Embed.Local do
     if File.exists?(@base_path) do
       @base_path
       |> File.ls!()
-      |> Enum.map(&ProjectId.from_string/1)
-      |> Enum.each(fn id ->
-        root = Path.join(@base_path, ProjectId.to_string(id))
-        case get_entry_by_id(id) do
-          nil ->
-            File.rm_rf!(root)
-            :ok
-          {:finished, _error, last_accessed} ->
-            if :os.system_time(:second) - last_accessed >= minutes_old * 60 do
-              File.rm_rf!(root)
-              delete_entry_by_id(id)
+      |> Enum.each(fn id_string ->
+          root = Path.join(@base_path, id_string)
+          with {:ok, id} <- PrettyId.cast(id_string),
+                entry <- get_entry_by_id(id)
+          do
+            case entry do
+              nil ->
+                File.rm_rf!(root)
+                :ok
+              {:finished, _error, last_accessed} ->
+                if :os.system_time(:second) - last_accessed >= minutes_old * 60 do
+                  File.rm_rf!(root)
+                  delete_entry_by_id(id)
+                end
+                :ok
+              _ ->
+                :ok
             end
-            :ok
-          _ ->
-            :ok
-        end
-      end)
-      :unit
+          else
+            _ ->
+              :ok
+          end
+        end)
+        :unit
     else
       :unit
     end
   end
 
   defp do_compile(revision) do
-    root = Path.join(@base_path, ProjectId.to_string(revision.id))
+    root = Path.join(@base_path, to_string(revision.id))
     File.rm_rf!(root)
     File.mkdir_p!(root)
 
