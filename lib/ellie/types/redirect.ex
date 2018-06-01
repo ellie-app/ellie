@@ -8,7 +8,7 @@ defmodule Ellie.Types.Redirect do
   schema "redirects" do
     field :project_id, PrettyId, primary_key: true, read_after_writes: true
     field :revision_number, :integer, primary_key: true, default: 0, read_after_writes: true
-    belongs_to :revision, Revision
+    belongs_to :revision, Revision, type: PrettyId
   end
 
   @doc false

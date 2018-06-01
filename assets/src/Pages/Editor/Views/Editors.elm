@@ -158,6 +158,7 @@ editorStyles =
         , height (pct 100)
         , width (pct 100)
         , displayFlex
+        , overflow hidden
         ]
 
 
