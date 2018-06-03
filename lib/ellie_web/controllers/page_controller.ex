@@ -23,7 +23,7 @@ defmodule EllieWeb.PageController do
       |> redirect(to: page_path(conn, redirection, to_string(revision.id)))
       |> halt()
     else
-      _ -> redirect(conn, to: page_path(conn, not_found, []))
+      _ -> redirect(conn, to: page_path(conn, not_found, "not-found"))
     end
   end
 
