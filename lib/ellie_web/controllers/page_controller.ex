@@ -3,6 +3,8 @@ defmodule EllieWeb.PageController do
   alias Ellie.Domain.Api
   alias Ellie.Types.PrettyId
 
+  def assets_fallback(conn, _params), do: send_resp(conn, :not_found, "")
+
   def new_editor(conn, _params), do: render(conn, "editor.html")
 
   def existing_editor_old(conn, params), do: old_id_scheme_redirect(:existing_editor, :new_editor, conn, params)
@@ -23,7 +25,8 @@ defmodule EllieWeb.PageController do
       |> redirect(to: page_path(conn, redirection, to_string(revision.id)))
       |> halt()
     else
-      _ -> redirect(conn, to: page_path(conn, not_found, "not-found"))
+      _ ->
+        redirect(conn, to: page_path(conn, not_found, "not-found"))
     end
   end
 

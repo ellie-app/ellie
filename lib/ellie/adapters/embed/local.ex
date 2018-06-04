@@ -3,7 +3,6 @@ defmodule Ellie.Adapters.Embed.Local do
   alias Elm.Project
   alias Ellie.Types.PrettyId
   alias Ellie.Types.Revision
-  alias Ellie.Helpers.EnumHelpers
   use Agent
 
   @base_path Path.expand("../../../../.local_tmp/embeds", __DIR__)

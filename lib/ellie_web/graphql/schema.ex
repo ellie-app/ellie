@@ -6,7 +6,6 @@ defmodule EllieWeb.Graphql.Schema do
   alias Ellie.Domain.Search
   alias Ellie.Domain.Workspace
   alias Ellie.Domain.Embed
-  alias Ellie.Types.PrettyId
   alias EllieWeb.Token
   alias Elm.Platform
 

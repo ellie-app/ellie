@@ -46,10 +46,8 @@ defmodule Elm.Platform.Local do
           {:ok, modules}
         else
           {:error, json_error} ->
-            IO.inspect(render_json_error(json_error))
             :error
           error ->
-            IO.inspect(error)
             :error
         end
     end

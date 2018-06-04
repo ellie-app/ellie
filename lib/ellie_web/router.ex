@@ -48,15 +48,21 @@ defmodule EllieWeb.Router do
   scope "/" do
     pipe_through :browser
 
+    # Need this in case a browser requests an old version and the server
+    # doesn't have it
+    get "/assets/*not_found", EllieWeb.PageController, :assets_fallback
+
     get "/new", EllieWeb.PageController, :new_editor
 
     get "/a/terms/:version", EllieWeb.PageController, :terms
 
     get "/embed/:project_id/:revision_number", EllieWeb.PageController, :embed_old
     get "/embed/:id", EllieWeb.PageController, :embed
+    get "/embed/*invalid", EllieWeb.PageController, :embed
 
     get "/:project_id/:revision_number", EllieWeb.PageController, :existing_editor_old
     get "/:id", EllieWeb.PageController, :existing_editor
+
 
     get "/*path", EllieWeb.PageController, :new_editor
   end

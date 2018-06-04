@@ -67,7 +67,7 @@ defmodule Ellie.Adapters.Api.Ecto do
     url = "#{endpoint}/#{to_string(project_id)}/#{revision_number}.json"
 
     with {:ok, %HTTPoison.Response{status_code: 200, body: body}} <- HTTPoison.get(url),
-         {:ok, revision_data} <- Poison.decode(body),
+         {:ok, revision_data} <- Poison.decode(strip_utf(body)),
          {:ok, package_combos} <- Map.fetch(revision_data, "packages"),
          {:ok, packages} <- EnumHelpers.traverse_result(package_combos, &parse_package/1),
          {:ok, html_code} <- Map.fetch(revision_data, "htmlCode"),
@@ -103,17 +103,22 @@ defmodule Ellie.Adapters.Api.Ecto do
       case result do
         {:ok, saved_revision} ->
           saved_revision
-        _error ->
-          # TODO LOG ERROR
+        error ->
+          Sentry.capture_message "Failed to decode legacy revision", extra: %{reason: error}
           # The transaction can fail because someone has already downloaded and
           # inserted the revision. If that is the case then we can look for it one
           # more time
           retrieve_revision_from_redirect(project_id, revision_number)
       end
     else
-      _error ->
-        # TODO LOG ERROR
+      error ->
+        Sentry.capture_message "Failed to decode legacy revision", extra: %{reason: error}
         nil
     end
   end
+
+  defp strip_utf(str), do: strip_utf_help(str, [])
+  defp strip_utf_help(<<x :: utf8>> <> rest, acc), do: strip_utf_help rest, [x | acc]
+  defp strip_utf_help(<<_x>> <> rest, acc), do: strip_utf_help(rest, acc)
+  defp strip_utf_help("", acc), do: List.to_string(:lists.reverse(acc))
 end
