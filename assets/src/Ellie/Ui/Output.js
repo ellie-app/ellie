@@ -74,7 +74,7 @@ export default {
       var controlsSelector = 'div[style*="z-index: 2147483647"][style*="background-color: rgb(61, 61, 61)"], .elm-mini-controls'
       var overlaySelector = 'div[style*="z-index: 2147483646"][style*="background-color: rgba(200, 200, 200, 0.7)"]'
       var styles = document.createElement('style')
-      // styles.textContent = controlsSelector + ' { display: none !important; }'
+      styles.textContent = controlsSelector + ' { display: none !important; }'
       document.head.appendChild(styles)
       window.addEventListener('message', function (event) {
         switch(event.data.tag) {
