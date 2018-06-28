@@ -9,7 +9,7 @@
     "@babel/preset-env": "7.0.0-beta.46",
     "@babel/preset-stage-2": "7.0.0-beta.46",
     "@webcomponents/custom-elements": "1.1.0",
-    "babel-loader": "8.0.0-beta",
+    "babel-loader": "8.0.0-beta.4",
     "babel-plugin-elm-pre-minify": "0.1.2",
     "codemirror": "5.27.4",
     "compression-webpack-plugin": "1.1.11",
