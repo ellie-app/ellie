@@ -41,14 +41,14 @@ export default {
       var iframe = document.createElement('iframe')
       window.open = function () {
         iframe.style.display = 'block'
-        iframe.style.zIndex = 999999999
+        iframe.style.zIndex = 2147483648
         iframe.style.width = '100%'
         iframe.style.height = '100%'
         iframe.style.position = 'fixed'
         iframe.style.top = 0
         iframe.style.left = 0
         iframe.style.border = 0
-        iframe.style.backgroundColor = '#fff';
+        iframe.style.backgroundColor = '#fff'
         iframe.src = 'javascript:void(0);'
         document.body.appendChild(iframe)
         var onClose = function () {}
@@ -70,10 +70,11 @@ export default {
         })
         return debuggerWindowProxy
       }
-      var buttonSelector = '#elm-debugger-overlay div[style*="cursor: pointer;"], .elm-mini-controls-button'
-      var controlsSelector = 'div[style*="background-color: rgb(61, 61, 61);"], .elm-mini-controls'
+      var buttonSelector = 'div[style*="z-index: 2147483647"][style*="background-color: rgb(61, 61, 61)"] > div[style*="cursor: pointer"], .elm-mini-controls-button'
+      var controlsSelector = 'div[style*="z-index: 2147483647"][style*="background-color: rgb(61, 61, 61)"], .elm-mini-controls'
+      var overlaySelector = 'div[style*="z-index: 2147483646"][style*="background-color: rgba(200, 200, 200, 0.7)"]'
       var styles = document.createElement('style')
-      styles.textContent = '#elm-debugger-overlay > ' + controlsSelector + ' { display: none !important; }'
+      // styles.textContent = controlsSelector + ' { display: none !important; }'
       document.head.appendChild(styles)
       window.addEventListener('message', function (event) {
         switch(event.data.tag) {
@@ -84,6 +85,10 @@ export default {
     
           case 'SwitchToProgram':
             if (debuggerWindowProxy) debuggerWindowProxy.close()
+            setTimeout(function () {
+              var overlay = document.querySelector(overlaySelector)
+              if (overlay) overlay.id = 'elm-debugger-overlay'
+            }, 32)
             break
         }
       })
@@ -114,7 +119,18 @@ export default {
       const script = doc.createElement('script')
       script.textContent = embeddedApi
       const style = doc.createElement('style')
-      style.textContent = `.elm-overlay { z-index: 999999999999 !important; } .elm-mini-controls { display: none !important; }`
+      style.textContent = `
+        div[style*="z-index: 2147483646"][style*="background-color: rgba(200, 200, 200, 0.7)"] {
+          position: fixed;
+          top: 0;
+          left: 0;
+        }
+        .elm-overlay {
+          z-index: 2147483646 !important;
+        }
+        .elm-mini-controls {
+          display: none !important;
+        }`
       doc.head.appendChild(script)
       doc.head.appendChild(style)
     }

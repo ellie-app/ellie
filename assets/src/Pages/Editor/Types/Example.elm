@@ -34,7 +34,7 @@ main =
 <body>
   <main></main>
   <script>
-    var app = Elm.Main.embed(document.querySelector('main'))
+    var app = Elm.Main.init({ node: document.querySelector('main') })
     // you can use ports and stuff here
   </script>
 </body>
@@ -55,7 +55,7 @@ counter =
 <body>
   <main></main>
   <script>
-    var app = Elm.Main.embed(document.querySelector('main'))
+    var app = Elm.Main.init({ node: document.querySelector('main') })
     // you can use ports and stuff here
   </script>
 </body>

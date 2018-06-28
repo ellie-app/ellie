@@ -47,7 +47,7 @@ RUN mkdir -p /tmp/elm_bin/0.18.0 && mkdir -p /tmp/elm_bin/0.19.0 \
     && rm /tmp/format-0.18.0.tar.gz \
     && chmod +x /tmp/elm_bin/0.18.0/* \
     # Elm Platform 0.19
-    && wget -q https://44a95588fe4cc47efd96-ec3c2a753a12d2be9f23ba16873acc23.ssl.cf2.rackcdn.com/linux-64.tar.gz?cb=2 -O /tmp/platform-0.19.0.tar.gz \
+    && wget -q https://44a95588fe4cc47efd96-ec3c2a753a12d2be9f23ba16873acc23.ssl.cf2.rackcdn.com/linux-64.tar.gz?cb=3 -O /tmp/platform-0.19.0.tar.gz \
     && tar -xvC /tmp/elm_bin/0.19.0 -f /tmp/platform-0.19.0.tar.gz \
     && rm /tmp/platform-0.19.0.tar.gz \
     && chmod +x /tmp/elm_bin/0.19.0/* \

@@ -115,7 +115,7 @@ reset token user recovery revision defaultPackages =
     , animating = True
     , user = user
     , workbenchRatio = 0.5
-    , editorsRatio = 0.75
+    , editorsRatio = 0.6
     , analysis = Analysis.empty
     , recovery = recovery
     }

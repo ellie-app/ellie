@@ -13,7 +13,11 @@ defmodule Elm.Platform.Local19 do
       project_json = read_project!(root)
       project = %Project{
         elm_version: Version.create(0, 19, 0),
-        dependencies: decode_deps_map!(Map.fetch!(project_json, "dependencies"))
+        dependencies:
+          project_json
+          |> Map.get("dependencies", %{})
+          |> Map.get("direct", %{})
+          |> decode_deps_map!()
       }
       {:ok, project}
     else
@@ -29,12 +33,16 @@ defmodule Elm.Platform.Local19 do
     output = Keyword.fetch!(options, :output)
 
     project_json = read_project!(root)
-    current_deps = decode_deps_map!(Map.get(project_json, "dependencies", %{}))
+    current_deps =
+      project_json
+      |> Map.get("dependencies", %{})
+      |> Map.get("direct", %{})
+      |> decode_deps_map!()
 
     install_result =
       if not MapSet.equal?(current_deps, project.dependencies) do
         default_project()
-        |> Map.put("dependencies", make_deps_map(project.dependencies))
+        |> put_in(["dependencies", "direct"], make_deps_map(project.dependencies))
         |> write_project!(root)
         install_transitive_deps(root)
       else
@@ -98,11 +106,11 @@ defmodule Elm.Platform.Local19 do
               |> Path.join("elm.json.original")
               |> File.read!()
               |> Poison.decode!()
-            case get_in(original_elm_json, ["do-not-edit-this-by-hand", "transitive-dependencies", Name.to_string(name)]) do
+            case get_in(original_elm_json, ["dependencies", "indirect", Name.to_string(name)]) do
               version_string when not is_nil(version_string) ->
                 root
                 |> read_project!()
-                |> put_in(["do-not-edit-this-by-hand", "transitive-dependencies", Name.to_string(name)], version_string)
+                |> put_in(["dependencies", "indirect", Name.to_string(name)], version_string)
                 |> write_project!(root)
                 install_transitive_deps(root)
               nil ->
@@ -112,7 +120,7 @@ defmodule Elm.Platform.Local19 do
             project_json = read_project!(root)
             packages
             |> Enum.reduce(project_json, fn package, pj ->
-                put_in(pj, ["do-not-edit-this-by-hand", "transitive-dependencies", Name.to_string(package.name)], Version.to_string(package.version))
+                put_in(pj, ["dependencies", "indirect", Name.to_string(package.name)], Version.to_string(package.version))
               end)
             |> write_project!(root)
             install_transitive_deps(root)
@@ -183,11 +191,9 @@ defmodule Elm.Platform.Local19 do
     Logger.info("elm init\nexit: #{inspect result}\n")
     case result do
       %Porcelain.Result{status: 0} ->
-        with :ok <- File.rm(Path.join(root, "src/Main.elm")),
-             :ok <- File.cp(Path.join(root, "elm.json"), Path.join(root, "elm.json.original"))
-        do
-          :ok
-        else
+        case File.cp(Path.join(root, "elm.json"), Path.join(root, "elm.json.original")) do
+          :ok ->
+            :ok
           {:error, reason} ->
             Sentry.capture_message "elm init filesystem error",
               extra: %{
@@ -247,10 +253,13 @@ defmodule Elm.Platform.Local19 do
       "type" => "application",
       "elm-version" => "0.19.0",
       "source-directories" => ["src"],
-      "dependencies" => %{},
-      "test-dependencies" => %{},
-      "do-not-edit-this-by-hand" => %{
-        "transitive-dependencies" => %{}
+      "dependencies" => %{
+        "direct" => %{},
+        "indirect" => %{},
+      },
+      "test-dependencies" => %{
+        "direct" => %{},
+        "indirect" => %{},
       }
     }
   end
