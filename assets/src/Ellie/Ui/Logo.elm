@@ -34,7 +34,7 @@ animated =
         , height (pct 100)
         , display block
         ]
-        []
+        [ SvgAttributes.viewBox "0 0 51 20" ]
         [ Svg.defs []
             [ Svg.symbol
                 [ SvgAttributes.id "animated-logo"

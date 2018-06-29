@@ -305,13 +305,12 @@ viewClickToRun =
         , color Theme.primaryForeground
         , cursor pointer
         , flexDirection column
-        , paddingTop (px 100)
+        , justifyContent center
         ]
         [ Events.onClick EmbedRunStarted ]
         [ Html.styled Html.div
             [ width (pct 80)
             , maxWidth (px 300)
-            , height (px 200)
             , marginBottom (px 24)
             ]
             []
@@ -333,13 +332,12 @@ viewAnimatedContainer text =
         , color Theme.primaryForeground
         , cursor pointer
         , flexDirection column
-        , paddingTop (px 100)
+        , justifyContent center
         ]
         []
         [ Html.styled Html.div
             [ width (pct 80)
             , maxWidth (px 300)
-            , height (px 200)
             , marginBottom (px 24)
             ]
             []
