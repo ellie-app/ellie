@@ -19,5 +19,9 @@ export default {
     //     queue = []
     //   })
     // })
+
+    app.ports.effectProgramTitle.subscribe((title) => {
+      document.title = title
+    })
   }
 }

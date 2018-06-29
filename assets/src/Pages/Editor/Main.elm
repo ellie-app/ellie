@@ -5,7 +5,7 @@ import Json.Decode exposing (Value)
 import Pages.Editor.Route as Route
 import Pages.Editor.State.App as AppState
 import Pages.Editor.Types.Flags as Flags exposing (Flags)
-import Pages.Editor.View as View
+import Pages.Editor.Views.App as View
 
 
 port outbound : ( String, Value ) -> Cmd msg
@@ -27,4 +27,5 @@ main =
         , styles = View.styles
         , inbound = inbound
         , outbound = outbound
+        , title = View.title
         }

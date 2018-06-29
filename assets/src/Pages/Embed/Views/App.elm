@@ -1,4 +1,4 @@
-module Pages.Embed.Views.App exposing (styles, view)
+module Pages.Embed.Views.App exposing (styles, title, view)
 
 import Css exposing (..)
 import Css.Foreign
@@ -16,6 +16,21 @@ import Html.Styled.Events as Events
 import Pages.Embed.State.App as AppState exposing (Model(..), Msg(..), OutputState, WorkingState)
 import Pages.Embed.Types.Panel as Panel exposing (Panel)
 import Pages.Embed.Types.Revision as Revision exposing (Revision)
+
+
+title : Model -> String
+title model =
+    case model of
+        Working workingState ->
+            case workingState.revision.data.title of
+                "" ->
+                    "Ellie - Untitled"
+
+                name ->
+                    "Ellie - " ++ name
+
+        _ ->
+            "Ellie"
 
 
 view : Model -> Html Msg
