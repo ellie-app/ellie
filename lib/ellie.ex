@@ -7,12 +7,18 @@ defmodule Ellie do
     Application.put_env(:sentry, :dsn, Map.get(System.get_env(), "SENTRY_DSN", ""))
 
     if Application.get_env(:ellie, :env) == :prod do
-      merge_config :ellie, EllieWeb.Endpoint,
-        secret_key_base: Map.fetch!(System.get_env(), "SECRET_KEY_BASE"),
-        url: [host: url_host()]
+      runtime_url_host = url_host()
+      require Logger
+      Logger.info("configuring url host as #{runtime_url_host}")
 
-      merge_config :ellie, Ellie.Repo,
-        url: System.get_env("DATABASE_URL")
+      merge_config(
+        :ellie,
+        EllieWeb.Endpoint,
+        secret_key_base: Map.fetch!(System.get_env(), "SECRET_KEY_BASE"),
+        url: [host: runtime_url_host]
+      )
+
+      merge_config(:ellie, Ellie.Repo, url: System.get_env("DATABASE_URL"))
     end
 
     children = [
@@ -44,6 +50,7 @@ defmodule Ellie do
         |> with_default("0.0.0.0")
         |> String.replace("https://", "")
         |> String.replace("http://", "")
+
       hostname ->
         hostname
     end
