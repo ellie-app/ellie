@@ -104,7 +104,7 @@ if [[ $branch_name == "master" ]]; then
         -e DATABASE_URL=@production-db \
         -e SENTRY_DSN=@sentry-dsn \
         -e SENTRY_API_KEY=@sentry-api-key \
-        -e HOSTNAME=ellie-app.com \
+        -e HOSTNAME=https://ellie-app.com \
         -n ellie-production \
         ellie-app/ellie
 
@@ -148,7 +148,7 @@ else
         -e DATABASE_URL=$database_url \
         -e SENTRY_DSN=@sentry-dsn \
         -e SENTRY_API_KEY=@sentry-api-key \
-        -e HOSTNAME=$app_name.now.sh \
+        -e HOSTNAME=https://$app_name.now.sh \
         ellie-app/ellie#$branch_name
     now -t $now_token -A ./now.json alias
     rm ./now.json
