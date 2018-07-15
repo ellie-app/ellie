@@ -44,7 +44,7 @@ defmodule Ellie do
   end
 
   defp url_host() do
-    case System.get_env("HOSTNAME") do
+    case Map.get(System.get_env(), "SERVER_HOST") do
       nil ->
         System.get_env("NOW_URL")
         |> with_default("0.0.0.0")

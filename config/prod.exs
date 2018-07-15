@@ -1,8 +1,6 @@
 use Mix.Config
 
-# config :logger,
-#   backends: []
-config :logger, level: :info
+config :logger, backends: []
 
 config :ellie, EllieWeb.Endpoint,
   load_from_system_env: true,

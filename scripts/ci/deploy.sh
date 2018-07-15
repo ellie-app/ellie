@@ -104,7 +104,7 @@ if [[ $branch_name == "master" ]]; then
         -e DATABASE_URL=@production-db \
         -e SENTRY_DSN=@sentry-dsn \
         -e SENTRY_API_KEY=@sentry-api-key \
-        -e HOSTNAME=ellie-app.com \
+        -e SERVER_HOST=ellie-app.com \
         -n ellie-production \
         ellie-app/ellie
 
