@@ -1,4 +1,4 @@
-FROM elixir
+FROM elixir:1.7.2
 
 ENV DEBIAN_FRONTEND=noninteractive
 
@@ -28,7 +28,7 @@ ADD https://github.com/alco/goon/releases/download/v1.1.1/goon_linux_386.tar.gz 
 ADD https://github.com/elm-lang/elm-platform/releases/download/0.18.0-exp/elm-platform-linux-64bit.tar.gz /tmp/ellie-bin/0.18.0
 ADD https://github.com/avh4/elm-format/releases/download/0.7.0-exp/elm-format-0.18-0.7.0-exp-linux-x64.tgz /tmp/ellie-bin/0.18.0
 ADD https://github.com/avh4/elm-format/releases/download/0.8.0-alpha-elm019rc1-rc2/elm-format-0.19-0.8.0-alpha-elm019rc1-rc2-linux-x64.tgz /tmp/ellie-bin/0.19.0
-RUN wget https://44a95588fe4cc47efd96-ec3c2a753a12d2be9f23ba16873acc23.ssl.cf2.rackcdn.com/linux-64.tar.gz?a=2 -O /tmp/ellie-bin/0.19.0/linux-64.tar.gz
+RUN wget https://44a95588fe4cc47efd96-ec3c2a753a12d2be9f23ba16873acc23.ssl.cf2.rackcdn.com/linux-64.tar.gz?a=3 -O /tmp/ellie-bin/0.19.0/linux-64.tar.gz
 
 RUN tar -xvC /tmp/ellie-bin/ -f /tmp/ellie-bin/goon_linux_386.tar.gz \
     && tar -xvC /tmp/ellie-bin/0.18.0/ -f /tmp/ellie-bin/0.18.0/elm-platform-linux-64bit.tar.gz \

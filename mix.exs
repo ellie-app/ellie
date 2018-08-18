@@ -5,11 +5,11 @@ defmodule Ellie.Mixfile do
     [
       app: :ellie,
       version: "0.0.1",
-      elixir: "~> 1.4",
-      elixirc_paths: elixirc_paths(Mix.env),
-      compilers: [:phoenix] ++ Mix.compilers,
-      build_embedded: Mix.env == :prod,
-      start_permanent: Mix.env == :prod,
+      elixir: "1.7.2",
+      elixirc_paths: elixirc_paths(Mix.env()),
+      compilers: [:phoenix] ++ Mix.compilers(),
+      build_embedded: Mix.env() == :prod,
+      start_permanent: Mix.env() == :prod,
       aliases: aliases(),
       deps: deps(),
       default_task: "phx.server"
@@ -28,16 +28,16 @@ defmodule Ellie.Mixfile do
 
   # Specifies which paths to compile per environment.
   defp elixirc_paths(:test), do: ["lib", "test/support"]
-  defp elixirc_paths(_),     do: ["lib"]
+  defp elixirc_paths(_), do: ["lib"]
 
   # Specifies your project dependencies.
   #
   # Type `mix help deps` for examples and options.
   defp deps do
     [
-      {:absinthe, "~> 1.4.0"},
-      {:absinthe_plug, "~> 1.4.0"},
-      {:absinthe_phoenix, "~> 1.4.0"},
+      {:absinthe, "1.4.13"},
+      {:absinthe_plug, "1.4.4"},
+      {:absinthe_phoenix, "1.4.3"},
       {:combine, "~> 0.10"},
       {:cowboy, "~> 1.0"},
       {:dataloader, "~> 1.0.0"},
@@ -70,8 +70,8 @@ defmodule Ellie.Mixfile do
     [
       "ecto.setup": ["ecto.create", "ecto.migrate", "run priv/repo/seeds.exs"],
       "ecto.reset": ["ecto.drop", "ecto.setup"],
-      "test": ["ecto.create --quiet", "ecto.migrate", "test"],
-      "generate_schema": ["loadpaths", "absinthe.schema.json ./priv/graphql/schema.json"]
+      test: ["ecto.create --quiet", "ecto.migrate", "test"],
+      generate_schema: ["loadpaths", "absinthe.schema.json ./priv/graphql/schema.json"]
     ]
   end
 end

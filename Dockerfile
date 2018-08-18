@@ -1,7 +1,7 @@
 # This Dockerfile is for production. Ideally I'd like to put it in scripts/docker/production
 # but right now Ellie is deployed to zeit.co's now.sh service. now.sh can only find Dockerfiles
 # in the root of the project. Development dockerfiles are found in scripts/docker/development.
-FROM elixir:1.6
+FROM elixir:1.7.2
 
 ENV DEBIAN_FRONTEND=noninteractive
 
@@ -47,12 +47,12 @@ RUN mkdir -p /tmp/elm_bin/0.18.0 && mkdir -p /tmp/elm_bin/0.19.0 \
     && rm /tmp/format-0.18.0.tar.gz \
     && chmod +x /tmp/elm_bin/0.18.0/* \
     # Elm Platform 0.19
-    && wget -q https://44a95588fe4cc47efd96-ec3c2a753a12d2be9f23ba16873acc23.ssl.cf2.rackcdn.com/linux-64.tar.gz?cb=3 -O /tmp/platform-0.19.0.tar.gz \
+    && wget -q https://44a95588fe4cc47efd96-ec3c2a753a12d2be9f23ba16873acc23.ssl.cf2.rackcdn.com/linux-64.tar.gz?cb=4 -O /tmp/platform-0.19.0.tar.gz \
     && tar -xvC /tmp/elm_bin/0.19.0 -f /tmp/platform-0.19.0.tar.gz \
     && rm /tmp/platform-0.19.0.tar.gz \
     && chmod +x /tmp/elm_bin/0.19.0/* \
     # Elm Format 0.19
-    && wget -q https://github.com/avh4/elm-format/releases/download/0.8.0-alpha-elm019rc1-rc1/elm-format-0.19-0.8.0-alpha-elm019rc1-rc1-linux-x64.tgz -O /tmp/format-0.19.0.tar.gz \
+    && wget -q https://github.com/avh4/elm-format/releases/download/0.8.0-alpha-elm019rc1-rc2/elm-format-0.19-0.8.0-alpha-elm019rc1-rc2-linux-x64.tgz -O /tmp/format-0.19.0.tar.gz \
     && tar -xvC /tmp/elm_bin/0.19.0 -f /tmp/format-0.19.0.tar.gz \
     && rm /tmp/format-0.19.0.tar.gz \
     && chmod +x /tmp/elm_bin/0.19.0/*
