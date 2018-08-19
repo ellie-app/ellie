@@ -17,8 +17,8 @@ view model =
         AppState.Initial _ _ ->
             Html.text ""
 
-        AppState.Setup setupState ->
-            case setupState of
+        AppState.Setup setupModel ->
+            case setupModel.state of
                 SetupState.Authenticating _ ->
                     SetupView.view SetupView.Authenticating
 

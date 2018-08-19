@@ -1,7 +1,8 @@
 module Pages.Editor.State.Setup
     exposing
-        ( Model(..)
+        ( Model
         , Msg(..)
+        , State(..)
         , Transition
         , init
         , subscriptions
@@ -21,11 +22,18 @@ import Pages.Editor.Types.User as User exposing (User)
 import Pages.Editor.Types.WorkspaceUpdate as WorkspaceUpdate exposing (WorkspaceUpdate)
 
 
-type Model
-    = AcceptingTerms { latestTerms : Int, user : User, revisionId : Maybe Revision.Id }
-    | Authenticating { user : User, revisionId : Maybe Revision.Id }
-    | Loading { token : Jwt, user : User, revisionId : Revision.Id }
-    | Attaching { token : Jwt, user : User, revision : Maybe ( Revision.Id, Revision ) }
+type alias Model =
+    { defaultRevision : Maybe Revision
+    , user : User
+    , state : State
+    }
+
+
+type State
+    = AcceptingTerms { latestTerms : Int, revisionId : Maybe Revision.Id }
+    | Authenticating { revisionId : Maybe Revision.Id }
+    | Loading { token : Jwt, revisionId : Revision.Id }
+    | Attaching { token : Jwt, revision : Maybe ( Revision.Id, Revision ) }
     | Failure String
 
 
@@ -33,23 +41,91 @@ type alias Transition =
     Transition.Transition Model
         { token : Jwt
         , user : User
-        , revision : Maybe ( Revision.Id, Revision )
+        , revision : Revision.External
         , packages : List Package
         }
 
 
-init : User -> Maybe Revision.Id -> Int -> ( Model, Command Msg )
-init user maybeRevisionId latestTerms =
-    if user.acceptedTerms == Just latestTerms then
-        ( Authenticating { user = user, revisionId = maybeRevisionId }
-        , Effects.authenticate
-            |> Command.map (Result.mapError (\_ -> ()))
-            |> Command.map Authenticated
-        )
-    else
-        ( AcceptingTerms { latestTerms = latestTerms, user = user, revisionId = maybeRevisionId }
-        , Command.none
-        )
+init : Route -> User -> Int -> ( Model, Command Msg )
+init route user latestTerms =
+    case ( route, user.acceptedTerms == Just latestTerms ) of
+        ( New, True ) ->
+            ( { defaultRevision = Nothing
+              , user = user
+              , state = Authenticating { revisionId = Nothing }
+              }
+            , Effects.authenticate
+                |> Command.map (Result.mapError (\_ -> ()))
+                |> Command.map Authenticated
+            )
+
+        ( New, False ) ->
+            ( { defaultRevision = Nothing
+              , user = user
+              , state = AcceptingTerms { latestTerms = latestTerms, revisionId = Nothing }
+              }
+            , Command.none
+            )
+
+        ( Example revision, True ) ->
+            ( { defaultRevision = Just revision
+              , user = user
+              , state = Authenticating { revisionId = Nothing }
+              }
+            , Command.batch
+                [ Effects.authenticate
+                    |> Command.map (Result.mapError (\_ -> ()))
+                    |> Command.map Authenticated
+                , Effects.redirect <| Route.toString Route.New
+                ]
+            )
+
+        ( Example revision, False ) ->
+            ( { defaultRevision = Just revision
+              , user = user
+              , state = AcceptingTerms { latestTerms = latestTerms, revisionId = Nothing }
+              }
+            , Effects.redirect <| Route.toString Route.New
+            )
+
+        ( Existing revisionId, True ) ->
+            ( { defaultRevision = Nothing
+              , user = user
+              , state = Authenticating { revisionId = Just revisionId }
+              }
+            , Effects.authenticate
+                |> Command.map (Result.mapError (\_ -> ()))
+                |> Command.map Authenticated
+            )
+
+        ( Existing revisionId, False ) ->
+            ( { defaultRevision = Nothing
+              , user = user
+              , state = AcceptingTerms { latestTerms = latestTerms, revisionId = Just revisionId }
+              }
+            , Command.none
+            )
+
+        ( NotFound, True ) ->
+            ( { defaultRevision = Nothing
+              , user = user
+              , state = Authenticating { revisionId = Nothing }
+              }
+            , Command.batch
+                [ Effects.authenticate
+                    |> Command.map (Result.mapError (\_ -> ()))
+                    |> Command.map Authenticated
+                , Effects.redirect <| Route.toString Route.New
+                ]
+            )
+
+        ( NotFound, False ) ->
+            ( { defaultRevision = Nothing
+              , user = user
+              , state = AcceptingTerms { latestTerms = latestTerms, revisionId = Nothing }
+              }
+            , Effects.redirect <| Route.toString Route.New
+            )
 
 
 type Msg
@@ -63,30 +139,42 @@ type Msg
 
 
 update : Msg -> Model -> ( Transition, Command Msg )
-update msg state =
-    case state of
-        AcceptingTerms ({ user } as state) ->
+update msg model =
+    case model.state of
+        AcceptingTerms state ->
             case msg of
                 RouteChanged route ->
                     case route of
                         Route.Existing newRevisionId ->
-                            ( { state | revisionId = Just newRevisionId }
-                                |> AcceptingTerms
-                                |> Transition.step
+                            ( Transition.step
+                                { model
+                                    | state = AcceptingTerms { state | revisionId = Just newRevisionId }
+                                }
                             , Command.none
                             )
 
                         Route.New ->
-                            ( { state | revisionId = Nothing }
-                                |> AcceptingTerms
-                                |> Transition.step
+                            ( Transition.step
+                                { model
+                                    | state = AcceptingTerms { state | revisionId = Nothing }
+                                }
                             , Command.none
                             )
 
+                        Route.Example defaultRevision ->
+                            ( Transition.step
+                                { model
+                                    | defaultRevision = Just defaultRevision
+                                    , state = AcceptingTerms { state | revisionId = Nothing }
+                                }
+                            , Effects.redirect <| Route.toString Route.New
+                            )
+
                         Route.NotFound ->
-                            ( { state | revisionId = Nothing }
-                                |> AcceptingTerms
-                                |> Transition.step
+                            ( Transition.step
+                                { model
+                                    | state = AcceptingTerms state
+                                }
                             , case state.revisionId of
                                 Just rid ->
                                     Effects.redirect <| Route.toString <| Route.Existing rid
@@ -97,12 +185,17 @@ update msg state =
 
                 UserAcceptedTerms ->
                     let
+                        currentUser =
+                            model.user
+
                         updatedUser =
-                            { user | acceptedTerms = Just state.latestTerms }
+                            { currentUser | acceptedTerms = Just state.latestTerms }
                     in
-                    ( { user = updatedUser, revisionId = state.revisionId }
-                        |> Authenticating
-                        |> Transition.step
+                    ( Transition.step
+                        { model
+                            | user = updatedUser
+                            , state = Authenticating { revisionId = state.revisionId }
+                        }
                     , Command.batch
                         [ Effects.updateUser updatedUser
                         , Effects.authenticate
@@ -112,32 +205,44 @@ update msg state =
                     )
 
                 _ ->
-                    ( Transition.step <| AcceptingTerms state
+                    ( Transition.step model
                     , Command.none
                     )
 
-        Authenticating ({ user, revisionId } as state) ->
+        Authenticating state ->
             case msg of
                 RouteChanged route ->
                     case route of
                         Route.Existing newRevisionId ->
-                            ( { state | revisionId = Just newRevisionId }
-                                |> Authenticating
-                                |> Transition.step
+                            ( Transition.step
+                                { model
+                                    | state = Authenticating { revisionId = Just newRevisionId }
+                                }
                             , Command.none
                             )
 
                         Route.New ->
-                            ( { state | revisionId = Nothing }
-                                |> Authenticating
-                                |> Transition.step
+                            ( Transition.step
+                                { model
+                                    | state = Authenticating { revisionId = Nothing }
+                                }
                             , Command.none
                             )
 
+                        Route.Example defaultRevision ->
+                            ( Transition.step
+                                { model
+                                    | defaultRevision = Just defaultRevision
+                                    , state = Authenticating { revisionId = Nothing }
+                                }
+                            , Effects.redirect <| Route.toString Route.New
+                            )
+
                         Route.NotFound ->
-                            ( { state | revisionId = Nothing }
-                                |> Authenticating
-                                |> Transition.step
+                            ( Transition.step
+                                { model
+                                    | state = Authenticating { revisionId = state.revisionId }
+                                }
                             , case state.revisionId of
                                 Just rid ->
                                     Effects.redirect <| Route.toString <| Route.Existing rid
@@ -149,133 +254,185 @@ update msg state =
                 Authenticated (Ok token) ->
                     case state.revisionId of
                         Just revisionId ->
-                            ( { token = token, user = user, revisionId = revisionId }
-                                |> Loading
-                                |> Transition.step
+                            ( Transition.step
+                                { model
+                                    | state = Loading { token = token, revisionId = revisionId }
+                                }
                             , Effects.getRevision revisionId
                                 |> Command.map (Result.mapError (\_ -> ()))
                                 |> Command.map (RevisionLoaded revisionId)
                             )
 
                         Nothing ->
-                            ( { token = token, revision = Nothing, user = user }
-                                |> Attaching
-                                |> Transition.step
+                            ( Transition.step
+                                { model
+                                    | state = Attaching { token = token, revision = Nothing }
+                                }
                             , Command.none
                             )
 
                 _ ->
-                    ( Transition.step <| Authenticating state
+                    ( Transition.step model
                     , Command.none
                     )
 
-        Loading ({ user, revisionId, token } as state) ->
+        Loading state ->
             case msg of
                 RouteChanged route ->
                     case route of
                         Route.Existing newRevisionId ->
-                            if newRevisionId == revisionId then
-                                ( Transition.step <| Loading state
+                            if newRevisionId == state.revisionId then
+                                ( Transition.step model
                                 , Command.none
                                 )
                             else
-                                ( Transition.step <| Loading { state | revisionId = newRevisionId }
-                                , Effects.getRevision revisionId
-                                    |> Command.map (Result.mapError (\_ -> ()))
-                                    |> Command.map (RevisionLoaded newRevisionId)
-                                )
-
-                        Route.New ->
-                            ( Transition.step <| Attaching { user = user, token = token, revision = Nothing }
-                            , Command.none
-                            )
-
-                        Route.NotFound ->
-                            ( Transition.step <| Loading state
-                            , Effects.redirect <| Route.toString <| Route.Existing revisionId
-                            )
-
-                RevisionLoaded rid result ->
-                    if rid == state.revisionId then
-                        case result of
-                            Ok revision ->
-                                ( Transition.step <| Attaching { user = user, token = token, revision = Just ( rid, revision ) }
-                                , Command.none
-                                )
-
-                            Err _ ->
-                                ( Transition.step <| Failure "Could not load revision"
-                                , Command.none
-                                )
-                    else
-                        ( Transition.step <| Loading state
-                        , Command.none
-                        )
-
-                _ ->
-                    ( Transition.step <| Loading state
-                    , Command.none
-                    )
-
-        Attaching ({ user, revision, token } as attachingState) ->
-            case msg of
-                RouteChanged route ->
-                    case route of
-                        Route.Existing newRevisionId ->
-                            if Maybe.map Tuple.first revision == Just newRevisionId then
-                                ( Transition.step <| Attaching attachingState
-                                , Command.none
-                                )
-                            else
-                                ( Transition.step <| Loading { user = user, token = token, revisionId = newRevisionId }
+                                ( Transition.step
+                                    { model
+                                        | state = Loading { state | revisionId = newRevisionId }
+                                    }
                                 , Effects.getRevision newRevisionId
                                     |> Command.map (Result.mapError (\_ -> ()))
                                     |> Command.map (RevisionLoaded newRevisionId)
                                 )
 
                         Route.New ->
-                            ( Transition.step <| Attaching { attachingState | revision = Nothing }
+                            ( Transition.step
+                                { model
+                                    | state = Attaching { token = state.token, revision = Nothing }
+                                }
                             , Command.none
                             )
 
+                        Route.Example defaultRevision ->
+                            ( Transition.step
+                                { model
+                                    | defaultRevision = Just defaultRevision
+                                    , state = Attaching { token = state.token, revision = Nothing }
+                                }
+                            , Effects.redirect <| Route.toString Route.New
+                            )
+
                         Route.NotFound ->
-                            case revision of
+                            ( Transition.step model
+                            , Effects.redirect <| Route.toString <| Route.Existing state.revisionId
+                            )
+
+                RevisionLoaded rid result ->
+                    if rid == state.revisionId then
+                        case result of
+                            Ok revision ->
+                                ( Transition.step
+                                    { model
+                                        | state = Attaching { token = state.token, revision = Just ( rid, revision ) }
+                                    }
+                                , Command.none
+                                )
+
+                            Err _ ->
+                                ( Transition.step
+                                    { model
+                                        | state = Failure "Could not load revision"
+                                    }
+                                , Command.none
+                                )
+                    else
+                        ( Transition.step model
+                        , Command.none
+                        )
+
+                _ ->
+                    ( Transition.step model
+                    , Command.none
+                    )
+
+        Attaching state ->
+            case msg of
+                RouteChanged route ->
+                    case route of
+                        Route.Existing newRevisionId ->
+                            if Maybe.map Tuple.first state.revision == Just newRevisionId then
+                                ( Transition.step model
+                                , Command.none
+                                )
+                            else
+                                ( Transition.step
+                                    { model
+                                        | state = Loading { token = state.token, revisionId = newRevisionId }
+                                    }
+                                , Effects.getRevision newRevisionId
+                                    |> Command.map (Result.mapError (\_ -> ()))
+                                    |> Command.map (RevisionLoaded newRevisionId)
+                                )
+
+                        Route.New ->
+                            ( Transition.step
+                                { model
+                                    | state = Attaching { state | revision = Nothing }
+                                }
+                            , Command.none
+                            )
+
+                        Route.Example defaultRevision ->
+                            ( Transition.step
+                                { model
+                                    | state = Attaching { state | revision = Nothing }
+                                    , defaultRevision = Just defaultRevision
+                                }
+                            , Effects.redirect <| Route.toString Route.New
+                            )
+
+                        Route.NotFound ->
+                            case state.revision of
                                 Just ( rid, _ ) ->
-                                    ( Transition.step <| Attaching attachingState
+                                    ( Transition.step model
                                     , Effects.redirect <| Route.toString <| Route.Existing rid
                                     )
 
                                 Nothing ->
-                                    ( Transition.step <| Attaching attachingState
+                                    ( Transition.step model
                                     , Effects.redirect <| Route.toString Route.New
                                     )
 
                 WorkspaceConnected ->
-                    ( Transition.step <| Attaching attachingState
-                    , revision
+                    ( Transition.step model
+                    , state.revision
                         |> Maybe.map (Tuple.second >> .elmVersion)
                         |> Maybe.withDefault Compiler.version
-                        |> Effects.attachToWorkspace attachingState.token
+                        |> Effects.attachToWorkspace state.token
                         |> Command.map (\_ -> NoOp)
                     )
 
                 WorkspaceAttached packages ->
-                    ( Transition.exit { token = token, user = user, revision = revision, packages = packages }
+                    ( Transition.exit
+                        { token = state.token
+                        , user = model.user
+                        , packages = packages
+                        , revision =
+                            case ( model.defaultRevision, state.revision ) of
+                                ( _, Just revisionAndId ) ->
+                                    Revision.Remote revisionAndId
+
+                                ( Just default, Nothing ) ->
+                                    Revision.Example default
+
+                                ( Nothing, Nothing ) ->
+                                    Revision.Default
+                        }
                     , Command.none
                     )
 
                 _ ->
-                    ( Transition.step <| Attaching attachingState
+                    ( Transition.step model
                     , Command.none
                     )
 
         _ ->
-            ( Transition.step state, Command.none )
+            ( Transition.step model, Command.none )
 
 
 subscriptions : Model -> Subscription Msg
 subscriptions model =
-    case model of
+    case model.state of
         Attaching { token } ->
             Effects.workspaceUpdates token
                 |> Subscription.map chooseUpdate

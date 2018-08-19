@@ -3,7 +3,6 @@ module Pages.Editor.Views.Editors exposing (..)
 import Css exposing (..)
 import Ellie.Ui.CodeEditor as CodeEditor
 import Ellie.Ui.Icon as Icon
-import Ellie.Ui.Menu as Menu
 import Ellie.Ui.SplitPane as SplitPane
 import Ellie.Ui.Theme as Theme
 import Elm.Error as Error exposing (Error)
@@ -11,7 +10,6 @@ import Html.Styled as Html exposing (Attribute, Html)
 import Html.Styled.Attributes as Attributes exposing (css)
 import Html.Styled.Events as Events
 import Pages.Editor.Types.Analysis as Analysis exposing (Analysis)
-import Pages.Editor.Types.Example as Example exposing (Example)
 
 
 type alias Config msg =
@@ -21,7 +19,6 @@ type alias Config msg =
     , htmlCode : String
     , onHtmlChange : String -> msg
     , onResize : Float -> msg
-    , onExampleSelect : Example -> msg
     , ratio : Float
     , vimMode : Bool
     , onFormat : msg
@@ -203,19 +200,7 @@ viewEditorHeader config name tooltip msg icon =
                 , justifyContent flexEnd
                 ]
             ]
-            [ Html.div
-                [ css
-                    [ width (px 24)
-                    , height (px 24)
-                    , position relative
-                    ]
-                ]
-                [ Menu.view
-                    { icon = Icon.More
-                    , items = List.map (\e -> { label = e.label, onSelect = config.onExampleSelect e }) Example.all
-                    }
-                ]
-            , Html.button
+            [ Html.button
                 [ css
                     [ property "background" "none"
                     , border zero

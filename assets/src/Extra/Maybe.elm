@@ -1,6 +1,11 @@
 module Extra.Maybe exposing (..)
 
 
+combine : List (Maybe a) -> Maybe (List a)
+combine list =
+    List.foldr (Maybe.map2 (::)) (Just []) list
+
+
 isJust : Maybe a -> Bool
 isJust maybe =
     case maybe of

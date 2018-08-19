@@ -12,7 +12,6 @@ import Data.Transition as Transition exposing (Transition(..))
 import Effect.Command as Command exposing (Command)
 import Effect.Subscription as Subscription exposing (Subscription)
 import Elm.Package as Package exposing (Package)
-import Pages.Editor.Effects as Effects
 import Pages.Editor.Route as Route exposing (Route(..))
 import Pages.Editor.State.Setup as Setup
 import Pages.Editor.State.Working as Working
@@ -34,27 +33,15 @@ init flags route =
         user =
             Maybe.withDefault User.default flags.user
     in
-    case route of
-        Route.New ->
-            Setup.init user Nothing flags.latestTerms
-                |> Tuple.mapFirst Setup
-                |> Tuple.mapSecond (Command.map SetupMsg)
-
-        Route.Existing revisionId ->
-            Setup.init user (Just revisionId) flags.latestTerms
-                |> Tuple.mapFirst Setup
-                |> Tuple.mapSecond (Command.map SetupMsg)
-
-        NotFound ->
-            ( Initial flags route
-            , Effects.redirect <| Route.toString Route.New
-            )
+    Setup.init route user flags.latestTerms
+        |> Tuple.mapFirst Setup
+        |> Tuple.mapSecond (Command.map SetupMsg)
 
 
 setupToWorking :
     { token : Jwt
     , recovery : Maybe Revision
-    , revision : Maybe ( Revision.Id, Revision )
+    , revision : Revision.External
     , packages : List Package
     , user : User
     }
