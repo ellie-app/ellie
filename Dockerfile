@@ -6,11 +6,12 @@ FROM elixir:1.7.2
 ENV DEBIAN_FRONTEND=noninteractive
 
 # Install build-time deps
-RUN curl -sL https://deb.nodesource.com/setup_9.x | bash - \
+RUN curl -sL https://deb.nodesource.com/setup_10.x | bash - \
     && curl -sS https://dl.yarnpkg.com/debian/pubkey.gpg | apt-key add - \
     && echo "deb https://dl.yarnpkg.com/debian/ stable main" | tee /etc/apt/sources.list.d/yarn.list \
     && apt-get update \
-    && apt-get install --no-install-recommends -qy build-essential nodejs yarn
+    && apt-get install --no-install-recommends -qy build-essential nodejs \
+    && npm install -g npm
 
 # Install libsysconfcpus
 RUN git clone https://github.com/obmarg/libsysconfcpus.git /usr/local/src/libsysconfcpus \
