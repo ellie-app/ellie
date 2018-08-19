@@ -183,7 +183,7 @@ hasChanged model =
             (model.elmCode /= model.defaultRevision.elmCode)
                 || (model.htmlCode /= model.defaultRevision.htmlCode)
                 || (model.packages /= model.defaultRevision.packages)
-                || (model.projectName /= "")
+                || (model.projectName /= model.defaultRevision.title)
 
         Just ( _, revision ) ->
             (model.elmCode /= revision.elmCode)
