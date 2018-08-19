@@ -148,7 +148,7 @@ else
         -e DATABASE_URL=$database_url \
         -e SENTRY_DSN=@sentry-dsn \
         -e SENTRY_API_KEY=@sentry-api-key \
-        -e HOSTNAME=$app_name.now.sh \
+        -e SERVER_HOST=$app_name.now.sh \
         ellie-app/ellie#$branch_name
     now -t $now_token -A ./now.json alias
     rm ./now.json
