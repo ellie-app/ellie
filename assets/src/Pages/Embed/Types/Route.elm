@@ -15,8 +15,8 @@ type Route
 panel : QueryParser.Parser Panel
 panel =
     QueryParser.string "panel"
-        |> QueryParser.map (Result.map Panel.fromString)
-        |> QueryParser.map (Result.withDefault Elm)
+        |> QueryParser.map (Maybe.map Panel.fromString)
+        |> QueryParser.map (Maybe.withDefault Elm)
 
 
 parser : Parser (Route -> Route) Route

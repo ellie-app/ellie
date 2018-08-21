@@ -16,7 +16,6 @@ import Pages.Editor.Route as Route
 import Pages.Editor.State.Actions as Actions
 import Pages.Editor.Types.Analysis as Analysis exposing (Analysis)
 import Pages.Editor.Types.EditorAction as EditorAction exposing (EditorAction)
-import Pages.Editor.Types.Example as Example exposing (Example)
 import Pages.Editor.Types.Log as Log exposing (Log)
 import Pages.Editor.Types.Notification as Notification exposing (Notification)
 import Pages.Editor.Types.Revision as Revision exposing (Revision)
@@ -60,7 +59,8 @@ type alias Model =
     , packages : List Package
     , projectName : String
     , token : Jwt
-    , activeExample : Example
+    , recovery : Maybe Revision
+    , defaultRevision : Revision
     , defaultPackages : List Package
     , revision : Replaceable Revision.Id Revision
     , saving : Bool
@@ -74,39 +74,51 @@ type alias Model =
     , editorsRatio : Float
     , notifications : List Notification
     , analysis : Analysis
-    , recovery : Maybe Revision
     }
 
 
-reset : Jwt -> User -> Maybe Revision -> Maybe ( Revision.Id, Revision ) -> List Package -> Model
-reset token user recovery revision defaultPackages =
+reset : Jwt -> User -> Maybe Revision -> Revision.External -> List Package -> Model
+reset token user recovery external defaultPackages =
     let
+        activeRevision =
+            case external of
+                Revision.Default ->
+                    Revision.default defaultPackages
+
+                Revision.Example revision ->
+                    revision
+
+                Revision.Remote ( _, revision ) ->
+                    revision
+
+        savedRevision =
+            case external of
+                Revision.Remote ( id, r ) ->
+                    Replaceable.Loaded ( id, r )
+
+                _ ->
+                    Replaceable.NotAsked
+
         isLatestElm =
-            Version.eq
-                (revision |> Maybe.map (Tuple.second >> .elmVersion) |> Maybe.withDefault Compiler.version)
-                Compiler.version
+            case external of
+                Revision.Default ->
+                    True
+
+                Revision.Example revision ->
+                    revision.elmVersion == Compiler.version
+
+                Revision.Remote ( _, revision ) ->
+                    revision.elmVersion == Compiler.version
     in
-    { elmCode =
-        revision
-            |> Maybe.map (Tuple.second >> .elmCode)
-            |> Maybe.withDefault (.elm Example.default)
-    , htmlCode =
-        revision
-            |> Maybe.map (Tuple.second >> .htmlCode)
-            |> Maybe.withDefault (.html Example.default)
-    , packages =
-        revision
-            |> Maybe.map (Tuple.second >> .packages)
-            |> Maybe.withDefault defaultPackages
-    , projectName =
-        revision
-            |> Maybe.map (Tuple.second >> .title)
-            |> Maybe.withDefault ""
+    { elmCode = activeRevision.elmCode
+    , htmlCode = activeRevision.htmlCode
+    , packages = activeRevision.packages
+    , projectName = activeRevision.title
     , notifications = []
-    , activeExample = Example.default
     , token = token
+    , defaultRevision = activeRevision
     , defaultPackages = defaultPackages
-    , revision = Replaceable.fromMaybe revision
+    , revision = savedRevision
     , actions = Actions.Hidden
     , workbench = Ready
     , compiling = False
@@ -115,7 +127,7 @@ reset token user recovery revision defaultPackages =
     , animating = True
     , user = user
     , workbenchRatio = 0.5
-    , editorsRatio = 0.75
+    , editorsRatio = 0.6
     , analysis = Analysis.empty
     , recovery = recovery
     }
@@ -168,10 +180,10 @@ hasChanged : Model -> Bool
 hasChanged model =
     case Replaceable.toMaybe model.revision of
         Nothing ->
-            (model.elmCode /= model.activeExample.elm)
-                || (model.htmlCode /= model.activeExample.html)
-                || (model.packages /= model.defaultPackages)
-                || (model.projectName /= "")
+            (model.elmCode /= model.defaultRevision.elmCode)
+                || (model.htmlCode /= model.defaultRevision.htmlCode)
+                || (model.packages /= model.defaultRevision.packages)
+                || (model.projectName /= model.defaultRevision.title)
 
         Just ( _, revision ) ->
             (model.elmCode /= revision.elmCode)
@@ -208,7 +220,6 @@ type Msg
     | FormatCompleted (Result () String)
     | CollapseHtml
     | EditorsResized Float
-    | ExampleSelected Example
     | TokenChanged (Located Token)
     | DocsReceived (List Module)
       -- Action stuff
@@ -250,7 +261,7 @@ type Msg
     | NoOp
 
 
-init : Jwt -> User -> Maybe Revision -> Maybe ( Revision.Id, Revision ) -> List Package -> ( Model, Command Msg )
+init : Jwt -> User -> Maybe Revision -> Revision.External -> List Package -> ( Model, Command Msg )
 init token user recovery revision defaultPackages =
     reset token user recovery revision defaultPackages
         |> update CompileRequested
@@ -585,15 +596,6 @@ update msg ({ user } as model) =
                 , Command.none
                 )
 
-            ExampleSelected example ->
-                ( { model
-                    | activeExample = example
-                    , elmCode = example.elm
-                    , htmlCode = example.html
-                  }
-                , Command.none
-                )
-
             PackageInstalled package ->
                 let
                     nextPackages =
@@ -684,7 +686,12 @@ update msg ({ user } as model) =
                 case ( model.revision, result ) of
                     ( Replaceable.Loading rid, Ok revision ) ->
                         if rid == revisionId then
-                            ( reset model.token model.user model.recovery (Just ( revisionId, revision )) model.defaultPackages
+                            ( reset
+                                model.token
+                                model.user
+                                model.recovery
+                                (Revision.Remote ( revisionId, revision ))
+                                model.defaultPackages
                             , Command.none
                             )
                         else
@@ -692,7 +699,12 @@ update msg ({ user } as model) =
 
                     ( Replaceable.Replacing rid _, Ok revision ) ->
                         if rid == revisionId then
-                            ( reset model.token model.user model.recovery (Just ( revisionId, revision )) model.defaultPackages
+                            ( reset
+                                model.token
+                                model.user
+                                model.recovery
+                                (Revision.Remote ( revisionId, revision ))
+                                model.defaultPackages
                             , Command.none
                             )
                         else
@@ -770,9 +782,24 @@ update msg ({ user } as model) =
                                 ( model, Command.none )
 
                             _ ->
-                                ( reset model.token model.user model.recovery Nothing model.defaultPackages
+                                ( reset
+                                    model.token
+                                    model.user
+                                    model.recovery
+                                    Revision.Default
+                                    model.defaultPackages
                                 , Command.none
                                 )
+
+                    Route.Example revision ->
+                        ( reset
+                            model.token
+                            model.user
+                            model.recovery
+                            (Revision.Example revision)
+                            model.defaultPackages
+                        , Effects.redirect <| Route.toString Route.New
+                        )
 
                     Route.NotFound ->
                         case Replaceable.toMaybe model.revision of

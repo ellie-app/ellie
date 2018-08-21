@@ -158,7 +158,6 @@ viewEditors model =
         , htmlCode = model.htmlCode
         , onHtmlChange = WorkingState.HtmlCodeChanged
         , onResize = WorkingState.EditorsResized
-        , onExampleSelect = WorkingState.ExampleSelected
         , ratio = model.editorsRatio
         , onFormat = WorkingState.FormatRequested
         , onCollapse = WorkingState.CollapseHtml

@@ -1,4 +1,4 @@
-module Pages.Editor.View exposing (styles, view)
+module Pages.Editor.Views.App exposing (styles, title, view)
 
 import Css exposing (..)
 import Css.Foreign
@@ -17,8 +17,8 @@ view model =
         AppState.Initial _ _ ->
             Html.text ""
 
-        AppState.Setup setupState ->
-            case setupState of
+        AppState.Setup setupModel ->
+            case setupModel.state of
                 SetupState.Authenticating _ ->
                     SetupView.view SetupView.Authenticating
 
@@ -44,6 +44,21 @@ view model =
 
         AppState.Broken ->
             Html.text "It broke"
+
+
+title : Model -> String
+title model =
+    case model of
+        AppState.Working workingState ->
+            case workingState.projectName of
+                "" ->
+                    "Ellie - Untitled"
+
+                name ->
+                    "Ellie - " ++ workingState.projectName
+
+        _ ->
+            "Ellie"
 
 
 

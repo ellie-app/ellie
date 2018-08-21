@@ -4,15 +4,19 @@ defmodule Elm.Name do
   @type t :: %Elm.Name{user: String.t(), project: String.t()}
 
   def core() do
-    %Elm.Name{ user: "elm-lang", project: "core" }
+    %Elm.Name{user: "elm", project: "core"}
   end
 
   def browser() do
-    %Elm.Name{ user: "elm-lang", project: "browser" }
+    %Elm.Name{user: "elm", project: "browser"}
   end
 
   def html() do
-    %Elm.Name{ user: "elm-lang", project: "html" }
+    %Elm.Name{user: "elm", project: "html"}
+  end
+
+  def json() do
+    %Elm.Name{user: "elm", project: "json"}
   end
 
   def to_string(%Elm.Name{user: user, project: project}) do

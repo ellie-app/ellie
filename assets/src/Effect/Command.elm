@@ -35,6 +35,7 @@ type Command msg
         , data : Value
         , debounce : Maybe String
         }
+    | SetTitle String
     | NewUrl String
     | Redirect String
     | Delay Int msg
@@ -119,6 +120,9 @@ map f cmd =
 
         PortSend stuff ->
             PortSend stuff
+
+        SetTitle title ->
+            SetTitle title
 
         NewUrl url ->
             NewUrl url

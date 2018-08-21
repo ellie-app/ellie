@@ -6,6 +6,7 @@ module Elm.Package
         , decoder
         , docsLink
         , encoder
+        , fromString
         , selection
         , toInputObject
         , toString
@@ -47,6 +48,18 @@ encoder package =
 toString : Package -> String
 toString { name, version } =
     Name.toString name ++ "@" ++ Version.toString version
+
+
+fromString : String -> Maybe Package
+fromString string =
+    case String.split "@" string of
+        [ name, version ] ->
+            Maybe.map2 Package
+                (Name.fromString name |> Result.toMaybe)
+                (Version.fromString version |> Result.toMaybe)
+
+        _ ->
+            Nothing
 
 
 compare : Package -> Package -> Order

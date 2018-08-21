@@ -1,7 +1,6 @@
 module Data.Url.Parser.Query
     exposing
         ( Parser
-        , Problem(..)
         , custom
         , enum
         , int
@@ -33,7 +32,7 @@ parameter by the `&` character.
 
 # Parse Query Parameters
 
-@docs Parser, string, int, enum, Problem, custom
+@docs Parser, string, int, enum, custom
 
 
 # Mapping
@@ -55,144 +54,54 @@ type alias Parser a =
     Q.QueryParser a
 
 
-
--- PRIMITIVES
-
-
-{-| Handle `String` parameters.
-
-    search : Parser (Result Problem String)
-    search =
-        string "search"
-
-
-    -- ?search=cats             == Ok "cats"
-    -- ?search=42               == Ok "42"
-    -- ?branch=left             == Err NotFound
-    -- ?search=cats&search=dogs == Err (TooMany ["cats","dogs"])
-
-Check out [`custom`](#custom) if you need to handle multiple `search`
-parameters for some reason.
-
--}
-string : String -> Parser (Result Problem String)
+string : String -> Parser (Maybe String)
 string key =
     custom key <|
         \stringList ->
             case stringList of
                 [] ->
-                    Err NotFound
+                    Nothing
 
                 [ str ] ->
-                    Ok str
+                    Just str
 
                 _ ->
-                    Err (TooMany stringList)
+                    Nothing
 
 
-{-| Handle `Int` parameters. Maybe you want to show paginated search results:
-
-    page : Parser (Result Problem Int)
-    page =
-        int "page"
-
-
-    -- ?page=2        == Ok 2
-    -- ?page=17       == Ok 17
-    -- ?page=two      == Err (Invalid "two")
-    -- ?sort=date     == Err NotFound
-    -- ?page=2&page=3 == Err (TooMany ["2","3"])
-
-Check out [`custom`](#custom) if you need to handle multiple `page` parameters
-or something like that.
-
--}
-int : String -> Parser (Result Problem Int)
+int : String -> Parser (Maybe Int)
 int key =
     custom key <|
         \stringList ->
             case stringList of
                 [] ->
-                    Err NotFound
+                    Nothing
 
                 [ str ] ->
                     case String.toInt str of
                         Err _ ->
-                            Err (Invalid str)
+                            Nothing
 
                         Ok n ->
-                            Ok n
+                            Just n
 
                 _ ->
-                    Err (TooMany stringList)
+                    Nothing
 
 
-{-| Handle enumerated parameters. Maybe you want a true-or-false parameter:
-
-    import Dict
-
-    debug : Parser (Result Problem Bool)
-    debug =
-        enum "debug" (Dict.fromList [ ( "true", True ), ( "false", False ) ])
-
-
-    -- ?debug=true   == Ok True
-    -- ?debug=false  == Ok False
-    -- ?debug=1      == Err (Invalid "1")
-    -- ?debug=0      == Err (Invalid "0")
-
-You could add `0` and `1` to the dictionary if you want to handle those as
-well. You can also use [`map`](#map) to say `map (Result.withDefault False) debug`
-to get a parser of type `Parser Bool` that swallows any errors and defaults to
-`False`.
-
-**Note:** Parameters like `?debug` with no `=` are not supported by this library.
-
--}
-enum : String -> Dict.Dict String a -> Parser (Result Problem a)
+enum : String -> Dict.Dict String a -> Parser (Maybe a)
 enum key dict =
     custom key <|
         \stringList ->
             case stringList of
                 [] ->
-                    Err NotFound
+                    Nothing
 
                 [ str ] ->
-                    case Dict.get str dict of
-                        Nothing ->
-                            Err (Invalid str)
-
-                        Just value ->
-                            Ok value
+                    Dict.get str dict
 
                 _ ->
-                    Err (TooMany stringList)
-
-
-
--- PROBLEMS
-
-
-{-| The [`string`](#string), [`int`](#int), and [`enum`](#enum) parsers may
-fail for a few reasons.
-
-  - `NotFound` means there was no parameter with that name.
-  - `Invalid` means the parameter was found, but the value was not valid.
-  - `TooMany` means Q found more than one paramater with that name!
-
-If you actually _want_ more than one parameter with the same name, check out
-the [`custom`](#custom) function below!
-
-And if you want to ignore your problems and hope everything turns out okay, you
-can write code like this:
-
-    map (Result.withDefault 1) (int "page")
-
--}
-type Problem
-    = NotFound
-    | Invalid String
-    | TooMany (List String)
+                    Nothing
 
 
 
