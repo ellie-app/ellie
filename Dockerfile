@@ -48,12 +48,12 @@ RUN mkdir -p /tmp/elm_bin/0.18.0 && mkdir -p /tmp/elm_bin/0.19.0 \
     && rm /tmp/format-0.18.0.tar.gz \
     && chmod +x /tmp/elm_bin/0.18.0/* \
     # Elm Platform 0.19
-    && wget -q https://44a95588fe4cc47efd96-ec3c2a753a12d2be9f23ba16873acc23.ssl.cf2.rackcdn.com/linux-64.tar.gz?cb=4 -O /tmp/platform-0.19.0.tar.gz \
+    && wget -q https://github.com/elm/compiler/releases/download/0.19.0/binaries-for-linux.tar.gz -O /tmp/platform-0.19.0.tar.gz \
     && tar -xvC /tmp/elm_bin/0.19.0 -f /tmp/platform-0.19.0.tar.gz \
     && rm /tmp/platform-0.19.0.tar.gz \
     && chmod +x /tmp/elm_bin/0.19.0/* \
     # Elm Format 0.19
-    && wget -q https://github.com/avh4/elm-format/releases/download/0.8.0-alpha-elm019rc1-rc2/elm-format-0.19-0.8.0-alpha-elm019rc1-rc2-linux-x64.tgz -O /tmp/format-0.19.0.tar.gz \
+    && wget -q https://github.com/avh4/elm-format/releases/download/0.8.0-rc3/elm-format-0.19-0.8.0-rc3-linux-x64.tgz -O /tmp/format-0.19.0.tar.gz \
     && tar -xvC /tmp/elm_bin/0.19.0 -f /tmp/format-0.19.0.tar.gz \
     && rm /tmp/format-0.19.0.tar.gz \
     && chmod +x /tmp/elm_bin/0.19.0/*

@@ -63,7 +63,7 @@ module.exports = {
               { pattern: /'\%PROTOCOL\%'/g, replacement: () => 'window.location.protocol' },
               { pattern: /\%SERVER_ORIGIN\%/g, replacement: () => 'http://localhost:4000' },
               { pattern: /\%SOCKET_ORIGIN\%/g, replacement: () => 'ws://localhost:4000' },
-              { pattern: /\%PACKAGE_SITE\%/g, replacement: () => 'https://alpha.elm-lang.org' },
+              { pattern: /\%PACKAGE_SITE\%/g, replacement: () => 'https://package.elm-lang.org' },
               { pattern: /\%ENV\%/g, replacement: () => 'development' },
             ]
           }),

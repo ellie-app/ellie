@@ -12,6 +12,7 @@ defmodule Elm.Platform.Local do
 
   def compile(root, options) do
     project = Keyword.fetch!(options, :project)
+
     case project.elm_version do
       %Version{major: 0, minor: 19, patch: 0} -> Local19.compile(root, options)
       %Version{major: 0, minor: 18, patch: 0} -> Local18.compile(root, options)
@@ -27,26 +28,32 @@ defmodule Elm.Platform.Local do
 
   defp render_json_error({:field, field, e}), do: "At field #{field}: #{render_json_error(e)}"
   defp render_json_error({:index, index, e}), do: "At index #{index}: #{render_json_error(e)}"
-  defp render_json_error({:one_of, es}), do: es |> Enum.map(&render_json_error/1) |> Enum.join(", ")
+
+  defp render_json_error({:one_of, es}),
+    do: es |> Enum.map(&render_json_error/1) |> Enum.join(", ")
+
   defp render_json_error({:failure, message, _value}), do: message
   defp render_json_error(_), do: "IDK"
 
   def docs(package) do
     {:ok, table} = :dets.open_file(:docs_table, file: @dets_path)
+
     case :dets.lookup(table, package) do
       [{^package, modules}] ->
         :dets.close(table)
         {:ok, modules}
+
       _ ->
-        with {:ok, %HTTPoison.Response{status_code: 200, body: body}} <- HTTPoison.get(docs_url(package)),
-             {:ok, modules} <- Parser.docs_json(body)
-        do
+        with {:ok, %HTTPoison.Response{status_code: 200, body: body}} <-
+               HTTPoison.get(docs_url(package)),
+             {:ok, modules} <- Parser.docs_json(body) do
           :dets.insert(table, {package, modules})
           :dets.close(table)
           {:ok, modules}
         else
           {:error, json_error} ->
             :error
+
           error ->
             :error
         end
@@ -54,10 +61,10 @@ defmodule Elm.Platform.Local do
   end
 
   def search() do
-    url = "https://alpha.elm-lang.org/search.json"
+    url = "https://package.elm-lang.org/search.json"
+
     with {:ok, %HTTPoison.Response{status_code: 200, body: body}} <- HTTPoison.get(url),
-         {:ok, searchables} <- Parser.searchables_json(body)
-    do
+         {:ok, searchables} <- Parser.searchables_json(body) do
       {:ok, searchables}
     else
       _ -> :error
@@ -65,12 +72,8 @@ defmodule Elm.Platform.Local do
   end
 
   defp docs_url(package) do
-    "https://alpha.elm-lang.org/packages/" <>
+    "https://package.elm-lang.org/packages/" <>
       package.name.user <>
-      "/" <>
-      package.name.project <>
-      "/" <>
-      Version.to_string(package.version) <>
-      "/docs.json"
+      "/" <> package.name.project <> "/" <> Version.to_string(package.version) <> "/docs.json"
   end
 end

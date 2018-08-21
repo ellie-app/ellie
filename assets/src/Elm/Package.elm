@@ -74,7 +74,7 @@ compare l r =
 
 docsLink : Package -> String
 docsLink { name, version } =
-    "http://alpha.elm-lang.org/packages/"
+    "http://package.elm-lang.org/packages/"
         ++ name.user
         ++ "/"
         ++ name.project

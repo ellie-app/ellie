@@ -55,7 +55,7 @@ module.exports = {
               { pattern: /\%SERVER_ORIGIN\%/g, replacement: () => 'https://' + process.env.SERVER_HOST },
               { pattern: /\%SOCKET_ORIGIN\%/g, replacement: () => 'wss://' + process.env.SERVER_HOST },
               { pattern: /\%ENV\%/g, replacement: () => process.env.NODE_ENV },
-              { pattern: /\%PACKAGE_SITE\%/g, replacement: () => 'https://alpha.elm-lang.org' },
+              { pattern: /\%PACKAGE_SITE\%/g, replacement: () => 'https://package.elm-lang.org' },
             ]
           }),
           {
