@@ -11,12 +11,14 @@ defmodule Ellie.Adapters.Embed.Local do
     case get_entry(revision) do
       {:finished, nil, _last_access} ->
         output = Path.join([@base_path, to_string(revision.id), "embed.js"])
+
         if File.exists?(output) do
           put_entry(revision, {:finished, nil, :os.system_time(:second)})
           {:ok, output}
         else
           :error
         end
+
       _ ->
         :error
     end
@@ -33,7 +35,7 @@ defmodule Ellie.Adapters.Embed.Local do
 
       _ ->
         put_entry(revision, :working)
-        task = fn -> Task.async fn -> do_compile(revision) end end
+        task = fn -> Task.async(fn -> do_compile(revision) end) end
         {:started, task}
     end
   end
@@ -43,29 +45,33 @@ defmodule Ellie.Adapters.Embed.Local do
       @base_path
       |> File.ls!()
       |> Enum.each(fn id_string ->
-          root = Path.join(@base_path, id_string)
-          with {:ok, id} <- PrettyId.cast(id_string),
-                entry <- get_entry_by_id(id)
-          do
-            case entry do
-              nil ->
+        root = Path.join(@base_path, id_string)
+
+        with {:ok, id} <- PrettyId.cast(id_string),
+             entry <- get_entry_by_id(id) do
+          case entry do
+            nil ->
+              File.rm_rf!(root)
+              :ok
+
+            {:finished, _error, last_accessed} ->
+              if :os.system_time(:second) - last_accessed >= minutes_old * 60 do
                 File.rm_rf!(root)
-                :ok
-              {:finished, _error, last_accessed} ->
-                if :os.system_time(:second) - last_accessed >= minutes_old * 60 do
-                  File.rm_rf!(root)
-                  delete_entry_by_id(id)
-                end
-                :ok
-              _ ->
-                :ok
-            end
-          else
+                delete_entry_by_id(id)
+              end
+
+              :ok
+
             _ ->
               :ok
           end
-        end)
-        :unit
+        else
+          _ ->
+            :ok
+        end
+      end)
+
+      :unit
     else
       :unit
     end
@@ -77,9 +83,12 @@ defmodule Ellie.Adapters.Embed.Local do
     File.mkdir_p!(root)
 
     with {:ok, _p} <- Platform.setup(root, revision.elm_version),
-         project <- %Project{dependencies: revision.packages, elm_version: revision.elm_version},
-         {:ok, error} <- Platform.compile(root, [source: revision.elm_code, output: "embed.js", project: project])
-    do
+         project <- %Project{
+           dependencies: MapSet.new(revision.packages),
+           elm_version: revision.elm_version
+         },
+         {:ok, error} <-
+           Platform.compile(root, source: revision.elm_code, output: "embed.js", project: project) do
       put_entry(revision, {:finished, error, :os.system_time(:second)})
       {:ok, error}
     else
@@ -94,18 +103,18 @@ defmodule Ellie.Adapters.Embed.Local do
   end
 
   defp get_entry(revision) do
-    Agent.get __MODULE__, fn state -> Map.get(state, revision.id) end
+    Agent.get(__MODULE__, fn state -> Map.get(state, revision.id) end)
   end
 
   defp get_entry_by_id(id) do
-    Agent.get __MODULE__, fn state -> Map.get(state, id) end
+    Agent.get(__MODULE__, fn state -> Map.get(state, id) end)
   end
 
   defp put_entry(revision, status) do
-    Agent.update __MODULE__, fn state -> Map.put(state, revision.id, status) end
+    Agent.update(__MODULE__, fn state -> Map.put(state, revision.id, status) end)
   end
 
   defp delete_entry_by_id(id) do
-    Agent.update __MODULE__, fn state -> Map.delete(state, id) end
+    Agent.update(__MODULE__, fn state -> Map.delete(state, id) end)
   end
 end
