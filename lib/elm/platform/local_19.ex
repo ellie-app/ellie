@@ -6,11 +6,12 @@ defmodule Elm.Platform.Local19 do
   alias Elm.Version
   require Logger
 
-  @spec setup(Path.t) :: {:ok, Project.t} | :error
+  @spec setup(Path.t()) :: {:ok, Project.t()} | :error
   def setup(root) do
     with :ok <- elm_init(root) do
       File.mkdir_p!(Path.join(root, "src"))
       project_json = read_project!(root)
+
       project = %Project{
         elm_version: Version.create(0, 19, 0),
         dependencies:
@@ -19,6 +20,7 @@ defmodule Elm.Platform.Local19 do
           |> Map.get("direct", %{})
           |> decode_deps_map!()
       }
+
       {:ok, project}
     else
       _ ->
@@ -26,13 +28,15 @@ defmodule Elm.Platform.Local19 do
     end
   end
 
-  @spec compile(Path.t, [source: String.t, project: Project.t, output: Path.t]) :: {:ok, Error.t | nil} | :error
+  @spec compile(Path.t(), source: String.t(), project: Project.t(), output: Path.t()) ::
+          {:ok, Error.t() | nil} | :error
   def compile(root, options) do
     source = Keyword.fetch!(options, :source)
     project = Keyword.fetch!(options, :project)
     output = Keyword.fetch!(options, :output)
 
     project_json = read_project!(root)
+
     current_deps =
       project_json
       |> Map.get("dependencies", %{})
@@ -44,6 +48,7 @@ defmodule Elm.Platform.Local19 do
         default_project()
         |> put_in(["dependencies", "direct"], make_deps_map(project.dependencies))
         |> write_project!(root)
+
         install_transitive_deps(root)
       else
         :ok
@@ -57,33 +62,54 @@ defmodule Elm.Platform.Local19 do
         File.write!(Path.join(root, entry), source)
 
         binary = Application.app_dir(:ellie, "priv/bin/0.19.0/elm")
-        args = ["--num", "1", binary, "make", entry, "--debug", "--output", output, "--report", "json"]
+
+        args = [
+          "--num",
+          "1",
+          binary,
+          "make",
+          entry,
+          "--debug",
+          "--output",
+          output,
+          "--report",
+          "json"
+        ]
 
         options = [dir: root, out: :string, err: :string]
         result = Porcelain.exec("sysconfcpus", args, options)
-        Logger.info("elm make\nexit: #{result.status}\nstdout: #{result.out}\nstderr: #{result.err}\n")
+
+        Logger.info(
+          "elm make\nexit: #{result.status}\nstdout: #{result.out}\nstderr: #{result.err}\n"
+        )
+
         case result do
           %Porcelain.Result{err: err, status: 0} ->
             {:ok, parse_error(err)}
+
           %Porcelain.Result{err: err, status: 1} ->
             {:ok, parse_error(err)}
+
           _ ->
             :error
         end
+
       :error ->
         :error
-      end
+    end
   end
 
-  @spec format(String.t) :: {:ok, String.t} | :error
+  @spec format(String.t()) :: {:ok, String.t()} | :error
   def format(code) do
     binary = Application.app_dir(:ellie, "priv/bin/0.19.0/elm-format")
     args = ["--stdin"]
     options = [in: code, out: :string, err: :string]
     result = Porcelain.exec(binary, args, options)
+
     case result do
       %Porcelain.Result{err: "", out: out, status: 0} ->
         {:ok, out}
+
       _ ->
         :error
     end
@@ -96,7 +122,11 @@ defmodule Elm.Platform.Local19 do
     args = ["--num", "1", binary, "make", "--report", "json"]
     options = [dir: root, out: :string, err: :string]
     result = Porcelain.exec("sysconfcpus", args, options)
-    Logger.info("elm make\nexit: #{result.status}\nstdout: #{result.out}\nstderr: #{result.err}\n")
+
+    Logger.info(
+      "elm make\nexit: #{result.status}\nstdout: #{result.out}\nstderr: #{result.err}\n"
+    )
+
     case result do
       %Porcelain.Result{err: err, status: 1} ->
         case explore_dependency_error(err) do
@@ -106,29 +136,42 @@ defmodule Elm.Platform.Local19 do
               |> Path.join("elm.json.original")
               |> File.read!()
               |> Poison.decode!()
+
             case get_in(original_elm_json, ["dependencies", "indirect", Name.to_string(name)]) do
               version_string when not is_nil(version_string) ->
                 root
                 |> read_project!()
                 |> put_in(["dependencies", "indirect", Name.to_string(name)], version_string)
                 |> write_project!(root)
+
                 install_transitive_deps(root)
+
               nil ->
                 :ok
             end
+
           {:ok, :missing_transitives, packages} ->
             project_json = read_project!(root)
+
             packages
             |> Enum.reduce(project_json, fn package, pj ->
-                put_in(pj, ["dependencies", "indirect", Name.to_string(package.name)], Version.to_string(package.version))
-              end)
+              put_in(
+                pj,
+                ["dependencies", "indirect", Name.to_string(package.name)],
+                Version.to_string(package.version)
+              )
+            end)
             |> write_project!(root)
+
             install_transitive_deps(root)
+
           {:ok, :nothing_missing} ->
             :ok
+
           {:error, _reason} ->
             :error
         end
+
       _ ->
         :error
     end
@@ -145,9 +188,11 @@ defmodule Elm.Platform.Local19 do
                   {:ok, name} -> {:ok, :missing_required, name}
                   :error -> {:error, "Could not parse package name #{package_name_string}."}
                 end
+
               _message ->
                 {:error, "Could not understand error message for MISSING DEPENDENCY error."}
             end
+
           {"error", "MISSING DEPENDENCIES"} ->
             missing_packages =
               case Map.get(error_data, "message", []) do
@@ -158,28 +203,35 @@ defmodule Elm.Platform.Local19 do
                   |> Enum.flat_map(fn stuff ->
                     with [name_string, version_string] <- String.split(stuff, "\": \""),
                          {:ok, name} <- Name.from_string(name_string),
-                         {:ok, version} <- Version.from_string(version_string)
-                    do
+                         {:ok, version} <- Version.from_string(version_string) do
                       [%Package{name: name, version: version}]
                     else
                       _stuff -> []
                     end
                   end)
+
                 _other_message ->
                   []
               end
+
             if Enum.empty?(missing_packages) do
               {:error, "Could not understand error message for MISSING DEPENDENCIES error."}
             else
               {:ok, :missing_transitives, missing_packages}
             end
+
           {"error", "NO INPUT"} ->
             {:ok, :nothing_missing}
+
           {"error", other_title} ->
             {:error, "Unexpected error type: #{other_title}."}
+
           _other_error ->
             {:error, "Unexpected error type."}
         end
+
+      _error ->
+        {:error, "Could not understand error message: #{json_string}"}
     end
   end
 
@@ -188,32 +240,42 @@ defmodule Elm.Platform.Local19 do
     args = ["init"]
     options = [out: :string, err: :string, dir: root, in: "Y"]
     result = Porcelain.exec(binary, args, options)
-    Logger.info("elm init\nexit: #{inspect result}\n")
+    Logger.info("elm init\nexit: #{inspect(result)}\n")
+
     case result do
       %Porcelain.Result{status: 0} ->
         case File.cp(Path.join(root, "elm.json"), Path.join(root, "elm.json.original")) do
           :ok ->
             :ok
+
           {:error, reason} ->
-            Sentry.capture_message "elm init filesystem error",
+            Sentry.capture_message("elm init filesystem error",
               extra: %{
                 reason: reason,
                 elm_version: "0.19.0"
               }
+            )
+
             {:error, reason}
         end
+
       %Porcelain.Result{status: other} ->
-        Sentry.capture_message "elm init process error",
+        Sentry.capture_message("elm init process error",
           extra: %{
             stderr: result.err,
             stdout: result.out,
             status: result.status,
             elm_version: "0.19.0"
           }
+        )
+
         {:error, "init exited with code #{other}"}
+
       {:error, reason} ->
-        Sentry.capture_message "elm init startup error",
+        Sentry.capture_message("elm init startup error",
           extra: %{reason: reason, elm_version: "0.19.0"}
+        )
+
         {:error, reason}
     end
   end
@@ -255,11 +317,11 @@ defmodule Elm.Platform.Local19 do
       "source-directories" => ["src"],
       "dependencies" => %{
         "direct" => %{},
-        "indirect" => %{},
+        "indirect" => %{}
       },
       "test-dependencies" => %{
         "direct" => %{},
-        "indirect" => %{},
+        "indirect" => %{}
       }
     }
   end
@@ -270,6 +332,7 @@ defmodule Elm.Platform.Local19 do
     |> Enum.flat_map(fn line ->
       if String.starts_with?(line, "{") do
         data = Poison.decode!(line)
+
         case Map.fetch!(data, "type") do
           "compile-errors" ->
             modules =
@@ -279,32 +342,35 @@ defmodule Elm.Platform.Local19 do
                 %Elm.Error.BadModule{
                   path: Map.fetch!(a, "path"),
                   name: Map.fetch!(a, "name"),
-                  problems: Enum.map(Map.fetch!(a, "problems"), fn b ->
-                    %Elm.Error.Problem{
-                      title: Map.fetch!(b, "title"),
-                      region: %Elm.Error.Region{
-                        start: %Elm.Error.Position{
-                          line: get_in(b, ["region", "start", "line"]),
-                          column: get_in(b, ["region", "start", "column"])
+                  problems:
+                    Enum.map(Map.fetch!(a, "problems"), fn b ->
+                      %Elm.Error.Problem{
+                        title: Map.fetch!(b, "title"),
+                        region: %Elm.Error.Region{
+                          start: %Elm.Error.Position{
+                            line: get_in(b, ["region", "start", "line"]),
+                            column: get_in(b, ["region", "start", "column"])
+                          },
+                          end: %Elm.Error.Position{
+                            line: get_in(b, ["region", "end", "line"]),
+                            column: get_in(b, ["region", "end", "column"])
+                          }
                         },
-                        end: %Elm.Error.Position{
-                          line: get_in(b, ["region", "end", "line"]),
-                          column: get_in(b, ["region", "end", "column"])
-                        }
-                      },
-                      message: Enum.map(Map.fetch!(b, "message"), &parse_chunk/1)
-                    }
-                  end)
+                        message: Enum.map(Map.fetch!(b, "message"), &parse_chunk/1)
+                      }
+                    end)
                 }
               end)
+
             [{:module_problems, modules}]
+
           "error" ->
-            problem =
-              %Elm.Error.GeneralProblem{
-                path: Map.fetch!(data, "path"),
-                title: Map.fetch!(data, "title"),
-                message: Enum.map(Map.fetch!(data, "message"), &parse_chunk/1)
-              }
+            problem = %Elm.Error.GeneralProblem{
+              path: Map.fetch!(data, "path"),
+              title: Map.fetch!(data, "title"),
+              message: Enum.map(Map.fetch!(data, "message"), &parse_chunk/1)
+            }
+
             [{:general_problem, problem}]
         end
       else
@@ -318,7 +384,12 @@ defmodule Elm.Platform.Local19 do
     {:unstyled, string}
   end
 
-  defp parse_chunk(%{"bold" => bold, "underline" => underline, "color" => color, "string" => string}) do
+  defp parse_chunk(%{
+         "bold" => bold,
+         "underline" => underline,
+         "color" => color,
+         "string" => string
+       }) do
     style = %Elm.Error.Style{
       bold: bold,
       underline: underline,
@@ -329,6 +400,7 @@ defmodule Elm.Platform.Local19 do
           Elm.Error.Color.from_string(color)
         end
     }
+
     {:styled, style, string}
   end
 end
