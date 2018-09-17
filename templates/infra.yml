@@ -1,0 +1,523 @@
+Description: >
+  This template contains the infrastructure deployed by CodePipeline on a successful build
+
+Parameters:
+  # Set automatically by CodePipeline
+
+  ApplicationName:
+    Description: "This will be used to name the pipeline and build resources"
+    Type: String
+    AllowedPattern: '[A-Za-z0-9-]+'
+
+  EnvironmentName:
+    Description: "The environment this stack represents"
+    Type: String
+
+  # Overridden using templates/<env>.conf per-environment
+
+  DatabaseUrl:
+    Description: "The url of the database to use when connecting"
+    Type: String
+
+  SSHKeyName:
+    Description: "The name of the SSH keypair to use for connecting to EC2 hosts"
+    Type: AWS::EC2::KeyPair::KeyName
+
+Mappings:
+  # Amazon Linux 2 AMI 20180622.1
+  # amzn2-ami-hvm-2.0.20180622.1-x86_64-gp2
+  # https://aws.amazon.com/amazon-linux-ami/
+  AWSRegionToAMI:
+    us-east-1:
+      AMI: ami-b70554c8
+    us-east-2:
+      AMI: ami-8c122be9
+    us-west-1:
+      AMI: ami-e0ba5c83
+    us-west-2:
+      AMI: ami-a9d09ed1
+    ca-central-1:
+      AMI: ami-0ee86a6a
+    eu-west-1:
+      AMI: ami-466768ac
+    eu-west-2:
+      AMI: ami-b8b45ddf
+    eu-west-3:
+      AMI: ami-2cf54551
+    eu-central-1:
+      AMI: ami-7c4f7097
+    ap-southeast-1:
+      AMI: ami-05868579
+    ap-northeast-2:
+      AMI: ami-afd86dc1
+    ap-northeast-1:
+      AMI: ami-e99f4896
+    ap-southeast-2:
+      AMI: ami-39f8215b
+    ap-south-1:
+      AMI: ami-d783a9b8
+    sa-east-1:
+      AMI: ami-6dca9001
+
+Resources:
+  # DNS
+
+  HostedZone:
+    Type: AWS::Route53::HostedZone
+    Properties:
+      Name: !Sub "${ApplicationName}.internal"
+      VPCs:
+        - VPCId: !Ref VPC
+          VPCRegion: !Ref "AWS::Region"
+      HostedZoneConfig:
+        Comment: !Sub "Internal DNS for ${ApplicationName}"
+
+  # VPC
+
+  VPC:
+    Type: AWS::EC2::VPC
+    Properties:
+      CidrBlock: 10.0.0.0/16
+      InstanceTenancy: default
+      EnableDnsSupport: 'true'
+      EnableDnsHostnames: 'true'
+      Tags:
+        - Key: Name
+          Value: !Sub "${ApplicationName}-vpc"
+        - Key: source
+          Value: !Ref ApplicationName
+
+  VPCDHCP:
+    Type: AWS::EC2::DHCPOptions
+    Properties:
+      DomainName: ec2.internal
+      DomainNameServers:
+        - AmazonProvidedDNS
+
+  VPCDHCPAssoc:
+    Type: AWS::EC2::VPCDHCPOptionsAssociation
+    Properties:
+      VpcId: !Ref VPC
+      DhcpOptionsId: !Ref VPCDHCP
+
+  SubnetAppA:
+    Type: AWS::EC2::Subnet
+    Properties:
+      CidrBlock: 10.0.0.0/24
+      AvailabilityZone:
+        Fn::Select:
+          - 0
+          - Fn::GetAZs: !Ref "AWS::Region"
+      VpcId: !Ref VPC
+      Tags:
+        - Key: Name
+          Value: !Sub "${ApplicationName}-subnet-app-a"
+        - Key: source
+          Value: !Ref ApplicationName
+
+  InternetGateway:
+    Type: AWS::EC2::InternetGateway
+    Properties:
+      Tags:
+        - Key: Name
+          Value: !Sub "${ApplicationName}-ig"
+        - Key: source
+          Value: !Ref ApplicationName
+
+  InternetGatewayAttachment:
+    Type: AWS::EC2::VPCGatewayAttachment
+    Properties:
+      VpcId: !Ref VPC
+      InternetGatewayId: !Ref InternetGateway
+
+  RouteTable:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref VPC
+      Tags:
+        - Key: Name
+          Value: !Sub "${ApplicationName}-vpc-routetable"
+        - Key: source
+          Value: !Ref ApplicationName
+
+  RouteTableEntry1:
+    Type: AWS::EC2::Route
+    Properties:
+      DestinationCidrBlock: 0.0.0.0/0
+      RouteTableId: !Ref RouteTable
+      GatewayId: !Ref InternetGateway
+    DependsOn: InternetGatewayAttachment
+
+  SubnetAppARoute:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId: !Ref RouteTable
+      SubnetId: !Ref SubnetAppA
+
+  SubnetAppBRoute:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId: !Ref RouteTable
+      SubnetId: !Ref SubnetAppB
+
+  NetworkACL:
+    Type: AWS::EC2::NetworkAcl
+    Properties:
+      VpcId: !Ref VPC
+      Tags:
+        - Key: Name
+          Value: !Sub "${ApplicationName}-network-acls"
+        - Key: source
+          Value: !Ref ApplicationName
+
+  NetworkACLEntry1:
+    Type: AWS::EC2::NetworkAclEntry
+    Properties:
+      CidrBlock: 0.0.0.0/0
+      Egress: 'true'
+      Protocol: '-1'
+      RuleAction: allow
+      RuleNumber: '100'
+      NetworkAclId: !Ref NetworkACL
+
+  NetworkACLEntry2:
+    Type: AWS::EC2::NetworkAclEntry
+    Properties:
+      CidrBlock: 0.0.0.0/0
+      Protocol: '-1'
+      RuleAction: allow
+      RuleNumber: '100'
+      NetworkAclId: !Ref NetworkACL
+
+  NetworkACLSubnetAppA:
+    Type: AWS::EC2::SubnetNetworkAclAssociation
+    Properties:
+      NetworkAclId: !Ref NetworkACL
+      SubnetId: !Ref SubnetAppA
+
+  NetworkACLSubnetAppB:
+    Type: AWS::EC2::SubnetNetworkAclAssociation
+    Properties:
+      NetworkAclId: !Ref NetworkACL
+      SubnetId: !Ref SubnetAppB
+
+  # Security Groups
+
+  SecurityGroupApp:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: !Sub "Security group for the ${ApplicationName} app"
+      VpcId: !Ref VPC
+      Tags:
+        - Key: Name
+          Value: !Sub "${ApplicationName}-sg-app"
+        - Key: source
+          Value: !Ref ApplicationName
+
+  SecurityGroupALB:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: !Sub "Security group for the ${ApplicationName} load balancer"
+      VpcId: !Ref VPC
+      Tags:
+        - Key: Name
+          Value: !Sub "${ApplicationName}-sg-alb"
+        - Key: source
+          Value: !Ref ApplicationName
+
+  SecurityGroupAppIngressSSH:
+    Type: AWS::EC2::SecurityGroupIngress
+    Description: "Allow SSH to hosts in the application security group"
+    Properties:
+      CidrIp: 0.0.0.0/0
+      GroupId: !GetAtt SecurityGroupApp.GroupId
+      IpProtocol: tcp
+      FromPort: '22'
+      ToPort: '22'
+
+  SecurityGroupAppIngressALB:
+    Type: AWS::EC2::SecurityGroupIngress
+    Description: "Allow HTTP traffic from ALBs to hosts in the application security group"
+    Properties:
+      SourceSecurityGroupId: !GetAtt SecurityGroupALB.GroupId
+      SourceSecurityGroupOwnerId: !Ref "AWS::AccountId"
+      GroupId: !GetAtt SecurityGroupApp.GroupId
+      IpProtocol: tcp
+      FromPort: '4000'
+      ToPort: '4000'
+
+  SecurityGroupALBIngressPublicHTTP:
+    Type: AWS::EC2::SecurityGroupIngress
+    Description: "Allow any HTTP traffic on port 80 to ALBs"
+    Properties:
+      CidrIp: 0.0.0.0/0
+      GroupId: !GetAtt SecurityGroupALB.GroupId
+      IpProtocol: tcp
+      FromPort: '80'
+      ToPort: '80'
+
+  SecurityGroupALBIngressPrivateHTTP:
+    Type: AWS::EC2::SecurityGroupIngress
+    Description: "Allow HTTP traffic on port 4000 from the application security group to ALBs"
+    Properties:
+      SourceSecurityGroupId: !GetAtt SecurityGroupApp.GroupId
+      SourceSecurityGroupOwnerId: !Ref "AWS::AccountId"
+      GroupId: !GetAtt SecurityGroupALB.GroupId
+      IpProtocol: tcp
+      FromPort: '4000'
+      ToPort: '4000'
+
+  SecurityGroupAppEgressAll:
+    Type: AWS::EC2::SecurityGroupEgress
+    Description: "Allow all outbound traffic from the application security group"
+    Properties:
+      CidrIp: 0.0.0.0/0
+      GroupId: !GetAtt SecurityGroupApp.GroupId
+      IpProtocol: '-1'
+
+  SecurityGroupALBEgressAll:
+    Type: AWS::EC2::SecurityGroupEgress
+    Description: "Allow all outbound traffic from the ALB security group"
+    Properties:
+      CidrIp: 0.0.0.0/0
+      GroupId: !GetAtt SecurityGroupALB.GroupId
+      IpProtocol: '-1'
+
+
+  # Load Balancer
+
+  LoadBalancer:
+    Type: AWS::ElasticLoadBalancingV2::LoadBalancer
+    Properties:
+      Name: !Sub "${ApplicationName}-alb"
+      Type: "application"
+      Scheme: "internet-facing"
+      SecurityGroups:
+        - !GetAtt SecurityGroupALB.GroupId
+      Subnets:
+        - !Ref SubnetAppA
+        - !Ref SubnetAppB
+      Tags:
+        - Key: source
+          Value: !Ref ApplicationName
+
+  TargetGroup:
+    Type: AWS::ElasticLoadBalancingV2::TargetGroup
+    Properties:
+      Name: !Sub "${ApplicationName}-tg"
+      Port: 4000
+      Protocol: "HTTP"
+      HealthCheckPath: "/healthz"
+      HealthCheckPort: "traffic-port"
+      HealthCheckProtocol: "HTTP"
+      HealthCheckIntervalSeconds: 15
+      HealthCheckTimeoutSeconds: 5
+      HealthyThresholdCount: 2
+      UnhealthyThresholdCount: 2
+      VpcId: !Ref VPC
+      Matcher:
+        HttpCode: "200-299"
+      TargetGroupAttributes:
+        - Key: "stickiness.enabled"
+          Value: "true"
+        - Key: "stickiness.type"
+          Value: "lb_cookie"
+      TargetType: "instance"
+      Tags:
+        - Key: source
+          Value: !Ref ApplicationName
+
+  LoadBalancerHTTPListener:
+    Type: AWS::ElasticLoadBalancingV2::Listener
+    Properties:
+        Port: 80
+        Protocol: "HTTP"
+        DefaultActions:
+          - Type: "forward"
+            TargetGroupArn: !Ref TargetGroup
+        LoadBalancerArn: !Ref LoadBalancer
+
+  # Autoscaling Group
+
+  ASG:
+    Type: AWS::AutoScaling::AutoScalingGroup
+    DependsOn: InternetGatewayAttachment
+    Properties:
+      AvailabilityZones:
+        - Fn::Select:
+            - 0
+            - Fn::GetAZs: !Ref "AWS::Region"
+        - Fn::Select:
+            - 1
+            - Fn::GetAZs: !Ref "AWS::Region"
+      LaunchConfigurationName: !Ref LaunchConfig
+      TargetGroupARNs:
+        - !Ref TargetGroup
+      HealthCheckGracePeriod: '300'
+      HealthCheckType: EC2
+      MaxSize: '2'
+      MinSize: '2'
+      DesiredCapacity: '2'
+      VPCZoneIdentifier:
+        - !Ref SubnetAppA
+        - !Ref SubnetAppB
+      Tags:
+        - Key: source
+          Value: !Ref ApplicationName
+          PropagateAtLaunch: true
+        - Key: Name
+          Value: !Sub "${ApplicationName}-${EnvironmentName}"
+          PropagateAtLaunch: true
+    CreationPolicy:
+      ResourceSignal:
+        Timeout: PT30M
+    UpdatePolicy:
+      AutoScalingRollingUpdate:
+        MinInstancesInService: 1
+        MaxBatchSize: 1
+        PauseTime: PT15M
+        WaitOnResourceSignals: true
+
+  LaunchConfig:
+    Type: AWS::AutoScaling::LaunchConfiguration
+    Properties:
+      LaunchConfigurationName: !Sub "${ApplicationName}-launchconfig"
+      ImageId: !FindInMap [AWSRegionToAMI, !Ref "AWS::Region", AMI]
+      InstanceType: t2.micro
+      KeyName: !Ref SSHKeyName
+      IamInstanceProfile: !GetAtt InstanceProfile.Arn
+      AssociatePublicIpAddress: true
+      UserData:
+        Fn::Base64: !Sub |
+          #!/usr/bin/env bash
+          function fail(){
+            /opt/aws/bin/cfn-signal -e 1 -r "$1" --region ${AWS::Region} --stack ${AWS::StackId} --resource ASG
+            exit 1
+          }
+          yum update -y
+          yum install -y aws-cfn-bootstrap
+          /opt/aws/bin/cfn-init -v --region ${AWS::Region} --stack ${AWS::StackId} --resource LaunchConfig
+          /opt/aws/bin/cfn-hup || fail 'Failed to start cfn-hup'
+          /opt/aws/bin/cfn-signal -e 0 --region ${AWS::Region} --stack ${AWS::StackId} --resource ASG
+      SecurityGroups:
+        - !Ref SecurityGroupApp
+      BlockDeviceMappings:
+        - DeviceName: /dev/xvda
+          Ebs:
+            VolumeSize: 8
+    Metadata:
+      AWS::CloudFormation::Init:
+        config:
+          packages:
+            rpm:
+              epel: "https://dl.fedoraproject.org/pub/epel/epel-release-latest-7.noarch.rpm"
+            yum:
+              unzip: []
+              ruby: []
+              jq: []
+          files:
+            /etc/cfn/cfn-hup.conf:
+              content: !Sub |
+                [main]
+                stack=${AWS::StackId}
+                region=${AWS::Region}
+              group: root
+              owner: root
+              mode: '000400'
+            /etc/cfn/hooks.d/cfn-auto-reloader.conf:
+              content: !Sub |
+                [cfn-auto-reloader-hook]
+                triggers=post.update
+                path=Resources.LaunchConfig.Metadata.AWS::CloudFormation::Init
+                action=/usr/local/bin/cfn-init -v -s ${AWS::StackId} -r LaunchConfig --region ${AWS::Region}
+                runas=root
+              group: root
+              owner: root
+              mode: '000400'
+            /usr/local/bin/setup-network-environment:
+              source: "https://github.com/kelseyhightower/setup-network-environment/releases/download/1.0.1/setup-network-environment"
+              encoding: plain
+              owner: ec2-user
+              group: ec2-user
+              mode: '000777'
+            /lib/systemd/system/setup-network-environment.service:
+              content: |
+                [Unit]
+                Description=Setup Network Environment
+                Documentation=https://github.com/kelseyhightower/setup-network-environment
+                Requires=network.service
+                After=network.service
+
+                [Service]
+                ExecStart=/usr/local/bin/setup-network-environment
+                RemainAfterExit=yes
+                Type=oneshot
+            /app/etc/environment:
+              content: !Sub |
+                HOME=/app
+                REPLACE_OS_VARS=true
+                APPLICATION_NAME=${ApplicationName}
+                ENVIRONMENT_NAME=${EnvironmentName}
+                DATABASE_URL=${DatabaseUrl}
+                AWS_REGION=${AWS::Region}
+              owner: ec2-user
+              group: ec2-user
+          commands:
+            setup-network-environment:
+              command: "systemctl start setup-network-environment.service"
+            config-bucket:
+              command: !Sub |
+                echo "LANG=en_US.UTF-8" >> /etc/environment
+                echo "LANGUAGE=en_US" >> /etc/environment
+                echo "LC_ALL=en_US.UTF-8" >> /etc/environment
+                echo "LC_CTYPE=en_US.UTF-8" >> /etc/environment
+            set-permissions:
+              command: |
+                chown -R ec2-user:ec2-user /app
+            codedeploy-agent:
+              cwd: /home/ec2-user
+              command: !Sub |
+                curl -O https://aws-codedeploy-${AWS::Region}.s3.amazonaws.com/latest/install
+                chmod +x ./install
+                ./install auto
+
+  # IAM role for EC2 instances
+
+  InstanceRole:
+    Type: AWS::IAM::Role
+    Properties:
+      Path: /
+      RoleName: !Sub "${ApplicationName}-${EnvironmentName}-${AWS::Region}"
+      AssumeRolePolicyDocument:
+        Statement:
+          - Effect: "Allow"
+            Principal:
+              Service: "ec2.amazonaws.com"
+            Action:
+              - "sts:AssumeRole"
+      ManagedPolicyArns:
+        - "arn:aws:iam::aws:policy/service-role/AmazonEC2RoleforAWSCodeDeploy"
+        - "arn:aws:iam::aws:policy/AmazonSSMReadOnlyAccess"
+
+  InstanceProfile:
+    Type: AWS::IAM::InstanceProfile
+    Properties:
+      Path: /
+      Roles:
+        - !Ref InstanceRole
+
+  CodeDeployDeploymentGroup:
+    Type: AWS::CodeDeploy::DeploymentGroup
+    Properties:
+      DeploymentGroupName: !Sub "${ApplicationName}-${EnvironmentName}"
+      ApplicationName:
+        Fn::ImportValue: !Sub "CodeDeployApplication-${ApplicationName}"
+      ServiceRoleArn:
+        Fn::ImportValue: !Sub "CodeDeployServiceRoleArn-${ApplicationName}"
+      AutoScalingGroups:
+        - !Ref ASG
+
+Outputs:
+    WebsiteURL:
+        Description: "The URL to access the running application once it is deployed"
+        Value: !Sub "http://${LoadBalancer.DNSName}"

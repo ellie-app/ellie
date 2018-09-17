@@ -1,0 +1,23 @@
+#!/usr/bin/env bash
+
+set -e
+set -x
+
+cd /app || exit 1
+
+# Extract release
+tar -xzf ellie.tar.gz
+# Clean up archive
+rm ellie.tar.gz
+# Set permissions
+chown -R ec2-user:ec2-user /app
+
+# Set up systemd service if not already done
+__cwd="$(pwd)"
+if [ ! -L /lib/systemd/system/ellie.service ]; then
+    pushd /lib/systemd/system
+    ln -s "${__cwd}/etc/ellie.service" ellie.service
+    popd
+fi
+
+exit 0

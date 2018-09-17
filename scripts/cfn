@@ -1,0 +1,181 @@
+#!/usr/bin/env bash
+
+set -e
+
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd -P)"
+
+STACK_NAME="${STACK_NAME:-ellie-app}"
+APP_NAME="${APP_NAME:-ellie-app}"
+GITHUB_TOKEN="$(cat "${SCRIPT_DIR}/../GITHUB_TOKEN" || "")"
+
+GIT_URL="$(grep 'url' .git/config | awk '{ print $3 }')"
+REPO_NAME="$(echo "$GIT_URL" | sed -e 's|https://github.com/||' -e 's|git@github.com:||' -e 's|.git$||')"
+GITHUB_USER="$(echo "$REPO_NAME" | cut -d'/' -f1)"
+GITHUB_REPO="$(echo "$REPO_NAME" | cut -d'/' -f2)"
+
+if [ -z "$GITHUB_USER" ]; then
+    echo "You must set GITHUB_USER!"
+    exit 1
+fi
+if [ -z "$GITHUB_REPO" ]; then
+    echo "You must set GITHUB_REPO!"
+    exit 1
+fi
+if [ -z "$GITHUB_TOKEN" ]; then
+    echo "You must set GITHUB_TOKEN!"
+    exit 1
+fi
+if [ -z "$SSH_KEY_NAME" ]; then
+    echo "You must set SSH_KEY_NAME!"
+    exit 1
+fi
+
+function validate_templates(){
+    echo "Validating $1.."
+    if ! aws cloudformation validate-template --template-body "file://$1"; then
+        exit 1
+    fi
+}
+
+function create_pipeline(){
+    aws cloudformation create-stack \
+        --stack-name "${STACK_NAME}" \
+        --template-body "file://${SCRIPT_DIR}/../templates/pipeline.yml" \
+        --parameters "ParameterKey=ApplicationName,ParameterValue=${APP_NAME}" \
+                     "ParameterKey=SSHKeyName,ParameterValue=${SSH_KEY_NAME}" \
+                     "ParameterKey=GitHubUser,ParameterValue=${GITHUB_USER}" \
+                     "ParameterKey=GitHubRepository,ParameterValue=${GITHUB_REPO}" \
+                     "ParameterKey=GitHubOAuthToken,ParameterValue=${GITHUB_TOKEN}" \
+        --capabilities "CAPABILITY_NAMED_IAM" \
+        --on-failure "DO_NOTHING" \
+        --tags "Key=source,Value=${APP_NAME}" \
+               "Key=stack,Value=${STACK_NAME}" | jq '.StackId' --raw-output
+}
+
+function bucket_arns(){
+    set -e
+    aws resourcegroupstaggingapi get-resources \
+        --resource-type-filters="s3" \
+        --tag-filters="Key=stack,Values=${STACK_NAME}" | \
+    jq '.ResourceTagMappingList[].ResourceARN' --raw-output | \
+    sed -e 's/arn:aws:s3::://'
+}
+
+function disable_bucket_versioning(){
+    aws s3api put-bucket-versioning --versioning-configuration="Status=Suspended" --bucket "$1"
+}
+
+function delete_bucket_versions(){
+    set -e
+    aws s3api list-object-versions --bucket="$1" |\
+        jq '.Versions[], .DeleteMarkers[] | "\"\(.Key)\" \"\(.VersionId)\""' --raw-output |\
+        awk -v bucket="$1" '{ \
+          print "aws s3api delete-object", \
+              "--bucket=\"" bucket "\"", \
+              "--key=\"" $1 "\"", \
+              "--version-id=\"" $2 "\"" \
+          | "/bin/sh >/dev/null"; \
+          print "Deleted version " $2 "of " $1 " successfully"; \
+         }'
+}
+
+function delete_stack(){
+    set -e
+    if aws cloudformation delete-stack --stack-name="$1"; then
+        tail_stack "$1"
+    fi
+}
+
+function stack_events() {
+    # Borrowed from github.com/realestate-com-au/bash-my-aws
+    if output=$(aws cloudformation describe-stack-events \
+        --stack-name="$1" \
+        --query="
+          sort_by(StackEvents, &Timestamp)[].[
+            Timestamp,
+            LogicalResourceId,
+            ResourceType,
+            ResourceStatus
+          ]" \
+        --output=table); then
+        echo "$output" | uniq -u
+    else
+        return $?
+    fi
+}
+
+function tail_stack() {
+    # Borrowed from github.com/realestate-com-au/bash-my-aws
+    local stack="$1"
+    local current
+    local final_line
+    local output
+    local previous
+    until echo "$current" | tail -1 | grep -E -q "${stack}.*_(COMPLETE|FAILED)"
+    do
+        if ! output=$(stack-events "${stack}"); then
+            # Something went wrong with stack-events (like stack not known)
+            return 1
+        fi
+        if [ -z "$output" ]; then sleep 1; continue; fi
+
+        current=$(echo "$output" | sed '$d')
+        final_line=$(echo "$output" | tail -1)
+        if [ -z "$previous" ]; then
+            echo "$current"
+        elif [ "$current" != "$previous" ]; then
+            comm -13 <(echo "$previous") <(echo "$current")
+        fi
+        previous="$current"
+        sleep 1
+    done
+    echo $final_line
+}
+
+function destroy_resources(){
+    arns="$(bucket_arns)"
+    for arn in "$arns"; do
+        if [ ! -z "$arn" ]; then
+            disable_bucket_versioning "$arn"
+            delete_bucket_versions "$arn"
+        fi
+    done
+    # Delete infra stack
+    delete_stack "${STACK_NAME}-production"
+    # Delete pipeline stack
+    delete_stack "${STACK_NAME}"
+    # Delete log groups
+    aws logs describe-log-groups \
+        --log-group-name-prefix="/aws/lambda/${APP_NAME}" | \
+    jq '.logGroups[].logGroupName' --raw-output | \
+    xargs -n1 aws logs delete-log-group --log-group-name
+}
+
+if [ -z "$1" ]; then
+    echo "Expected a command to run!"
+    exit 2
+fi
+
+CMD="$1"
+shift
+
+case $CMD in
+    create)
+        stack_id="$(create_pipeline "$@")"
+        echo "Stack ${stack_id} is being created, waiting for completion.."
+        aws cloudformation wait stack-create-complete --stack-name="${stack_id}"
+        echo "Successfully created stack ${stack_id}!"
+        exit 0
+        ;;
+    destroy)
+        destroy_resources "$@"
+        exit $?
+        ;;
+    validate)
+        validate_templates "$@"
+        exit $?
+        ;;
+    *)
+        echo "Invalid command (create|destroy|validate): $1"
+        exit 2
+esac

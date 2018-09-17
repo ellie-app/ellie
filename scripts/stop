@@ -1,0 +1,9 @@
+#!/usr/bin/env bash
+
+set -e
+
+if systemctl is-active ellie.service; then
+    systemctl stop ellie.service
+fi
+
+exit 0

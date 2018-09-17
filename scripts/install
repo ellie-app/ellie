@@ -1,0 +1,33 @@
+#!/usr/bin/env bash
+
+mkdir -p /tmp/elm_bin/0.18.0 && mkdir -p /tmp/elm_bin/0.19.0
+# goon executable for Procelain Elixir library, to run executables in Elixir processes
+wget -q https://github.com/alco/goon/releases/download/v1.1.1/goon_linux_386.tar.gz -O /tmp/goon.tar.gz
+tar -xvC /tmp/elm_bin -f /tmp/goon.tar.gz
+chmod +x /tmp/elm_bin/goon
+rm /tmp/goon.tar.gz
+# Elm Platform 0.18
+wget -q https://github.com/elm-lang/elm-platform/releases/download/0.18.0-exp/elm-platform-linux-64bit.tar.gz -O /tmp/platform-0.18.0.tar.gz
+tar -xvC /tmp/elm_bin/0.18.0 -f /tmp/platform-0.18.0.tar.gz
+rm /tmp/platform-0.18.0.tar.gz
+# Elm Format 0.18
+wget -q https://github.com/avh4/elm-format/releases/download/0.7.0-exp/elm-format-0.18-0.7.0-exp-linux-x64.tgz -O /tmp/format-0.18.0.tar.gz
+tar -xvC /tmp/elm_bin/0.18.0 -f /tmp/format-0.18.0.tar.gz
+rm /tmp/format-0.18.0.tar.gz
+chmod +x /tmp/elm_bin/0.18.0/*
+# Elm Platform 0.19
+wget -q https://github.com/elm/compiler/releases/download/0.19.0/binaries-for-linux.tar.gz -O /tmp/platform-0.19.0.tar.gz
+tar -xvC /tmp/elm_bin/0.19.0 -f /tmp/platform-0.19.0.tar.gz
+rm /tmp/platform-0.19.0.tar.gz
+chmod +x /tmp/elm_bin/0.19.0/*
+# Elm Format 0.19
+wget -q https://github.com/avh4/elm-format/releases/download/0.8.0-rc3/elm-format-0.19-0.8.0-rc3-linux-x64.tgz -O /tmp/format-0.19.0.tar.gz
+tar -xvC /tmp/elm_bin/0.19.0 -f /tmp/format-0.19.0.tar.gz
+rm /tmp/format-0.19.0.tar.gz
+chmod +x /tmp/elm_bin/0.19.0/*
+
+# Copy binaries and set up ELM_HOME
+export ELM_HOME=/app/priv/elm_home
+mkdir -p /app/priv/bin
+cp -r /tmp/elm_bin/* /app/priv/bin
+mkdir -p /app/priv/elm_home

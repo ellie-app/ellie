@@ -1,0 +1,21 @@
+[Unit]
+Description=Service unit for the ellie
+Requires=setup-network-environment.service
+After=setup-network-environment.service
+
+[Service]
+WorkingDirectory=/app
+EnvironmentFile=/etc/network-environment
+EnvironmentFile=/app/etc/environment
+StandardOutput=journal
+StandardError=journal
+User=ec2-user
+ExecStart=/app/bin/ellie foreground
+KillMode=process
+TimeoutStopSec=60
+Restart=on-failure
+RestartSec=5
+RemainAfterExit=no
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,7 @@
+#!/usr/bin/env bash
+
+set -e
+
+systemctl start ellie.service
+
+exit 0

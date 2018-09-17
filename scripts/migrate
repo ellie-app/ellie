@@ -1,0 +1,20 @@
+#!/usr/bin/env bash
+
+set -e
+
+cd /app || exit 1
+
+source /etc/network-environment
+
+# Imported from /etc/network-environment
+export DEFAULT_IPV4
+# Do not modify things on disk for this task
+export RELEASE_READ_ONLY=true
+# Import env
+set -o allexport
+source ./etc/environment
+set +o allexport
+
+bin/ellie migrate
+
+exit $?
