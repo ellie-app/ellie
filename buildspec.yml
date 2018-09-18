@@ -30,4 +30,5 @@ artifacts:
     - scripts/migrate
     - scripts/start
     - scripts/healthz
+    - scripts/install_executables
   discard-paths: no
