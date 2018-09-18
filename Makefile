@@ -16,19 +16,19 @@ init: ## Initialize the project from a clean state
 compile: ## Build the application
 	mix do deps.get, compile
 	mix do loadpaths, absinthe.schema.json /app/priv/graphql/schema.json
-	cd /app/assets
+	cd /app/assets && \
+		npm install && \
+		npm run graphql && \
+		npm run build
 	npm install
 	npm run graphql
 	npm run build
-	cd /app
 
 clean: ## Clean up generated artifacts
 	mix clean
 
-rebuild: clean build ## Rebuild the application
-
 image: ## Mimic CodeBuild build
-	docker run --rm -e BUILD_DIR=/app -v $(PWD):/app -it centos:7 /app/bin/build all
+	docker run --rm -e BUILD_DIR=/app -v $(PWD):/app -it centos:7 /app/scripts/build all
 
 release: ## Build a release of the application with MIX_ENV=prod
 	MIX_ENV=prod mix do deps.get, compile

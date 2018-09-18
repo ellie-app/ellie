@@ -1,0 +1,33 @@
+version: 0.2
+
+env:
+  variables:
+    MIX_ENV: "prod"
+
+phases:
+  install:
+    commands:
+      - chmod +x scripts/build
+      - scripts/build install
+  pre_build:
+    commands:
+      - scripts/build pre_build
+  build:
+    commands:
+      - scripts/build build
+  post_build:
+    commands:
+      - scripts/build post_build
+
+artifacts:
+  files:
+    - ellie.tar.gz
+    - appspec.yml
+    - templates/infra.yml
+    - templates/production.conf
+    - scripts/unpack
+    - scripts/stop
+    - scripts/migrate
+    - scripts/start
+    - scripts/healthz
+  discard-paths: no

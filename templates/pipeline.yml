@@ -5,11 +5,11 @@ Description: >
   CodePipeline orchestrates this process.
 
 Parameters:
-  ApplicationName: 
+  ApplicationName:
     Description: "Used to name resources provisioned by this template"
     Type: String
     AllowedPattern: '[A-Za-z0-9-]+'
-        
+
   GitHubUser:
     Description: "The GitHub username which owns the repository to be deployed"
     Type: String
@@ -21,11 +21,11 @@ Parameters:
   GitHubBranch:
     Description: "The branch of the repository to deploy"
     Type: String
-    Default: "master"
+    Default: "chore/aws-setup"
 
-  GitHubOAuthToken: 
+  GitHubOAuthToken:
     Description: "Create a token with 'repo' and 'admin:repo_hook' permissions here https://github.com/settings/tokens"
-    Type: String   
+    Type: String
     NoEcho: true
 
   SSHKeyName:
@@ -35,7 +35,7 @@ Parameters:
 Metadata:
   AWS::CloudFormation::Interface:
     ParameterGroups:
-      - Label: 
+      - Label:
           default: Application Configuration
         Parameters:
           - ApplicationName
@@ -48,21 +48,21 @@ Metadata:
           - GitHubBranch
           - GitHubOAuthToken
     ParameterLabels:
-      ApplicationName: 
+      ApplicationName:
         default: Application Name
-      SSHKeyName: 
+      SSHKeyName:
         default: SSH Key Name
-      GitHubRepository: 
+      GitHubRepository:
         default: Repository Name
-      GitHubUser: 
+      GitHubUser:
         default: Repository Owner
-      GitHubBranch: 
+      GitHubBranch:
         default: Repository Branch
-      GitHubOAuthToken: 
+      GitHubOAuthToken:
         default: OAuth Token
 
 Resources:
-  
+
   # S3 bucket for build artifacts
 
   S3BucketBuilds:
@@ -89,7 +89,7 @@ Resources:
       Name: !Ref ApplicationName
       RoleArn: !GetAtt CodePipelineRole.Arn
       RestartExecutionOnUpdate: false
-      ArtifactStore: 
+      ArtifactStore:
         Type: S3
         Location: !Ref S3BucketBuilds
       Stages:
@@ -113,14 +113,14 @@ Resources:
             - Name: CodeBuild
               InputArtifacts:
                 - Name: Source
-              ActionTypeId: 
+              ActionTypeId:
                 Category: Build
                 Owner: AWS
                 Version: 1
                 Provider: CodeBuild
               OutputArtifacts:
                 - Name: Built
-              Configuration: 
+              Configuration:
                 ProjectName: !Ref CodeBuild
         - Name: Deploy
           Actions:
@@ -155,7 +155,7 @@ Resources:
                 Owner: AWS
                 Version: 1
                 Provider: CodeDeploy
-              Configuration: 
+              Configuration:
                 ApplicationName: !Ref CodeDeployApplication
                 DeploymentGroupName: !Sub "${ApplicationName}-production"
 
@@ -182,19 +182,19 @@ Resources:
 
   CodePipelineRole:
     Type: AWS::IAM::Role
-    Properties: 
+    Properties:
       Path: /
       RoleName: !Sub "${ApplicationName}-codepipeline-${AWS::Region}"
-      AssumeRolePolicyDocument: 
+      AssumeRolePolicyDocument:
         Statement:
           - Effect: "Allow"
             Principal:
               Service: "codepipeline.amazonaws.com"
             Action:
               - "sts:AssumeRole"
-      Policies: 
+      Policies:
         - PolicyName: !Sub "${ApplicationName}-codepipeline-${AWS::Region}"
-          PolicyDocument: 
+          PolicyDocument:
             Statement:
               - Effect: "Allow"
                 Resource:
@@ -231,7 +231,7 @@ Resources:
 
   CodePipelineCloudFormationRole:
     Type: AWS::IAM::Role
-    Properties: 
+    Properties:
       Path: /
       RoleName: !Sub "${ApplicationName}-cfn-${AWS::Region}"
       AssumeRolePolicyDocument:
@@ -255,13 +255,13 @@ Resources:
     Properties:
       ApplicationName: !Ref ApplicationName
       ComputePlatform: Server
-          
+
   CodeDeployServiceRole:
     Type: AWS::IAM::Role
-    Properties: 
+    Properties:
       Path: /
       RoleName: !Sub "${ApplicationName}-codedeploy-${AWS::Region}"
-      AssumeRolePolicyDocument: 
+      AssumeRolePolicyDocument:
         Statement:
           - Effect: "Allow"
             Principal:
@@ -273,17 +273,17 @@ Resources:
 
   CodeBuildRole:
     Type: AWS::IAM::Role
-    Properties: 
+    Properties:
       Path: /
       RoleName: !Sub "${ApplicationName}-codebuild-${AWS::Region}"
-      AssumeRolePolicyDocument: 
+      AssumeRolePolicyDocument:
         Statement:
           - Effect: "Allow"
-            Principal: 
+            Principal:
               Service: "codebuild.amazonaws.com"
             Action:
               - "sts:AssumeRole"
-      Policies: 
+      Policies:
         - PolicyName: !Sub "${ApplicationName}-codebuild-${AWS::Region}"
           PolicyDocument:
             Statement:
@@ -294,7 +294,7 @@ Resources:
                   - "logs:CreateLogStream"
                   - "logs:PutLogEvents"
               - Effect: "Allow"
-                Resource: 
+                Resource:
                   - !Sub "arn:aws:s3:::${S3BucketBuilds}/*"
                 Action:
                   - "s3:GetObject"

@@ -7,8 +7,9 @@ SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd -P)"
 STACK_NAME="${STACK_NAME:-ellie-app}"
 APP_NAME="${APP_NAME:-ellie-app}"
 GITHUB_TOKEN="$(cat "${SCRIPT_DIR}/../GITHUB_TOKEN" || "")"
+GITHUB_BRANCH="chore/aws-setup"
 
-GIT_URL="$(grep 'url' .git/config | awk '{ print $3 }')"
+GIT_URL="git@github.com:ellie-app/ellie.git"
 REPO_NAME="$(echo "$GIT_URL" | sed -e 's|https://github.com/||' -e 's|git@github.com:||' -e 's|.git$||')"
 GITHUB_USER="$(echo "$REPO_NAME" | cut -d'/' -f1)"
 GITHUB_REPO="$(echo "$REPO_NAME" | cut -d'/' -f2)"
@@ -46,6 +47,7 @@ function create_pipeline(){
                      "ParameterKey=GitHubUser,ParameterValue=${GITHUB_USER}" \
                      "ParameterKey=GitHubRepository,ParameterValue=${GITHUB_REPO}" \
                      "ParameterKey=GitHubOAuthToken,ParameterValue=${GITHUB_TOKEN}" \
+                     "ParameterKey=GitHubBranch,ParameterValue=${GITHUB_BRANCH}" \
         --capabilities "CAPABILITY_NAMED_IAM" \
         --on-failure "DO_NOTHING" \
         --tags "Key=source,Value=${APP_NAME}" \

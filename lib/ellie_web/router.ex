@@ -46,6 +46,8 @@ defmodule EllieWeb.Router do
   end
 
   scope "/" do
+    get "/healthz", EllieWeb.HealthController, :healthz
+
     pipe_through :browser
 
     # Need this in case a browser requests an old version and the server
