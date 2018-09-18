@@ -17,6 +17,7 @@ Parameters:
 
   DatabaseUrl:
     Description: "The url of the database to use when connecting"
+    NoEcho: true
     Type: String
 
   SSHKeyName:
@@ -112,6 +113,21 @@ Resources:
       Tags:
         - Key: Name
           Value: !Sub "${ApplicationName}-subnet-app-a"
+        - Key: source
+          Value: !Ref ApplicationName
+
+  SubnetAppB:
+    Type: AWS::EC2::Subnet
+    Properties:
+      CidrBlock: 10.0.1.0/24
+      AvailabilityZone:
+        Fn::Select:
+          - 1
+          - Fn::GetAZs: !Ref "AWS::Region"
+      VpcId: !Ref VPC
+      Tags:
+        - Key: Name
+          Value: !Sub "${ApplicationName}-subnet-app-b"
         - Key: source
           Value: !Ref ApplicationName
 
