@@ -9,10 +9,11 @@ hooks:
       timeout: 300
   AfterInstall:
     - location: scripts/unpack
+    - location: scripts/install_executables
   ApplicationStart:
-    - location: scripts/migrate
-      runas: ec2-user
-      timeout: 300
+    # - location: scripts/migrate
+    #   runas: ec2-user
+    #   timeout: 300
     - location: scripts/start
       timeout: 3600
   ValidateService:
