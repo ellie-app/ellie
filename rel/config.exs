@@ -38,6 +38,11 @@ environment :prod do
   set include_erts: true
   set include_src: false
   set cookie: :"pBpq3i>h9Eoa1(F~fw8`;IYq1G]M$Nifih<C~9(fuId_$EKRUcF=B_*ZRaZk@Rb!"
+
+  set overlays: [
+    {:mkdir, "etc"},
+    {:template, "rel/etc/ellie.service", "etc/ellie.service"}
+  ]
 end
 
 # You may define one or more releases in this file.
