@@ -13,9 +13,9 @@ defmodule Ellie.Tasks.Binstall do
     if not File.exists?(dest) do
       dir = Path.dirname(dest)
       File.mkdir_p!(dir)
-      System.cmd("curl -L #{url} --output #{dest}", [])
-      System.cmd("tar xvzC #{dir} -f #{dest}", [])
-      System.cmd("chmod +x #{dir}/*", [])
+      System.cmd("sh", ["-c", "curl -L #{url} --output #{dest}"])
+      System.cmd("sh", ["-c", "tar xvzC #{dir} -f #{dest}"])
+      System.cmd("sh", ["-c", "chmod +x #{dir}/*"])
     else
       :ok
     end
