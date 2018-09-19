@@ -9,6 +9,7 @@ APP_NAME="${APP_NAME:-ellie-app}"
 GITHUB_TOKEN="$(cat "${SCRIPT_DIR}/../GITHUB_TOKEN" || "")"
 GITHUB_BRANCH="chore/aws-setup"
 
+# GIT_URL="$(grep 'url' .git/config | awk '{ print $3 }')"
 GIT_URL="git@github.com:ellie-app/ellie.git"
 REPO_NAME="$(echo "$GIT_URL" | sed -e 's|https://github.com/||' -e 's|git@github.com:||' -e 's|.git$||')"
 GITHUB_USER="$(echo "$REPO_NAME" | cut -d'/' -f1)"

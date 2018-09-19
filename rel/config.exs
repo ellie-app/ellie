@@ -43,6 +43,10 @@ environment :prod do
     binstall: "rel/commands/binstall.sh"
   ]
 
+  set config_providers: [
+    {Mix.Releases.Config.Providers.Elixir, ["${RELEASE_ROOT_DIR}/etc/config.exs"]}
+  ]
+
   set overlays: [
     {:mkdir, "etc"},
     {:template, "rel/etc/ellie.service", "etc/ellie.service"},

@@ -44,16 +44,10 @@ defmodule Ellie do
   end
 
   defp url_host() do
-    case Map.get(System.get_env(), "SERVER_HOST") do
-      nil ->
-        System.get_env("NOW_URL")
-        |> with_default("0.0.0.0")
-        |> String.replace("https://", "")
-        |> String.replace("http://", "")
-
-      hostname ->
-        hostname
-    end
+    Map.get(System.get_env(), "SERVER_HOST")
+    |> with_default("0.0.0.0")
+    |> String.replace("https://", "")
+    |> String.replace("http://", "")
   end
 
   defp with_default(nil, a), do: a
