@@ -11,6 +11,7 @@ hooks:
     - location: scripts/unpack
   ApplicationStart:
     - location: scripts/binstall
+      runas: ec2-user
     # - location: scripts/migrate
     #   runas: ec2-user
     #   timeout: 300
