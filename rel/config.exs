@@ -45,7 +45,8 @@ environment :prod do
 
   set overlays: [
     {:mkdir, "etc"},
-    {:template, "rel/etc/ellie.service", "etc/ellie.service"}
+    {:template, "rel/etc/ellie.service", "etc/ellie.service"},
+    {:copy, "rel/etc/config.exs", "etc/config.exs"}
   ]
 end
 

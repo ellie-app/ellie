@@ -12,7 +12,7 @@ defmodule Ellie.Adapters.Workspace.Local do
 
   # API
 
-  @basepath Path.expand("../../../../.local_tmp/workspaces", __DIR__)
+  @basepath Application.app_dir(:ellie, ".local_tmp/workspaces")
 
   @behaviour Ellie.Domain.Workspace
 
