@@ -1,0 +1,9 @@
+#!/usr/bin/env bash
+
+set -e
+
+cd /app || exit 1
+
+bin/ellie binstall
+
+exit 0

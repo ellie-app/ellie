@@ -39,6 +39,10 @@ environment :prod do
   set include_src: false
   set cookie: :"pBpq3i>h9Eoa1(F~fw8`;IYq1G]M$Nifih<C~9(fuId_$EKRUcF=B_*ZRaZk@Rb!"
 
+  set commands: [
+    binstall: "rel/commands/binstall.sh"
+  ]
+
   set overlays: [
     {:mkdir, "etc"},
     {:template, "rel/etc/ellie.service", "etc/ellie.service"}

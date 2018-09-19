@@ -9,8 +9,8 @@ hooks:
       timeout: 300
   AfterInstall:
     - location: scripts/unpack
-    - location: scripts/install_executables
   ApplicationStart:
+    - location: scripts/binstall
     # - location: scripts/migrate
     #   runas: ec2-user
     #   timeout: 300
