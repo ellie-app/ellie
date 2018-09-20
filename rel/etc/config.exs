@@ -6,11 +6,11 @@ config :porcelain, driver: Porcelain.Driver.Goon
 config :ellie, EllieWeb.Endpoint,
   http: [port: 4000],
   url: [host: "localhost", port: 4000],
+  check_origin: false,
   root: ".",
   secret_key_base: System.get_env("SECRET_KEY_BASE")
 
 config :ellie, Ellie.Repo,
-  # url: db_url
   url: System.get_env("DATABASE_URL")
 
 config :sentry,
