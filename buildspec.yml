@@ -26,6 +26,7 @@ artifacts:
     - templates/infra.yml
     - templates/production.conf
     - scripts/unpack
+    - scripts/postunpack
     - scripts/stop
     - scripts/migrate
     - scripts/start
