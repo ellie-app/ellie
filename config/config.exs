@@ -24,7 +24,7 @@ config :phoenix, :template_engines,
 
 # Configures the endpoint
 config :ellie, EllieWeb.Endpoint,
-  url: [host: "localhost"],
+  url: [host: "localhost", port: 4000],
   secret_key_base: "+ODF8PyQMpBDb5mxA117MqkLne/bGi0PZoTl5uIHAzck2hDAJ8uGJPzark0Aolyi",
   render_errors: [view: EllieWeb.ErrorView, accepts: ~w(html json)],
   pubsub: [name: Ellie.PubSub,

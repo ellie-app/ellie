@@ -47,6 +47,6 @@ defmodule EllieWeb.Jobs.CleanupLogs do
   end
 
   defp headers() do
-    [{"Authorization", "Bearer #{System.get_env("SENTRY_API_KEY")}"}]
+    [{"Authorization", "Bearer #{Application.get_env(:sentry, :api_key)}"}]
   end
 end
