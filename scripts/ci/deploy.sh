@@ -62,7 +62,7 @@ do
             fi
             shift;
             ;;
-        
+
         --commit_hash)
             shift;
             if test $# -gt 0; then
@@ -75,8 +75,8 @@ do
                 echo "commit hash not specified with --commit_hash flag";
                 exit 1;
             fi
-            shift; 
-            ;; 
+            shift;
+            ;;
     esac
 done
 
@@ -86,39 +86,12 @@ if [[ -z $branch_name ]]; then
 fi
 
 if [[ $branch_name == "master" ]]; then
-    if [[ -z $release_hook ]]; then
-        echo "ERROR: --release_hook is required on master deploys";
-        exit 1;
-    fi
-
-    if [[ -z $commit_hash ]]; then
-        echo "ERROR: --commit_hash is required on master deploys";
-        exit 1;
-    fi
-
-    echo '{ "name": "ellie-production", "alias": "ellie-app.com", "scale": { "bru1": { "min": 0, "max": 0 }, "sfo1": { "min": 1, "max": 1 } } }' > ./now.json
-
-    now -t $now_token \
-        -A ./now.json \
-        -e SECRET_KEY_BASE=@secret-key-base \
-        -e DATABASE_URL=@production-db \
-        -e SENTRY_DSN=@sentry-dsn \
-        -e SENTRY_API_KEY=@sentry-api-key \
-        -e SERVER_HOST=ellie-app.com \
-        -n ellie-production \
-        ellie-app/ellie
-
-    now -t $now_token -A ./now.json alias
+    echo -e "${green}--> DEPLOYING WITH AWS"
 
     curl $release_hook \
         -X POST \
         -H 'Content-Type: application/json' \
         -d '{"version": "'"$commit_hash"'"}'
-
-    rm ./now.json
-
-    # remove deployments that are more than 2 behind
-    now -t $now_token ls --all ellie-production | grep DOCKER | awk '{ print $2 }' | tail -n +3 | xargs -I {} sh -c 'echo "y" | now -t '"$now_token"' rm {}'
 else
     green='\033[0;32m'
 
