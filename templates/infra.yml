@@ -505,7 +505,6 @@ Resources:
               - "sts:AssumeRole"
       ManagedPolicyArns:
         - "arn:aws:iam::aws:policy/service-role/AmazonEC2RoleforAWSCodeDeploy"
-        - "arn:aws:iam::aws:policy/AmazonSSMReadOnlyAccess"
 
   InstanceProfile:
     Type: AWS::IAM::InstanceProfile
