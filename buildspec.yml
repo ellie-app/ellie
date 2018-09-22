@@ -24,7 +24,6 @@ artifacts:
     - ellie.tar.gz
     - appspec.yml
     - templates/infra.yml
-    - templates/production.conf
     - scripts/unpack
     - scripts/postunpack
     - scripts/stop

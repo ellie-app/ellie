@@ -13,13 +13,6 @@ Parameters:
     Description: "The environment this stack represents"
     Type: String
 
-  # Overridden using templates/<env>.conf per-environment
-
-  DatabaseUrl:
-    Description: "The url of the database to use when connecting"
-    NoEcho: true
-    Type: String
-
   SSHKeyName:
     Description: "The name of the SSH keypair to use for connecting to EC2 hosts"
     Type: AWS::EC2::KeyPair::KeyName
@@ -474,7 +467,6 @@ Resources:
                 REPLACE_OS_VARS=true
                 APPLICATION_NAME=${ApplicationName}
                 ENVIRONMENT_NAME=${EnvironmentName}
-                DATABASE_URL=${DatabaseUrl}
                 AWS_REGION=${AWS::Region}
               owner: ec2-user
               group: ec2-user
