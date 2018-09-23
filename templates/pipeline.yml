@@ -139,7 +139,6 @@ Resources:
                 Capabilities: CAPABILITY_NAMED_IAM
                 StackName: !Sub "${ApplicationName}-production"
                 TemplatePath: Built::templates/infra.yml
-                TemplateConfiguration: Built::templates/production.conf
                 ParameterOverrides: !Sub |
                   {
                     "ApplicationName": "${ApplicationName}",
