@@ -489,6 +489,24 @@ Resources:
                 chmod +x ./install
                 ./install auto
 
+  # S3 bucket for app secrets
+
+  S3BucketSecrets:
+    Type: AWS::S3::Bucket
+    DeletionPolicy: Delete
+    Properties:
+      BucketName: !Sub "${ApplicationName}-${EnvironmentName}-secrets"
+      AccessControl: Private
+      VersioningConfiguration:
+        Status: Enabled
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+          - ServerSideEncryptionByDefault:
+              SSEAlgorithm: aws:kms
+      Tags:
+        - Key: source
+          Value: !Ref ApplicationName
+
   # IAM role for EC2 instances
 
   InstanceRole:
@@ -505,6 +523,15 @@ Resources:
               - "sts:AssumeRole"
       ManagedPolicyArns:
         - "arn:aws:iam::aws:policy/service-role/AmazonEC2RoleforAWSCodeDeploy"
+      Policies:
+        - PolicyName: !Sub "${ApplicationName}-${EnvironmentName}-secrets"
+          PolicyDocument:
+            Statement:
+              - Effect: "Allow"
+                Resource:
+                  - !Sub "arn:aws:s3:::${S3BucketSecrets}/*"
+                Action:
+                  - "s3:GetObject"
 
   InstanceProfile:
     Type: AWS::IAM::InstanceProfile
