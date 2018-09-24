@@ -4,6 +4,11 @@ set -e
 
 cd /app || exit 1
 
+# Import env
+set -o allexport
+source ./etc/environment
+set +o allexport
+
 bin/ellie binstall
 
 exit 0
