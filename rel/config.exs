@@ -39,6 +39,9 @@ environment :prod do
   set include_src: false
   set cookie: :"pBpq3i>h9Eoa1(F~fw8`;IYq1G]M$Nifih<C~9(fuId_$EKRUcF=B_*ZRaZk@Rb!"
 
+  # Custom vm.args
+  set vm_args: "rel/vm.args"
+
   set commands: [
     binstall: "rel/commands/binstall.sh"
   ]
