@@ -29,9 +29,24 @@ environment :dev do
   # It is recommended that you build with MIX_ENV=prod and pass
   # the --env flag to Distillery explicitly if you want to use
   # dev mode.
-  set dev_mode: true
-  set include_erts: false
+
+  set commands: [
+    binstall: "rel/commands/binstall.sh",
+    migrate: "rel/commands/migrate.sh"
+  ]
+
+  set include_erts: true
+  set include_src: false
   set cookie: :"^`~K6{^:HDz8{Cbq`.~c`l/!ROE4?0Y&N_./t$@33fo(=WcsM>5=bfN02R,K;v*b"
+
+  set config_providers: [
+    {Mix.Releases.Config.Providers.Elixir, ["${RELEASE_ROOT_DIR}/etc/config.exs"]}
+  ]
+
+  set overlays: [
+    {:mkdir, "etc"},
+    {:copy, "rel/config/dev.exs", "etc/config.exs"}
+  ]
 end
 
 environment :prod do
@@ -43,7 +58,8 @@ environment :prod do
   set vm_args: "rel/vm.args"
 
   set commands: [
-    binstall: "rel/commands/binstall.sh"
+    binstall: "rel/commands/binstall.sh",
+    migrate: "rel/commands/migrate.sh"
   ]
 
   set config_providers: [
@@ -53,7 +69,7 @@ environment :prod do
   set overlays: [
     {:mkdir, "etc"},
     {:template, "rel/etc/ellie.service", "etc/ellie.service"},
-    {:copy, "rel/etc/config.exs", "etc/config.exs"}
+    {:copy, "rel/config/prod.exs", "etc/config.exs"}
   ]
 end
 

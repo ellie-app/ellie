@@ -3,6 +3,7 @@
 VERSION ?= `grep 'version' mix.exs | sed -e 's/ //g' -e 's/version://' -e 's/[",]//g'`
 IMAGE_NAME ?= ellie
 PWD ?= `pwd`
+BUILD ?= `git rev-parse --short HEAD`
 
 help:
 	@echo "$(IMAGE_NAME):$(VERSION)"
@@ -20,9 +21,7 @@ compile: ## Build the application
 		npm install && \
 		npm run graphql && \
 		npm run build
-	npm install
-	npm run graphql
-	npm run build
+	mix phx.digest
 
 clean: ## Clean up generated artifacts
 	mix clean
@@ -34,9 +33,20 @@ release: ## Build a release of the application with MIX_ENV=prod
 	MIX_ENV=prod mix do deps.get, compile
 	MIX_ENV=prod mix do loadpaths, absinthe.schema.json priv/graphql/schema.json
 	cd assets && \
-		NODE_ENV=prod npm install && \
-		NODE_ENV=prod npm run graphql && \
-		NODE_ENV=prod npm run build
+		NODE_ENV=production npm install && \
+		NODE_ENV=production npm run graphql && \
+		NODE_ENV=production npm run build
 	MIX_ENV=prod mix phx.digest
 	MIX_ENV=prod mix release --verbose --env=prod
 	@cp _build/prod/rel/$(IMAGE_NAME)/releases/$(VERSION)/$(IMAGE_NAME).tar.gz $(IMAGE_NAME).tar.gz
+
+build: ## Build the Docker image
+	docker build --build-arg APP_NAME=$(IMAGE_NAME) \
+		--build-arg APP_VSN=$(VERSION) \
+		-t $(IMAGE_NAME):$(VERSION)-$(BUILD) \
+		-t $(IMAGE_NAME):latest .
+
+run: ## Run the app in Docker
+	docker run --env-file .env.local \
+		--expose 4000 -p 4000:4000 \
+		--rm -it $(IMAGE_NAME):latest

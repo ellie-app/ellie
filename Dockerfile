@@ -1,86 +1,55 @@
-# This Dockerfile is for production. Ideally I'd like to put it in scripts/docker/production
-# but right now Ellie is deployed to zeit.co's now.sh service. now.sh can only find Dockerfiles
-# in the root of the project. Development dockerfiles are found in scripts/docker/development.
-FROM elixir:1.7.2
+FROM centos:7 AS builder
 
-ENV DEBIAN_FRONTEND=noninteractive
+ARG APP_NAME=ellie
+ARG APP_VSN
+ARG MIX_ENV=prod
+ARG RELEASE_ENV=dev
+ARG NODE_ENV=production
 
-# Install build-time deps
-RUN curl -sL https://deb.nodesource.com/setup_10.x | bash - \
-    && curl -sS https://dl.yarnpkg.com/debian/pubkey.gpg | apt-key add - \
-    && echo "deb https://dl.yarnpkg.com/debian/ stable main" | tee /etc/apt/sources.list.d/yarn.list \
-    && apt-get update \
-    && apt-get install --no-install-recommends -qy build-essential nodejs \
-    && npm install -g npm
-
-# Install libsysconfcpus
-RUN git clone https://github.com/obmarg/libsysconfcpus.git /usr/local/src/libsysconfcpus \
-    && cd /usr/local/src/libsysconfcpus \
-    && ./configure \
-    && make \
-    && make install \
-    && cd / \
-    && sysconfcpus --version
-
-ENV MIX_ENV=prod \
-    NODE_ENV=production \
-    PORT=4000
-
-# Install Elixir tools
-RUN mix local.hex --force \
-    && mix local.rebar --force \
-    && mix archive.install https://github.com/phoenixframework/archives/raw/master/phoenix_new.ez --force
-
-# Download Elm platform binaries
-RUN mkdir -p /tmp/elm_bin/0.18.0 && mkdir -p /tmp/elm_bin/0.19.0 \
-    # goon executable for Procelain Elixir library, to run executables in Elixir processes
-    && wget -q https://github.com/alco/goon/releases/download/v1.1.1/goon_linux_386.tar.gz -O /tmp/goon.tar.gz \
-    && tar -xvC /tmp/elm_bin -f /tmp/goon.tar.gz \
-    && chmod +x /tmp/elm_bin/goon \
-    && rm /tmp/goon.tar.gz \
-    # Elm Platform 0.18
-    && wget -q https://github.com/elm-lang/elm-platform/releases/download/0.18.0-exp/elm-platform-linux-64bit.tar.gz -O /tmp/platform-0.18.0.tar.gz \
-    && tar -xvC /tmp/elm_bin/0.18.0 -f /tmp/platform-0.18.0.tar.gz \
-    && rm /tmp/platform-0.18.0.tar.gz \
-    # Elm Format 0.18
-    && wget -q https://github.com/avh4/elm-format/releases/download/0.7.0-exp/elm-format-0.18-0.7.0-exp-linux-x64.tgz -O /tmp/format-0.18.0.tar.gz \
-    && tar -xvC /tmp/elm_bin/0.18.0 -f /tmp/format-0.18.0.tar.gz \
-    && rm /tmp/format-0.18.0.tar.gz \
-    && chmod +x /tmp/elm_bin/0.18.0/* \
-    # Elm Platform 0.19
-    && wget -q https://github.com/elm/compiler/releases/download/0.19.0/binaries-for-linux.tar.gz -O /tmp/platform-0.19.0.tar.gz \
-    && tar -xvC /tmp/elm_bin/0.19.0 -f /tmp/platform-0.19.0.tar.gz \
-    && rm /tmp/platform-0.19.0.tar.gz \
-    && chmod +x /tmp/elm_bin/0.19.0/* \
-    # Elm Format 0.19
-    && wget -q https://github.com/avh4/elm-format/releases/download/0.8.0-rc3/elm-format-0.19-0.8.0-rc3-linux-x64.tgz -O /tmp/format-0.19.0.tar.gz \
-    && tar -xvC /tmp/elm_bin/0.19.0 -f /tmp/format-0.19.0.tar.gz \
-    && rm /tmp/format-0.19.0.tar.gz \
-    && chmod +x /tmp/elm_bin/0.19.0/*
-
-# Load source code
-ADD . /app
 WORKDIR /app
 
-# Copy binaries and set up ELM_HOME
-ENV ELM_HOME=/app/priv/elm_home
-RUN mkdir -p /app/priv/bin \
-    && cp -r /tmp/elm_bin/* /app/priv/bin \
-    && mkdir -p /app/priv/elm_home
+COPY . .
 
-# Compile Elixir code and generate schema
-RUN mix deps.get \
-    && mix compile \
-    && mix do loadpaths, absinthe.schema.json /app/priv/graphql/schema.json
+RUN scripts/build install
 
-# Install node dependencies, compile production Elm apps, and generate digested assets
-RUN cd /app/assets \
+RUN mix local.rebar --force \
+    && mix local.hex --force
+
+RUN mix do deps.get, deps.compile, compile \
+    && mix do loadpaths, absinthe.schema.json priv/graphql/schema.json \
+    && cd assets \
     && npm install \
     && npm run graphql \
     && npm run build \
-    && cd /app
+    && cd .. \
+    && mix phx.digest
 
-# Run the server
-RUN echo "Running Ellie on ${SERVER_HOST}"
+RUN mkdir -p /built \
+    && mix release --verbose --env=${RELEASE_ENV} \
+    && cp _build/${MIX_ENV}/rel/${APP_NAME}/releases/${APP_VSN}/${APP_NAME}.tar.gz /built \
+    && cd /built \
+    && tar -xzf ${APP_NAME}.tar.gz \
+    && rm ${APP_NAME}.tar.gz
+
+FROM amazonlinux:2
+
+ARG APP_NAME=ellie
+
+ENV REPLACE_OS_VARS=true \
+    APP_NAME=${APP_NAME}
+
+WORKDIR /app
+
+COPY --from=builder /built .
+
+RUN yum install gcc unzip make tar gzip -y \
+    && curl -L https://github.com/obmarg/libsysconfcpus/archive/master.zip --output /usr/local/src/libsysconfcpus.zip \
+    && unzip /usr/local/src/libsysconfcpus.zip -d /usr/local/src \
+    && cd /usr/local/src/libsysconfcpus-master \
+    && ./configure && make && make install
+
 EXPOSE 4000
-CMD mix do ecto.migrate, phx.server
+CMD trap 'exit' INT; \
+    /app/bin/${APP_NAME} binstall \
+    && /app/bin/${APP_NAME} migrate \
+    && /app/bin/${APP_NAME} foreground

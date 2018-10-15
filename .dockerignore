@@ -11,3 +11,8 @@ priv/docs_table
 priv/elm_home
 priv/static
 .env
+.git
+.gitignore
+Dockerfile
+Makefile
+README*

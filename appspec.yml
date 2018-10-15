@@ -14,9 +14,9 @@ hooks:
   ApplicationStart:
     - location: scripts/binstall
       runas: ec2-user
-    # - location: scripts/migrate
-    #   runas: ec2-user
-    #   timeout: 300
+    - location: scripts/migrate
+      runas: ec2-user
+      timeout: 300
     - location: scripts/start
       timeout: 3600
   ValidateService:
