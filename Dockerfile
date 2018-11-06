@@ -12,10 +12,9 @@ COPY . .
 
 RUN scripts/build install
 
-RUN mix local.rebar --force \
-    && mix local.hex --force
+RUN scripts/build pre_build
 
-RUN mix do deps.get, deps.compile, compile \
+RUN mix do deps.compile, compile \
     && mix do loadpaths, absinthe.schema.json priv/graphql/schema.json \
     && cd assets \
     && npm install \
@@ -31,7 +30,7 @@ RUN mkdir -p /built \
     && tar -xzf ${APP_NAME}.tar.gz \
     && rm ${APP_NAME}.tar.gz
 
-FROM amazonlinux:2
+FROM amazonlinux:2018.03.0.20180827
 
 ARG APP_NAME=ellie
 
