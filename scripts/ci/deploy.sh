@@ -101,6 +101,11 @@ else
         exit 1;
     fi
 
+    if [[ -z $now_token ]]; then
+        echo "ERROR: --now_token is required on branch deploys";
+        exit 1;
+    fi
+
     echo -e "${green}--> CONFIGURING NOW CLI"
     app_name=ellie-test-$branch_name
     echo '{ "name": "'"$app_name"'", "alias": "'"$app_name"'.now.sh" }' > ./now.json
@@ -114,7 +119,8 @@ else
     database_url=${raw_database_url//postgres:\/\//"ecto://"}
 
     echo -e "${green}--> DEPLOYING TO NOW.SH"
-    now -t $now_token \
+    now -p \
+        -t $now_token \
         -A ./now.json \
         -n $app_name \
         -e SECRET_KEY_BASE=@secret-key-base \

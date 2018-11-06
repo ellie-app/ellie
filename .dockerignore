@@ -2,8 +2,8 @@
 .local_tmp
 .vscode
 _build
-elm-stuff
-node_modules
+assets/elm-stuff
+assets/node_modules
 deps
 priv/bin
 priv/graphql
@@ -13,6 +13,8 @@ priv/static
 .env
 .git
 .gitignore
-Dockerfile
-Makefile
 README*
+LICENSE*
+templates/
+test/
+design.sketch
