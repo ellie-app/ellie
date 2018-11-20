@@ -8,8 +8,11 @@ source /etc/network-environment
 
 # Imported from /etc/network-environment
 export DEFAULT_IPV4
-# Do not modify things on disk for this task
-export RELEASE_READ_ONLY=true
+# Do not modify things on disk for this task, if configs
+# have already been generated, otherwise we must generate them once
+if grep '${DEFAULT_IPV4}' var/vm.args >/dev/null; then
+    export RELEASE_READ_ONLY=true
+fi
 # Import env
 set -o allexport
 source ./etc/environment

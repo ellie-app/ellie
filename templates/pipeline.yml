@@ -21,7 +21,6 @@ Parameters:
   GitHubBranch:
     Description: "The branch of the repository to deploy"
     Type: String
-    Default: "chore/aws-setup"
 
   GitHubOAuthToken:
     Description: "Create a token with 'repo' and 'admin:repo_hook' permissions here https://github.com/settings/tokens"

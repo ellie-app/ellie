@@ -7,7 +7,7 @@ SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd -P)"
 STACK_NAME="${STACK_NAME:-ellie-app}"
 APP_NAME="${APP_NAME:-ellie-app}"
 GITHUB_TOKEN="$(cat "${SCRIPT_DIR}/../GITHUB_TOKEN" || "")"
-GITHUB_BRANCH="chore/aws-setup"
+GITHUB_BRANCH="aws-setup"
 
 # GIT_URL="$(grep 'url' .git/config | awk '{ print $3 }')"
 GIT_URL="git@github.com:ellie-app/ellie.git"
@@ -116,7 +116,7 @@ function tail_stack() {
     local previous
     until echo "$current" | tail -1 | grep -E -q "${stack}.*_(COMPLETE|FAILED)"
     do
-        if ! output=$(stack-events "${stack}"); then
+        if ! output=$(stack_events "${stack}"); then
             # Something went wrong with stack-events (like stack not known)
             return 1
         fi
