@@ -8,14 +8,13 @@
 |> Enum.map(&Code.eval_file(&1))
 
 use Mix.Releases.Config,
-    # This sets the default release built by `mix release`
-    default_release: :default,
-    # This sets the default environment used by `mix release`
-    default_environment: Mix.env()
+  # This sets the default release built by `mix release`
+  default_release: :default,
+  # This sets the default environment used by `mix release`
+  default_environment: Mix.env()
 
 # For a full list of config options for both releases
 # and environments, visit https://hexdocs.pm/distillery/config/distillery.html
-
 
 # You may define one or more environments in this file,
 # an environment's settings will override those of a release
@@ -30,47 +29,59 @@ environment :dev do
   # the --env flag to Distillery explicitly if you want to use
   # dev mode.
 
-  set commands: [
-    binstall: "rel/commands/binstall.sh",
-    migrate: "rel/commands/migrate.sh"
-  ]
+  set(
+    commands: [
+      binstall: "rel/commands/binstall.sh",
+      migrate: "rel/commands/migrate.sh"
+    ]
+  )
 
-  set include_erts: true
-  set include_src: false
-  set cookie: :"^`~K6{^:HDz8{Cbq`.~c`l/!ROE4?0Y&N_./t$@33fo(=WcsM>5=bfN02R,K;v*b"
+  set(include_erts: true)
+  set(include_src: false)
+  set(cookie: :"^`~K6{^:HDz8{Cbq`.~c`l/!ROE4?0Y&N_./t$@33fo(=WcsM>5=bfN02R,K;v*b")
 
-  set config_providers: [
-    {Mix.Releases.Config.Providers.Elixir, ["${RELEASE_ROOT_DIR}/etc/config.exs"]}
-  ]
+  set(
+    config_providers: [
+      {Mix.Releases.Config.Providers.Elixir, ["${RELEASE_ROOT_DIR}/etc/config.exs"]}
+    ]
+  )
 
-  set overlays: [
-    {:mkdir, "etc"},
-    {:copy, "rel/config/dev.exs", "etc/config.exs"}
-  ]
+  set(
+    overlays: [
+      {:mkdir, "etc"},
+      {:copy, "rel/config/dev.exs", "etc/config.exs"}
+    ]
+  )
 end
 
 environment :prod do
-  set include_erts: true
-  set include_src: false
-  set cookie: :"pBpq3i>h9Eoa1(F~fw8`;IYq1G]M$Nifih<C~9(fuId_$EKRUcF=B_*ZRaZk@Rb!"
+  set(include_erts: true)
+  set(include_src: false)
+  set(cookie: :"pBpq3i>h9Eoa1(F~fw8`;IYq1G]M$Nifih<C~9(fuId_$EKRUcF=B_*ZRaZk@Rb!")
 
   # Custom vm.args
-  set vm_args: "rel/vm.args"
+  set(vm_args: "rel/vm.args")
 
-  set commands: [
-    binstall: "rel/commands/binstall.sh",
-    migrate: "rel/commands/migrate.sh"
-  ]
+  set(
+    commands: [
+      binstall: "rel/commands/binstall.sh",
+      migrate: "rel/commands/migrate.sh"
+    ]
+  )
 
-  set config_providers: [
-    {Mix.Releases.Config.Providers.Elixir, ["${RELEASE_ROOT_DIR}/etc/config.exs"]}
-  ]
+  set(
+    config_providers: [
+      {Mix.Releases.Config.Providers.Elixir, ["${RELEASE_ROOT_DIR}/etc/config.exs"]}
+    ]
+  )
 
-  set overlays: [
-    {:mkdir, "etc"},
-    {:template, "rel/etc/ellie.service", "etc/ellie.service"},
-    {:copy, "rel/config/prod.exs", "etc/config.exs"}
-  ]
+  set(
+    overlays: [
+      {:mkdir, "etc"},
+      {:template, "rel/etc/ellie.service", "etc/ellie.service"},
+      {:copy, "rel/config/prod.exs", "etc/config.exs"}
+    ]
+  )
 end
 
 # You may define one or more releases in this file.
@@ -79,9 +90,7 @@ end
 # will be used by default
 
 release :ellie do
-  set version: current_version(:ellie)
-  set applications: [
-    :runtime_tools
-  ]
-end
+  set(version: current_version(:ellie))
 
+  set(applications: [:runtime_tools])
+end

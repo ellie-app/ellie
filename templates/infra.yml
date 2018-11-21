@@ -512,8 +512,7 @@ Resources:
               - Effect: "Allow"
                 Resource: !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${ApplicationName}-${EnvironmentName}/*"
                 Action:
-                  - "ssm:DescribeParameters"
-                  - "ssm:GetParameters"
+                  - "ssm:GetParametersByPath"
 
   InstanceProfile:
     Type: AWS::IAM::InstanceProfile
