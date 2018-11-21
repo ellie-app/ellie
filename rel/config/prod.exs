@@ -47,6 +47,8 @@ secrets =
 config :porcelain, :goon_driver_path, "#{:code.priv_dir(:ellie)}/bin/goon"
 config :porcelain, driver: Porcelain.Driver.Goon
 
+config :ellie, :priv_dir, :code.priv_dir(:ellie)
+
 config :ellie, EllieWeb.Endpoint,
   http: [port: 4000],
   url: [host: "localhost", port: 4000],

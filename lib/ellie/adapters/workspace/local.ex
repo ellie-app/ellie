@@ -7,21 +7,20 @@ defmodule Ellie.Adapters.Workspace.Local do
   alias Data.Uuid
   use GenServer
 
-
   defstruct [:location, :packages, :elm_hash, :error, :version]
 
   # API
 
-  @basepath Application.app_dir(:ellie, ".local_tmp/workspaces")
+  @base_path Path.join(:code.priv_dir(:ellie), ".local_tmp/workspaces")
 
   @behaviour Ellie.Domain.Workspace
 
-  @spec create() :: {:ok, Uuid.t} | :error
+  @spec create() :: {:ok, Uuid.t()} | :error
   def create() do
     {:ok, Uuid.new()}
   end
 
-  @spec watch(id :: Uuid.t, process :: pid) :: :unit
+  @spec watch(id :: Uuid.t(), process :: pid) :: :unit
   def watch(id, process) do
     GenServer.cast(__MODULE__, {:cleanup_after, id, process})
     :unit
@@ -29,29 +28,31 @@ defmodule Ellie.Adapters.Workspace.Local do
 
   @spec cleanup() :: :unit
   def cleanup() do
-    if File.exists?(@basepath) do
-      @basepath
+    if File.exists?(@base_path) do
+      @base_path
       |> File.ls!()
       |> Enum.each(fn uuid_string ->
         with {:ok, id} <- Uuid.parse(uuid_string),
-            nil <- get(id)
-        do
+             nil <- get(id) do
           File.rm_rf!(location_for_id(id))
         end
       end)
+
       :unit
     else
       :unit
     end
   end
 
-  @spec result(id :: Uuid.t) :: {:ok, {Path.t, String.t}} | :error
+  @spec result(id :: Uuid.t()) :: {:ok, {Path.t(), String.t()}} | :error
   def result(id) do
     case get(id) do
       nil ->
         :error
+
       current ->
         path = Path.join(current.location, "build.js")
+
         if is_nil(current.error) && File.exists?(path) do
           {:ok, {path, current.elm_hash}}
         else
@@ -60,17 +61,24 @@ defmodule Ellie.Adapters.Workspace.Local do
     end
   end
 
-  @spec dependencies(id :: Uuid.t, version :: Version.t) :: {:ok, MapSet.t(Package.t)} | :error
+  @spec dependencies(id :: Uuid.t(), version :: Version.t()) ::
+          {:ok, MapSet.t(Package.t())} | :error
   def dependencies(id, version) do
     case open(id, version) do
       :ok ->
         {:ok, get(id).packages}
+
       :error ->
         :error
     end
   end
 
-  @spec compile(id :: Uuid.t, version :: Version.t, elm_code :: String.t, packages :: MapSet.t(Package.t)) :: {:ok, Error.t | nil} | :error
+  @spec compile(
+          id :: Uuid.t(),
+          version :: Version.t(),
+          elm_code :: String.t(),
+          packages :: MapSet.t(Package.t())
+        ) :: {:ok, Error.t() | nil} | :error
   def compile(id, version, elm_code, packages) do
     case open(id, version) do
       :ok ->
@@ -82,23 +90,31 @@ defmodule Ellie.Adapters.Workspace.Local do
 
         compile_result =
           if needs_compile do
-            Platform.compile(workspace.location, [
+            Platform.compile(workspace.location,
               source: elm_code,
               output: "build.js",
               project: %Project{elm_version: version, dependencies: packages}
-            ])
+            )
           else
             {:ok, workspace.error}
           end
 
         case compile_result do
           {:ok, error} ->
-            updated_workspace = %{workspace | elm_hash: new_elm_hash, error: error, packages: packages}
+            updated_workspace = %{
+              workspace
+              | elm_hash: new_elm_hash,
+                error: error,
+                packages: packages
+            }
+
             put(id, updated_workspace)
             {:ok, error}
+
           :error ->
             :error
         end
+
       :error ->
         :error
     end
@@ -107,13 +123,16 @@ defmodule Ellie.Adapters.Workspace.Local do
   # HELPERS
 
   defp location_for_id(id) do
-    Path.join(@basepath, Uuid.to_string(id))
+    Path.join(@base_path, Uuid.to_string(id))
   end
 
   defp open(id, version) do
     current = get(id)
+
     case current do
-      nil -> open_help(id, version)
+      nil ->
+        open_help(id, version)
+
       workspace ->
         if workspace.version == version && File.exists?(workspace.location) do
           :ok
@@ -127,6 +146,7 @@ defmodule Ellie.Adapters.Workspace.Local do
     location = location_for_id(id)
     File.rm_rf!(location)
     File.mkdir_p!(location)
+
     case Platform.setup(location, version) do
       {:ok, project} ->
         workspace = %__MODULE__{
@@ -136,8 +156,10 @@ defmodule Ellie.Adapters.Workspace.Local do
           elm_hash: "",
           error: nil
         }
+
         put(id, workspace)
         :ok
+
       _ ->
         :error
     end
@@ -176,13 +198,16 @@ defmodule Ellie.Adapters.Workspace.Local do
 
   def handle_info({:DOWN, _ref, :process, pid, _reason}, state) do
     with {:ok, id} <- Map.fetch(state.monitors, pid),
-      {:ok, workspace} <- Map.fetch(state.workspaces, id)
-    do
+         {:ok, workspace} <- Map.fetch(state.workspaces, id) do
       # no ! because this can fail if a user disconnects as an operation is progress
       # but it's okay because we have a job to sweep through and catch orphaned directories
       File.rm_rf(workspace.location)
 
-      state = %{workspaces: Map.delete(state.workspaces, id), monitors: Map.delete(state.monitors, pid)}
+      state = %{
+        workspaces: Map.delete(state.workspaces, id),
+        monitors: Map.delete(state.monitors, pid)
+      }
+
       {:noreply, state}
     else
       _ -> {:noreply, state}

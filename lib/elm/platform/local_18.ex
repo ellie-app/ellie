@@ -8,9 +8,11 @@ defmodule Elm.Platform.Local18 do
   alias Elm.Platform.Parser
   use GenServer
 
+  @base_path Path.join(:code.priv_dir(:ellie), "bin/0.18.0")
+
   # Callbacks
 
-  @spec setup(Path.t) :: {:ok, Project.t} | :error
+  @spec setup(Path.t()) :: {:ok, Project.t()} | :error
   def setup(root) do
     case GenServer.call(__MODULE__, {:elm_package, :init, root}, :infinity) do
       :ok ->
@@ -18,22 +20,27 @@ defmodule Elm.Platform.Local18 do
         updated = Map.put(project_json, "source-directories", ["src"])
         write_project!(updated, root)
         File.mkdir_p!(Path.join(root, "src"))
+
         case decode_deps_map!(Map.fetch!(project_json, "dependencies")) do
           {:ok, dependencies} ->
             project = %Project{
               elm_version: Version.create(0, 18, 0),
               dependencies: dependencies
             }
+
             {:ok, project}
+
           _error ->
             :error
         end
+
       :error ->
         :error
     end
   end
 
-  @spec compile(Path.t, [source: String.t, project: Project.t, output: Path.t]) :: {:ok, Error.t | nil} | :error
+  @spec compile(Path.t(), source: String.t(), project: Project.t(), output: Path.t()) ::
+          {:ok, Error.t() | nil} | :error
   def compile(root, options) do
     source = Keyword.fetch!(options, :source)
     project = Keyword.fetch!(options, :project)
@@ -44,6 +51,7 @@ defmodule Elm.Platform.Local18 do
       |> read_project!()
       |> Map.put("dependencies", make_deps_map(project.dependencies))
       |> write_project!(root)
+
       File.rm_rf!(Path.join([root, "elm-stuff", "exact-dependencies.json"]))
 
       File.rm_rf!(Path.join(root, "src"))
@@ -60,15 +68,17 @@ defmodule Elm.Platform.Local18 do
     end
   end
 
-  @spec format(String.t) :: {:ok, String.t} | :error
+  @spec format(String.t()) :: {:ok, String.t()} | :error
   def format(code) do
-    binary = Application.app_dir(:ellie, "priv/bin/0.18.0/elm-format")
+    binary = Path.join(@base_path, "elm-format")
     args = ["--stdin"]
     options = [in: code, out: :string, err: :string]
     result = Porcelain.exec(binary, args, options)
+
     case result do
       %Porcelain.Result{err: "", out: out, status: 0} ->
         {:ok, out}
+
       _ ->
         :error
     end
@@ -85,30 +95,49 @@ defmodule Elm.Platform.Local18 do
   end
 
   def handle_call({:elm_package, :init, root}, _from, state) do
-    binary = Application.app_dir(:ellie, "priv/bin/0.18.0/elm-package")
+    binary = Path.join(@base_path, "elm-package")
     args = ["--num", "1", binary, "install", "--yes"]
     options = [out: :string, err: :string, dir: root]
     result = Porcelain.exec("sysconfcpus", args, options)
+
     case result do
       %Porcelain.Result{status: 0} ->
         {:reply, :ok, state}
+
       _ ->
         {:reply, :error, state}
     end
   end
 
   def handle_call({:elm_make, root, entry, output}, _from, state) do
-    binary = Application.app_dir(:ellie, "priv/bin/0.18.0/elm-make")
-    args = ["--num", "1", binary, entry, "--report", "json", "--yes", "--debug", "--output", output]
+    binary = Path.join(@base_path, "elm-make")
+
+    args = [
+      "--num",
+      "1",
+      binary,
+      entry,
+      "--report",
+      "json",
+      "--yes",
+      "--debug",
+      "--output",
+      output
+    ]
+
     options = [out: :string, err: :string, dir: root]
     result = Porcelain.exec("sysconfcpus", args, options)
+
     case result do
       %Porcelain.Result{status: 0} ->
         {:reply, nil, state}
+
       %Porcelain.Result{status: 1, out: out, err: ""} ->
         {:reply, parse_error(entry, out), state}
+
       %Porcelain.Result{err: err} ->
         {:reply, parse_error(entry, err), state}
+
       {:error, reason} ->
         {:reply, parse_error(entry, reason), state}
     end
@@ -147,9 +176,8 @@ defmodule Elm.Platform.Local18 do
     |> Map.to_list()
     |> Result.traverse(fn {key, value} ->
       with {:ok, name} <- Name.from_string(key),
-        [version_string, _, "v", _, _] <- String.split(value, " "),
-        {:ok, version} <- Version.from_string(version_string)
-      do
+           [version_string, _, "v", _, _] <- String.split(value, " "),
+           {:ok, version} <- Version.from_string(version_string) do
         {:ok, %Package{version: version, name: name}}
       else
         :error -> {:error, nil}
@@ -171,23 +199,25 @@ defmodule Elm.Platform.Local18 do
             case Map.get(error, "type") do
               "error" ->
                 file = Map.get(error, "file", "src/Main.elm")
+
                 top_key =
                   if is_nil(Map.get(error, "subregion")) do
                     "region"
                   else
                     "subregion"
                   end
-                region =
-                  %Error.Region{
-                    start: %Error.Position{
-                      line: get_in(error, [top_key, "start", "line"]),
-                      column: get_in(error, [top_key, "start", "column"])
-                    },
-                    end: %Error.Position{
-                      line: get_in(error, [top_key, "end", "line"]),
-                      column: get_in(error, [top_key, "end", "column"])
-                    }
+
+                region = %Error.Region{
+                  start: %Error.Position{
+                    line: get_in(error, [top_key, "start", "line"]),
+                    column: get_in(error, [top_key, "start", "column"])
+                  },
+                  end: %Error.Position{
+                    line: get_in(error, [top_key, "end", "line"]),
+                    column: get_in(error, [top_key, "end", "column"])
                   }
+                }
+
                 problem = %Error.Problem{
                   title: Map.fetch!(error, "tag"),
                   region: region,
@@ -197,9 +227,11 @@ defmodule Elm.Platform.Local18 do
                     {:unstyled, Map.get(error, "details", "")}
                   ]
                 }
+
                 by_source
                 |> Map.put_new(file, [])
                 |> Map.update!(file, fn problems -> [problem | problems] end)
+
               _ ->
                 by_source
             end
@@ -215,6 +247,7 @@ defmodule Elm.Platform.Local18 do
           []
         end
       end)
+
     if Enum.empty?(errors) do
       gp = %Error.GeneralProblem{
         path: entry,
@@ -234,6 +267,7 @@ defmodule Elm.Platform.Local18 do
         local_name
         |> String.trim_trailing(".elm")
         |> String.replace("/", ".")
+
       _ ->
         "Main"
     end
