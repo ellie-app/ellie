@@ -506,7 +506,7 @@ Resources:
       ManagedPolicyArns:
         - "arn:aws:iam::aws:policy/service-role/AmazonEC2RoleforAWSCodeDeploy"
       Policies:
-        - PolicyName: !Sub "${ApplicationName}-ssm"
+        - PolicyName: !Sub "${ApplicationName}-${EnvironmentName}-ssm"
           PolicyDocument:
             Statement:
               - Effect: "Allow"
