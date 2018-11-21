@@ -11,7 +11,7 @@ defmodule Ellie.Adapters.Workspace.Local do
 
   # API
 
-  @base_path Path.join(:code.priv_dir(:ellie), ".local_tmp/workspaces")
+  @base_path Path.join(".", ".local_tmp/workspaces")
 
   @behaviour Ellie.Domain.Workspace
 
