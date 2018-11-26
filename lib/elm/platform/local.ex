@@ -24,7 +24,7 @@ defmodule Elm.Platform.Local do
   def format(code, %Version{major: 0, minor: 19, patch: 0}), do: Local19.format(code)
   def format(_code, _version), do: :error
 
-  @dets_path String.to_charlist(Path.join([:code.priv_dir(:ellie), "docs_table"]))
+  defp dets_path, do: String.to_charlist(Path.join([:code.priv_dir(:ellie), "docs_table"]))
 
   defp render_json_error({:field, field, e}), do: "At field #{field}: #{render_json_error(e)}"
   defp render_json_error({:index, index, e}), do: "At index #{index}: #{render_json_error(e)}"
@@ -36,7 +36,7 @@ defmodule Elm.Platform.Local do
   defp render_json_error(_), do: "IDK"
 
   def docs(package) do
-    {:ok, table} = :dets.open_file(:docs_table, file: @dets_path)
+    {:ok, table} = :dets.open_file(:docs_table, file: dets_path)
 
     case :dets.lookup(table, package) do
       [{^package, modules}] ->
