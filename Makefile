@@ -24,9 +24,15 @@ compile: ## Build the application
 	mix phx.digest
 
 clean: ## Clean up generated artifacts
-	mix clean
+	@rm -rf \
+		assets/node_modules \
+		assets/elm-stuff \
+		priv/graphql \
+		priv/bin \
+	mix clean --deps
 
 image: ## Mimic CodeBuild build
+	$(MAKE) clean
 	docker run --rm -e BUILD_DIR=/app -v $(PWD):/app -it centos:7 /app/scripts/build all
 
 release: ## Build a release of the application with MIX_ENV=prod
@@ -40,13 +46,9 @@ release: ## Build a release of the application with MIX_ENV=prod
 	MIX_ENV=prod mix release --verbose --env=prod
 	@cp _build/prod/rel/$(IMAGE_NAME)/releases/$(VERSION)/$(IMAGE_NAME).tar.gz $(IMAGE_NAME).tar.gz
 
-build: ## Build the Docker image
-	docker build --build-arg APP_NAME=$(IMAGE_NAME) \
-		--build-arg APP_VSN=$(VERSION) \
-		-t $(IMAGE_NAME):$(VERSION)-$(BUILD) \
-		-t $(IMAGE_NAME):latest .
+bootstrap: ## Setup the app dev
+	$(MAKE) clean
+	scripts/bootstrap
 
-run: ## Run the app in Docker
-	docker run --env-file .env.local \
-		--expose 4000 -p 4000:4000 \
-		--rm -it $(IMAGE_NAME):latest
+server: ## Run the app locally for dev
+	scripts/server

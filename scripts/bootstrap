@@ -1,0 +1,30 @@
+#! /usr/bin/env bash
+
+set -e
+
+export MIX_ENV=dev
+export NODE_ENV=development
+
+if [ ! "$(sysconfcpus --version)" ]; then
+    curl -L https://github.com/obmarg/libsysconfcpus/archive/master.zip --output /usr/local/src/libsysconfcpus.zip
+    unzip /usr/local/src/libsysconfcpus.zip -d /usr/local/src
+    cd /usr/local/src/libsysconfcpus-master
+    ./configure && make && make install
+
+    echo "sysconfcpus install complete"
+else
+    echo "sysconfcpus already installed"
+fi
+
+mix deps.get
+mix compile
+mix do loadpaths, absinthe.schema.json ./priv/graphql/schema.json
+
+cd assets && npm install
+cd ../
+
+mix ellie.binstall
+mix ellie.graphqelm
+
+mix ecto.create
+mix ecto.migrate
