@@ -1,9 +1,6 @@
 use Mix.Config
 
-config :logger,
-  level: :info,
-  handle_sasl_reports: true,
-  handle_otp_reports: true
+config :logger, backends: []
 
 config :ellie, EllieWeb.Endpoint,
   cache_static_manifest: "priv/static/manifest.json",
