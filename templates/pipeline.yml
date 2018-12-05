@@ -10,6 +10,10 @@ Parameters:
     Type: String
     AllowedPattern: '[A-Za-z0-9-]+'
 
+  DomainName:
+    Description: "The domain this application is deployed to"
+    Type: String
+
   GitHubUser:
     Description: "The GitHub username which owns the repository to be deployed"
     Type: String
@@ -21,6 +25,7 @@ Parameters:
   GitHubBranch:
     Description: "The branch of the repository to deploy"
     Type: String
+    Default: "master"
 
   GitHubOAuthToken:
     Description: "Create a token with 'repo' and 'admin:repo_hook' permissions here https://github.com/settings/tokens"
@@ -141,6 +146,7 @@ Resources:
                 ParameterOverrides: !Sub |
                   {
                     "ApplicationName": "${ApplicationName}",
+                    "DomainName": "${DomainName}",
                     "EnvironmentName": "production",
                     "SSHKeyName": "${SSHKeyName}"
                   }

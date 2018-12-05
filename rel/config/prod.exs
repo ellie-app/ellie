@@ -49,9 +49,8 @@ config :porcelain, driver: Porcelain.Driver.Goon
 
 config :ellie, EllieWeb.Endpoint,
   http: [port: 4000],
-  url: [host: "localhost", port: 4000],
-  # check_origin: ["ellie-app.com"],
-  check_origin: false,
+  url: [host: System.get_env("DOMAIN_NAME"), port: 443, scheme: "https"],
+  check_origin: [System.get_env("DOMAIN_NAME")],
   root: ".",
   secret_key_base: Map.get(secrets, "SECRET_KEY_BASE")
 

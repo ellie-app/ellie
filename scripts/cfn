@@ -4,16 +4,13 @@ set -e
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd -P)"
 
-STACK_NAME="${STACK_NAME:-ellie-app}"
-APP_NAME="${APP_NAME:-ellie-app}"
+STACK_NAME="${STACK_NAME:-ellie}"
+APP_NAME="${APP_NAME:-ellie}"
+DOMAIN_NAME="ellie.tba.sh"
 GITHUB_TOKEN="$(cat "${SCRIPT_DIR}/../GITHUB_TOKEN" || "")"
-GITHUB_BRANCH="master"
-
-# GIT_URL="$(grep 'url' .git/config | awk '{ print $3 }')"
-GIT_URL="git@github.com:ellie-app/ellie.git"
-REPO_NAME="$(echo "$GIT_URL" | sed -e 's|https://github.com/||' -e 's|git@github.com:||' -e 's|.git$||')"
-GITHUB_USER="$(echo "$REPO_NAME" | cut -d'/' -f1)"
-GITHUB_REPO="$(echo "$REPO_NAME" | cut -d'/' -f2)"
+GITHUB_BRANCH="aws-setup"
+GITHUB_USER="ellie-app"
+GITHUB_REPO="ellie"
 
 if [ -z "$GITHUB_USER" ]; then
     echo "You must set GITHUB_USER!"
@@ -44,6 +41,7 @@ function create_pipeline(){
         --stack-name "${STACK_NAME}" \
         --template-body "file://${SCRIPT_DIR}/../templates/pipeline.yml" \
         --parameters "ParameterKey=ApplicationName,ParameterValue=${APP_NAME}" \
+                     "ParameterKey=DomainName,ParameterValue=${DOMAIN_NAME}" \
                      "ParameterKey=SSHKeyName,ParameterValue=${SSH_KEY_NAME}" \
                      "ParameterKey=GitHubUser,ParameterValue=${GITHUB_USER}" \
                      "ParameterKey=GitHubRepository,ParameterValue=${GITHUB_REPO}" \

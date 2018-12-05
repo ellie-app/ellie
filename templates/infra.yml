@@ -13,6 +13,10 @@ Parameters:
     Description: "The environment this stack represents"
     Type: String
 
+  DomainName:
+    Description: "The domain this application is deployed to"
+    Type: String
+
   SSHKeyName:
     Description: "The name of the SSH keypair to use for connecting to EC2 hosts"
     Type: AWS::EC2::KeyPair::KeyName
@@ -234,16 +238,6 @@ Resources:
         - Key: source
           Value: !Ref ApplicationName
 
-  SecurityGroupAppIngressSSH:
-    Type: AWS::EC2::SecurityGroupIngress
-    Description: "Allow SSH to hosts in the application security group"
-    Properties:
-      CidrIp: 0.0.0.0/0
-      GroupId: !GetAtt SecurityGroupApp.GroupId
-      IpProtocol: tcp
-      FromPort: '22'
-      ToPort: '22'
-
   SecurityGroupAppIngressALB:
     Type: AWS::EC2::SecurityGroupIngress
     Description: "Allow HTTP traffic from ALBs to hosts in the application security group"
@@ -364,7 +358,7 @@ Resources:
         - !Ref TargetGroup
       HealthCheckGracePeriod: '300'
       HealthCheckType: EC2
-      MaxSize: '2'
+      MaxSize: '4'
       MinSize: '2'
       DesiredCapacity: '2'
       VPCZoneIdentifier:
@@ -468,6 +462,7 @@ Resources:
                 APPLICATION_NAME=${ApplicationName}
                 ENVIRONMENT_NAME=${EnvironmentName}
                 AWS_REGION=${AWS::Region}
+                DOMAIN_NAME=${DomainName}
               owner: ec2-user
               group: ec2-user
           commands:
@@ -535,4 +530,4 @@ Resources:
 Outputs:
     WebsiteURL:
         Description: "The URL to access the running application once it is deployed"
-        Value: !Sub "http://${LoadBalancer.DNSName}"
+        Value: !Sub "https://${DomainName}"
