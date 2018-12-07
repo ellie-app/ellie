@@ -20,15 +20,6 @@ defmodule EllieWeb.Router do
     plug(:accepts, ["json"])
   end
 
-  if Application.get_env(:ellie, :env) == :dev do
-    scope "/assets" do
-      forward("/", PlugProxy,
-        upstream: "http://localhost:8080/",
-        connect_timeout: :infinity
-      )
-    end
-  end
-
   scope "/api" do
     pipe_through(:api)
     forward("/graphiql", Absinthe.Plug.GraphiQL, schema: EllieWeb.Graphql.Schema)

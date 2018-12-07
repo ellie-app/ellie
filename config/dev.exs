@@ -9,6 +9,7 @@ use Mix.Config
 config :ellie, EllieWeb.Endpoint,
   http: [port: 4000],
   url: [port: 4000],
+  static_url: [scheme: "http", host: "localhost", port: 8080],
   debug_errors: true,
   code_reloader: true,
   check_origin: false,
