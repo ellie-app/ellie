@@ -3,38 +3,39 @@ defmodule EllieWeb.Endpoint do
   use Absinthe.Phoenix.Endpoint
   use Sentry.Phoenix.Endpoint
 
-  socket "/api/sockets", EllieWeb.Graphql.Socket
+  socket("/api/sockets", EllieWeb.Graphql.Socket)
 
   # Code reloading can be explicitly enabled under the
   # :code_reloader configuration of your endpoint.
   if code_reloading? do
-    socket "/phoenix/live_reload/socket", Phoenix.LiveReloader.Socket
-    plug Phoenix.LiveReloader
-    plug Phoenix.CodeReloader
+    socket("/phoenix/live_reload/socket", Phoenix.LiveReloader.Socket)
+    plug(Phoenix.LiveReloader)
+    plug(Phoenix.CodeReloader)
   end
 
   if Application.get_env(:ellie, :env) == :prod do
-    plug Plug.Static,
+    plug(Plug.Static,
       at: "/assets",
       from: :ellie,
       gzip: true,
-      headers: %{"Service-Worker-Allowed" => "/"}
+      headers: %{"Service-Worker-Allowed" => "/", "Access-Control-Allow-Origin" => "*"}
+    )
   end
 
-  plug Plug.Logger
+  plug(Plug.Logger)
 
-  plug Plug.Parsers,
+  plug(Plug.Parsers,
     parsers: [:urlencoded, :multipart, :json],
     pass: ["*/*"],
     json_decoder: Poison
+  )
 
-  plug Plug.MethodOverride
-  plug Plug.Head
+  plug(Plug.MethodOverride)
+  plug(Plug.Head)
 
-  plug :clear_cookies, []
+  plug(:clear_cookies, [])
 
-
-  plug EllieWeb.Router
+  plug(EllieWeb.Router)
 
   @doc """
   Callback invoked for dynamically configuring the endpoint.
@@ -54,9 +55,24 @@ defmodule EllieWeb.Endpoint do
   def clear_cookies(conn, _opts) do
     conn
     |> fetch_cookies()
-    |> delete_cookie_if_present("_ga", domain: ".ellie-app.com", path: "/", http_only: false, secure: false)
-    |> delete_cookie_if_present("_gid", domain: ".ellie-app.com", path: "/", http_only: false, secure: false)
-    |> delete_cookie_if_present("ownedProjects", domain: ".ellie-app.com", path: "/", http_only: true, secure: true)
+    |> delete_cookie_if_present("_ga",
+      domain: ".ellie-app.com",
+      path: "/",
+      http_only: false,
+      secure: false
+    )
+    |> delete_cookie_if_present("_gid",
+      domain: ".ellie-app.com",
+      path: "/",
+      http_only: false,
+      secure: false
+    )
+    |> delete_cookie_if_present("ownedProjects",
+      domain: ".ellie-app.com",
+      path: "/",
+      http_only: true,
+      secure: true
+    )
   end
 
   defp delete_cookie_if_present(conn, key, opts) do
