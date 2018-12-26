@@ -51,7 +51,7 @@ config :ellie, EllieWeb.Endpoint,
   http: [port: 4000],
   url: [host: System.get_env("DOMAIN_NAME"), port: 443, scheme: "https"],
   static_url: [host: System.get_env("CDN_DOMAIN_NAME"), port: 443, scheme: "https"],
-  check_origin: [System.get_env("DOMAIN_NAME")],
+  check_origin: ["https://" <> System.get_env("DOMAIN_NAME")],
   root: ".",
   secret_key_base: Map.get(secrets, "SECRET_KEY_BASE")
 

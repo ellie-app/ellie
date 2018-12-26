@@ -1,9 +1,11 @@
 use Mix.Config
 
-config :logger, backends: []
+config :logger,
+  level: :info,
+  handle_sasl_reports: true,
+  handle_otp_reports: true
 
 config :ellie, EllieWeb.Endpoint,
-  force_ssl: [rewrite_on: [:x_forwarded_proto]],
   cache_static_manifest: "priv/static/manifest.json",
   server: true,
   version: Application.spec(:ellie, :vsn)
