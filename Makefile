@@ -9,11 +9,6 @@ help:
 	@echo "$(IMAGE_NAME):$(VERSION)"
 	@perl -nle'print $& if m{^[a-zA-Z_-]+:.*?## .*$$}' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-30s\033[0m %s\n", $$1, $$2}'
 
-init: ## Initialize the project from a clean state
-	mix local.rebar --force
-	mix local.hex --force
-	mix deps.get
-
 compile: ## Build the application
 	mix do deps.get, compile
 	mix do loadpaths, absinthe.schema.json priv/graphql/schema.json

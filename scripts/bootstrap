@@ -16,6 +16,8 @@ else
     echo "sysconfcpus already installed"
 fi
 
+mix local.rebar --force
+mix local.hex --force
 mix deps.get
 mix compile
 mix do loadpaths, absinthe.schema.json ./priv/graphql/schema.json

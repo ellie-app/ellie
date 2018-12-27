@@ -7,11 +7,14 @@ SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd -P)"
 STACK_NAME="${STACK_NAME:-ellie}"
 APP_NAME="${APP_NAME:-ellie}"
 DOMAIN_NAME="ellie.tba.sh"
-GITHUB_TOKEN="$(cat "${SCRIPT_DIR}/../GITHUB_TOKEN" || "")"
 GITHUB_BRANCH="aws-setup"
 GITHUB_USER="ellie-app"
 GITHUB_REPO="ellie"
 
+if [ -z "$DOMAIN_NAME" ]; then
+    echo "You must set DOMAIN_NAME!"
+    exit 1
+fi
 if [ -z "$GITHUB_USER" ]; then
     echo "You must set GITHUB_USER!"
     exit 1

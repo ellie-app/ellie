@@ -41,4 +41,3 @@ priv/docs_table
 *.tar.gz
 
 /config/*.toml
-/GITHUB_TOKEN

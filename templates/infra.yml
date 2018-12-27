@@ -340,6 +340,32 @@ Resources:
             TargetGroupArn: !Ref TargetGroup
         LoadBalancerArn: !Ref LoadBalancer
 
+  # CDN
+
+  CDN:
+    Type: AWS::CloudFront::Distribution
+    Properties:
+      DistributionConfig:
+        Origins:
+          - DomainName: !Ref DomainName
+            Id: !GetAtt LoadBalancer.LoadBalancerName
+            CustomOriginConfig:
+              OriginProtocolPolicy: "https-only"
+        DefaultCacheBehavior:
+          TargetOriginId: !GetAtt LoadBalancer.LoadBalancerName
+          ViewerProtocolPolicy: "redirect-to-https"
+          MinTTL: 0
+          ForwardedValues:
+            Cookies:
+              Forward: "none"
+            QueryString: false
+        Enabled: true
+      Tags:
+        - Key: Name
+          Value: !Sub "${ApplicationName}-cdn"
+        - Key: source
+          Value: !Ref ApplicationName
+
   # Autoscaling Group
 
   ASG:
@@ -463,6 +489,7 @@ Resources:
                 ENVIRONMENT_NAME=${EnvironmentName}
                 AWS_REGION=${AWS::Region}
                 DOMAIN_NAME=${DomainName}
+                CDN_DOMAIN_NAME=${CDN.DomainName}
               owner: ec2-user
               group: ec2-user
           commands:
