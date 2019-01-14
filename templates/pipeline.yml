@@ -110,6 +110,7 @@ Resources:
               Configuration:
                 Owner: !Ref GitHubUser
                 Repo: !Ref GitHubRepository
+                PollForSourceChanges: false
                 Branch: !Ref GitHubBranch
                 OAuthToken: !Ref GitHubOAuthToken
         - Name: Build
@@ -162,6 +163,21 @@ Resources:
               Configuration:
                 ApplicationName: !Ref CodeDeployApplication
                 DeploymentGroupName: !Sub "${ApplicationName}-production"
+
+  Webhook:
+    Type: "AWS::CodePipeline::Webhook"
+    Properties:
+      AuthenticationConfiguration:
+        SecretToken: !Ref GitHubOAuthToken
+      Filters:
+        - JsonPath: "$.release.target_commitish"
+          MatchEquals: !Ref GitHubBranch
+      Authentication: GITHUB_HMAC
+      TargetPipeline: !Ref CodePipeline
+      TargetAction: Source
+      Name: !Ref ApplicationName
+      TargetPipelineVersion: !GetAtt CodePipeline.Version
+      RegisterWithThirdParty: true
 
   CodeBuild:
     Type: AWS::CodeBuild::Project

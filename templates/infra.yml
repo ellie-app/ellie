@@ -333,12 +333,18 @@ Resources:
   LoadBalancerHTTPListener:
     Type: AWS::ElasticLoadBalancingV2::Listener
     Properties:
-        Port: 80
-        Protocol: "HTTP"
-        DefaultActions:
-          - Type: "forward"
-            TargetGroupArn: !Ref TargetGroup
-        LoadBalancerArn: !Ref LoadBalancer
+      Port: 80
+      Protocol: "HTTP"
+      DefaultActions:
+        - Type: "redirect"
+          RedirectConfig:
+            Host: "#{host}"
+            Path: "/#{path}"
+            Port: 443
+            Protocol: "HTTPS"
+            Query: "#{query}"
+            StatusCode: HTTP_301
+      LoadBalancerArn: !Ref LoadBalancer
 
   # CDN
 
@@ -412,7 +418,7 @@ Resources:
     Properties:
       LaunchConfigurationName: !Sub "${ApplicationName}-launchconfig"
       ImageId: !FindInMap [AWSRegionToAMI, !Ref "AWS::Region", AMI]
-      InstanceType: t2.micro
+      InstanceType: t3.micro
       KeyName: !Ref SSHKeyName
       IamInstanceProfile: !GetAtt InstanceProfile.Arn
       AssociatePublicIpAddress: true
