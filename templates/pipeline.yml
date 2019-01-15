@@ -174,7 +174,7 @@ Resources:
           MatchEquals: !Ref GitHubBranch
       Authentication: GITHUB_HMAC
       TargetPipeline: !Ref CodePipeline
-      TargetAction: Source
+      TargetAction: GitHub
       Name: !Ref ApplicationName
       TargetPipelineVersion: !GetAtt CodePipeline.Version
       RegisterWithThirdParty: true
