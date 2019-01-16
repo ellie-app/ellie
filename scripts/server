@@ -1,0 +1,8 @@
+#! /usr/bin/env bash
+
+set -e
+
+export MIX_ENV=dev
+export NODE_ENV=development
+
+iex -S mix phx.server

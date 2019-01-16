@@ -36,3 +36,8 @@ priv/docs_table
 .local_tmp/
 .DS_Store
 .env*
+
+*.pem
+*.tar.gz
+
+/config/*.toml

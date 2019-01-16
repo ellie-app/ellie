@@ -1,0 +1,6 @@
+# Set node name dynamically
+# DEFAULT_IPV4 is exported in /etc/network-environment by setup-network-environment
+-name ellie@${DEFAULT_IPV4}
+
+# Use cookie from vm.args
+-setcookie <%= release.profile.cookie %>

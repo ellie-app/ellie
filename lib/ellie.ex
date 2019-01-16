@@ -4,23 +4,6 @@ defmodule Ellie do
   def start(_type, _args) do
     import Supervisor.Spec
 
-    Application.put_env(:sentry, :dsn, Map.get(System.get_env(), "SENTRY_DSN", ""))
-
-    if Application.get_env(:ellie, :env) == :prod do
-      runtime_url_host = url_host()
-      require Logger
-      Logger.info("configuring url host as #{runtime_url_host}")
-
-      merge_config(
-        :ellie,
-        EllieWeb.Endpoint,
-        secret_key_base: Map.fetch!(System.get_env(), "SECRET_KEY_BASE"),
-        url: [host: runtime_url_host]
-      )
-
-      merge_config(:ellie, Ellie.Repo, url: System.get_env("DATABASE_URL"))
-    end
-
     children = [
       supervisor(Elm, []),
       supervisor(Ellie.Repo, []),
@@ -41,27 +24,5 @@ defmodule Ellie do
   def config_change(changed, _new, removed) do
     EllieWeb.Endpoint.config_change(changed, removed)
     :ok
-  end
-
-  defp url_host() do
-    case Map.get(System.get_env(), "SERVER_HOST") do
-      nil ->
-        System.get_env("NOW_URL")
-        |> with_default("0.0.0.0")
-        |> String.replace("https://", "")
-        |> String.replace("http://", "")
-
-      hostname ->
-        hostname
-    end
-  end
-
-  defp with_default(nil, a), do: a
-  defp with_default(a, _), do: a
-
-  defp merge_config(app, key, keywords) do
-    env = Application.get_env(app, key)
-    updated_env = Keyword.merge(env, keywords)
-    Application.put_env(app, key, updated_env)
   end
 end

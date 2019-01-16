@@ -1,0 +1,99 @@
+#!/usr/bin/env bash
+
+set -e
+
+if [ ! -z "$BUILD_DIR" ]; then
+    cd "$BUILD_DIR" || exit 1
+fi
+
+ERL_VERSION="21.0"
+ELIXIR_VERSION="1.7.2"
+
+export LANG=en_US.UTF-8
+export LANGUAGE=en_US
+export LC_ALL=en_US.UTF-8
+export LC_CTYPE=en_US.UTF-8
+
+function do_install(){
+    mkdir -p /tmp
+
+    echo "==> Installing wget, unzip, make"
+    yum install -y -q wget unzip make
+
+    echo "==> Installing EPEL repository"
+    wget --no-verbose -P /tmp https://dl.fedoraproject.org/pub/epel/epel-release-latest-7.noarch.rpm
+    yum install -q -y /tmp/epel-release-latest-7.noarch.rpm
+
+    echo "==> Updating package repos"
+    yum update -y -q
+
+    echo "==> Updating system packages"
+    yum upgrade -y -q --enablerepo=epel
+
+    echo "==> Installing wxGTK-devel (erlang dep)"
+    yum install -y -q wxGTK-devel || exit 1
+
+    echo "==> Installing unixODBC-devel (erlang dep)"
+    yum install -y -q unixODBC-devel || exit 1
+
+    echo "==> Installing Erlang ${ERL_VERSION}.."
+    wget --no-verbose -P /tmp/ "https://packages.erlang-solutions.com/erlang/esl-erlang/FLAVOUR_1_general/esl-erlang_${ERL_VERSION}-1~centos~7_amd64.rpm"
+    rpm -Uvh "/tmp/esl-erlang_${ERL_VERSION}-1~centos~7_amd64.rpm"
+
+    echo "==> Installing Elixir ${ELIXIR_VERSION}"
+    wget --no-verbose -P /tmp/ "https://github.com/elixir-lang/elixir/releases/download/v${ELIXIR_VERSION}/Precompiled.zip"
+    unzip /tmp/Precompiled.zip -d /usr/local
+
+    echo "==> Installing git, node, npm"
+    yum install -y git nodejs npm --enablerepo=epel
+}
+
+function do_pre_build(){
+    echo "==> Installing hex, rebar"
+    mix local.rebar --force
+    mix local.hex --force
+
+    echo "==> Installing project dependencies"
+    mix deps.get
+}
+
+function do_build(){
+    echo "==> Building release.."
+    make release
+}
+
+function do_post_build(){
+    echo "==> Nothing to do in post-build!"
+}
+
+if [ -z "$1" ]; then
+    echo "You must pass a task to execute! Expected one of (install|build|pre_build|post_build)"
+    exit 1
+fi
+
+case $1 in
+    build)
+        do_build
+        ;;
+    pre_build)
+        do_pre_build
+        ;;
+    post_build)
+        do_post_build
+        ;;
+    install)
+        do_install
+        ;;
+    all)
+        do_install && \
+          do_pre_build && \
+          do_build && \
+          do_post_build
+        ;;
+    *)
+        echo "Invalid command $1"
+        exit 1
+        ;;
+esac
+
+exit 0

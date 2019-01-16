@@ -5,7 +5,7 @@ defmodule Ellie.Adapters.Embed.Local do
   alias Ellie.Types.Revision
   use Agent
 
-  @base_path Path.expand("../../../../.local_tmp/embeds", __DIR__)
+  @base_path Path.join(".", ".local_tmp/embeds")
 
   def result(%Revision{} = revision) do
     case get_entry(revision) do

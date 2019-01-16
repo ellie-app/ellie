@@ -1,10 +1,14 @@
 use Mix.Config
 
-config :logger, backends: []
+config :logger,
+  level: :info,
+  handle_sasl_reports: true,
+  handle_otp_reports: true
 
 config :ellie, EllieWeb.Endpoint,
-  load_from_system_env: true,
-  cache_static_manifest: "priv/static/manifest.json"
+  cache_static_manifest: "priv/static/manifest.json",
+  server: true,
+  version: Application.spec(:ellie, :vsn)
 
 config :ellie, Ellie.Repo,
   adapter: Ecto.Adapters.Postgres,

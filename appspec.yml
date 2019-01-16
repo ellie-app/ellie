@@ -1,0 +1,24 @@
+version: 0.0
+os: linux
+files:
+  - source: .
+    destination: /app
+hooks:
+  ApplicationStop:
+    - location: scripts/stop
+      timeout: 300
+  AfterInstall:
+    - location: scripts/unpack
+    - location: scripts/postunpack
+      runas: root
+  ApplicationStart:
+    - location: scripts/binstall
+      runas: ec2-user
+    - location: scripts/migrate
+      runas: ec2-user
+      timeout: 300
+    - location: scripts/start
+      timeout: 3600
+  ValidateService:
+    - location: scripts/healthz
+      timeout: 3600

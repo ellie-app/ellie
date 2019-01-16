@@ -72,7 +72,6 @@ module.exports = {
             options: {
               maxInstances: 1,
               forceWatch: true,
-              cache: true,
               yes: true,
               debug: true,
               cwd: __dirname

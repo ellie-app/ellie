@@ -1,0 +1,13 @@
+#!/usr/bin/env bash
+
+if [ ! "$(sysconfcpus --version)" ]; then
+    yum install gcc -y
+    curl -L https://github.com/obmarg/libsysconfcpus/archive/master.zip --output /usr/local/src/libsysconfcpus.zip
+    unzip /usr/local/src/libsysconfcpus.zip -d /usr/local/src
+    cd /usr/local/src/libsysconfcpus-master
+    ./configure && make && make install
+
+    echo "sysconfcpus install complete"
+else
+    echo "sysconfcpus already installed"
+fi

@@ -1,13 +1,10 @@
-module Pages.Editor.Views.StatusBar exposing (..)
+module Pages.Editor.Views.StatusBar exposing (Config, view)
 
 import Css exposing (..)
 import Ellie.Ui.Icon as Icon
 import Ellie.Ui.Theme as Theme
 import Html.Styled as Html exposing (Html)
 import Html.Styled.Attributes as Attributes exposing (css)
-import Html.Styled.Events exposing (onClick)
-import Pages.Editor.Types.Notification as Notification exposing (Notification)
-import Pages.Editor.Views.Notifications as Notifications
 
 
 type alias Config =
@@ -40,16 +37,6 @@ view config =
             ]
             []
             [ Html.styled Html.a
-                [ marginRight (px 16)
-                , color Theme.primaryForeground
-                , textDecoration none
-                , fontSize (px 16)
-                ]
-                [ Attributes.href "https://zeit.co"
-                , Attributes.target "_blank"
-                ]
-                [ Html.text "Hosted on ▲ ZEIT Now" ]
-            , Html.styled Html.a
                 [ marginRight (px 16)
                 , color Theme.primaryForeground
                 , textDecoration none
