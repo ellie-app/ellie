@@ -6,8 +6,8 @@ SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd -P)"
 
 STACK_NAME="${STACK_NAME:-ellie}"
 APP_NAME="${APP_NAME:-ellie}"
-DOMAIN_NAME="ellie.tba.sh"
-GITHUB_BRANCH="aws-setup"
+DOMAIN_NAME="ellie-app.com"
+GITHUB_BRANCH="master"
 GITHUB_USER="ellie-app"
 GITHUB_REPO="ellie"
 

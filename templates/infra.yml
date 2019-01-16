@@ -249,6 +249,16 @@ Resources:
       FromPort: '4000'
       ToPort: '4000'
 
+  SecurityGroupALBIngressPublicHTTPS:
+    Type: AWS::EC2::SecurityGroupIngress
+    Description: "Allow any HTTPS traffic on port 443 to ALBs"
+    Properties:
+      CidrIp: 0.0.0.0/0
+      GroupId: !GetAtt SecurityGroupALB.GroupId
+      IpProtocol: tcp
+      FromPort: '443'
+      ToPort: '443'
+
   SecurityGroupALBIngressPublicHTTP:
     Type: AWS::EC2::SecurityGroupIngress
     Description: "Allow any HTTP traffic on port 80 to ALBs"
