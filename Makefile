@@ -42,7 +42,6 @@ release: ## Build a release of the application with MIX_ENV=prod
 	@cp _build/prod/rel/$(IMAGE_NAME)/releases/$(VERSION)/$(IMAGE_NAME).tar.gz $(IMAGE_NAME).tar.gz
 
 bootstrap: ## Setup the app dev
-	$(MAKE) clean
 	scripts/bootstrap
 
 server: ## Run the app locally for dev
