@@ -1,4 +1,4 @@
-module Extra.Html.Attributes exposing (..)
+module Extra.Html.Attributes exposing (cond, maybe, none, style)
 
 import Html.Styled exposing (Attribute)
 import Html.Styled.Attributes as Attributes exposing (property)
@@ -9,6 +9,7 @@ cond : Attribute msg -> Bool -> Attribute msg
 cond attr bool =
     if bool then
         attr
+
     else
         none
 

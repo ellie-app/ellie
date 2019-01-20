@@ -1,4 +1,4 @@
-module Pages.Editor.Types.User exposing (..)
+module Pages.Editor.Types.User exposing (Settings, Theme(..), User, default, localStorageDecoder, localStorageEncoder)
 
 import Extra.Json.Encode as Encode
 import Json.Decode as Decode exposing (Decoder)

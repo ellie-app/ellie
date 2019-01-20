@@ -1,8 +1,8 @@
-module Effect.Subscription exposing (..)
+module Effect.Subscription exposing (Subscription(..), batch, eq, map, none)
 
-import Graphqelm.Document as Document
-import Graphqelm.Operation exposing (RootSubscription)
-import Graphqelm.SelectionSet as SelectionSet exposing (SelectionSet)
+import Graphql.Document as Document
+import Graphql.Operation exposing (RootSubscription)
+import Graphql.SelectionSet as SelectionSet exposing (SelectionSet)
 import Json.Decode as Decode exposing (Decoder, Value)
 import Keyboard exposing (KeyCode)
 
@@ -45,6 +45,7 @@ eq left right =
         ( Batch lSubs, Batch rSubs ) ->
             if List.length lSubs == List.length rSubs then
                 List.all identity (List.map2 eq lSubs rSubs)
+
             else
                 False
 

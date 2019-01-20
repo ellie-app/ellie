@@ -1,19 +1,7 @@
-module Data.Url.Parser.Query
-    exposing
-        ( Parser
-        , custom
-        , enum
-        , int
-        , map
-        , map2
-        , map3
-        , map4
-        , map5
-        , map6
-        , map7
-        , map8
-        , string
-        )
+module Data.Url.Parser.Query exposing
+    ( Parser, string, int, enum, custom
+    , map, map2, map3, map4, map5, map6, map7, map8
+    )
 
 {-| In [the URI spec](https://tools.ietf.org/html/rfc3986), Tim Berners-Lee
 says a URL looks like this:
@@ -43,6 +31,7 @@ parameter by the `&` character.
 
 import Data.Url.Parser.Internal as Q
 import Dict
+
 
 
 -- PARSERS
@@ -239,8 +228,8 @@ map7 func (Q.Parser a) (Q.Parser b) (Q.Parser c) (Q.Parser d) (Q.Parser e) (Q.Pa
 And then you can chain it to do as many of these as you would like:
 
     map func (string "search")
-      |> apply (int "page")
-      |> apply (int "per-page")
+        |> apply (int "page")
+        |> apply (int "per-page")
 
 -}
 map8 : (a -> b -> c -> d -> e -> f -> g -> h -> result) -> Parser a -> Parser b -> Parser c -> Parser d -> Parser e -> Parser f -> Parser g -> Parser h -> Parser result

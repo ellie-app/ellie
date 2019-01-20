@@ -1,11 +1,10 @@
-module Data.Url
-    exposing
-        ( Url
-        , fromString
-        , href
-        , src
-        , toString
-        )
+module Data.Url exposing
+    ( Url
+    , fromString
+    , href
+    , src
+    , toString
+    )
 
 import Html.Styled exposing (Attribute)
 import Html.Styled.Attributes as Attributes

@@ -1,15 +1,9 @@
-module Elm.Error
-    exposing
-        ( BadModule
-        , Chunk(..)
-        , Color(..)
-        , Error(..)
-        , Position
-        , Problem
-        , Region
-        , Style
-        , selection
-        )
+module Elm.Error exposing
+    ( Error(..), BadModule, Problem
+    , Chunk(..), Style, Color(..)
+    , Region, Position
+    , selection
+    )
 
 {-| When `elm make --report=json` fails, this module helps you turn the
 resulting JSON into HTML.
@@ -42,8 +36,8 @@ import Ellie.Api.Object.ElmErrorRegion as ElmErrorRegion
 import Ellie.Api.Object.ElmErrorStyle as ElmErrorStyle
 import Ellie.Api.Union as ApiUnion
 import Ellie.Api.Union.ElmError as ElmError
-import Graphqelm.Field as Field
-import Graphqelm.SelectionSet exposing (SelectionSet, with)
+import Graphql.Field as Field
+import Graphql.SelectionSet exposing (SelectionSet, with)
 
 
 type Error

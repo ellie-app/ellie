@@ -26,7 +26,6 @@ cd assets && npm install
 cd ../
 
 mix ellie.binstall
-mix ellie.graphqelm
 
 mix ecto.create
 mix ecto.migrate

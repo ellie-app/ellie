@@ -1,29 +1,28 @@
-module Ellie.Ui.CodeEditor
-    exposing
-        ( Attribute
-        , Completions
-        , LinterMessage
-        , Located(..)
-        , Position
-        , Severity(..)
-        , Token(..)
-        , autocomplete
-        , completions
-        , id
-        , linterMessages
-        , mode
-        , noCompletions
-        , nowhere
-        , onAdvancedToken
-        , onChange
-        , onSettled
-        , onToken
-        , readOnly
-        , tabSize
-        , value
-        , view
-        , vim
-        )
+module Ellie.Ui.CodeEditor exposing
+    ( Attribute
+    , Completions
+    , LinterMessage
+    , Located(..)
+    , Position
+    , Severity(..)
+    , Token(..)
+    , autocomplete
+    , completions
+    , id
+    , linterMessages
+    , mode
+    , noCompletions
+    , nowhere
+    , onAdvancedToken
+    , onChange
+    , onSettled
+    , onToken
+    , readOnly
+    , tabSize
+    , value
+    , view
+    , vim
+    )
 
 import Html.Styled as Html exposing (Html)
 import Html.Styled.Attributes as Attributes exposing (property)

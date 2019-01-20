@@ -1,12 +1,18 @@
-module Network.Socket
-    exposing
-        ( Info(..)
-        , listen
-        , send
-        )
+port module Network.Socket exposing
+    ( Info(..)
+    , listen
+    , send
+    )
 
-import Json.Decode as Decode exposing (Decoder, Value)
-import WebSocket
+import Json.Decode as Decode exposing (Decoder)
+import Json.Encode as Encode exposing (Value)
+
+
+
+-- INBOUND --
+
+
+port networkSocketInbound : (Value -> msg) -> Sub msg
 
 
 type Info
@@ -17,9 +23,9 @@ type Info
 
 listen : String -> Sub Info
 listen url =
-    WebSocket.listen ("ELM_LANG_SOCKET::" ++ url) <|
+    networkSocketInbound <|
         \input ->
-            case Decode.decodeString infoDecoder input of
+            case Decode.decodeValue infoDecoder input of
                 Ok info ->
                     info
 
@@ -27,9 +33,21 @@ listen url =
                     Close
 
 
+
+-- OUTBOUND --
+
+
+port networkSocketOutbound : Value -> Cmd msg
+
+
 send : String -> String -> Cmd msg
 send url data =
-    WebSocket.send ("ELM_LANG_SOCKET::" ++ url) data
+    networkSocketOutbound <|
+        Encode.object
+            [ ( "tag", Encode.string "Send" )
+            , ( "url", Encode.string ("ELM_LANG_SOCKET::" ++ url) )
+            , ( "data", Encode.string data )
+            ]
 
 
 infoDecoder : Decoder Info

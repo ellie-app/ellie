@@ -1,8 +1,7 @@
-module Pages.Editor.Views.Setup
-    exposing
-        ( Stage(..)
-        , view
-        )
+module Pages.Editor.Views.Setup exposing
+    ( Stage(..)
+    , view
+    )
 
 import Css exposing (..)
 import Ellie.Ui.Button as Button

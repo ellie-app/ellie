@@ -1,23 +1,11 @@
-module Data.Url.Parser
-    exposing
-        ( (</>)
-        , (<?>)
-        , Parser
-        , Protocol
-        , Url
-        , custom
-        , fragment
-        , fromUrl
-        , int
-        , map
-        , oneOf
-        , parse
-        , query
-        , s
-        , string
-        , toUrl
-        , top
-        )
+module Data.Url.Parser exposing
+    ( Parser, string, int, s
+    , map, oneOf, top, custom
+    , query
+    , fragment
+    , parse, Url, Protocol, toUrl, fromUrl
+    , (</>), (<?>)
+    )
 
 {-| In [the URI spec](https://tools.ietf.org/html/rfc3986), Tim Berners-Lee
 says a URL looks like this:
@@ -62,18 +50,23 @@ import Dict exposing (Dict)
 import Http
 
 
+
 -- INFIX TABLE
 
 
 (</>) : Parser a b -> Parser b c -> Parser a c
 (</>) =
     slash
+
+
 infixr 7 </>
 
 
 (<?>) : Parser a (query -> b) -> Query.Parser query -> Parser a b
 (<?>) =
     questionMark
+
+
 infixl 8 <?>
 
 
@@ -107,6 +100,8 @@ type alias State value =
     -- /42/     ==>  Just "42"
     -- /        ==>  Nothing
 
+
+
 -}
 string : Parser (String -> a) a
 string =
@@ -120,6 +115,8 @@ string =
     -- /42/     ==>  Just 42
     -- /        ==>  Nothing
 
+
+
 -}
 int : Parser (Int -> a) a
 int =
@@ -129,10 +126,10 @@ int =
 {-| Parse a segment of the path if it matches a given string. It is almost
 always used with [`</>`](#</>) or [`oneOf`](#oneOf). For example:
 
+
     blog : Parser (String -> a) a
     blog =
         s "blog" </> int
-
 
     -- /blog/42  ==>  Just 42
     -- /tree/42  ==>  Nothing
@@ -151,6 +148,7 @@ s str =
                 next :: rest ->
                     if next == str then
                         [ State (next :: visited) rest params frag value ]
+
                     else
                         []
 
@@ -170,6 +168,7 @@ You can use it to define something like “only CSS files” like this:
             \segment ->
                 if String.endsWith ".css" segment then
                     Just segment
+
                 else
                     Nothing
 
@@ -197,20 +196,18 @@ custom tipe stringToSomething =
 
 {-| Parse a path with multiple segments.
 
+
     blog : Parser (Int -> a) a
     blog =
         s "blog" </> int
-
 
     -- /blog/35/  ==>  Just 35
     -- /blog/42   ==>  Just 42
     -- /blog/     ==>  Nothing
     -- /42/       ==>  Nothing
-
     search : Parser (String -> a) a
     search =
         s "search" </> string
-
 
     -- /search/cats/  ==>  Just "cats"
     -- /search/frog   ==>  Just "frog"
@@ -227,6 +224,7 @@ slash (Parser parseBefore) (Parser parseAfter) =
 
 {-| Transform a path parser.
 
+
     type alias Comment =
         { user : String, id : Int }
 
@@ -237,7 +235,6 @@ slash (Parser parseBefore) (Parser parseAfter) =
     comment : Parser (Comment -> a) a
     comment =
         map Comment userAndId
-
 
     -- /user/bob/comments/42  ==>  Just { user = "bob", id = 42 }
     -- /user/tom/comments/35  ==>  Just { user = "tom", id = 35 }
@@ -260,6 +257,7 @@ mapState func { visited, unvisited, params, frag, value } =
 
 {-| Try a bunch of different path parsers.
 
+
     type Route
         = Search String
         | Blog Int
@@ -274,7 +272,6 @@ mapState func { visited, unvisited, params, frag, value } =
             , map User (s "user" </> string)
             , map Comment (s "user" </> string </> s "comments" </> int)
             ]
-
 
     -- /search/cats           ==>  Just (Search "cats")
     -- /search/"              ==>  Nothing
@@ -297,6 +294,7 @@ oneOf parsers =
 
 {-| A parser that does not consume any path segments.
 
+
     type Route
         = Overview
         | Post Int
@@ -308,7 +306,6 @@ oneOf parsers =
                     [ map Overview top
                     , map Post (s "post" </> int)
                     ]
-
 
     -- /blog/         ==>  Just Overview
     -- /blog/post/42  ==>  Just (Post 42)
@@ -341,7 +338,6 @@ your blog website:
             , map Post (s "blog" </> int)
             ]
 
-
     -- /blog/           ==>  Just (Overview (Err Query.NotFound))
     -- /blog/?q=cats    ==>  Just (Overview (Ok "cats"))
     -- /blog/cats       ==>  Nothing
@@ -360,6 +356,7 @@ questionMark parser queryParser =
 those into normal parsers.
 
     import Url.Parser.Query as Query
+
 
     -- the following expressions are both the same!
     --
@@ -385,6 +382,7 @@ query (Q.Parser queryParser) =
 {-| Create a parser for the URL fragment, the stuff after the `#`. This can
 be handy for handling links to DOM elements within a page. Pages like this one!
 
+
     type alias Docs =
         { name : String
         , value : Maybe String
@@ -393,7 +391,6 @@ be handy for handling links to DOM elements within a page. Pages like this one!
     docs : Parser (Docs -> a) a
     docs =
         map Docs (string </> fragment identity)
-
 
     -- /List/map   ==>  Nothing
     -- /List/#map  ==>  Just (Docs "List" (Just "map"))
@@ -441,7 +438,6 @@ parameters, and fragment!
 
             Just segments ->
                 Maybe.withDefault NotFound (Parser.parse route segments)
-
 
     -- toRoute "/blog/42"                            ==  NotFound
     -- toRoute "https://example.com/"                ==  Home
@@ -612,17 +608,21 @@ what to show on screen.
 
 The conversion to segments can fail in some cases as well:
 
-    toUrl "example.com:443"        == Nothing  -- no protocol
-    toUrl "http://tom@example.com" == Nothing  -- userinfo disallowed
-    toUrl "http://#cats"           == Nothing  -- no host
+    toUrl "example.com:443" == Nothing -- no protocol
+
+    toUrl "http://tom@example.com" == Nothing -- userinfo disallowed
+
+    toUrl "http://#cats" == Nothing -- no host
 
 -}
 toUrl : String -> Maybe Url
 toUrl str =
     if String.startsWith "http://" str then
         chompAfterProtocol Http (String.dropLeft 7 str)
+
     else if String.startsWith "https://" str then
         chompAfterProtocol Https (String.dropLeft 8 str)
+
     else
         Nothing
 
@@ -631,6 +631,7 @@ chompAfterProtocol : Protocol -> String -> Maybe Url
 chompAfterProtocol protocol str =
     if String.isEmpty str then
         Nothing
+
     else
         case String.indexes "#" str of
             [] ->
@@ -644,6 +645,7 @@ chompBeforeFragment : Protocol -> Maybe String -> String -> Maybe Url
 chompBeforeFragment protocol frag str =
     if String.isEmpty str then
         Nothing
+
     else
         case String.indexes "?" str of
             [] ->
@@ -657,6 +659,7 @@ chompBeforeQuery : Protocol -> Maybe String -> Maybe String -> String -> Maybe U
 chompBeforeQuery protocol params frag str =
     if String.isEmpty str then
         Nothing
+
     else
         case String.indexes "/" str of
             [] ->
@@ -670,6 +673,7 @@ chompBeforePath : Protocol -> String -> Maybe String -> Maybe String -> String -
 chompBeforePath protocol path params frag str =
     if String.isEmpty str || String.contains "@" str then
         Nothing
+
     else
         case String.indexes ":" str of
             [] ->

@@ -1,4 +1,4 @@
-port module Effect.Program exposing (..)
+port module Effect.Program exposing (Config, Model(..), Msg(..), Program, State, debounceConfig, effectProgramKeyDowns, effectProgramTitle, includeTitle, initialState, keyDownDecoder, maybeWithDebounce, maybeWithToken, program, runCmd, runSub, withCaching, wrapInit, wrapSubscriptions, wrapUpdate, wrapView)
 
 import Css exposing (..)
 import Css.Foreign
@@ -8,10 +8,10 @@ import Dict exposing (Dict)
 import Effect.Command as Command exposing (Command)
 import Effect.Subscription as Subscription exposing (Subscription)
 import Ellie.Ui.Output as Output
-import Graphqelm.Document
-import Graphqelm.Http
-import Graphqelm.Operation exposing (RootSubscription)
-import Graphqelm.SelectionSet exposing (SelectionSet)
+import Graphql.Document
+import Graphql.Http
+import Graphql.Operation exposing (RootSubscription)
+import Graphql.SelectionSet exposing (SelectionSet)
 import Html
 import Html.Styled as Styled
 import Json.Decode as Decode exposing (Decoder)
@@ -83,7 +83,7 @@ initialState =
     }
 
 
-maybeWithToken : Maybe Jwt -> Graphqelm.Http.Request a -> Graphqelm.Http.Request a
+maybeWithToken : Maybe Jwt -> Graphql.Http.Request a -> Graphql.Http.Request a
 maybeWithToken maybeToken request =
     case maybeToken of
         Just token ->
@@ -94,16 +94,16 @@ maybeWithToken maybeToken request =
             request
 
 
-withCaching : Command.CacheLevel -> Graphqelm.Http.Request a -> Graphqelm.Http.Request a
+withCaching : Command.CacheLevel -> Graphql.Http.Request a -> Graphql.Http.Request a
 withCaching cacheLevel request =
     case cacheLevel of
         Command.Permanent ->
             request
-                |> Graphqelm.Http.withQueryParams [ ( "cache", "permanent" ) ]
+                |> Graphql.Http.withQueryParams [ ( "cache", "permanent" ) ]
 
         Command.Temporary ->
             request
-                |> Graphqelm.Http.withQueryParams [ ( "cache", "temporary" ) ]
+                |> Graphql.Http.withQueryParams [ ( "cache", "temporary" ) ]
 
         Command.AlwaysFetch ->
             request
@@ -127,11 +127,11 @@ runCmd : Config flags route model msg -> State msg -> Command msg -> ( State msg
 runCmd config state cmd =
     case cmd of
         Command.GraphqlQuery { url, token, selection, onError, debounce, cache } ->
-            Graphqelm.Http.queryRequestWithHttpGet url Graphqelm.Http.AlwaysGet selection
+            Graphql.Http.queryRequestWithHttpGet url Graphql.Http.AlwaysGet selection
                 |> maybeWithToken token
                 |> withCaching cache
-                |> Graphqelm.Http.send identity
-                |> Cmd.map (Result.mapError Graphqelm.Http.ignoreParsedErrorData)
+                |> Graphql.Http.send identity
+                |> Cmd.map (Result.mapError Graphql.Http.ignoreParsedErrorData)
                 |> Cmd.map
                     (\result ->
                         case result of
@@ -144,10 +144,10 @@ runCmd config state cmd =
                 |> maybeWithDebounce state debounce
 
         Command.GraphqlMutation { url, token, selection, onError, debounce } ->
-            Graphqelm.Http.mutationRequest url selection
+            Graphql.Http.mutationRequest url selection
                 |> maybeWithToken token
-                |> Graphqelm.Http.send identity
-                |> Cmd.map (Result.mapError Graphqelm.Http.ignoreParsedErrorData)
+                |> Graphql.Http.send identity
+                |> Cmd.map (Result.mapError Graphql.Http.ignoreParsedErrorData)
                 |> Cmd.map
                     (\result ->
                         case result of
@@ -212,6 +212,7 @@ keyDownDecoder needsShift needsMeta key msg =
         (\actualKey shift meta ->
             if shift == needsShift && meta == needsMeta && key == actualKey then
                 UserMsg msg
+
             else
                 NoOp
         )
@@ -242,6 +243,7 @@ runSub config state sub =
                 \( inChannel, data ) ->
                     if inChannel == channel then
                         UserMsg (callback data)
+
                     else
                         NoOp
 
@@ -250,6 +252,7 @@ runSub config state sub =
                 (\keycode ->
                     if keycode == code then
                         UserMsg msg
+
                     else
                         NoOp
                 )
@@ -259,7 +262,7 @@ runSub config state sub =
                 key =
                     url
                         ++ " :: "
-                        ++ Graphqelm.Document.serializeSubscription selection
+                        ++ Graphql.Document.serializeSubscription selection
                         |> Murmur3.hashString 0
                         |> toString
             in
@@ -270,7 +273,7 @@ runSub config state sub =
                             (\info ->
                                 case info of
                                     Absinthe.Data data ->
-                                        case Decode.decodeValue (Graphqelm.Document.decoder selection) data of
+                                        case Decode.decodeValue (Graphql.Document.decoder selection) data of
                                             Ok msg ->
                                                 UserMsg msg
 

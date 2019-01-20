@@ -1,13 +1,12 @@
-module Data.Either
-    exposing
-        ( Either(..)
-        , andMap
-        , andThen
-        , map
-        , mapBoth
-        , mapLeft
-        , mapRight
-        )
+module Data.Either exposing
+    ( Either(..)
+    , andMap
+    , andThen
+    , map
+    , mapBoth
+    , mapLeft
+    , mapRight
+    )
 
 
 type Either l r

@@ -1,4 +1,4 @@
-module Pages.Embed.Types.Revision exposing (..)
+module Pages.Embed.Types.Revision exposing (Id, Revision, editorLink, embedLink, outputLink)
 
 import Data.Url as Url exposing (Url)
 import Ellie.Constants as Constants

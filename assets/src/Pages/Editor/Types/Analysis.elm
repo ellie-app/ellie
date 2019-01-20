@@ -1,14 +1,13 @@
-module Pages.Editor.Types.Analysis
-    exposing
-        ( Analysis
-        , Hint
-        , completions
-        , empty
-        , hint
-        , withCode
-        , withModules
-        , withToken
-        )
+module Pages.Editor.Types.Analysis exposing
+    ( Analysis
+    , Hint
+    , completions
+    , empty
+    , hint
+    , withCode
+    , withModules
+    , withToken
+    )
 
 import Char
 import Dict exposing (Dict)
@@ -17,7 +16,7 @@ import Ellie.Ui.CodeEditor as CodeEditor exposing (Completions, Located(..), Tok
 import Elm.Docs exposing (Binop, Module, Union)
 import Elm.Version as Version exposing (Version)
 import Parser exposing ((|.), (|=), Parser)
-import Parser.LanguageKit
+import Parser.Advanced
 import Set exposing (Set)
 
 
@@ -125,6 +124,7 @@ buildCompletions (Located from to token) (Analysis analysis) =
                             (\value ->
                                 if String.startsWith text value.name && text /= value.name then
                                     Just value.name
+
                                 else
                                     Nothing
                             )
@@ -295,6 +295,7 @@ binopsToHints moduleData importData binop =
                 "(" ++ binop.name ++ ")"
         in
         [ ( binop.name, { name = moduleData.name ++ "." ++ withParens, url = urlTo moduleData withParens } ) ]
+
     else
         []
 
@@ -315,6 +316,7 @@ nameToHints moduleDocs importData name =
     in
     if isExposed name importData then
         [ ( name, hint ), ( localName, hint ) ]
+
     else
         [ ( localName, hint ) ]
 
@@ -371,6 +373,7 @@ dotToHyphen string =
         (\c ->
             if c == '.' then
                 '-'
+
             else
                 c
         )
@@ -482,10 +485,22 @@ exposedParser =
     Parser.oneOf
         [ Parser.map (\_ -> ExposedAll) (Parser.symbol "(..)")
         , Parser.oneOf [ typeParser, lowerVarParser, infixParser ]
-            |> Parser.LanguageKit.tuple spaces
+            |> tuple spaces
             |> Parser.map (Set.fromList >> ExposedSome)
         , Parser.succeed ExposedNone
         ]
+
+
+tuple : Parser () -> Parser a -> Parser (List a)
+tuple spaces item =
+    Parser.sequence
+        { start = "("
+        , separator = ","
+        , end = ")"
+        , spaces = spaces
+        , item = item
+        , trailing = Parser.Forbidden
+        }
 
 
 typeParser : Parser String
@@ -500,7 +515,7 @@ constructorExportsParser : Parser ()
 constructorExportsParser =
     Parser.oneOf
         [ Parser.symbol "(..)"
-        , Parser.map (\_ -> ()) <| Parser.LanguageKit.tuple spaces capVarParser
+        , Parser.map (\_ -> ()) <| tuple spaces capVarParser
         , Parser.succeed ()
         ]
 
@@ -515,12 +530,20 @@ infixParser =
 
 capVarParser : Parser String
 capVarParser =
-    Parser.LanguageKit.variable Char.isUpper isVarChar keywords
+    Parser.variable
+        { start = Char.isUpper
+        , inner = isVarChar
+        , reserved = reserved
+        }
 
 
 lowerVarParser : Parser String
 lowerVarParser =
-    Parser.LanguageKit.variable Char.isLower isVarChar keywords
+    Parser.variable
+        { start = Char.isLower
+        , inner = isVarChar
+        , reserved = reserved
+        }
 
 
 isVarChar : Char -> Bool
@@ -534,18 +557,24 @@ isVarChar char =
 
 qualifiedVarParser : Parser String
 qualifiedVarParser =
-    Parser.LanguageKit.variable Char.isUpper (\c -> isVarChar c || c == '.') keywords
+    Parser.variable
+        { start = Char.isUpper
+        , inner = \c -> isVarChar c || c == '.'
+        , reserved = reserved
+        }
 
 
-keywords : Set String
-keywords =
+reserved : Set String
+reserved =
     Set.fromList [ "let", "in", "case", "of", "type", "import", "exposing", "as" ]
 
 
 spaces : Parser ()
 spaces =
-    Parser.LanguageKit.whitespace
-        { allowTabs = False
-        , lineComment = Parser.LanguageKit.LineComment "--"
-        , multiComment = Parser.LanguageKit.NestableComment "{-" "-}"
-        }
+    Parser.oneOf
+        [ Parser.Advanced.nestableComment
+            (Parser.Advanced.token "{-" ExpectingSymbol)
+            (Parser.Advanced.token "-}" ExpectingSymbol)
+        , Parser.Advanced.lineComment
+            (Parser.Advanced.token "--" ExpectingSymbol)
+        ]

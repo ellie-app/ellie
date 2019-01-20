@@ -1,4 +1,4 @@
-module Pages.Embed.State.App exposing (..)
+module Pages.Embed.State.App exposing (DebugState(..), Flags, Model(..), Msg(..), OutputState(..), WorkingState, flags, init, subscriptions, update)
 
 import Effect.Command as Command exposing (Command)
 import Effect.Subscription as Subscription exposing (Subscription)
@@ -94,12 +94,14 @@ update flags msg model =
                     }
                 , Command.none
                 )
+
             else
                 ( model, Command.none )
 
         ( Loading rid panel, RevisionLoaded revisionId (Err error) ) ->
             if rid == revisionId then
                 ( Failure, Command.none )
+
             else
                 ( model, Command.none )
 
@@ -114,6 +116,7 @@ update flags msg model =
                     | debug =
                         if canDebug then
                             NotDebugging
+
                         else
                             DebuggerUnavailable
                 }

@@ -32,6 +32,7 @@ clearOnEscape onChange =
                 (\keycode ->
                     if keycode == 27 then
                         Decode.succeed <| onChange ""
+
                     else
                         Decode.fail ""
                 )
@@ -50,6 +51,7 @@ view config =
             , autofocus config.autofocus
             , if config.clearable then
                 clearOnEscape config.onChange
+
               else
                 Attributes.none
             , inputStyles
@@ -124,10 +126,12 @@ inputStyles hasIcon hasClearButton =
         , pseudoElement "-moz-placeholder" [ color Theme.secondaryForeground ]
         , if hasIcon then
             batch [ paddingLeft (px 40) ]
+
           else
             batch []
         , if hasClearButton then
             batch [ paddingRight (px 28) ]
+
           else
             batch []
         ]

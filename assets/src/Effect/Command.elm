@@ -1,10 +1,10 @@
-module Effect.Command exposing (..)
+module Effect.Command exposing (CacheLevel(..), Command(..), batch, eq, map, none)
 
 import Data.Jwt as Jwt exposing (Jwt)
-import Graphqelm.Document as Document
-import Graphqelm.Http
-import Graphqelm.Operation exposing (RootMutation, RootQuery)
-import Graphqelm.SelectionSet as SelectionSet exposing (SelectionSet)
+import Graphql.Document as Document
+import Graphql.Http
+import Graphql.Operation exposing (RootMutation, RootQuery)
+import Graphql.SelectionSet as SelectionSet exposing (SelectionSet)
 import Json.Decode as Decode exposing (Decoder, Value)
 
 
@@ -19,7 +19,7 @@ type Command msg
         { url : String
         , token : Maybe Jwt
         , selection : SelectionSet msg RootQuery
-        , onError : Graphqelm.Http.Error () -> msg
+        , onError : Graphql.Http.Error () -> msg
         , debounce : Maybe String
         , cache : CacheLevel
         }
@@ -27,7 +27,7 @@ type Command msg
         { url : String
         , token : Maybe Jwt
         , selection : SelectionSet msg RootMutation
-        , onError : Graphqelm.Http.Error () -> msg
+        , onError : Graphql.Http.Error () -> msg
         , debounce : Maybe String
         }
     | PortSend

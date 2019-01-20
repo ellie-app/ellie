@@ -1,13 +1,12 @@
-module Pages.Editor.State.Setup
-    exposing
-        ( Model
-        , Msg(..)
-        , State(..)
-        , Transition
-        , init
-        , subscriptions
-        , update
-        )
+module Pages.Editor.State.Setup exposing
+    ( Model
+    , Msg(..)
+    , State(..)
+    , Transition
+    , init
+    , subscriptions
+    , update
+    )
 
 import Data.Jwt as Jwt exposing (Jwt)
 import Data.Transition as Transition
@@ -285,6 +284,7 @@ update msg model =
                                 ( Transition.step model
                                 , Command.none
                                 )
+
                             else
                                 ( Transition.step
                                     { model
@@ -335,6 +335,7 @@ update msg model =
                                     }
                                 , Command.none
                                 )
+
                     else
                         ( Transition.step model
                         , Command.none
@@ -354,6 +355,7 @@ update msg model =
                                 ( Transition.step model
                                 , Command.none
                                 )
+
                             else
                                 ( Transition.step
                                     { model

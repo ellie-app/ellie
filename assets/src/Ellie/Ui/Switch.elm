@@ -90,6 +90,7 @@ labelTextStyles leftSide =
         , property "user-select" "none"
         , if leftSide then
             marginRight (px 8)
+
           else
             marginLeft (px 8)
         ]

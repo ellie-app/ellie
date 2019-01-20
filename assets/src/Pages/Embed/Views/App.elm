@@ -161,6 +161,7 @@ viewTab mine current =
         , textTransform capitalize
         , if Panel.eq mine current then
             borderBottom3 (px 2) solid Theme.tabActiveBorder
+
           else
             batch []
         ]

@@ -1,4 +1,4 @@
-module Pages.Editor.Views.Notifications exposing (..)
+module Pages.Editor.Views.Notifications exposing (Config, view, viewAction, viewCloseAllButton, viewCloseButton, viewNotification, viewSeverity, viewTitle)
 
 import Css exposing (..)
 import Css.Foreign
@@ -75,6 +75,7 @@ viewNotification config notification =
             ]
         , if List.isEmpty notification.actions then
             Html.text ""
+
           else
             Html.div
                 [ css [ paddingTop (px 12) ] ]

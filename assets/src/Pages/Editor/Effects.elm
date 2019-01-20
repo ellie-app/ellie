@@ -1,4 +1,4 @@
-module Pages.Editor.Effects exposing (..)
+module Pages.Editor.Effects exposing (attachToWorkspace, authenticate, compile, createRevision, delay, downloadZip, escapePressed, formatCode, getDocs, getRevision, keyCombos, moveElmCursor, navigate, networkStatus, openInNewTab, redirect, reloadOutput, saveToken, searchPackages, updateRecoveryRevision, updateUser, workspaceUpdates)
 
 import Data.Jwt as Jwt exposing (Jwt)
 import Effect.Command as Command exposing (Command)
@@ -22,9 +22,9 @@ import Elm.Package as Package exposing (Package)
 import Elm.Project as Project exposing (Project)
 import Elm.Version as Version exposing (Version)
 import Extra.Json.Encode as Encode
-import Graphqelm.Http
-import Graphqelm.OptionalArgument as OptionalArgument
-import Graphqelm.SelectionSet as SelectionSet exposing (SelectionSet(..), hardcoded, with)
+import Graphql.Http
+import Graphql.OptionalArgument as OptionalArgument
+import Graphql.SelectionSet as SelectionSet exposing (SelectionSet(..), hardcoded, with)
 import Json.Decode as Decode exposing (Decoder)
 import Json.Encode as Encode exposing (Value)
 import Pages.Editor.Types.EditorAction as EditorAction exposing (EditorAction)
@@ -33,7 +33,7 @@ import Pages.Editor.Types.User as User exposing (User)
 import Pages.Editor.Types.WorkspaceUpdate as WorkspaceUpdate exposing (WorkspaceUpdate(..))
 
 
-getRevision : Revision.Id -> Command (Result (Graphqelm.Http.Error ()) Revision)
+getRevision : Revision.Id -> Command (Result (Graphql.Http.Error ()) Revision)
 getRevision revisionId =
     let
         query =
@@ -61,7 +61,7 @@ getRevision revisionId =
         }
 
 
-searchPackages : String -> Command (Result (Graphqelm.Http.Error ()) (List Package))
+searchPackages : String -> Command (Result (Graphql.Http.Error ()) (List Package))
 searchPackages queryString =
     let
         query =
@@ -86,7 +86,7 @@ searchPackages queryString =
         }
 
 
-formatCode : Jwt -> Version -> String -> Command (Result (Graphqelm.Http.Error ()) String)
+formatCode : Jwt -> Version -> String -> Command (Result (Graphql.Http.Error ()) String)
 formatCode token version code =
     let
         mutation =
@@ -107,7 +107,7 @@ formatCode token version code =
         }
 
 
-compile : Jwt -> Version -> String -> List Package -> Command (Result (Graphqelm.Http.Error ()) ())
+compile : Jwt -> Version -> String -> List Package -> Command (Result (Graphql.Http.Error ()) ())
 compile token elmVersion elmCode packages =
     let
         mutation =
@@ -134,7 +134,7 @@ compile token elmVersion elmCode packages =
         }
 
 
-authenticate : Command (Result (Graphqelm.Http.Error ()) Jwt)
+authenticate : Command (Result (Graphql.Http.Error ()) Jwt)
 authenticate =
     Command.GraphqlMutation
         { url = "/api"
@@ -173,12 +173,13 @@ workspaceUpdates token =
         (\connected ->
             if connected then
                 Connected
+
             else
                 Disconnected
         )
 
 
-attachToWorkspace : Jwt -> Version -> Command (Result (Graphqelm.Http.Error ()) ())
+attachToWorkspace : Jwt -> Version -> Command (Result (Graphql.Http.Error ()) ())
 attachToWorkspace token version =
     let
         selection =
@@ -206,7 +207,7 @@ updateUser user =
         }
 
 
-createRevision : Jwt -> Int -> Revision -> Command (Result (Graphqelm.Http.Error ()) Revision.Id)
+createRevision : Jwt -> Int -> Revision -> Command (Result (Graphql.Http.Error ()) Revision.Id)
 createRevision token termsVersion revision =
     let
         selection =

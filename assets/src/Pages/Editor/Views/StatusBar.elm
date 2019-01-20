@@ -71,6 +71,7 @@ view config =
                 , color <|
                     if config.connected then
                         Theme.connectionStatusConnected
+
                     else
                         Theme.connectionStatusDisconnected
                 ]
@@ -87,6 +88,7 @@ view config =
                         ++ " notification"
                         ++ (if config.notificationCount == 1 then
                                 ""
+
                             else
                                 "s"
                            )
@@ -103,6 +105,7 @@ view config =
                         [ paddingLeft (px 4) ]
                         []
                         [ Html.text <| toString config.notificationCount ]
+
                   else
                     Html.text ""
                 ]

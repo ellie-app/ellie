@@ -1,10 +1,10 @@
-module Ellie.Api.Helpers exposing (..)
+module Ellie.Api.Helpers exposing (defaultField, nameField, projectIdField, unitField, versionField, withMaybe)
 
 import Ellie.Api.Scalar as ApiScalar
 import Elm.Name as Name exposing (Name)
 import Elm.Version as Version exposing (Version)
-import Graphqelm.Field as Field exposing (Field)
-import Graphqelm.Http exposing (Request)
+import Graphql.Field as Field exposing (Field)
+import Graphql.Http exposing (Request)
 
 
 versionField : Field ApiScalar.ElmVersion a -> Field Version a

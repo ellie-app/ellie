@@ -189,11 +189,13 @@ viewWorkbench model =
         , onCompile =
             if model.connected then
                 Just WorkingState.CompileRequested
+
             else
                 Nothing
         , onSave =
             if model.connected && WorkingState.hasChanged model then
                 Just WorkingState.SaveRequested
+
             else
                 Nothing
         , compilerVersion = WorkingState.compilerVersion model

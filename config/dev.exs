@@ -22,13 +22,13 @@ config :ellie, EllieWeb.Endpoint,
       cd: Path.expand("../assets", __DIR__)
     ],
     node: [
-      "node_modules/graphqelm/bin/graphqelm",
+      "node_modules/@dillonkearns/elm-graphql/bin/elm-graphql",
       "--introspection-file",
       "../priv/graphql/schema.json",
       "--base",
       "Ellie.Api",
       "--output",
-      "elm-stuff/generated/dillonkearns/graphqelm",
+      "elm-stuff/generated/dillonkearns/graphql",
       cd: Path.expand("../assets", __DIR__)
     ]
   ]

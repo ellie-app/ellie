@@ -1,4 +1,4 @@
-module Extra.Json.Encode exposing (..)
+module Extra.Json.Encode exposing (genericUnion, maybeNull, objectWithType)
 
 import Json.Encode as Encode exposing (Value)
 

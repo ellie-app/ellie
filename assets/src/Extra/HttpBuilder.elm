@@ -1,4 +1,4 @@
-module Extra.HttpBuilder exposing (..)
+module Extra.HttpBuilder exposing (withMaybe)
 
 import HttpBuilder exposing (RequestBuilder)
 

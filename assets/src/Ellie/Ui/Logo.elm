@@ -1,4 +1,4 @@
-module Ellie.Ui.Logo exposing (..)
+module Ellie.Ui.Logo exposing (animated, flat, logoPath)
 
 import Css exposing (..)
 import Html.Styled as Html exposing (Attribute, Html)

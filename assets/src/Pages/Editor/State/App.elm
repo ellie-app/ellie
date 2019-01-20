@@ -1,11 +1,10 @@
-module Pages.Editor.State.App
-    exposing
-        ( Model(..)
-        , Msg(..)
-        , init
-        , subscriptions
-        , update
-        )
+module Pages.Editor.State.App exposing
+    ( Model(..)
+    , Msg(..)
+    , init
+    , subscriptions
+    , update
+    )
 
 import Data.Jwt as Jwt exposing (Jwt)
 import Data.Transition as Transition exposing (Transition(..))

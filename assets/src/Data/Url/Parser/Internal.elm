@@ -1,7 +1,4 @@
-module Data.Url.Parser.Internal
-    exposing
-        ( QueryParser(..)
-        )
+module Data.Url.Parser.Internal exposing (QueryParser(..))
 
 import Dict
 

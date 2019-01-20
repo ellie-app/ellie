@@ -1,4 +1,4 @@
-module Pages.Editor.Views.Editors exposing (..)
+module Pages.Editor.Views.Editors exposing (Config, containerStyles, editorStyles, errorToLinterMessages, problemToLinterMessage, renderChunks, view, viewEditorHeader)
 
 import Css exposing (..)
 import Ellie.Ui.CodeEditor as CodeEditor
@@ -131,6 +131,7 @@ view config =
                             Html.div
                                 [ css [ height (pct 100), transform (rotate (deg 180)) ] ]
                                 [ Icon.view Icon.Chevron ]
+
                         else
                             Icon.view Icon.Chevron
                     , Html.div [ editorStyles ]

@@ -1,4 +1,4 @@
-module Pages.Editor.Views.Workbench.Share exposing (..)
+module Pages.Editor.Views.Workbench.Share exposing (Config, container, heading, iframe, preview, view, warning)
 
 import Css exposing (..)
 import Data.Url as Url
@@ -32,6 +32,7 @@ view config =
         []
         [ if config.hasUnsavedChanges then
             container [ warning ]
+
           else
             Html.text ""
         , container

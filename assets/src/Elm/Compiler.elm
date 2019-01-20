@@ -1,4 +1,4 @@
-module Elm.Compiler exposing (..)
+module Elm.Compiler exposing (version)
 
 import Elm.Version as Version exposing (Version)
 

@@ -1,4 +1,4 @@
-module Ellie.Ui.Theme exposing (..)
+module Ellie.Ui.Theme exposing (accent, blue, buttonBackground, buttonBorder, connectionStatusConnected, connectionStatusDisconnected, controlBorder, darkGray, darkMediumGray, darkStyles, draggableBorder, editorFontFamily, editorHeaderBackground, failure, green, information, lightGray, lightMediumGray, lightStyles, markdownCodeBackground, mediumGray, pink, primaryBackground, primaryForeground, red, secondaryBackground, secondaryForeground, staticBorder, success, tabActiveBorder, tabForeground, warning, workbenchWatermark, yellow)
 
 import Css exposing (..)
 import Css.Foreign

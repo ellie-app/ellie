@@ -1,8 +1,7 @@
-module Elm.Project
-    exposing
-        ( Project
-        , encoder
-        )
+module Elm.Project exposing
+    ( Project
+    , encoder
+    )
 
 {-| Turn `elm.json` files into data that is nice to use in Elm.
 
@@ -22,6 +21,7 @@ import Elm.Name as Name exposing (Name)
 import Elm.Package as Package exposing (Package)
 import Elm.Version as Version exposing (Version)
 import Json.Encode as Encode exposing (Value)
+
 
 
 -- PROJECT
@@ -53,6 +53,7 @@ encoder project =
             , ( "dependencies", encodeDeps project.deps )
             , ( "elm-version", Encode.string "0.18.0 <= v < 0.19.0" )
             ]
+
     else
         Encode.object
             [ ( "type", Encode.string "application" )

@@ -40,8 +40,10 @@ compare left right =
     if left.major == right.major then
         if left.minor == right.minor then
             Basics.compare left.patch right.patch
+
         else
             Basics.compare left.minor right.minor
+
     else
         Basics.compare left.major right.major
 

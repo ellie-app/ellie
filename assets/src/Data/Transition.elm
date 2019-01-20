@@ -1,4 +1,4 @@
-module Data.Transition exposing (..)
+module Data.Transition exposing (Transition(..), exit, fold, step)
 
 
 type Transition a b

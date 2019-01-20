@@ -1,19 +1,18 @@
-module Network.Absinthe.Subscription
-    exposing
-        ( ChannelStatus(..)
-        , Info(..)
-        , Logger
-        , Msg
-        , Socket
-        , emptyLogger
-        , init
-        , listen
-        , update
-        )
+module Network.Absinthe.Subscription exposing
+    ( ChannelStatus(..)
+    , Info(..)
+    , Logger
+    , Msg
+    , Socket
+    , emptyLogger
+    , init
+    , listen
+    , update
+    )
 
-import Graphqelm.Document as Document
-import Graphqelm.Operation exposing (RootSubscription)
-import Graphqelm.SelectionSet exposing (SelectionSet)
+import Graphql.Document as Document
+import Graphql.Operation exposing (RootSubscription)
+import Graphql.SelectionSet exposing (SelectionSet)
 import Json.Decode as Decode exposing (Decoder)
 import Json.Encode as Encode exposing (Value)
 import Network.Socket as Socket exposing (Info(..))
@@ -239,6 +238,7 @@ listenHelp state socketInfo =
 
                             Err stuff ->
                                 Control (ProblemResponse stuff)
+
                     else
                         Control NoOp
 
@@ -257,6 +257,7 @@ listenHelp state socketInfo =
 
                             Err string ->
                                 Control (ProblemResponse string)
+
                     else
                         Control NoOp
 

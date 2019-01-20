@@ -1,12 +1,11 @@
-module Data.Entity
-    exposing
-        ( Entity(..)
-        , decoder
-        , encoder
-        , key
-        , map
-        , record
-        )
+module Data.Entity exposing
+    ( Entity(..)
+    , decoder
+    , encoder
+    , key
+    , map
+    , record
+    )
 
 {-| A representation of some data that is stored based on some unique ID.
 This is a much nicer way to represent this situation than by putting an

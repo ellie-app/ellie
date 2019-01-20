@@ -1,4 +1,4 @@
-module Ellie.Ui.SplitPane exposing (..)
+module Ellie.Ui.SplitPane exposing (Config, Direction(..), horizontalStyles, verticalStyles, view)
 
 import Css exposing (..)
 import Css.Foreign

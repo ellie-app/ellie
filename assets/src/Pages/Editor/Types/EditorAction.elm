@@ -1,4 +1,4 @@
-module Pages.Editor.Types.EditorAction exposing (..)
+module Pages.Editor.Types.EditorAction exposing (EditorAction(..))
 
 
 type EditorAction

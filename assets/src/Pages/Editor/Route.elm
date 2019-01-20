@@ -23,6 +23,7 @@ revisionId =
         \string ->
             if String.endsWith "a1" string then
                 Just string
+
             else
                 Nothing
 

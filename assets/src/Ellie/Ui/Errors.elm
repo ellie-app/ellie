@@ -1,4 +1,4 @@
-module Ellie.Ui.Errors exposing (..)
+module Ellie.Ui.Errors exposing (Config, chunkColor, view, viewChunk, viewProblem)
 
 import Css exposing (..)
 import Ellie.Ui.Theme as Theme
@@ -102,10 +102,12 @@ viewChunk chunk =
             Html.styled Html.span
                 [ if style.bold then
                     fontWeight bold
+
                   else
                     batch []
                 , if style.underline then
                     textDecoration underline
+
                   else
                     batch []
                 , style.color
