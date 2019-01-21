@@ -5,8 +5,8 @@ module Pages.Editor.Types.Notification exposing
     , eq
     )
 
-import Data.Url as Url exposing (Url)
 import Pages.Editor.Types.EditorAction as EditorAction exposing (EditorAction)
+import Url as Url exposing (Url)
 
 
 type Action

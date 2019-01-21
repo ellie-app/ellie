@@ -1,7 +1,7 @@
 module Ellie.Ui.Theme exposing (accent, blue, buttonBackground, buttonBorder, connectionStatusConnected, connectionStatusDisconnected, controlBorder, darkGray, darkMediumGray, darkStyles, draggableBorder, editorFontFamily, editorHeaderBackground, failure, green, information, lightGray, lightMediumGray, lightStyles, markdownCodeBackground, mediumGray, pink, primaryBackground, primaryForeground, red, secondaryBackground, secondaryForeground, staticBorder, success, tabActiveBorder, tabForeground, warning, workbenchWatermark, yellow)
 
 import Css exposing (..)
-import Css.Foreign
+import Css.Global
 import Extra.Css exposing (..)
 import Html.Styled as Html exposing (Attribute, Html)
 import Html.Styled.Attributes exposing (attribute)
@@ -117,9 +117,9 @@ markdownCodeBackground =
     var "--theme-color-markdown-code-background"
 
 
-darkStyles : Css.Foreign.Snippet
+darkStyles : Css.Global.Snippet
 darkStyles =
-    Css.Foreign.selector ":root"
+    Css.Global.selector ":root"
         [ property "--theme-color-border-draggable" mediumGray.value
         , property "--theme-color-border-static" darkGray.value
         , property "--theme-color-border-control" mediumGray.value
@@ -145,9 +145,9 @@ darkStyles =
         ]
 
 
-lightStyles : Css.Foreign.Snippet
+lightStyles : Css.Global.Snippet
 lightStyles =
-    Css.Foreign.selector ":root"
+    Css.Global.selector ":root"
         [ property "--theme-color-border-draggable" mediumGray.value
         , property "--theme-color-border-static" "#EAEAEA"
         , property "--theme-color-border-control" mediumGray.value

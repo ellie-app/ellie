@@ -1,13 +1,13 @@
 module Pages.Editor.Route exposing (Route(..), parse, toString)
 
-import Data.Url.Parser as UrlParser exposing ((</>), (<?>), Parser, int, s, string)
-import Data.Url.Parser.Query as QueryParser
 import Elm.Compiler as Compiler
 import Elm.Package as Package exposing (Package)
 import Elm.Version as Version exposing (Version)
 import Extra.Maybe as Maybe
-import Navigation
 import Pages.Editor.Types.Revision as Revision exposing (Revision)
+import Url exposing (Url)
+import Url.Parser as UrlParser exposing ((</>), (<?>), Parser, int, s, string)
+import Url.Parser.Query as QueryParser
 
 
 type Route
@@ -105,11 +105,9 @@ parser =
         ]
 
 
-parse : Navigation.Location -> Route
-parse location =
-    location.href
-        |> UrlParser.toUrl
-        |> Maybe.andThen (UrlParser.parse parser)
+parse : Url -> Route
+parse url =
+    UrlParser.parse parser url
         |> Maybe.withDefault NotFound
 
 

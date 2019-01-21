@@ -1,12 +1,12 @@
 module Pages.Editor.Types.Revision exposing (External(..), Id, Revision, default, editorLink, embedLink, localStorageDecoder, localStorageEncoder)
 
-import Data.Url as Url exposing (Url)
 import Ellie.Constants as Constants
 import Elm.Compiler as Compiler
 import Elm.Package as Package exposing (Package)
 import Elm.Version as Version exposing (Version)
 import Json.Decode as Decode exposing (Decoder)
 import Json.Encode as Encode exposing (Value)
+import Url as Url exposing (Url)
 
 
 type External
@@ -28,12 +28,12 @@ type alias Revision =
     }
 
 
-editorLink : Id -> Url
+editorLink : Id -> Maybe Url
 editorLink id =
     Url.fromString <| Constants.editorBase ++ "/" ++ id
 
 
-embedLink : Id -> Url
+embedLink : Id -> Maybe Url
 embedLink id =
     Url.fromString <| Constants.embedBase ++ "/" ++ id
 

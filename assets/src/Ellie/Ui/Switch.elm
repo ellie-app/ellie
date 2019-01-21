@@ -2,7 +2,7 @@ module Ellie.Ui.Switch exposing (Config, view)
 
 import Colors
 import Css exposing (..)
-import Css.Foreign
+import Css.Global
 import Extra.Html.Attributes as Attributes
 import Html.Styled as Html exposing (Attribute, Html, div, input, label, span)
 import Html.Styled.Attributes as Attributes exposing (attribute, css, for, id, type_)
@@ -38,10 +38,10 @@ view config =
                 , position absolute
                 , left (px -999)
                 , checked
-                    [ Css.Foreign.generalSiblings
-                        [ Css.Foreign.selector "[data-ui-switch-toggler]"
-                            [ Css.Foreign.descendants
-                                [ Css.Foreign.selector "[data-ui-switch-toggler-circle]" [ property "cx" "28" ]
+                    [ Css.Global.generalSiblings
+                        [ Css.Global.selector "[data-ui-switch-toggler]"
+                            [ Css.Global.descendants
+                                [ Css.Global.selector "[data-ui-switch-toggler-circle]" [ property "cx" "28" ]
                                 ]
                             ]
                         ]
@@ -97,10 +97,10 @@ labelTextStyles leftSide =
 
 
 activeFocus =
-    Css.Foreign.generalSiblings
-        [ Css.Foreign.selector "[data-ui-switch-toggler]"
-            [ Css.Foreign.descendants
-                [ Css.Foreign.selector "[data-ui-switch-toggler-outline]" [ property "stroke" (.value Colors.pink) ]
+    Css.Global.generalSiblings
+        [ Css.Global.selector "[data-ui-switch-toggler]"
+            [ Css.Global.descendants
+                [ Css.Global.selector "[data-ui-switch-toggler-outline]" [ property "stroke" (.value Colors.pink) ]
                 ]
             ]
         ]

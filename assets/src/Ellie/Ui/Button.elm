@@ -1,7 +1,7 @@
 module Ellie.Ui.Button exposing (Action, Config, click, link, none, view)
 
 import Css exposing (..)
-import Css.Foreign
+import Css.Global
 import Ellie.Ui.Icon as Icon
 import Ellie.Ui.Theme as Theme
 import Extra.Html.Attributes as Attributes
@@ -117,8 +117,8 @@ buttonStyles config =
         , outline zero
         , focus
             [ borderColor Theme.accent
-            , Css.Foreign.descendants
-                [ Css.Foreign.selector "[data-ellie-ui-button-icon]"
+            , Css.Global.descendants
+                [ Css.Global.selector "[data-ellie-ui-button-icon]"
                     [ borderColor Theme.accent
                     ]
                 ]

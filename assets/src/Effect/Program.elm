@@ -1,7 +1,10 @@
 port module Effect.Program exposing (Config, Model(..), Msg(..), Program, State, debounceConfig, effectProgramKeyDowns, effectProgramTitle, includeTitle, initialState, keyDownDecoder, maybeWithDebounce, maybeWithToken, program, runCmd, runSub, withCaching, wrapInit, wrapSubscriptions, wrapUpdate, wrapView)
 
+import Browser
+import Browser.Events
+import Browser.Navigation as Navigation
 import Css exposing (..)
-import Css.Foreign
+import Css.Global
 import Data.Jwt as Jwt exposing (Jwt)
 import Debounce
 import Dict exposing (Dict)
@@ -15,9 +18,7 @@ import Graphql.SelectionSet exposing (SelectionSet)
 import Html
 import Html.Styled as Styled
 import Json.Decode as Decode exposing (Decoder)
-import Keyboard exposing (KeyCode)
 import Murmur3
-import Navigation exposing (Location)
 import Network.Absinthe.Subscription as Absinthe
 import Process
 import Set exposing (Set)
@@ -39,7 +40,7 @@ type alias Config flags route model msg =
     , update : flags -> msg -> model -> ( model, Command msg )
     , view : model -> Styled.Html msg
     , title : model -> String
-    , styles : List Css.Foreign.Snippet
+    , styles : List Css.Global.Snippet
     , subscriptions : model -> Subscription msg
     , outbound : ( String, Decode.Value ) -> Cmd (Msg msg)
     , inbound : (( String, Decode.Value ) -> Msg msg) -> Sub (Msg msg)
@@ -64,7 +65,8 @@ type Msg msg
 
 
 type alias State msg =
-    { sockets : Dict String Absinthe.Socket
+    { navKey : Navigation.Key
+    , sockets : Dict String Absinthe.Socket
     , keysDown : Set String
     , debouncers : Dict String (Debounce.Debounce (Cmd (Msg msg)))
     }
@@ -170,12 +172,12 @@ runCmd config state cmd =
 
         Command.NewUrl url ->
             ( state
-            , Navigation.newUrl url
+            , Navigation.pushUrl state.navKey url
             )
 
         Command.Redirect url ->
             ( state
-            , Navigation.modifyUrl url
+            , Navigation.replaceUrl state.navKey url
             )
 
         Command.Delay millis next ->
@@ -248,13 +250,14 @@ runSub config state sub =
                         NoOp
 
         Subscription.KeyPress code msg ->
-            Keyboard.ups
+            Browser.Events.onKeyUp
                 (\keycode ->
-                    if keycode == code then
-                        UserMsg msg
+                    Decode.succeed <|
+                        if keycode == code then
+                            UserMsg msg
 
-                    else
-                        NoOp
+                        else
+                            NoOp
                 )
 
         Subscription.AbsintheSubscription url selection onStatus ->
@@ -408,7 +411,7 @@ wrapView config model =
                 Styled.styled Styled.div
                     [ height (pct 100) ]
                     []
-                    [ Css.Foreign.global config.styles
+                    [ Css.Global.global config.styles
                     , Styled.map UserMsg <| config.view m
                     , Styled.node "ellie-ui-portal" [] []
                     ]
@@ -430,9 +433,11 @@ type alias Program flags model msg =
 
 program : Config flags route model msg -> Program flags model msg
 program config =
-    Navigation.programWithFlags (config.url >> config.route >> UserMsg)
+    Browser.application (config.url >> config.route >> UserMsg)
         { init = wrapInit config
         , update = wrapUpdate config
         , view = wrapView config
         , subscriptions = wrapSubscriptions config
+        , onUrlChange = ChangedUrl
+        , onUrlRequest = ClickedLink
         }

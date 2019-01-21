@@ -1,7 +1,7 @@
 module Ellie.Ui.Checkbox exposing (Config, view)
 
 import Css exposing (..)
-import Css.Foreign
+import Css.Global
 import Ellie.Ui.Theme as Theme
 import Extra.Html.Attributes as Attributes
 import Html.Styled exposing (Attribute, Html, div, input, label, span)
@@ -38,24 +38,24 @@ view config =
                 , position absolute
                 , left (px -999)
                 , checked
-                    [ Css.Foreign.adjacentSiblings
-                        [ Css.Foreign.div
-                            [ Css.Foreign.descendants
-                                [ Css.Foreign.selector "[data-ui-checkbox-check]" [ display block ]
+                    [ Css.Global.adjacentSiblings
+                        [ Css.Global.div
+                            [ Css.Global.descendants
+                                [ Css.Global.selector "[data-ui-checkbox-check]" [ display block ]
                                 ]
                             ]
                         ]
                     ]
                 , focus
-                    [ Css.Foreign.adjacentSiblings
-                        [ Css.Foreign.div
+                    [ Css.Global.adjacentSiblings
+                        [ Css.Global.div
                             [ borderColor Theme.accent
                             ]
                         ]
                     ]
                 , active
-                    [ Css.Foreign.adjacentSiblings
-                        [ Css.Foreign.div
+                    [ Css.Global.adjacentSiblings
+                        [ Css.Global.div
                             [ borderColor Theme.accent
                             ]
                         ]

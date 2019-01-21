@@ -4,13 +4,12 @@ import Graphql.Document as Document
 import Graphql.Operation exposing (RootSubscription)
 import Graphql.SelectionSet as SelectionSet exposing (SelectionSet)
 import Json.Decode as Decode exposing (Decoder, Value)
-import Keyboard exposing (KeyCode)
 
 
 type Subscription msg
     = AbsintheSubscription String (SelectionSet msg RootSubscription) (Bool -> msg)
     | PortReceive String (Value -> msg)
-    | KeyPress KeyCode msg
+    | KeyPress Int msg
     | KeyCombo { meta : Bool, shift : Bool, key : String } msg
     | Batch (List (Subscription msg))
     | None

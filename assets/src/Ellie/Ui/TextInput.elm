@@ -1,7 +1,7 @@
 module Ellie.Ui.TextInput exposing (view)
 
 import Css exposing (..)
-import Css.Foreign
+import Css.Global
 import Ellie.Ui.Icon as Icon
 import Ellie.Ui.Theme as Theme
 import Extra.Html as Html
@@ -115,8 +115,8 @@ inputStyles hasIcon hasClearButton =
         , height (pct 100)
         , focus
             [ border3 (px 1) solid Theme.accent
-            , Css.Foreign.adjacentSiblings
-                [ Css.Foreign.div
+            , Css.Global.adjacentSiblings
+                [ Css.Global.div
                     [ borderRightColor Theme.accent
                     ]
                 ]

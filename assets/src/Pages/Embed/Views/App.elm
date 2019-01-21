@@ -1,8 +1,7 @@
 module Pages.Embed.Views.App exposing (styles, title, view)
 
 import Css exposing (..)
-import Css.Foreign
-import Data.Url as Url
+import Css.Global
 import Ellie.Ui.Button as Button
 import Ellie.Ui.CodeEditor as CodeEditor
 import Ellie.Ui.Errors as Errors
@@ -16,6 +15,7 @@ import Html.Styled.Events as Events
 import Pages.Embed.State.App as AppState exposing (Model(..), Msg(..), OutputState, WorkingState)
 import Pages.Embed.Types.Panel as Panel exposing (Panel)
 import Pages.Embed.Types.Revision as Revision exposing (Revision)
+import Url as Url
 
 
 title : Model -> String
@@ -118,9 +118,9 @@ viewHeader revisionId current =
             , lineHeight (num 1)
             , textDecoration none
             , hover [ color Theme.accent ]
-            , Css.Foreign.children
-                [ Css.Foreign.mediaQuery [ "(max-width: 320px)" ]
-                    [ Css.Foreign.selector "[data-extraneous]"
+            , Css.Global.children
+                [ Css.Global.mediaQuery [ "(max-width: 320px)" ]
+                    [ Css.Global.selector "[data-extraneous]"
                         [ display none |> important ]
                     ]
                 ]
@@ -398,23 +398,23 @@ viewCrashed message =
 -- STYLES
 
 
-styles : List Css.Foreign.Snippet
+styles : List Css.Global.Snippet
 styles =
-    [ Css.Foreign.html
+    [ Css.Global.html
         [ height (pct 100)
         , backgroundColor Theme.secondaryBackground
         ]
-    , Css.Foreign.body
+    , Css.Global.body
         [ height (pct 100)
         , margin zero
         , fontFamilies [ "-apple-system", "BlinkMacSystemFont", "Segoe UI", "Roboto", "Helvetica", "Arial", "sans-serif" ]
         , property "-webkit-font-smoothing" "antialiased"
         ]
-    , Css.Foreign.everything
+    , Css.Global.everything
         [ boxSizing borderBox ]
-    , Css.Foreign.button
+    , Css.Global.button
         [ focus [ outline zero ] ]
-    , Css.Foreign.input
+    , Css.Global.input
         [ focus [ outline zero ] ]
     , Theme.darkStyles
     ]

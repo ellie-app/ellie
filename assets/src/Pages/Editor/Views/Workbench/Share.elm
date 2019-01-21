@@ -1,7 +1,6 @@
 module Pages.Editor.Views.Workbench.Share exposing (Config, container, heading, iframe, preview, view, warning)
 
 import Css exposing (..)
-import Data.Url as Url
 import Ellie.Ui.Button as Button
 import Ellie.Ui.CopyText as CopyText
 import Ellie.Ui.Icon as Icon
@@ -9,6 +8,7 @@ import Ellie.Ui.Theme as Theme
 import Html.Styled as Html exposing (Attribute, Html)
 import Html.Styled.Attributes as Attributes exposing (css)
 import Pages.Editor.Types.Revision as Revision exposing (Revision)
+import Url as Url
 
 
 type alias Config msg =
@@ -102,7 +102,7 @@ preview revisionId =
         , position relative
         , zIndex (int 1)
         ]
-        [ Url.src <| Revision.embedLink revisionId ]
+        [ Attributes.src <| Url.toString (Revision.embedLink revisionId) ]
         []
 
 
