@@ -53,7 +53,7 @@ localStorageEncoder revision =
     Encode.object
         [ ( "htmlCode", Encode.string revision.htmlCode )
         , ( "elmCode", Encode.string revision.elmCode )
-        , ( "packages", Encode.list <| List.map Package.encoder revision.packages )
+        , ( "packages", Encode.list Package.encoder revision.packages )
         , ( "title", Encode.string revision.title )
         , ( "elmVersion", Version.encoder revision.elmVersion )
         ]

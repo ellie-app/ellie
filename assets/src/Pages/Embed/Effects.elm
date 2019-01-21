@@ -118,8 +118,8 @@ goToPosition position =
         { channel = "GoToPosition"
         , debounce = Nothing
         , data =
-            Encode.list
-                [ Encode.int position.line
-                , Encode.int position.column
+            Encode.list Encode.int
+                [ position.line
+                , position.column
                 ]
         }

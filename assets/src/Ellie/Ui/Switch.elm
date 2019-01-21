@@ -6,7 +6,7 @@ import Css.Global
 import Extra.Html.Attributes as Attributes
 import Html.Styled as Html exposing (Attribute, Html, div, input, label, span)
 import Html.Styled.Attributes as Attributes exposing (attribute, css, for, id, type_)
-import Html.Styled.Events exposing (onCheck, onClick, onWithOptions)
+import Html.Styled.Events as Events exposing (onCheck, onClick)
 import Json.Decode as Decode
 import Svg.Styled as Svg exposing (svg)
 import Svg.Styled.Attributes as Svg
@@ -53,27 +53,33 @@ view config =
             []
         , div
             [ labelTextStyles True
-            , onWithOptions
-                "click"
-                { stopPropagation = True, preventDefault = False }
-                (Decode.succeed (config.onChange False))
+            , Events.custom "click" <|
+                Decode.succeed
+                    { message = config.onChange False
+                    , preventDefault = True
+                    , stopPropagation = True
+                    }
             , attribute "data-ui-switch-left-label" ""
             ]
             [ Html.text config.offLabel ]
         , div
-            [ onWithOptions
-                "click"
-                { stopPropagation = True, preventDefault = False }
-                (Decode.succeed (config.onChange (not config.on)))
+            [ Events.custom "click" <|
+                Decode.succeed
+                    { message = config.onChange (not config.on)
+                    , preventDefault = False
+                    , stopPropagation = True
+                    }
             , attribute "data-ui-switch-toggler" ""
             ]
             [ switch ]
         , div
             [ labelTextStyles False
-            , onWithOptions
-                "click"
-                { stopPropagation = True, preventDefault = False }
-                (Decode.succeed (config.onChange True))
+            , Events.custom "click" <|
+                Decode.succeed
+                    { message = config.onChange True
+                    , preventDefault = False
+                    , stopPropagation = True
+                    }
             , attribute "data-ui-switch-right-label" ""
             ]
             [ Html.text config.onLabel ]

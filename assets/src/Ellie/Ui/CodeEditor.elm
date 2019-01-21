@@ -56,8 +56,8 @@ mode =
 
 
 vim : Bool -> Attribute msg
-vim value =
-    Attr <| property "vimMode" <| Encode.bool value
+vim isVim =
+    Attr <| property "vimMode" <| Encode.bool isVim
 
 
 tabSize : Int -> Attribute msg
@@ -72,12 +72,12 @@ readOnly =
 
 linterMessages : List LinterMessage -> Attribute msg
 linterMessages messages =
-    Attr <| property "linterMessages" <| Encode.list <| List.map linterMessageEncoder messages
+    Attr <| property "linterMessages" <| Encode.list linterMessageEncoder messages
 
 
 autocomplete : Completions -> Attribute msg
-autocomplete (Completions value) =
-    Attr <| property "autocomplete" value
+autocomplete (Completions comps) =
+    Attr <| property "autocomplete" comps
 
 
 onChange : (String -> msg) -> Attribute msg
@@ -183,7 +183,7 @@ completions (Located from to list) =
                 Encode.object
                     [ ( "from", positionEncoder from )
                     , ( "to", positionEncoder to )
-                    , ( "list", Encode.list <| List.map Encode.string stuff )
+                    , ( "list", Encode.list Encode.string stuff )
                     ]
 
 

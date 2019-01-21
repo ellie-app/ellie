@@ -103,12 +103,12 @@ viewAction config action =
                     ]
                 ]
 
-        Notification.PerformAction label action ->
+        Notification.PerformAction label actionToPerform ->
             Html.div []
                 [ Button.view
                     { icon = Nothing
                     , label = label
-                    , action = Button.click <| config.onEditorAction action
+                    , action = Button.click <| config.onEditorAction actionToPerform
                     }
                 ]
 

@@ -106,9 +106,9 @@ update msg state =
                     ( { state | channel = Joining (state.refId + 1), refId = state.refId + 1 }
                     , Socket.send state.url <|
                         Encode.encode 0 <|
-                            Encode.list
+                            Encode.list identity
                                 [ Encode.null
-                                , Encode.string <| toString (state.refId + 1)
+                                , Encode.string <| String.fromInt (state.refId + 1)
                                 , Encode.string "__absinthe__:control"
                                 , Encode.string "phx_join"
                                 , Encode.object []
@@ -135,9 +135,9 @@ update msg state =
                     ( { state | refId = state.refId + 1 }
                     , Socket.send state.url <|
                         Encode.encode 0 <|
-                            Encode.list
-                                [ Encode.string <| toString joinRef
-                                , Encode.string <| toString (state.refId + 1)
+                            Encode.list identity
+                                [ Encode.string <| String.fromInt joinRef
+                                , Encode.string <| String.fromInt (state.refId + 1)
                                 , Encode.string "__absinthe__:control"
                                 , Encode.string "doc"
                                 , Encode.object [ ( "query", Encode.string state.document ) ]
@@ -177,9 +177,9 @@ update msg state =
             ( { state | refId = state.refId + 1 }
             , Socket.send state.url <|
                 Encode.encode 0 <|
-                    Encode.list
+                    Encode.list identity
                         [ Encode.null
-                        , Encode.string <| toString (state.refId + 1)
+                        , Encode.string <| String.fromInt (state.refId + 1)
                         , Encode.string "phoenix"
                         , Encode.string "heartbeat"
                         , Encode.object []
@@ -194,7 +194,7 @@ listen state =
             |> Sub.map (status state)
         , Socket.listen state.url
             |> Sub.map (listenHelp state)
-        , Time.every (30 * Time.second) (\_ -> Control HeartbeatRequested)
+        , Time.every (30 * 1000) (\_ -> Control HeartbeatRequested)
         ]
 
 
@@ -226,37 +226,37 @@ listenHelp state socketInfo =
                     Decode.decodeValue rawMessageDecoder data
                         |> Result.withDefault nonsenseRawMessage
             in
-            case ( state.channel, rawMessage.ref, rawMessage.joinRef, rawMessage.channel, rawMessage.event ) of
-                ( Joining refId, Just ref, Just joinRef, "__absinthe__:control", "phx_reply" ) ->
+            case ( ( state.channel, rawMessage.ref, rawMessage.joinRef ), rawMessage.channel, rawMessage.event ) of
+                ( ( Joining refId, Just ref, Just joinRef ), "__absinthe__:control", "phx_reply" ) ->
                     Control (ChannelJoined joinRef)
 
-                ( Joined myJoinRef, Just ref, Just joinRef, "__absinthe__:control", "phx_reply" ) ->
+                ( ( Joined myJoinRef, Just ref, Just joinRef ), "__absinthe__:control", "phx_reply" ) ->
                     if myJoinRef == joinRef then
                         case Decode.decodeValue decodeAbsintheControl rawMessage.data of
                             Ok msg ->
                                 Control msg
 
                             Err stuff ->
-                                Control (ProblemResponse stuff)
+                                Control (ProblemResponse <| Decode.errorToString stuff)
 
                     else
                         Control NoOp
 
-                ( Joined myJoinRef, Just ref, _, "phoenix", "phx_reply" ) ->
+                ( ( Joined myJoinRef, Just ref, _ ), "phoenix", "phx_reply" ) ->
                     Control HeartbeatReceived
 
-                ( Joined myJoinRef, Nothing, Nothing, docId, "subscription:data" ) ->
+                ( ( Joined myJoinRef, Nothing, Nothing ), docId, "subscription:data" ) ->
                     if state.docId == Just docId then
                         let
                             decoder =
                                 Decode.field "result" Decode.value
                         in
                         case Decode.decodeValue decoder rawMessage.data of
-                            Ok data ->
-                                Data data
+                            Ok x ->
+                                Data x
 
                             Err string ->
-                                Control (ProblemResponse string)
+                                Control (ProblemResponse <| Decode.errorToString string)
 
                     else
                         Control NoOp
@@ -269,8 +269,8 @@ decodeAbsintheControl : Decoder Msg
 decodeAbsintheControl =
     Decode.field "status" Decode.string
         |> Decode.andThen
-            (\status ->
-                case status of
+            (\x ->
+                case x of
                     "ok" ->
                         Decode.oneOf
                             [ Decode.field "subscriptionId" Decode.string
@@ -307,8 +307,8 @@ nonsenseRawMessage =
 rawMessageDecoder : Decoder RawMessage
 rawMessageDecoder =
     Decode.map5 RawMessage
-        (Decode.index 0 (Decode.map (Maybe.andThen (String.toInt >> Result.toMaybe)) (Decode.nullable Decode.string)))
-        (Decode.index 1 (Decode.map (Maybe.andThen (String.toInt >> Result.toMaybe)) (Decode.nullable Decode.string)))
+        (Decode.index 0 (Decode.map (Maybe.andThen String.toInt) (Decode.nullable Decode.string)))
+        (Decode.index 1 (Decode.map (Maybe.andThen String.toInt) (Decode.nullable Decode.string)))
         (Decode.index 2 Decode.string)
         (Decode.index 3 Decode.string)
         (Decode.index 4 Decode.value)

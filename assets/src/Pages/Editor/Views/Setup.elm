@@ -86,7 +86,7 @@ terms state =
         [ Html.text "Please accept Ellie's "
         , Html.styled Html.a
             [ color Theme.accent ]
-            [ Attributes.href <| "/a/terms/" ++ toString state.termsVersion
+            [ Attributes.href <| "/a/terms/" ++ String.fromInt state.termsVersion
             , Attributes.target "_blank"
             ]
             [ Html.text "Terms of Service" ]
@@ -106,7 +106,7 @@ terms state =
             , position relative
             , height (px 400)
             ]
-            [ Attributes.src <| "/a/terms/" ++ toString state.termsVersion
+            [ Attributes.src <| "/a/terms/" ++ String.fromInt state.termsVersion
             ]
             []
         ]
@@ -129,7 +129,7 @@ terms state =
         , Html.text ". See our "
         , Html.styled Html.a
             [ color Theme.accent ]
-            [ Attributes.href <| "/a/terms/" ++ toString state.termsVersion ++ "#privacy"
+            [ Attributes.href <| "/a/terms/" ++ String.fromInt state.termsVersion ++ "#privacy"
             , Attributes.target "_blank"
             ]
             [ Html.text "Privacy Policy" ]

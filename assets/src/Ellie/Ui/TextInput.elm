@@ -7,6 +7,7 @@ import Ellie.Ui.Theme as Theme
 import Extra.Html as Html
 import Extra.Html.Attributes as Attributes
 import Extra.Maybe as Maybe
+import Html.Events
 import Html.Styled exposing (Attribute, Html, button, div, input)
 import Html.Styled.Attributes exposing (attribute, autofocus, css, placeholder, tabindex, type_, value)
 import Html.Styled.Events as Events exposing (onClick, onInput)
@@ -25,18 +26,20 @@ type alias Config msg =
 
 clearOnEscape : (String -> msg) -> Attribute msg
 clearOnEscape onChange =
-    Events.onWithOptions "keydown"
-        { preventDefault = True, stopPropagation = True }
-        (Events.keyCode
-            |> Decode.andThen
-                (\keycode ->
-                    if keycode == 27 then
-                        Decode.succeed <| onChange ""
+    Events.custom "keydown" <|
+        Decode.andThen
+            (\keycode ->
+                if keycode == 27 then
+                    Decode.succeed
+                        { message = onChange ""
+                        , preventDefault = True
+                        , stopPropagation = True
+                        }
 
-                    else
-                        Decode.fail ""
-                )
-        )
+                else
+                    Decode.fail ""
+            )
+            Html.Events.keyCode
 
 
 view : Config msg -> Html msg

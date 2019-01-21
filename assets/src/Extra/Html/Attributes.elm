@@ -26,4 +26,4 @@ none =
 
 style : String -> String -> Attribute msg
 style key value =
-    Attributes.style [ ( key, value ) ]
+    Attributes.style key value

@@ -24,6 +24,7 @@ import Process
 import Set exposing (Set)
 import Task
 import Time
+import Url exposing (Url)
 
 
 port effectProgramKeyDowns : (Decode.Value -> a) -> Sub a
@@ -34,7 +35,7 @@ port effectProgramTitle : String -> Cmd a
 
 type alias Config flags route model msg =
     { init : flags -> route -> ( model, Command msg )
-    , url : Location -> route
+    , url : Url -> route
     , route : route -> msg
     , flags : Decoder flags
     , update : flags -> msg -> model -> ( model, Command msg )
@@ -77,9 +78,10 @@ type Model flags model msg
     | Running (State msg) flags model
 
 
-initialState : State msg
-initialState =
-    { sockets = Dict.empty
+initialState : Navigation.Key -> State msg
+initialState navKey =
+    { navKey = navKey
+    , sockets = Dict.empty
     , keysDown = Set.empty
     , debouncers = Dict.empty
     }
@@ -194,12 +196,12 @@ runCmd config state cmd =
         Command.Batch commands ->
             commands
                 |> List.foldr
-                    (\command ( state, cmds ) ->
+                    (\command ( currentState, cmds ) ->
                         let
-                            ( nextState, cmd ) =
-                                runCmd config state command
+                            ( nextState, nextCmd ) =
+                                runCmd config currentState command
                         in
-                        ( nextState, cmd :: cmds )
+                        ( nextState, nextCmd :: cmds )
                     )
                     ( state, [] )
                 |> Tuple.mapSecond Cmd.batch
@@ -233,8 +235,8 @@ runSub config state sub =
             effectProgramKeyDowns
                 (\value ->
                     case Decode.decodeValue (keyDownDecoder combo.shift combo.meta combo.key msg) value of
-                        Ok msg ->
-                            msg
+                        Ok wrappedMsg ->
+                            wrappedMsg
 
                         Err _ ->
                             NoOp
@@ -250,15 +252,17 @@ runSub config state sub =
                         NoOp
 
         Subscription.KeyPress code msg ->
-            Browser.Events.onKeyUp
-                (\keycode ->
-                    Decode.succeed <|
-                        if keycode == code then
-                            UserMsg msg
+            Browser.Events.onKeyUp <|
+                Decode.andThen
+                    (\keycode ->
+                        Decode.succeed <|
+                            if keycode == code then
+                                UserMsg msg
 
-                        else
-                            NoOp
-                )
+                            else
+                                NoOp
+                    )
+                    Decode.int
 
         Subscription.AbsintheSubscription url selection onStatus ->
             let
@@ -267,7 +271,7 @@ runSub config state sub =
                         ++ " :: "
                         ++ Graphql.Document.serializeSubscription selection
                         |> Murmur3.hashString 0
-                        |> toString
+                        |> String.fromInt
             in
             case Dict.get key state.sockets of
                 Just socket ->
@@ -300,16 +304,16 @@ runSub config state sub =
             Sub.none
 
 
-wrapInit : Config flags route model msg -> Decode.Value -> Location -> ( Model flags model msg, Cmd (Msg msg) )
-wrapInit config flagsValue location =
+wrapInit : Config flags route model msg -> Decode.Value -> Url -> Navigation.Key -> ( Model flags model msg, Cmd (Msg msg) )
+wrapInit config flagsValue url navKey =
     case Decode.decodeValue config.flags flagsValue of
         Ok flags ->
             let
                 ( userModel, userCmd ) =
-                    config.init flags (config.url location)
+                    config.init flags (config.url url)
 
                 ( state, cmd ) =
-                    runCmd config initialState userCmd
+                    runCmd config (initialState navKey) userCmd
             in
             ( Running state flags userModel
             , Cmd.batch [ cmd, effectProgramTitle (config.title userModel) ]
@@ -400,21 +404,25 @@ includeTitle produceTitle ( model, cmd ) =
             )
 
 
-wrapView : Config flags route model msg -> Model flags model msg -> Html.Html (Msg msg)
+wrapView : Config flags route model msg -> Model flags model msg -> Browser.Document (Msg msg)
 wrapView config model =
-    case model of
-        StartupFailure ->
-            Html.text "Couldn't decode the flags"
+    { title = "Ellie"
+    , body =
+        [ case model of
+            StartupFailure ->
+                Html.text "Couldn't decode the flags"
 
-        Running _ _ m ->
-            Styled.toUnstyled <|
-                Styled.styled Styled.div
-                    [ height (pct 100) ]
-                    []
-                    [ Css.Global.global config.styles
-                    , Styled.map UserMsg <| config.view m
-                    , Styled.node "ellie-ui-portal" [] []
-                    ]
+            Running _ _ m ->
+                Styled.toUnstyled <|
+                    Styled.styled Styled.div
+                        [ height (pct 100) ]
+                        []
+                        [ Css.Global.global config.styles
+                        , Styled.map UserMsg <| config.view m
+                        , Styled.node "ellie-ui-portal" [] []
+                        ]
+        ]
+    }
 
 
 wrapSubscriptions : Config flags route model msg -> Model flags model msg -> Sub (Msg msg)
@@ -433,11 +441,11 @@ type alias Program flags model msg =
 
 program : Config flags route model msg -> Program flags model msg
 program config =
-    Browser.application (config.url >> config.route >> UserMsg)
+    Browser.application
         { init = wrapInit config
         , update = wrapUpdate config
         , view = wrapView config
         , subscriptions = wrapSubscriptions config
-        , onUrlChange = ChangedUrl
-        , onUrlRequest = ClickedLink
+        , onUrlChange = UserMsg << config.route << config.url
+        , onUrlRequest = \_ -> NoOp
         }

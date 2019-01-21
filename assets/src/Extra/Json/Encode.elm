@@ -33,5 +33,5 @@ genericUnion tag contents =
         _ ->
             Encode.object
                 [ ( "tag", Encode.string tag )
-                , ( "contents", Encode.list contents )
+                , ( "contents", Encode.list identity contents )
                 ]

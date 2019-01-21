@@ -8,7 +8,7 @@
     "@babel/core": "7.0.0-beta.46",
     "@babel/preset-env": "7.0.0-beta.46",
     "@babel/preset-stage-2": "7.0.0-beta.46",
-    "@dillonkearns/elm-graphql": "^3.1.0",
+    "@dillonkearns/elm-graphql": "^1.0.7",
     "@webcomponents/custom-elements": "1.1.0",
     "babel-loader": "8.0.0-beta.4",
     "babel-plugin-elm-pre-minify": "0.1.2",

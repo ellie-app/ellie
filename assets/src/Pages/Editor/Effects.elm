@@ -203,7 +203,7 @@ updateUser user =
     Command.PortSend
         { channel = "UpdateUser"
         , debounce = Nothing
-        , data = Encode.list [ User.localStorageEncoder user ]
+        , data = Encode.list User.localStorageEncoder [ user ]
         }
 
 
@@ -281,9 +281,9 @@ moveElmCursor position =
         { channel = "MoveElmCursor"
         , debounce = Nothing
         , data =
-            Encode.list
-                [ Encode.int position.line
-                , Encode.int position.column
+            Encode.list Encode.int
+                [ position.line
+                , position.column
                 ]
         }
 
@@ -307,7 +307,7 @@ openInNewTab url =
     Command.PortSend
         { channel = "OpenInNewTab"
         , debounce = Nothing
-        , data = Encode.list [ Encode.string url ]
+        , data = Encode.list Encode.string [ url ]
         }
 
 
@@ -321,7 +321,7 @@ saveToken token =
     Command.PortSend
         { channel = "SaveToken"
         , debounce = Nothing
-        , data = Encode.list [ Jwt.encoder token ]
+        , data = Encode.list Jwt.encoder [ token ]
         }
 
 
@@ -375,6 +375,6 @@ updateRecoveryRevision : Maybe Revision -> Command msg
 updateRecoveryRevision revision =
     Command.PortSend
         { channel = "UpdateRecoveryRevision"
-        , data = Encode.list [ Encode.maybeNull Revision.localStorageEncoder revision ]
+        , data = Encode.list Encode.maybeNull [ Revision.localStorageEncoder revision ]
         , debounce = Just "UpdateRecoveryRevision"
         }
