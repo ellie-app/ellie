@@ -84,7 +84,7 @@ viewProblem config problem =
             [ Attributes.href "javascript:void(0)"
             , Events.onClick <| config.onPositionClick problem.region.start
             ]
-            [ Html.text <| "Line " ++ toString problem.region.start.line ++ ", Column " ++ toString problem.region.start.column ]
+            [ Html.text <| "Line " ++ String.fromInt problem.region.start.line ++ ", Column " ++ String.fromInt problem.region.start.column ]
         , Html.styled Html.div
             [ whiteSpace preWrap
             , fontSize (px 16)

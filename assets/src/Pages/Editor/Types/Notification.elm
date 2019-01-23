@@ -6,11 +6,10 @@ module Pages.Editor.Types.Notification exposing
     )
 
 import Pages.Editor.Types.EditorAction as EditorAction exposing (EditorAction)
-import Url as Url exposing (Url)
 
 
 type Action
-    = CopyLink Url
+    = CopyLink String
     | GoToLink String
     | PerformAction String EditorAction
 

@@ -64,8 +64,8 @@ update flags msg_ model =
     case ( model, msg_ ) of
         ( _, RouteChanged route ) ->
             case model of
-                Initial flags _ ->
-                    init flags route
+                Initial initFlags _ ->
+                    init initFlags route
 
                 Setup setupState ->
                     update flags (SetupMsg (Setup.RouteChanged route)) model

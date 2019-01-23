@@ -444,8 +444,8 @@ subscriptions model =
 
 
 chooseUpdate : WorkspaceUpdate -> Msg
-chooseUpdate update =
-    case update of
+chooseUpdate workspaceUpdate =
+    case workspaceUpdate of
         WorkspaceUpdate.Attached packages ->
             WorkspaceAttached packages
 

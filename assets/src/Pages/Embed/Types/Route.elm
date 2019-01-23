@@ -33,8 +33,8 @@ parse url =
 toString : Route -> String
 toString route =
     case route of
-        Existing id panel ->
-            "/embed/" ++ id ++ "?panel=" ++ Panel.toString panel
+        Existing id existingPanel ->
+            "/embed/" ++ id ++ "?panel=" ++ Panel.toString existingPanel
 
         NotFound ->
             "/embed/not-found"

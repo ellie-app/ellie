@@ -55,9 +55,9 @@ update msg model =
                     |> Command.map SearchedPackagesReceived
                 )
 
-        ( Packages packagesModel, SearchedPackagesReceived packages ) ->
+        ( Packages packagesModel, SearchedPackagesReceived searchedPackages ) ->
             if packagesModel.awaitingSearch then
-                ( Packages { packagesModel | searchedPackages = packages, awaitingSearch = False }
+                ( Packages { packagesModel | searchedPackages = searchedPackages, awaitingSearch = False }
                 , Command.none
                 )
 

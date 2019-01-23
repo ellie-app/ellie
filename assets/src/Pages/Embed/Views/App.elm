@@ -125,7 +125,7 @@ viewHeader revisionId current =
                     ]
                 ]
             ]
-            [ Attributes.href <| Url.toString <| Revision.editorLink revisionId
+            [ Attributes.href <| Revision.editorLink revisionId
             , Attributes.target "_blank"
             ]
             [ Html.span [] [ Html.text "Edit" ]
@@ -255,7 +255,7 @@ viewOutput state =
                     []
                     [ Output.view
                         [ Output.html state.revision.data.htmlCode
-                        , Output.elmSource <| Url.toString <| Revision.outputLink state.revision.id
+                        , Output.elmSource <| Revision.outputLink state.revision.id
                         , Output.onCanDebug CanDebugChanged
                         , Output.debug (state.debug == AppState.Debugging)
                         ]

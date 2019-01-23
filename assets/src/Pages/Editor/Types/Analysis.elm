@@ -16,7 +16,6 @@ import Ellie.Ui.CodeEditor as CodeEditor exposing (Completions, Located(..), Tok
 import Elm.Docs exposing (Binop, Module, Union)
 import Elm.Version as Version exposing (Version)
 import Parser exposing ((|.), (|=), Parser)
-import Parser.Advanced
 import Set exposing (Set)
 
 
@@ -171,11 +170,11 @@ findHint (Located _ _ token) (Analysis stuff) =
                         |> Maybe.map (\q -> q ++ "." ++ name)
                         |> Maybe.withDefault name
 
-                value =
+                hintFromDict =
                     Dict.get fullName stuff.tokens
                         |> Maybe.andThen List.head
             in
-            case value of
+            case hintFromDict of
                 Just value ->
                     Just value
 
@@ -261,8 +260,8 @@ buildTokenIndex imports moduleList =
         getMaybeHints moduleDocs =
             Maybe.map (filteredHints moduleDocs) (Dict.get moduleDocs.name imports)
 
-        insert ( token, hint ) dict =
-            Dict.update token (\value -> Just (hint :: Maybe.withDefault [] value)) dict
+        insert ( token, nextHing ) dict =
+            Dict.update token (\value -> Just (nextHing :: Maybe.withDefault [] value)) dict
     in
     moduleList
         |> List.filterMap getMaybeHints
@@ -306,7 +305,7 @@ nameToHints moduleDocs importData name =
         fullName =
             moduleDocs.name ++ "." ++ name
 
-        hint =
+        nextHint =
             { name = fullName, url = urlTo moduleDocs name }
 
         localName =
@@ -315,10 +314,10 @@ nameToHints moduleDocs importData name =
                 ++ name
     in
     if isExposed name importData then
-        [ ( name, hint ), ( localName, hint ) ]
+        [ ( name, nextHint ), ( localName, nextHint ) ]
 
     else
-        [ ( localName, hint ) ]
+        [ ( localName, nextHint ) ]
 
 
 isExposed : String -> Import -> Bool
@@ -342,10 +341,10 @@ unionTagsToHints moduleDocs union =
                 fullName =
                     moduleDocs.name ++ "." ++ tag
 
-                hint =
+                nextHint =
                     Hint fullName (urlTo moduleDocs union.name)
             in
-            ( tag, hint ) :: ( fullName, hint ) :: hints
+            ( tag, nextHint ) :: ( fullName, nextHint ) :: hints
     in
     List.foldl addHints [] union.tags
 
@@ -450,10 +449,11 @@ detailsParser =
 
 aliasParser : Parser ( Maybe String, Exposed )
 aliasParser =
-    Parser.delayedCommit asParser <|
-        Parser.succeed (\s e -> ( Just s, e ))
-            |= capVarParser
-            |= exposingParser
+    Parser.succeed (\s e -> ( Just s, e ))
+        -- TODO: Try to rm backtrackable use
+        |. Parser.backtrackable asParser
+        |= capVarParser
+        |= exposingParser
 
 
 asParser : Parser ()
@@ -466,8 +466,9 @@ asParser =
 
 exposingParser : Parser Exposed
 exposingParser =
+    -- TODO: Test heavily
     Parser.oneOf
-        [ Parser.delayedCommit exposingKwParser exposedParser
+        [ exposedParser
         , Parser.succeed ExposedNone
         ]
 
@@ -482,17 +483,19 @@ exposingKwParser =
 
 exposedParser : Parser Exposed
 exposedParser =
-    Parser.oneOf
-        [ Parser.map (\_ -> ExposedAll) (Parser.symbol "(..)")
-        , Parser.oneOf [ typeParser, lowerVarParser, infixParser ]
-            |> tuple spaces
-            |> Parser.map (Set.fromList >> ExposedSome)
-        , Parser.succeed ExposedNone
-        ]
+    Parser.succeed identity
+        |. exposingKwParser
+        |= Parser.oneOf
+            [ Parser.map (\_ -> ExposedAll) (Parser.symbol "(..)")
+            , Parser.oneOf [ typeParser, lowerVarParser, infixParser ]
+                |> tuple
+                |> Parser.map (Set.fromList >> ExposedSome)
+            , Parser.succeed ExposedNone
+            ]
 
 
-tuple : Parser () -> Parser a -> Parser (List a)
-tuple spaces item =
+tuple : Parser a -> Parser (List a)
+tuple item =
     Parser.sequence
         { start = "("
         , separator = ","
@@ -514,8 +517,10 @@ typeParser =
 constructorExportsParser : Parser ()
 constructorExportsParser =
     Parser.oneOf
-        [ Parser.symbol "(..)"
-        , Parser.map (\_ -> ()) <| tuple spaces capVarParser
+        [ -- TODO: Try to rm backtrackable use
+          --   Parser.symbol "(..)"
+          -- ,
+          Parser.map (\_ -> ()) <| tuple capVarParser
         , Parser.succeed ()
         ]
 
@@ -523,9 +528,19 @@ constructorExportsParser =
 infixParser : Parser String
 infixParser =
     Parser.succeed identity
-        |. Parser.ignore (Parser.Exactly 1) ((==) '(')
-        |= Parser.keep Parser.oneOrMore (\c -> not (isVarChar c) && c /= ')')
-        |. Parser.ignore (Parser.Exactly 1) ((==) ')')
+        |. Parser.symbol "("
+        |= (Parser.chompWhile (\c -> not (isVarChar c) && c /= ')' && c /= ' ')
+                |> Parser.getChompedString
+                |> Parser.andThen
+                    (\v ->
+                        if String.length v > 0 then
+                            Parser.succeed v
+
+                        else
+                            Parser.problem "To few characters"
+                    )
+           )
+        |. Parser.symbol ")"
 
 
 capVarParser : Parser String
@@ -548,11 +563,7 @@ lowerVarParser =
 
 isVarChar : Char -> Bool
 isVarChar char =
-    Char.isLower char
-        || Char.isUpper char
-        || Char.isDigit char
-        || char
-        == '_'
+    Char.isAlphaNum char || char == '_'
 
 
 qualifiedVarParser : Parser String
@@ -571,10 +582,25 @@ reserved =
 
 spaces : Parser ()
 spaces =
-    Parser.oneOf
-        [ Parser.Advanced.nestableComment
-            (Parser.Advanced.token "{-" ExpectingSymbol)
-            (Parser.Advanced.token "-}" ExpectingSymbol)
-        , Parser.Advanced.lineComment
-            (Parser.Advanced.token "--" ExpectingSymbol)
-        ]
+    Parser.loop 0 <|
+        ifProgress <|
+            Parser.oneOf
+                [ Parser.lineComment "--"
+                , Parser.multiComment "{-" "-}" Parser.Nestable
+                , Parser.spaces
+                ]
+
+
+ifProgress : Parser a -> Int -> Parser (Parser.Step Int ())
+ifProgress parser offset =
+    Parser.succeed identity
+        |. parser
+        |= Parser.getOffset
+        |> Parser.map
+            (\newOffset ->
+                if offset == newOffset then
+                    Parser.Done ()
+
+                else
+                    Parser.Loop newOffset
+            )

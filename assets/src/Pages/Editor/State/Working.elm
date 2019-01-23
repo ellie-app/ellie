@@ -551,18 +551,18 @@ update msg ({ user } as model) =
                         , Effects.reloadOutput
                         )
 
-                    ( True, Just error, FinishedWithError state ) ->
+                    ( True, Just e, FinishedWithError state ) ->
                         ( { model
                             | compiling = False
-                            , workbench = FinishedWithError { state | error = error }
+                            , workbench = FinishedWithError { state | error = e }
                           }
                         , Command.none
                         )
 
-                    ( True, Just error, _ ) ->
+                    ( True, Just e, _ ) ->
                         ( { model
                             | compiling = False
-                            , workbench = FinishedWithError { error = error, pane = ErrorsList }
+                            , workbench = FinishedWithError { error = e, pane = ErrorsList }
                           }
                         , Command.none
                         )
@@ -847,8 +847,8 @@ subscriptions model =
             |> Subscription.map ActionsMsg
         , Effects.workspaceUpdates model.token
             |> Subscription.map
-                (\update ->
-                    case update of
+                (\updates ->
+                    case updates of
                         WorkspaceUpdate.CompileCompleted maybeError ->
                             CompileFinished maybeError
 

@@ -49,7 +49,7 @@ flags =
 
 
 init : Flags -> Route -> ( Model, Command Msg )
-init flags route =
+init _ route =
     case route of
         Route.NotFound ->
             ( Failure, Command.none )
@@ -76,7 +76,7 @@ type Msg
 
 
 update : Flags -> Msg -> Model -> ( Model, Command Msg )
-update flags msg model =
+update _ msg model =
     case ( model, msg ) of
         ( _, RouteChanged route ) ->
             init {} route

@@ -294,7 +294,7 @@ downloadZip elm html project =
         { channel = "DownloadZip"
         , debounce = Nothing
         , data =
-            Encode.list
+            Encode.list identity
                 [ Encode.string <| Encode.encode 2 (Project.encoder project)
                 , Encode.string elm
                 , Encode.string html
@@ -375,6 +375,6 @@ updateRecoveryRevision : Maybe Revision -> Command msg
 updateRecoveryRevision revision =
     Command.PortSend
         { channel = "UpdateRecoveryRevision"
-        , data = Encode.list Encode.maybeNull [ Revision.localStorageEncoder revision ]
+        , data = Encode.list (Encode.maybeNull Revision.localStorageEncoder) [ revision ]
         , debounce = Just "UpdateRecoveryRevision"
         }

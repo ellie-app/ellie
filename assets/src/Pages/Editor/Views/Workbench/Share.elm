@@ -48,7 +48,7 @@ view config =
             ]
         , container
             [ heading "Share on Medium (Embed.ly)"
-            , CopyText.view <| Url.toString <| Revision.editorLink config.revisionId
+            , CopyText.view <| Revision.editorLink config.revisionId
             ]
         , container
             [ heading "Embed IFrame"
@@ -90,7 +90,7 @@ warning =
 
 iframe : Revision.Id -> String
 iframe revisionId =
-    "<iframe src=\"" ++ Url.toString (Revision.embedLink revisionId) ++ "\" style=\"width:100%; height:400px; border:0; overflow:hidden;\" sandbox=\"allow-modals allow-forms allow-popups allow-scripts allow-same-origin\"></iframe>"
+    "<iframe src=\"" ++ Revision.embedLink revisionId ++ "\" style=\"width:100%; height:400px; border:0; overflow:hidden;\" sandbox=\"allow-modals allow-forms allow-popups allow-scripts allow-same-origin\"></iframe>"
 
 
 preview : Revision.Id -> Html msg
@@ -102,7 +102,7 @@ preview revisionId =
         , position relative
         , zIndex (int 1)
         ]
-        [ Attributes.src <| Url.toString (Revision.embedLink revisionId) ]
+        [ Attributes.src <| Revision.embedLink revisionId ]
         []
 
 

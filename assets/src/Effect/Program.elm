@@ -406,14 +406,16 @@ includeTitle produceTitle ( model, cmd ) =
 
 wrapView : Config flags route model msg -> Model flags model msg -> Browser.Document (Msg msg)
 wrapView config model =
-    { title = "Ellie"
-    , body =
-        [ case model of
-            StartupFailure ->
-                Html.text "Couldn't decode the flags"
+    case model of
+        StartupFailure ->
+            { title = ""
+            , body = [ Html.text "Couldn't decode the flags" ]
+            }
 
-            Running _ _ m ->
-                Styled.toUnstyled <|
+        Running _ _ m ->
+            { title = config.title m
+            , body =
+                [ Styled.toUnstyled <|
                     Styled.styled Styled.div
                         [ height (pct 100) ]
                         []
@@ -421,8 +423,8 @@ wrapView config model =
                         , Styled.map UserMsg <| config.view m
                         , Styled.node "ellie-ui-portal" [] []
                         ]
-        ]
-    }
+                ]
+            }
 
 
 wrapSubscriptions : Config flags route model msg -> Model flags model msg -> Sub (Msg msg)

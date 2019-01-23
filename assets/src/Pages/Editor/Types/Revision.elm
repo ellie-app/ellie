@@ -6,7 +6,6 @@ import Elm.Package as Package exposing (Package)
 import Elm.Version as Version exposing (Version)
 import Json.Decode as Decode exposing (Decoder)
 import Json.Encode as Encode exposing (Value)
-import Url as Url exposing (Url)
 
 
 type External
@@ -28,14 +27,14 @@ type alias Revision =
     }
 
 
-editorLink : Id -> Maybe Url
+editorLink : Id -> String
 editorLink id =
-    Url.fromString <| Constants.editorBase ++ "/" ++ id
+    Constants.editorBase ++ "/" ++ id
 
 
-embedLink : Id -> Maybe Url
+embedLink : Id -> String
 embedLink id =
-    Url.fromString <| Constants.embedBase ++ "/" ++ id
+    Constants.embedBase ++ "/" ++ id
 
 
 localStorageDecoder : Decoder Revision

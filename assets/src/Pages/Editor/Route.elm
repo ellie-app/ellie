@@ -117,8 +117,8 @@ toString route =
         New ->
             "/new"
 
-        Existing revisionId ->
-            "/" ++ revisionId
+        Existing id ->
+            "/" ++ id
 
         Example _ ->
             "/a/example/v1"

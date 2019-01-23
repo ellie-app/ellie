@@ -105,18 +105,6 @@ type alias Position =
 selection : SelectionSet Error ApiUnion.ElmError
 selection =
     let
-        selection =
-            ElmError.selection (Maybe.withDefault (ModuleProblems []))
-                [ ElmErrorGeneralProblem.selection (\path title message -> GeneralProblem { path = path, title = title, message = message })
-                    |> with ElmErrorGeneralProblem.path
-                    |> with ElmErrorGeneralProblem.title
-                    |> with (ElmErrorGeneralProblem.message chunkSelection)
-                    |> ElmError.onElmErrorGeneralProblem
-                , ElmErrorModuleProblems.selection ModuleProblems
-                    |> with (ElmErrorModuleProblems.errors badModuleSelection)
-                    |> ElmError.onElmErrorModuleProblems
-                ]
-
         badModuleSelection =
             ElmErrorBadModule.selection BadModule
                 |> with ElmErrorBadModule.path
@@ -146,8 +134,8 @@ selection =
 
         makeChunk string style =
             case style of
-                Just style ->
-                    Styled style string
+                Just x ->
+                    Styled x string
 
                 Nothing ->
                     Unstyled string
@@ -208,4 +196,13 @@ selection =
                 ElmErrorColor.VividBlack ->
                     BLACK
     in
-    selection
+    ElmError.selection (Maybe.withDefault (ModuleProblems []))
+        [ ElmErrorGeneralProblem.selection (\path title message -> GeneralProblem { path = path, title = title, message = message })
+            |> with ElmErrorGeneralProblem.path
+            |> with ElmErrorGeneralProblem.title
+            |> with (ElmErrorGeneralProblem.message chunkSelection)
+            |> ElmError.onElmErrorGeneralProblem
+        , ElmErrorModuleProblems.selection ModuleProblems
+            |> with (ElmErrorModuleProblems.errors badModuleSelection)
+            |> ElmError.onElmErrorModuleProblems
+        ]

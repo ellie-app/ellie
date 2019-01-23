@@ -87,7 +87,7 @@ viewAction : Config msg -> Notification.Action -> Html msg
 viewAction config action =
     case action of
         Notification.CopyLink url ->
-            CopyText.view <| Url.toString url
+            CopyText.view url
 
         Notification.GoToLink url ->
             Html.div []
