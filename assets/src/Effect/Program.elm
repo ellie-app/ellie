@@ -368,7 +368,7 @@ wrapUpdate config msg model =
 
                     SetupSocket key url selection ->
                         ( Running
-                            { state | sockets = Dict.insert key (Absinthe.init url Debug.log selection) state.sockets }
+                            { state | sockets = Dict.insert key (Absinthe.init url always selection) state.sockets }
                             flags
                             m
                         , Cmd.none

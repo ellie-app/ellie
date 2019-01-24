@@ -132,10 +132,10 @@ selection =
                 |> with ElmErrorChunk.string
                 |> with (ElmErrorChunk.style styleSelection)
 
-        makeChunk string style =
-            case style of
-                Just x ->
-                    Styled x string
+        makeChunk string maybeStyle =
+            case maybeStyle of
+                Just style ->
+                    Styled style string
 
                 Nothing ->
                     Unstyled string
