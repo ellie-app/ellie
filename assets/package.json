@@ -40,6 +40,6 @@
     "start": "yarn run watch",
     "watch": "MIX_ENV=dev webpack-dev-server --watch --config ./webpack.dev.config.js",
     "build": "webpack --config ./webpack.prod.config.js",
-    "graphql": "elm-graphql --introspection-file ../priv/graphql/schema.json --base Ellie.Api --output generated/dillonkearns/graphql"
+    "graphql": "elm-graphql --introspection-file ../priv/graphql/schema.json --base Ellie.Api --output ./elm-stuff/generated/dillonkearns/graphql"
   }
 }
