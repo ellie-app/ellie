@@ -23,9 +23,7 @@ view model =
                     SetupView.view SetupView.Authenticating
 
                 SetupState.AcceptingTerms state ->
-                    { termsVersion = state.latestTerms
-                    , onAccept = SetupState.UserAcceptedTerms
-                    }
+                    { termsVersion = state.latestTerms, onAccept = SetupState.UserAcceptedTerms }
                         |> SetupView.AcceptingTerms
                         |> SetupView.view
                         |> Html.map AppState.SetupMsg
@@ -97,10 +95,3 @@ styles =
         ]
     , Theme.darkStyles
     ]
-
-
-notificationsStyles : Attribute msg
-notificationsStyles =
-    css
-        [ padding (px 16)
-        ]

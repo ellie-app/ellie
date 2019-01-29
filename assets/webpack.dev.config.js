@@ -84,8 +84,8 @@ module.exports = {
             loader: "elm-webpack-loader",
             options: {
               cwd: __dirname,
-              runtimeOptions: "-A128m -H128m -n8m"
-              // debug: true
+              runtimeOptions: "-A128m -H128m -n8m",
+              debug: true
             }
           }
         ]
