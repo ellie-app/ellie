@@ -10,6 +10,7 @@ import Debounce
 import Dict exposing (Dict)
 import Effect.Command as Command exposing (Command)
 import Effect.Subscription as Subscription exposing (Subscription)
+import Ellie.Ui.Icon as Icon
 import Ellie.Ui.Output as Output
 import Graphql.Document
 import Graphql.Http
@@ -419,7 +420,8 @@ wrapView config model =
                     Styled.styled Styled.div
                         [ height (pct 100) ]
                         []
-                        [ Css.Global.global config.styles
+                        [ Icon.sprite
+                        , Css.Global.global config.styles
                         , Styled.map UserMsg <| config.view m
                         , Styled.node "ellie-ui-portal" [] []
                         ]

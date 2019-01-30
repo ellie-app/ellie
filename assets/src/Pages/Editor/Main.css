@@ -48,15 +48,3 @@
 .LoadingIcon-circle:nth-child(3) {
   animation-delay: 0.4s;
 }
-
-
-
-.elm-overlay {
-  z-index: 20;
-}
-
-
-.elm-mini-controls {
-  left: 6px !important;
-  right: unset !important;
-}

@@ -1,7 +1,7 @@
-module Ellie.Ui.Icon exposing (Icon(..), view)
+module Ellie.Ui.Icon exposing (Icon(..), sprite, view)
 
 import Css exposing (..)
-import Html.Styled exposing (Attribute, Html)
+import Html.Styled as Html exposing (Attribute, Html)
 import Svg.Styled exposing (svg, use)
 import Svg.Styled.Attributes exposing (css, xlinkHref)
 
@@ -188,3 +188,8 @@ iconStyles =
         , fill currentColor
         , display block
         ]
+
+
+sprite : Html msg
+sprite =
+    Html.node "ellie-ui-icon-sprite" [] []

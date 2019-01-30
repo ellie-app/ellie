@@ -1,23 +1,18 @@
+import CustomElements from "../../Platform/CustomElements";
+
 export default {
   start(app) {
-    import(/* webpackChunkName: "icons-svg" */ './Icon.svg')
-      .then((text) => {
-        const hack = document && document.documentElement.doScroll
-        let loaded = document && (hack ? /^loaded|^c/ : /^loaded|^i|^c/).test(document.readyState)
-        const callback = () => {
-          const div = document.createElement('div')
-          div.style.display = 'none'
-          div.innerHTML = text
-          document.body.insertBefore(div, document.body.childNodes[0])
-          document.removeEventListener('DOMContentLoaded', callback)
-          loaded = true
-        }
-
-        if (!loaded) {
-          document.addEventListener('DOMContentLoaded', callback)
-        } else {
-          setTimeout(callback, 0)
-        }
-      })
+    import(/* webpackChunkName: "icons-svg" */ "./Icon.svg").then(text => {
+      CustomElements.define(
+        "ellie-ui-icon-sprite",
+        HTMLElement =>
+          class extends HTMLElement {
+            connectedCallback() {
+              this.style.display = "none";
+              this.innerHTML = text;
+            }
+          }
+      );
+    });
   }
-}
+};
