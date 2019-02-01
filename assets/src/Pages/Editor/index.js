@@ -15,7 +15,7 @@
  *    topological order of module imports.
  */
 
-import NetworkSocket from "../../Network/Socket";
+import NetworkAbsintheSocket from "../../Network/Absinthe/Socket";
 import EffectProgram from "../../Effect/Program";
 import EllieUiIcon from "../../Ellie/Ui/Icon";
 import EllieUiMenu from "../../Ellie/Ui/Menu";
@@ -35,7 +35,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   const app = Elm.Pages.Editor.Main.init({ flags });
 
-  NetworkSocket.start(app);
+  NetworkAbsintheSocket.start(app);
   EffectProgram.start(app);
   EllieUiIcon.start(app);
   EllieUiMenu.start(app);

@@ -44,5 +44,5 @@ release: ## Build a release of the application with MIX_ENV=prod
 bootstrap: ## Setup the app dev
 	scripts/bootstrap
 
-server: ## Run the app locally for dev
+serve: ## Run the app locally for dev
 	scripts/server

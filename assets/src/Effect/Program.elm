@@ -20,7 +20,7 @@ import Html
 import Html.Styled as Styled
 import Json.Decode as Decode exposing (Decoder)
 import Murmur3
-import Network.Absinthe.Subscription as Absinthe
+import Network.Absinthe.Socket as Absinthe
 import Process
 import Set exposing (Set)
 import Task
@@ -58,7 +58,7 @@ debounceConfig debounceMsg =
 
 type Msg msg
     = UserMsg msg
-    | SetupSocket String String (SelectionSet msg RootSubscription)
+    | SetupSocket String { url : String, token : Maybe String } (SelectionSet msg RootSubscription)
     | SubscriptionMsg String Absinthe.Msg
     | KeyDown String
     | KeyUp String
@@ -265,10 +265,11 @@ runSub config state sub =
                     )
                     Decode.int
 
-        Subscription.AbsintheSubscription url selection onStatus ->
+        Subscription.AbsintheSubscription socketConfig selection onStatus ->
             let
                 key =
-                    url
+                    socketConfig.url
+                        ++ Maybe.withDefault "" (Maybe.map (\t -> "?token=" ++ t) socketConfig.token)
                         ++ " :: "
                         ++ Graphql.Document.serializeSubscription selection
                         |> Murmur3.hashString 0
@@ -296,7 +297,7 @@ runSub config state sub =
                             )
 
                 Nothing ->
-                    Time.every 100 (\_ -> SetupSocket key url selection)
+                    Time.every 100 (\_ -> SetupSocket key socketConfig selection)
 
         Subscription.Batch subs ->
             Sub.batch <| List.map (runSub config state) subs
@@ -367,12 +368,16 @@ wrapUpdate config msg model =
                         , cmd
                         )
 
-                    SetupSocket key url selection ->
+                    SetupSocket key socketConfig selection ->
+                        let
+                            ( absinthe, absintheCmd ) =
+                                Absinthe.init socketConfig always selection
+                        in
                         ( Running
-                            { state | sockets = Dict.insert key (Absinthe.init url always selection) state.sockets }
+                            { state | sockets = Dict.insert key absinthe state.sockets }
                             flags
                             m
-                        , Cmd.none
+                        , absintheCmd
                         )
 
                     SubscriptionMsg key socketMsg ->

@@ -1,7 +1,7 @@
 import EllieUiIcon from "../../Ellie/Ui/Icon";
 import EllieUiCodeEditor from "../../Ellie/Ui/CodeEditor";
 import EllieUiOutput from "../../Ellie/Ui/Output";
-import NetworkSocket from "../../Network/Socket";
+import NetworkAbsintheSocket from "../../Network/Absinthe/Socket";
 import EffectProgram from "../../Effect/Program";
 import PagesEmbedMain from "./Main";
 import "../../Ellie/Ui/CodeEditor.css";
@@ -13,7 +13,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   const app = Elm.Pages.Embed.Main.init({ flags });
 
-  NetworkSocket.start(app);
+  NetworkAbsintheSocket.start(app);
   EffectProgram.start(app);
   EllieUiOutput.start(app);
   EllieUiCodeEditor.start(app);

@@ -7,7 +7,7 @@ import Json.Decode as Decode exposing (Decoder, Value)
 
 
 type Subscription msg
-    = AbsintheSubscription String (SelectionSet msg RootSubscription) (Bool -> msg)
+    = AbsintheSubscription { url : String, token : Maybe String } (SelectionSet msg RootSubscription) (Bool -> msg)
     | PortReceive String (Value -> msg)
     | KeyPress Int msg
     | KeyCombo { meta : Bool, shift : Bool, key : String } msg
@@ -28,8 +28,8 @@ batch =
 eq : Subscription msg -> Subscription msg -> Bool
 eq left right =
     case ( left, right ) of
-        ( AbsintheSubscription lUrl lSelection _, AbsintheSubscription rUrl rSelection _ ) ->
-            (lUrl == rUrl)
+        ( AbsintheSubscription lConfig lSelection _, AbsintheSubscription rConfig rSelection _ ) ->
+            (lConfig.token == rConfig.token)
                 && (Document.serializeSubscription lSelection == Document.serializeSubscription rSelection)
 
         ( PortReceive lChannel _, PortReceive rChannel _ ) ->
@@ -58,8 +58,8 @@ eq left right =
 map : (a -> b) -> Subscription a -> Subscription b
 map f cmd =
     case cmd of
-        AbsintheSubscription url selection onStatus ->
-            AbsintheSubscription url (SelectionSet.map f selection) (onStatus >> f)
+        AbsintheSubscription socketConfig selection onStatus ->
+            AbsintheSubscription socketConfig (SelectionSet.map f selection) (onStatus >> f)
 
         PortReceive channel callback ->
             PortReceive channel (callback >> f)

@@ -101,7 +101,7 @@ embedUpdates revisionId =
                 ]
     in
     Subscription.AbsintheSubscription
-        (Constants.socketOrigin ++ "/api/sockets/websocket?vsn=2.0.0")
+        { url = Constants.socketOrigin ++ "/api/sockets", token = Nothing }
         selection
         (\connected ->
             if connected then

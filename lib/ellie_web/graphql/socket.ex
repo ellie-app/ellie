@@ -5,14 +5,14 @@ defmodule EllieWeb.Graphql.Socket do
   alias EllieWeb.Token
   alias Data.Uuid
 
-  transport :websocket, Phoenix.Transports.WebSocket,
-    timeout: 45_000
+  transport(:websocket, Phoenix.Transports.WebSocket, timeout: 45_000)
 
   def connect(%{"token" => token}, socket) do
+    IO.inspect(token)
+
     with {:ok, workspace_string} <- Token.verify(token),
          {:ok, workspace} <- Uuid.parse(workspace_string),
-         :unit <- Workspace.watch(workspace, socket.transport_pid)
-    do
+         :unit <- Workspace.watch(workspace, socket.transport_pid) do
       {:ok, Absinthe.Phoenix.Socket.put_options(socket, context: %{workspace: workspace})}
     else
       _ -> {:error, "Socket setup failed"}

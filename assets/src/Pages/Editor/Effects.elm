@@ -168,7 +168,7 @@ workspaceUpdates token =
                 ]
     in
     Subscription.AbsintheSubscription
-        (Constants.socketOrigin ++ "/api/sockets/websocket?vsn=2.0.0&token=" ++ Jwt.toString token)
+        { url = Constants.socketOrigin ++ "/api/sockets", token = Just (Jwt.toString token) }
         selection
         (\connected ->
             if connected then
