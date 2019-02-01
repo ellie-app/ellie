@@ -26,7 +26,6 @@ export default {
     };
 
     const onResult = res => {
-      console.log(">>> Result", JSON.stringify(res));
       app.ports.absintheSocketInbound.send({ tag: "Data", data: res });
     };
 
