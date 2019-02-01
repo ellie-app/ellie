@@ -46,6 +46,7 @@ function do_install(){
 
     echo "==> Installing git, node, npm"
     yum install -y git nodejs npm --enablerepo=epel
+    npm cache clean
 }
 
 function do_pre_build(){
