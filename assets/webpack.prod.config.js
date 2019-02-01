@@ -4,10 +4,10 @@ const StringReplacePlugin = require("string-replace-webpack-plugin");
 const ManifestPlugin = require("webpack-manifest-plugin");
 const CompressionPlugin = require("compression-webpack-plugin");
 const CopyPlugin = require("copy-webpack-plugin");
+const TerserPlugin = require("terser-webpack-plugin");
 
 module.exports = {
   cache: true,
-  target: "web",
 
   entry: {
     editor: path.join(__dirname, "src/Pages/Editor/index.js"),
@@ -34,7 +34,7 @@ module.exports = {
           loader: "babel-loader",
           options: {
             presets: [
-              ["@babel/preset-env", { targets: { uglify: true } }],
+              "@babel/preset-env",
               ["@babel/preset-stage-2", { decoratorsLegacy: true }]
             ]
           }
@@ -74,13 +74,6 @@ module.exports = {
             ]
           }),
           {
-            loader: "babel-loader",
-            options: {
-              presets: [["@babel/preset-env", { targets: { uglify: true } }]],
-              plugins: ["babel-plugin-elm-pre-minify"]
-            }
-          },
-          {
             loader: "elm-webpack-loader",
             options: {
               cwd: __dirname,
@@ -93,6 +86,47 @@ module.exports = {
     ]
   },
 
+  optimization: {
+    minimizer: [
+      new TerserPlugin({
+        cache: true,
+        parallel: true,
+        terserOptions: {
+          mangle: false,
+          compress: {
+            pure_funcs: [
+              "F2",
+              "F3",
+              "F4",
+              "F5",
+              "F6",
+              "F7",
+              "F8",
+              "F9",
+              "A2",
+              "A3",
+              "A4",
+              "A5",
+              "A6",
+              "A7",
+              "A8",
+              "A9"
+            ],
+            pure_getters: true,
+            keep_fargs: false,
+            unsafe_comps: true,
+            unsafe: true
+          }
+        }
+      }),
+      new TerserPlugin({
+        cache: true,
+        parallel: true,
+        terserOptions: { mangle: true }
+      })
+    ]
+  },
+
   plugins: [
     new webpack.DefinePlugin({
       OPBEAT_APP_ID: JSON.stringify(process.env.OPBEAT_FRONTEND_APP_ID),
@@ -100,13 +134,6 @@ module.exports = {
         process.env.OPBEAT_ORGANIZATION_ID
       ),
       "process.env.NODE_ENV": JSON.stringify(process.env.NODE_ENV)
-    }),
-    new webpack.optimize.OccurrenceOrderPlugin(),
-    new webpack.optimize.UglifyJsPlugin({
-      compress: true,
-      mangle: true,
-      warningsFilter: () => false,
-      exclude: /custom-elements-native-shim/
     }),
     new StringReplacePlugin(),
     new ManifestPlugin({

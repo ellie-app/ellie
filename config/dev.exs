@@ -16,6 +16,8 @@ config :ellie, EllieWeb.Endpoint,
   watchers: [
     node: [
       "node_modules/webpack-dev-server/bin/webpack-dev-server.js",
+      "--mode",
+      "development",
       "--watch-stdin",
       "--config",
       "./webpack.dev.config.js",

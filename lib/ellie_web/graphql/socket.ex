@@ -8,8 +8,6 @@ defmodule EllieWeb.Graphql.Socket do
   transport(:websocket, Phoenix.Transports.WebSocket, timeout: 45_000)
 
   def connect(%{"token" => token}, socket) do
-    IO.inspect(token)
-
     with {:ok, workspace_string} <- Token.verify(token),
          {:ok, workspace} <- Uuid.parse(workspace_string),
          :unit <- Workspace.watch(workspace, socket.transport_pid) do
