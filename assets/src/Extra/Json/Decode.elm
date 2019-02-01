@@ -1,4 +1,4 @@
-module Extra.Json.Decode exposing (..)
+module Extra.Json.Decode exposing (either, genericUnion1, genericUnion2, genericUnion3, withDefault)
 
 import Json.Decode as Decode exposing (Decoder)
 
@@ -35,6 +35,7 @@ genericUnion1 constructor tag a =
             (\actualTag ->
                 if actualTag == tag then
                     Decode.map constructor <| Decode.field "contents" a
+
                 else
                     Decode.fail <| "Expected constructor \"" ++ tag ++ "\". Got \"" ++ actualTag ++ "\"."
             )
@@ -50,6 +51,7 @@ genericUnion2 constructor tag a b =
                         Decode.map2 constructor
                             (Decode.index 0 a)
                             (Decode.index 1 b)
+
                 else
                     Decode.fail <| "Expected constructor \"" ++ tag ++ "\". Got \"" ++ actualTag ++ "\"."
             )
@@ -66,6 +68,7 @@ genericUnion3 constructor tag a b c =
                             (Decode.index 0 a)
                             (Decode.index 1 b)
                             (Decode.index 2 c)
+
                 else
                     Decode.fail <| "Expected constructor \"" ++ tag ++ "\". Got \"" ++ actualTag ++ "\"."
             )

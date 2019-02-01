@@ -1,10 +1,9 @@
-module Data.Group
-    exposing
-        ( Group
-        , batch
-        , none
-        , one
-        )
+module Data.Group exposing
+    ( Group
+    , batch
+    , none
+    , one
+    )
 
 
 type Group a

@@ -1,8 +1,7 @@
-module Pages.Editor.Views.Notifications exposing (..)
+module Pages.Editor.Views.Notifications exposing (Config, view, viewAction, viewCloseAllButton, viewCloseButton, viewNotification, viewSeverity, viewTitle)
 
 import Css exposing (..)
-import Css.Foreign
-import Data.Url as Url exposing (Url)
+import Css.Global
 import Ellie.Ui.Button as Button
 import Ellie.Ui.CopyText as CopyText
 import Ellie.Ui.Icon as Icon
@@ -12,6 +11,7 @@ import Html.Styled.Attributes as Attributes exposing (css)
 import Html.Styled.Events as Events
 import Pages.Editor.Types.EditorAction as EditorAction exposing (EditorAction)
 import Pages.Editor.Types.Notification as Notification exposing (Notification)
+import Url as Url exposing (Url)
 
 
 type alias Config msg =
@@ -47,8 +47,8 @@ viewNotification config notification =
             , boxShadow5 (px 0) (px 1) (px 6) (px 0) (hex "#000")
             , lastChild [ marginBottom zero ]
             , hover
-                [ Css.Foreign.descendants
-                    [ Css.Foreign.selector "[data-close-all-button]" [ displayFlex ]
+                [ Css.Global.descendants
+                    [ Css.Global.selector "[data-close-all-button]" [ displayFlex ]
                     ]
                 ]
             ]
@@ -75,6 +75,7 @@ viewNotification config notification =
             ]
         , if List.isEmpty notification.actions then
             Html.text ""
+
           else
             Html.div
                 [ css [ paddingTop (px 12) ] ]
@@ -86,7 +87,7 @@ viewAction : Config msg -> Notification.Action -> Html msg
 viewAction config action =
     case action of
         Notification.CopyLink url ->
-            CopyText.view <| Url.toString url
+            CopyText.view url
 
         Notification.GoToLink url ->
             Html.div []
@@ -102,12 +103,12 @@ viewAction config action =
                     ]
                 ]
 
-        Notification.PerformAction label action ->
+        Notification.PerformAction label actionToPerform ->
             Html.div []
                 [ Button.view
                     { icon = Nothing
                     , label = label
-                    , action = Button.click <| config.onEditorAction action
+                    , action = Button.click <| config.onEditorAction actionToPerform
                     }
                 ]
 

@@ -1,16 +1,15 @@
-module Elm.Package
-    exposing
-        ( Package
-        , codeLink
-        , compare
-        , decoder
-        , docsLink
-        , encoder
-        , fromString
-        , selection
-        , toInputObject
-        , toString
-        )
+module Elm.Package exposing
+    ( Package
+    , codeLink
+    , compare
+    , decoder
+    , docsLink
+    , encoder
+    , fromString
+    , selection
+    , toInputObject
+    , toString
+    )
 
 import Ellie.Api.Helpers as ApiHelpers
 import Ellie.Api.InputObject as ApiInputObject
@@ -19,7 +18,7 @@ import Ellie.Api.Object.ElmPackage as ApiPackage
 import Ellie.Api.Scalar as ApiScalar
 import Elm.Name as Name exposing (Name)
 import Elm.Version as Version exposing (Version)
-import Graphqelm.SelectionSet exposing (SelectionSet, with)
+import Graphql.SelectionSet exposing (SelectionSet, with)
 import Json.Decode as Decode exposing (Decoder)
 import Json.Encode as Encode exposing (Value)
 

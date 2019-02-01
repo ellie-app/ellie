@@ -20,13 +20,12 @@ mix local.rebar --force
 mix local.hex --force
 mix deps.get
 mix compile
-mix do loadpaths, absinthe.schema.json ./priv/graphql/schema.json
+mix generate_schema
 
 cd assets && npm install
 cd ../
 
 mix ellie.binstall
-mix ellie.graphqelm
 
 mix ecto.create
 mix ecto.migrate

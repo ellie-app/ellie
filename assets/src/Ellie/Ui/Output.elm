@@ -1,7 +1,7 @@
 port module Ellie.Ui.Output exposing (Attribute, debug, elmSource, html, onCanDebug, onLog, onRuntimeException, reload, view)
 
 import Css exposing (..)
-import Css.Foreign
+import Css.Global
 import Html.Styled as Html exposing (Html)
 import Html.Styled.Attributes as Attributes exposing (css)
 import Html.Styled.Events as Events
@@ -73,8 +73,8 @@ styles =
         , position relative
         , backgroundColor (hex "#fff")
         , display block
-        , Css.Foreign.children
-            [ Css.Foreign.selector "iframe"
+        , Css.Global.children
+            [ Css.Global.selector "iframe"
                 [ width (pct 100)
                 , height (pct 100)
                 , border zero

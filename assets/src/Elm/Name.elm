@@ -1,12 +1,11 @@
-module Elm.Name
-    exposing
-        ( Name
-        , compare
-        , decoder
-        , encoder
-        , fromString
-        , toString
-        )
+module Elm.Name exposing
+    ( Name
+    , compare
+    , decoder
+    , encoder
+    , fromString
+    , toString
+    )
 
 import Json.Decode as Decode exposing (Decoder)
 import Json.Encode as Encode exposing (Value)

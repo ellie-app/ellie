@@ -1,6 +1,5 @@
-module Pages.Editor.Types.Revision exposing (..)
+module Pages.Editor.Types.Revision exposing (External(..), Id, Revision, default, editorLink, embedLink, localStorageDecoder, localStorageEncoder)
 
-import Data.Url as Url exposing (Url)
 import Ellie.Constants as Constants
 import Elm.Compiler as Compiler
 import Elm.Package as Package exposing (Package)
@@ -28,14 +27,14 @@ type alias Revision =
     }
 
 
-editorLink : Id -> Url
+editorLink : Id -> String
 editorLink id =
-    Url.fromString <| Constants.editorBase ++ "/" ++ id
+    Constants.editorBase ++ "/" ++ id
 
 
-embedLink : Id -> Url
+embedLink : Id -> String
 embedLink id =
-    Url.fromString <| Constants.embedBase ++ "/" ++ id
+    Constants.embedBase ++ "/" ++ id
 
 
 localStorageDecoder : Decoder Revision
@@ -53,7 +52,7 @@ localStorageEncoder revision =
     Encode.object
         [ ( "htmlCode", Encode.string revision.htmlCode )
         , ( "elmCode", Encode.string revision.elmCode )
-        , ( "packages", Encode.list <| List.map Package.encoder revision.packages )
+        , ( "packages", Encode.list Package.encoder revision.packages )
         , ( "title", Encode.string revision.title )
         , ( "elmVersion", Version.encoder revision.elmVersion )
         ]

@@ -1,4 +1,4 @@
-module Extra.Set exposing (..)
+module Extra.Set exposing (superset)
 
 import Set exposing (Set)
 

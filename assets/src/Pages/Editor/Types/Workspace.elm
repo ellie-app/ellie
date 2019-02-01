@@ -1,4 +1,4 @@
-module Pages.Editor.Types.Message exposing (..)
+module Pages.Editor.Types.Message exposing (Event(..), Incoming(..), Outgoing(..))
 
 import Elm.Compiler.Error as Compiler
 import Elm.Package as Package exposing (Package)

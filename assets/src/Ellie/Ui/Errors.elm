@@ -1,4 +1,4 @@
-module Ellie.Ui.Errors exposing (..)
+module Ellie.Ui.Errors exposing (Config, chunkColor, view, viewChunk, viewProblem)
 
 import Css exposing (..)
 import Ellie.Ui.Theme as Theme
@@ -84,7 +84,7 @@ viewProblem config problem =
             [ Attributes.href "javascript:void(0)"
             , Events.onClick <| config.onPositionClick problem.region.start
             ]
-            [ Html.text <| "Line " ++ toString problem.region.start.line ++ ", Column " ++ toString problem.region.start.column ]
+            [ Html.text <| "Line " ++ String.fromInt problem.region.start.line ++ ", Column " ++ String.fromInt problem.region.start.column ]
         , Html.styled Html.div
             [ whiteSpace preWrap
             , fontSize (px 16)
@@ -102,10 +102,12 @@ viewChunk chunk =
             Html.styled Html.span
                 [ if style.bold then
                     fontWeight bold
+
                   else
                     batch []
                 , if style.underline then
                     textDecoration underline
+
                   else
                     batch []
                 , style.color

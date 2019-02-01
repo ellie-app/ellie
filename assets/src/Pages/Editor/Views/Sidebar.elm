@@ -1,4 +1,4 @@
-module Pages.Editor.Views.Sidebar exposing (..)
+module Pages.Editor.Views.Sidebar exposing (view, viewIconButton, viewIconLink, viewLogo)
 
 import Css exposing (..)
 import Ellie.Ui.Icon as Icon
@@ -80,6 +80,7 @@ viewIconButton icon tooltip default current =
             , color <|
                 if isActive then
                     Theme.primaryForeground
+
                 else
                     Theme.secondaryForeground
             , hover

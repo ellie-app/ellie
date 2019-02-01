@@ -1,4 +1,4 @@
-module Extra.Result exposing (..)
+module Extra.Result exposing (fold, traverse)
 
 
 fold : (a -> b) -> (x -> b) -> Result x a -> b

@@ -1,16 +1,15 @@
-module Effect.Subscription exposing (..)
+module Effect.Subscription exposing (Subscription(..), batch, eq, map, none)
 
-import Graphqelm.Document as Document
-import Graphqelm.Operation exposing (RootSubscription)
-import Graphqelm.SelectionSet as SelectionSet exposing (SelectionSet)
+import Graphql.Document as Document
+import Graphql.Operation exposing (RootSubscription)
+import Graphql.SelectionSet as SelectionSet exposing (SelectionSet)
 import Json.Decode as Decode exposing (Decoder, Value)
-import Keyboard exposing (KeyCode)
 
 
 type Subscription msg
-    = AbsintheSubscription String (SelectionSet msg RootSubscription) (Bool -> msg)
+    = AbsintheSubscription { url : String, token : Maybe String } (SelectionSet msg RootSubscription) (Bool -> msg)
     | PortReceive String (Value -> msg)
-    | KeyPress KeyCode msg
+    | KeyPress Int msg
     | KeyCombo { meta : Bool, shift : Bool, key : String } msg
     | Batch (List (Subscription msg))
     | None
@@ -29,8 +28,8 @@ batch =
 eq : Subscription msg -> Subscription msg -> Bool
 eq left right =
     case ( left, right ) of
-        ( AbsintheSubscription lUrl lSelection _, AbsintheSubscription rUrl rSelection _ ) ->
-            (lUrl == rUrl)
+        ( AbsintheSubscription lConfig lSelection _, AbsintheSubscription rConfig rSelection _ ) ->
+            (lConfig.token == rConfig.token)
                 && (Document.serializeSubscription lSelection == Document.serializeSubscription rSelection)
 
         ( PortReceive lChannel _, PortReceive rChannel _ ) ->
@@ -45,6 +44,7 @@ eq left right =
         ( Batch lSubs, Batch rSubs ) ->
             if List.length lSubs == List.length rSubs then
                 List.all identity (List.map2 eq lSubs rSubs)
+
             else
                 False
 
@@ -58,8 +58,8 @@ eq left right =
 map : (a -> b) -> Subscription a -> Subscription b
 map f cmd =
     case cmd of
-        AbsintheSubscription url selection onStatus ->
-            AbsintheSubscription url (SelectionSet.map f selection) (onStatus >> f)
+        AbsintheSubscription socketConfig selection onStatus ->
+            AbsintheSubscription socketConfig (SelectionSet.map f selection) (onStatus >> f)
 
         PortReceive channel callback ->
             PortReceive channel (callback >> f)

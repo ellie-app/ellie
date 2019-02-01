@@ -1,8 +1,7 @@
-module Elm.Project
-    exposing
-        ( Project
-        , encoder
-        )
+module Elm.Project exposing
+    ( Project
+    , encoder
+    )
 
 {-| Turn `elm.json` files into data that is nice to use in Elm.
 
@@ -22,6 +21,7 @@ import Elm.Name as Name exposing (Name)
 import Elm.Package as Package exposing (Package)
 import Elm.Version as Version exposing (Version)
 import Json.Encode as Encode exposing (Value)
+
 
 
 -- PROJECT
@@ -48,15 +48,16 @@ encoder project =
             , ( "summary", Encode.string "helpful summary of your project, less than 80 characers" )
             , ( "repository", Encode.string "https://github.com/user/project.git" )
             , ( "license", Encode.string "MIT" )
-            , ( "source-directories", Encode.list <| List.map Encode.string project.sourceDirs )
-            , ( "exposed-modules", Encode.list [] )
+            , ( "source-directories", Encode.list Encode.string project.sourceDirs )
+            , ( "exposed-modules", Encode.list identity [] )
             , ( "dependencies", encodeDeps project.deps )
             , ( "elm-version", Encode.string "0.18.0 <= v < 0.19.0" )
             ]
+
     else
         Encode.object
             [ ( "type", Encode.string "application" )
-            , ( "source-directories", Encode.list <| List.map Encode.string project.sourceDirs )
+            , ( "source-directories", Encode.list Encode.string project.sourceDirs )
             , ( "elm-version", Version.encoder project.elm )
             , ( "dependencies", encodeDeps project.deps )
             , ( "test-dependencies", Encode.object [] )

@@ -15,11 +15,11 @@ fromString : String -> Result String Version
 fromString str =
     case String.split "." str of
         [ major, minor, patch ] ->
-            Result.map3
-                Version
-                (String.toInt major)
-                (String.toInt minor)
-                (String.toInt patch)
+            Result.fromMaybe "Expecting a version as <Int>.<Int>.<Int>" <|
+                Maybe.map3 Version
+                    (String.toInt major)
+                    (String.toInt minor)
+                    (String.toInt patch)
 
         _ ->
             Err "Expecting a version like MAJOR.MINOR.PATCH"
@@ -40,19 +40,21 @@ compare left right =
     if left.major == right.major then
         if left.minor == right.minor then
             Basics.compare left.patch right.patch
+
         else
             Basics.compare left.minor right.minor
+
     else
         Basics.compare left.major right.major
 
 
 toString : Version -> String
 toString version =
-    Basics.toString version.major
+    String.fromInt version.major
         ++ "."
-        ++ Basics.toString version.minor
+        ++ String.fromInt version.minor
         ++ "."
-        ++ Basics.toString version.patch
+        ++ String.fromInt version.patch
 
 
 decoder : Decode.Decoder Version

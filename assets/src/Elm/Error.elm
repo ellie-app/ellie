@@ -1,15 +1,9 @@
-module Elm.Error
-    exposing
-        ( BadModule
-        , Chunk(..)
-        , Color(..)
-        , Error(..)
-        , Position
-        , Problem
-        , Region
-        , Style
-        , selection
-        )
+module Elm.Error exposing
+    ( Error(..), BadModule, Problem
+    , Chunk(..), Style, Color(..)
+    , Region, Position
+    , selection
+    )
 
 {-| When `elm make --report=json` fails, this module helps you turn the
 resulting JSON into HTML.
@@ -42,8 +36,8 @@ import Ellie.Api.Object.ElmErrorRegion as ElmErrorRegion
 import Ellie.Api.Object.ElmErrorStyle as ElmErrorStyle
 import Ellie.Api.Union as ApiUnion
 import Ellie.Api.Union.ElmError as ElmError
-import Graphqelm.Field as Field
-import Graphqelm.SelectionSet exposing (SelectionSet, with)
+import Graphql.Field as Field
+import Graphql.SelectionSet exposing (SelectionSet, with)
 
 
 type Error
@@ -111,18 +105,6 @@ type alias Position =
 selection : SelectionSet Error ApiUnion.ElmError
 selection =
     let
-        selection =
-            ElmError.selection (Maybe.withDefault (ModuleProblems []))
-                [ ElmErrorGeneralProblem.selection (\path title message -> GeneralProblem { path = path, title = title, message = message })
-                    |> with ElmErrorGeneralProblem.path
-                    |> with ElmErrorGeneralProblem.title
-                    |> with (ElmErrorGeneralProblem.message chunkSelection)
-                    |> ElmError.onElmErrorGeneralProblem
-                , ElmErrorModuleProblems.selection ModuleProblems
-                    |> with (ElmErrorModuleProblems.errors badModuleSelection)
-                    |> ElmError.onElmErrorModuleProblems
-                ]
-
         badModuleSelection =
             ElmErrorBadModule.selection BadModule
                 |> with ElmErrorBadModule.path
@@ -150,8 +132,8 @@ selection =
                 |> with ElmErrorChunk.string
                 |> with (ElmErrorChunk.style styleSelection)
 
-        makeChunk string style =
-            case style of
+        makeChunk string maybeStyle =
+            case maybeStyle of
                 Just style ->
                     Styled style string
 
@@ -214,4 +196,13 @@ selection =
                 ElmErrorColor.VividBlack ->
                     BLACK
     in
-    selection
+    ElmError.selection (Maybe.withDefault (ModuleProblems []))
+        [ ElmErrorGeneralProblem.selection (\path title message -> GeneralProblem { path = path, title = title, message = message })
+            |> with ElmErrorGeneralProblem.path
+            |> with ElmErrorGeneralProblem.title
+            |> with (ElmErrorGeneralProblem.message chunkSelection)
+            |> ElmError.onElmErrorGeneralProblem
+        , ElmErrorModuleProblems.selection ModuleProblems
+            |> with (ElmErrorModuleProblems.errors badModuleSelection)
+            |> ElmError.onElmErrorModuleProblems
+        ]

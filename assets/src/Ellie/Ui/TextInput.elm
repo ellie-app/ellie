@@ -1,12 +1,13 @@
 module Ellie.Ui.TextInput exposing (view)
 
 import Css exposing (..)
-import Css.Foreign
+import Css.Global
 import Ellie.Ui.Icon as Icon
 import Ellie.Ui.Theme as Theme
 import Extra.Html as Html
 import Extra.Html.Attributes as Attributes
 import Extra.Maybe as Maybe
+import Html.Events
 import Html.Styled exposing (Attribute, Html, button, div, input)
 import Html.Styled.Attributes exposing (attribute, autofocus, css, placeholder, tabindex, type_, value)
 import Html.Styled.Events as Events exposing (onClick, onInput)
@@ -25,17 +26,20 @@ type alias Config msg =
 
 clearOnEscape : (String -> msg) -> Attribute msg
 clearOnEscape onChange =
-    Events.onWithOptions "keydown"
-        { preventDefault = True, stopPropagation = True }
-        (Events.keyCode
-            |> Decode.andThen
-                (\keycode ->
-                    if keycode == 27 then
-                        Decode.succeed <| onChange ""
-                    else
-                        Decode.fail ""
-                )
-        )
+    Events.custom "keydown" <|
+        Decode.andThen
+            (\keycode ->
+                if keycode == 27 then
+                    Decode.succeed
+                        { message = onChange ""
+                        , preventDefault = True
+                        , stopPropagation = True
+                        }
+
+                else
+                    Decode.fail ""
+            )
+            Html.Events.keyCode
 
 
 view : Config msg -> Html msg
@@ -50,6 +54,7 @@ view config =
             , autofocus config.autofocus
             , if config.clearable then
                 clearOnEscape config.onChange
+
               else
                 Attributes.none
             , inputStyles
@@ -113,8 +118,8 @@ inputStyles hasIcon hasClearButton =
         , height (pct 100)
         , focus
             [ border3 (px 1) solid Theme.accent
-            , Css.Foreign.adjacentSiblings
-                [ Css.Foreign.div
+            , Css.Global.adjacentSiblings
+                [ Css.Global.div
                     [ borderRightColor Theme.accent
                     ]
                 ]
@@ -124,10 +129,12 @@ inputStyles hasIcon hasClearButton =
         , pseudoElement "-moz-placeholder" [ color Theme.secondaryForeground ]
         , if hasIcon then
             batch [ paddingLeft (px 40) ]
+
           else
             batch []
         , if hasClearButton then
             batch [ paddingRight (px 28) ]
+
           else
             batch []
         ]

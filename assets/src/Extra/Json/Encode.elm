@@ -1,4 +1,4 @@
-module Extra.Json.Encode exposing (..)
+module Extra.Json.Encode exposing (genericUnion, maybeNull, objectWithType)
 
 import Json.Encode as Encode exposing (Value)
 
@@ -33,5 +33,5 @@ genericUnion tag contents =
         _ ->
             Encode.object
                 [ ( "tag", Encode.string tag )
-                , ( "contents", Encode.list contents )
+                , ( "contents", Encode.list identity contents )
                 ]

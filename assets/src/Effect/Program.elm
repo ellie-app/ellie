@@ -1,28 +1,31 @@
-port module Effect.Program exposing (..)
+port module Effect.Program exposing (Config, Model(..), Msg(..), Program, State, debounceConfig, effectProgramKeyDowns, effectProgramTitle, includeTitle, initialState, keyDownDecoder, maybeWithDebounce, maybeWithToken, program, runCmd, runSub, withCaching, wrapInit, wrapSubscriptions, wrapUpdate, wrapView)
 
+import Browser
+import Browser.Events
+import Browser.Navigation as Navigation
 import Css exposing (..)
-import Css.Foreign
+import Css.Global
 import Data.Jwt as Jwt exposing (Jwt)
 import Debounce
 import Dict exposing (Dict)
 import Effect.Command as Command exposing (Command)
 import Effect.Subscription as Subscription exposing (Subscription)
+import Ellie.Ui.Icon as Icon
 import Ellie.Ui.Output as Output
-import Graphqelm.Document
-import Graphqelm.Http
-import Graphqelm.Operation exposing (RootSubscription)
-import Graphqelm.SelectionSet exposing (SelectionSet)
+import Graphql.Document
+import Graphql.Http
+import Graphql.Operation exposing (RootSubscription)
+import Graphql.SelectionSet exposing (SelectionSet)
 import Html
 import Html.Styled as Styled
 import Json.Decode as Decode exposing (Decoder)
-import Keyboard exposing (KeyCode)
 import Murmur3
-import Navigation exposing (Location)
-import Network.Absinthe.Subscription as Absinthe
+import Network.Absinthe.Socket as Absinthe
 import Process
 import Set exposing (Set)
 import Task
 import Time
+import Url exposing (Url)
 
 
 port effectProgramKeyDowns : (Decode.Value -> a) -> Sub a
@@ -33,13 +36,13 @@ port effectProgramTitle : String -> Cmd a
 
 type alias Config flags route model msg =
     { init : flags -> route -> ( model, Command msg )
-    , url : Location -> route
+    , url : Url -> route
     , route : route -> msg
     , flags : Decoder flags
     , update : flags -> msg -> model -> ( model, Command msg )
     , view : model -> Styled.Html msg
     , title : model -> String
-    , styles : List Css.Foreign.Snippet
+    , styles : List Css.Global.Snippet
     , subscriptions : model -> Subscription msg
     , outbound : ( String, Decode.Value ) -> Cmd (Msg msg)
     , inbound : (( String, Decode.Value ) -> Msg msg) -> Sub (Msg msg)
@@ -55,7 +58,7 @@ debounceConfig debounceMsg =
 
 type Msg msg
     = UserMsg msg
-    | SetupSocket String String (SelectionSet msg RootSubscription)
+    | SetupSocket String { url : String, token : Maybe String } (SelectionSet msg RootSubscription)
     | SubscriptionMsg String Absinthe.Msg
     | KeyDown String
     | KeyUp String
@@ -64,7 +67,8 @@ type Msg msg
 
 
 type alias State msg =
-    { sockets : Dict String Absinthe.Socket
+    { navKey : Navigation.Key
+    , sockets : Dict String Absinthe.Socket
     , keysDown : Set String
     , debouncers : Dict String (Debounce.Debounce (Cmd (Msg msg)))
     }
@@ -75,15 +79,16 @@ type Model flags model msg
     | Running (State msg) flags model
 
 
-initialState : State msg
-initialState =
-    { sockets = Dict.empty
+initialState : Navigation.Key -> State msg
+initialState navKey =
+    { navKey = navKey
+    , sockets = Dict.empty
     , keysDown = Set.empty
     , debouncers = Dict.empty
     }
 
 
-maybeWithToken : Maybe Jwt -> Graphqelm.Http.Request a -> Graphqelm.Http.Request a
+maybeWithToken : Maybe Jwt -> Graphql.Http.Request a -> Graphql.Http.Request a
 maybeWithToken maybeToken request =
     case maybeToken of
         Just token ->
@@ -94,16 +99,16 @@ maybeWithToken maybeToken request =
             request
 
 
-withCaching : Command.CacheLevel -> Graphqelm.Http.Request a -> Graphqelm.Http.Request a
+withCaching : Command.CacheLevel -> Graphql.Http.Request a -> Graphql.Http.Request a
 withCaching cacheLevel request =
     case cacheLevel of
         Command.Permanent ->
             request
-                |> Graphqelm.Http.withQueryParams [ ( "cache", "permanent" ) ]
+                |> Graphql.Http.withQueryParams [ ( "cache", "permanent" ) ]
 
         Command.Temporary ->
             request
-                |> Graphqelm.Http.withQueryParams [ ( "cache", "temporary" ) ]
+                |> Graphql.Http.withQueryParams [ ( "cache", "temporary" ) ]
 
         Command.AlwaysFetch ->
             request
@@ -127,11 +132,11 @@ runCmd : Config flags route model msg -> State msg -> Command msg -> ( State msg
 runCmd config state cmd =
     case cmd of
         Command.GraphqlQuery { url, token, selection, onError, debounce, cache } ->
-            Graphqelm.Http.queryRequestWithHttpGet url Graphqelm.Http.AlwaysGet selection
+            Graphql.Http.queryRequestWithHttpGet url Graphql.Http.AlwaysGet selection
                 |> maybeWithToken token
                 |> withCaching cache
-                |> Graphqelm.Http.send identity
-                |> Cmd.map (Result.mapError Graphqelm.Http.ignoreParsedErrorData)
+                |> Graphql.Http.send identity
+                |> Cmd.map (Result.mapError Graphql.Http.ignoreParsedErrorData)
                 |> Cmd.map
                     (\result ->
                         case result of
@@ -144,10 +149,10 @@ runCmd config state cmd =
                 |> maybeWithDebounce state debounce
 
         Command.GraphqlMutation { url, token, selection, onError, debounce } ->
-            Graphqelm.Http.mutationRequest url selection
+            Graphql.Http.mutationRequest url selection
                 |> maybeWithToken token
-                |> Graphqelm.Http.send identity
-                |> Cmd.map (Result.mapError Graphqelm.Http.ignoreParsedErrorData)
+                |> Graphql.Http.send identity
+                |> Cmd.map (Result.mapError Graphql.Http.ignoreParsedErrorData)
                 |> Cmd.map
                     (\result ->
                         case result of
@@ -170,12 +175,12 @@ runCmd config state cmd =
 
         Command.NewUrl url ->
             ( state
-            , Navigation.newUrl url
+            , Navigation.pushUrl state.navKey url
             )
 
         Command.Redirect url ->
             ( state
-            , Navigation.modifyUrl url
+            , Navigation.replaceUrl state.navKey url
             )
 
         Command.Delay millis next ->
@@ -192,12 +197,12 @@ runCmd config state cmd =
         Command.Batch commands ->
             commands
                 |> List.foldr
-                    (\command ( state, cmds ) ->
+                    (\command ( currentState, cmds ) ->
                         let
-                            ( nextState, cmd ) =
-                                runCmd config state command
+                            ( nextState, nextCmd ) =
+                                runCmd config currentState command
                         in
-                        ( nextState, cmd :: cmds )
+                        ( nextState, nextCmd :: cmds )
                     )
                     ( state, [] )
                 |> Tuple.mapSecond Cmd.batch
@@ -212,6 +217,7 @@ keyDownDecoder needsShift needsMeta key msg =
         (\actualKey shift meta ->
             if shift == needsShift && meta == needsMeta && key == actualKey then
                 UserMsg msg
+
             else
                 NoOp
         )
@@ -230,8 +236,8 @@ runSub config state sub =
             effectProgramKeyDowns
                 (\value ->
                     case Decode.decodeValue (keyDownDecoder combo.shift combo.meta combo.key msg) value of
-                        Ok msg ->
-                            msg
+                        Ok wrappedMsg ->
+                            wrappedMsg
 
                         Err _ ->
                             NoOp
@@ -242,26 +248,32 @@ runSub config state sub =
                 \( inChannel, data ) ->
                     if inChannel == channel then
                         UserMsg (callback data)
+
                     else
                         NoOp
 
         Subscription.KeyPress code msg ->
-            Keyboard.ups
-                (\keycode ->
-                    if keycode == code then
-                        UserMsg msg
-                    else
-                        NoOp
-                )
+            Browser.Events.onKeyUp <|
+                Decode.andThen
+                    (\keycode ->
+                        Decode.succeed <|
+                            if keycode == code then
+                                UserMsg msg
 
-        Subscription.AbsintheSubscription url selection onStatus ->
+                            else
+                                NoOp
+                    )
+                    Decode.int
+
+        Subscription.AbsintheSubscription socketConfig selection onStatus ->
             let
                 key =
-                    url
+                    socketConfig.url
+                        ++ Maybe.withDefault "" (Maybe.map (\t -> "?token=" ++ t) socketConfig.token)
                         ++ " :: "
-                        ++ Graphqelm.Document.serializeSubscription selection
+                        ++ Graphql.Document.serializeSubscription selection
                         |> Murmur3.hashString 0
-                        |> toString
+                        |> String.fromInt
             in
             case Dict.get key state.sockets of
                 Just socket ->
@@ -270,7 +282,7 @@ runSub config state sub =
                             (\info ->
                                 case info of
                                     Absinthe.Data data ->
-                                        case Decode.decodeValue (Graphqelm.Document.decoder selection) data of
+                                        case Decode.decodeValue (Graphql.Document.decoder selection) data of
                                             Ok msg ->
                                                 UserMsg msg
 
@@ -285,7 +297,7 @@ runSub config state sub =
                             )
 
                 Nothing ->
-                    Time.every 100 (\_ -> SetupSocket key url selection)
+                    Time.every 100 (\_ -> SetupSocket key socketConfig selection)
 
         Subscription.Batch subs ->
             Sub.batch <| List.map (runSub config state) subs
@@ -294,16 +306,16 @@ runSub config state sub =
             Sub.none
 
 
-wrapInit : Config flags route model msg -> Decode.Value -> Location -> ( Model flags model msg, Cmd (Msg msg) )
-wrapInit config flagsValue location =
+wrapInit : Config flags route model msg -> Decode.Value -> Url -> Navigation.Key -> ( Model flags model msg, Cmd (Msg msg) )
+wrapInit config flagsValue url navKey =
     case Decode.decodeValue config.flags flagsValue of
         Ok flags ->
             let
                 ( userModel, userCmd ) =
-                    config.init flags (config.url location)
+                    config.init flags (config.url url)
 
                 ( state, cmd ) =
-                    runCmd config initialState userCmd
+                    runCmd config (initialState navKey) userCmd
             in
             ( Running state flags userModel
             , Cmd.batch [ cmd, effectProgramTitle (config.title userModel) ]
@@ -356,12 +368,16 @@ wrapUpdate config msg model =
                         , cmd
                         )
 
-                    SetupSocket key url selection ->
+                    SetupSocket key socketConfig selection ->
+                        let
+                            ( absinthe, absintheCmd ) =
+                                Absinthe.init socketConfig always selection
+                        in
                         ( Running
-                            { state | sockets = Dict.insert key (Absinthe.init url Debug.log selection) state.sockets }
+                            { state | sockets = Dict.insert key absinthe state.sockets }
                             flags
                             m
-                        , Cmd.none
+                        , absintheCmd
                         )
 
                     SubscriptionMsg key socketMsg ->
@@ -394,21 +410,28 @@ includeTitle produceTitle ( model, cmd ) =
             )
 
 
-wrapView : Config flags route model msg -> Model flags model msg -> Html.Html (Msg msg)
+wrapView : Config flags route model msg -> Model flags model msg -> Browser.Document (Msg msg)
 wrapView config model =
     case model of
         StartupFailure ->
-            Html.text "Couldn't decode the flags"
+            { title = ""
+            , body = [ Html.text "Couldn't decode the flags" ]
+            }
 
         Running _ _ m ->
-            Styled.toUnstyled <|
-                Styled.styled Styled.div
-                    [ height (pct 100) ]
-                    []
-                    [ Css.Foreign.global config.styles
-                    , Styled.map UserMsg <| config.view m
-                    , Styled.node "ellie-ui-portal" [] []
-                    ]
+            { title = config.title m
+            , body =
+                [ Styled.toUnstyled <|
+                    Styled.styled Styled.div
+                        [ height (pct 100) ]
+                        []
+                        [ Icon.sprite
+                        , Css.Global.global config.styles
+                        , Styled.map UserMsg <| config.view m
+                        , Styled.node "ellie-ui-portal" [] []
+                        ]
+                ]
+            }
 
 
 wrapSubscriptions : Config flags route model msg -> Model flags model msg -> Sub (Msg msg)
@@ -427,9 +450,11 @@ type alias Program flags model msg =
 
 program : Config flags route model msg -> Program flags model msg
 program config =
-    Navigation.programWithFlags (config.url >> config.route >> UserMsg)
+    Browser.application
         { init = wrapInit config
         , update = wrapUpdate config
         , view = wrapView config
         , subscriptions = wrapSubscriptions config
+        , onUrlChange = UserMsg << config.route << config.url
+        , onUrlRequest = \_ -> NoOp
         }

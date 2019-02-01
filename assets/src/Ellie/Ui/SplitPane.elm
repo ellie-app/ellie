@@ -1,7 +1,7 @@
-module Ellie.Ui.SplitPane exposing (..)
+module Ellie.Ui.SplitPane exposing (Config, Direction(..), horizontalStyles, verticalStyles, view)
 
 import Css exposing (..)
-import Css.Foreign
+import Css.Global
 import Ellie.Ui.Theme as Theme
 import Html.Styled as Html exposing (Attribute, Html, node)
 import Html.Styled.Attributes as Attributes exposing (css)
@@ -66,8 +66,8 @@ horizontalStyles =
         , width (pct 100)
         , height (pct 100)
         , overflow hidden
-        , Css.Foreign.children
-            [ Css.Foreign.typeSelector "ellie-ui-split-pane-panel"
+        , Css.Global.children
+            [ Css.Global.typeSelector "ellie-ui-split-pane-panel"
                 [ width (pct 50)
                 , height (pct 100)
                 , firstChild
@@ -77,7 +77,7 @@ horizontalStyles =
                     [ borderLeft3 (px 1) solid Theme.draggableBorder
                     ]
                 ]
-            , Css.Foreign.typeSelector "ellie-ui-split-pane-divider"
+            , Css.Global.typeSelector "ellie-ui-split-pane-divider"
                 [ width (px 10)
                 , marginLeft (px -5)
                 , position absolute
@@ -100,8 +100,8 @@ verticalStyles =
         , width (pct 100)
         , height (pct 100)
         , overflow hidden
-        , Css.Foreign.children
-            [ Css.Foreign.typeSelector "ellie-ui-split-pane-panel"
+        , Css.Global.children
+            [ Css.Global.typeSelector "ellie-ui-split-pane-panel"
                 [ height (pct 50)
                 , width (pct 100)
                 , firstChild
@@ -111,7 +111,7 @@ verticalStyles =
                     [ borderTop3 (px 1) solid Theme.draggableBorder
                     ]
                 ]
-            , Css.Foreign.typeSelector "ellie-ui-split-pane-divider"
+            , Css.Global.typeSelector "ellie-ui-split-pane-divider"
                 [ height (px 10)
                 , marginTop (px -5)
                 , position absolute

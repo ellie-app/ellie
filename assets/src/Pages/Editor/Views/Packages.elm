@@ -1,4 +1,4 @@
-module Pages.Editor.Views.Packages exposing (..)
+module Pages.Editor.Views.Packages exposing (Config, infoContainerStyles, packageInfoStyles, packageNameStyles, view, viewAction, viewHeader, viewInstalledPackage, viewInstalledPackages, viewPackage, viewSearchInput, viewSearchedPackage, viewSearchedPackages)
 
 import Colors
 import Css exposing (..)
@@ -79,6 +79,7 @@ viewSearchInput isLoading value onSearch =
             , icon =
                 if isLoading then
                     Just Icon.Loading
+
                 else
                     Just Icon.Search
             }
@@ -146,6 +147,7 @@ viewSearchedPackage : (Package -> msg) -> (Package -> msg) -> List Package -> Pa
 viewSearchedPackage onInstall onUninstall installed package =
     if List.member package installed then
         viewInstalledPackage onUninstall package
+
     else
         viewPackage package
             [ Button.view

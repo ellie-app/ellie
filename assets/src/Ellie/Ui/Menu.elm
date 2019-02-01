@@ -1,4 +1,4 @@
-module Ellie.Ui.Menu exposing (..)
+module Ellie.Ui.Menu exposing (Config, Item, view, viewItem)
 
 import Css exposing (..)
 import Ellie.Ui.Icon as Icon exposing (Icon)

@@ -1,15 +1,8 @@
-module Elm.Docs
-    exposing
-        ( Alias
-        , Associativity(..)
-        , Binop
-        , Block(..)
-        , Module
-        , Union
-        , Value
-        , selection
-        , toBlocks
-        )
+module Elm.Docs exposing
+    ( Module, Alias, Union, Value, Binop, Associativity(..)
+    , toBlocks, Block(..)
+    , selection
+    )
 
 {-| When packages are published to [package.elm-lang.org][pkg], documentation
 is generated for all of the exposed modules (and all of the exposed values).
@@ -48,8 +41,9 @@ import Ellie.Api.Object.ElmDocsUnion as ElmDocsUnion
 import Ellie.Api.Object.ElmDocsValue as ElmDocsValue
 import Ellie.Api.Scalar as Scalar
 import Elm.Package as Package exposing (Package)
-import Graphqelm.Field as Field
-import Graphqelm.SelectionSet exposing (SelectionSet, hardcoded, with)
+import Graphql.Field as Field
+import Graphql.SelectionSet exposing (SelectionSet, hardcoded, with)
+
 
 
 -- DOCUMENTATION
@@ -83,7 +77,7 @@ When it became an `Alias` it would be like this:
 
     { name = "Pair"
     , comment = " pair of values "
-    , args = ["a"]
+    , args = [ "a" ]
     , tipe = Tuple [ Var "a", Var "a" ]
     }
 
@@ -106,10 +100,10 @@ When it became a `Union` it would be like this:
 
     { name = "Maybe"
     , comment = " maybe "
-    , args = ["a"]
+    , args = [ "a" ]
     , tipe =
-        [ ("Nothing", [])
-        , ("Just", [Var "a"])
+        [ ( "Nothing", [] )
+        , ( "Just", [ Var "a" ] )
         ]
     }
 
@@ -152,7 +146,8 @@ something like this:
     , tipe = Lambda (Var "number") (Lambda (Var "number") (Var "number"))
     , associativity = Left
     , precedence = 6
-    }8
+    }
+        8
 
 -}
 type alias Binop =
@@ -172,8 +167,9 @@ parentheses around everything. Here are some examples:
 We have to do the operations in _some_ order, so which of these interpretations
 should we choose?
 
-    ((1 + 2) + 3) + 4   -- left-associative
-    1 + (2 + (3 + 4))   -- right-associative
+    ((1 + 2) + 3) + 4 -- left-associative
+
+    1 + (2 + (3 + 4)) -- right-associative
 
 This is really important for operators like `(|>)`!
 
@@ -235,7 +231,7 @@ selection =
                 |> with ElmDocsBinop.precedence
 
         tagSelection =
-            ElmDocsTag.selection (,)
+            ElmDocsTag.selection (\a b -> ( a, b ))
                 |> with ElmDocsTag.name
                 |> with (Field.map (List.map (\(Scalar.ElmDocsType t) -> t)) ElmDocsTag.args)
 
@@ -329,6 +325,7 @@ nameToBlock docs docsName =
         name =
             if String.startsWith "(" docsName then
                 String.dropLeft 1 (String.dropRight 1 docsName)
+
             else
                 docsName
     in
@@ -352,5 +349,6 @@ find toBlock name entries fallback =
         entry :: rest ->
             if entry.name == name then
                 toBlock entry
+
             else
                 find toBlock name rest fallback

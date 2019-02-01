@@ -1,4 +1,4 @@
-module Pages.Editor.Types.WorkspaceUpdate exposing (..)
+module Pages.Editor.Types.WorkspaceUpdate exposing (WorkspaceUpdate(..))
 
 import Data.Jwt as Jwt exposing (Jwt)
 import Elm.Error as Error exposing (Error)

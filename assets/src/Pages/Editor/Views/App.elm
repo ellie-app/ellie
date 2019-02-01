@@ -1,7 +1,7 @@
 module Pages.Editor.Views.App exposing (styles, title, view)
 
 import Css exposing (..)
-import Css.Foreign
+import Css.Global
 import Ellie.Ui.Theme as Theme
 import Html.Styled as Html exposing (Attribute, Html)
 import Html.Styled.Attributes exposing (css)
@@ -23,9 +23,7 @@ view model =
                     SetupView.view SetupView.Authenticating
 
                 SetupState.AcceptingTerms state ->
-                    { termsVersion = state.latestTerms
-                    , onAccept = SetupState.UserAcceptedTerms
-                    }
+                    { termsVersion = state.latestTerms, onAccept = SetupState.UserAcceptedTerms }
                         |> SetupView.AcceptingTerms
                         |> SetupView.view
                         |> Html.map AppState.SetupMsg
@@ -65,31 +63,31 @@ title model =
 -- STYLES
 
 
-styles : List Css.Foreign.Snippet
+styles : List Css.Global.Snippet
 styles =
-    [ Css.Foreign.html
+    [ Css.Global.html
         [ height (pct 100)
         , backgroundColor Theme.secondaryBackground
         ]
-    , Css.Foreign.body
+    , Css.Global.body
         [ height (pct 100)
         , margin zero
         , fontFamilies [ "-apple-system", "BlinkMacSystemFont", "Segoe UI", "Roboto", "Helvetica", "Arial", "sans-serif" ]
         , property "-webkit-font-smoothing" "antialiased"
         ]
-    , Css.Foreign.everything
+    , Css.Global.everything
         [ boxSizing borderBox ]
-    , Css.Foreign.button
+    , Css.Global.button
         [ focus [ outline zero ] ]
-    , Css.Foreign.input
+    , Css.Global.input
         [ focus [ outline zero ] ]
-    , Css.Foreign.id "elmEditor"
+    , Css.Global.id "elmEditor"
         [ width (pct 100)
         , height (pct 100)
         , position relative
         , zIndex (int 0)
         ]
-    , Css.Foreign.id "htmlEditor"
+    , Css.Global.id "htmlEditor"
         [ width (pct 100)
         , height (pct 100)
         , position relative
@@ -97,10 +95,3 @@ styles =
         ]
     , Theme.darkStyles
     ]
-
-
-notificationsStyles : Attribute msg
-notificationsStyles =
-    css
-        [ padding (px 16)
-        ]

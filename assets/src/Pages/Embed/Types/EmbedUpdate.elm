@@ -1,4 +1,4 @@
-module Pages.Embed.Types.EmbedUpdate exposing (..)
+module Pages.Embed.Types.EmbedUpdate exposing (EmbedUpdate(..))
 
 import Elm.Error as Error exposing (Error)
 

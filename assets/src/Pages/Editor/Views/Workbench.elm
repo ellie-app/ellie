@@ -1,4 +1,4 @@
-module Pages.Editor.Views.Workbench exposing (..)
+module Pages.Editor.Views.Workbench exposing (Config, view, viewContent, viewErrorsHeader, viewFinishedHeader, viewHeader, viewHeaderAction, viewHeaderActions, viewHeaderTab, viewHeaderTabs, viewInitial, viewLog, viewLogs, viewOutput)
 
 import BoundedDeque exposing (BoundedDeque)
 import Css exposing (..)
@@ -157,11 +157,13 @@ viewErrorsHeader pane config =
                     { icon =
                         if config.compiling then
                             Just Icon.Loading
+
                         else
                             Just Icon.Play
                     , label =
                         if config.compiling then
                             "Compiling..."
+
                         else
                             "Compile"
                     , action =
@@ -177,11 +179,13 @@ viewErrorsHeader pane config =
                         { label =
                             if config.saving then
                                 "Saving..."
+
                             else
                                 "Save"
                         , icon =
                             if config.saving then
                                 Just Icon.Loading
+
                             else
                                 Just Icon.Upload
                         , action =
@@ -192,6 +196,7 @@ viewErrorsHeader pane config =
                                 Nothing ->
                                     Button.none
                         }
+
                   else
                     Nothing
                 ]
@@ -214,11 +219,13 @@ viewFinishedHeader pane canDebug config =
                     { icon =
                         if config.compiling then
                             Just Icon.Loading
+
                         else
                             Just Icon.Play
                     , label =
                         if config.compiling then
                             "Compiling..."
+
                         else
                             "Compile"
                     , action =
@@ -241,6 +248,7 @@ viewFinishedHeader pane canDebug config =
                                 _ ->
                                     Button.none
                         }
+
                   else
                     Nothing
                 , case pane of
@@ -270,6 +278,7 @@ viewFinishedHeader pane canDebug config =
                 [ Just ( config.onSelectSuccessPane SuccessOutput, "Output", pane == SuccessOutput )
                 , if canDebug then
                     Just ( config.onSelectSuccessPane SuccessDebug, "Debug", pane == SuccessDebug )
+
                   else
                     Nothing
                 , Just ( config.onSelectSuccessPane SuccessLogs, "Logs", pane == SuccessLogs )
@@ -299,6 +308,7 @@ viewHeader config actions tabs =
             [ Attributes.title <|
                 if config.maximized then
                     "Minimize workbench"
+
                 else
                     "Maximize workbench"
             , Events.onClick config.onExpand
@@ -320,6 +330,7 @@ viewHeader config actions tabs =
                     [ height (pct 100)
                     , if config.maximized then
                         transform <| rotate (deg -90)
+
                       else
                         transform <| rotate (deg 90)
                     ]
@@ -401,6 +412,7 @@ viewHeaderTab msg name active =
                 , textTransform uppercase
                 , if active then
                     borderBottom3 (px 1) solid Theme.tabActiveBorder
+
                   else
                     batch []
                 ]
@@ -435,16 +447,19 @@ viewInitial config =
                 { icon =
                     if config.compiling then
                         Just Icon.Loading
+
                     else
                         Just Icon.Play
                 , label =
                     if config.compiling then
                         "Compiling..."
+
                     else
                         "Compile"
                 , action =
                     if config.compiling then
                         Button.none
+
                     else
                         case config.onCompile of
                             Just onCompile ->
@@ -478,6 +493,7 @@ viewLogs logSearch logs config =
         filteredLogs =
             if String.isEmpty lowerSearch then
                 BoundedDeque.toList logs
+
             else
                 logs
                     |> BoundedDeque.toList

@@ -2,7 +2,7 @@ module Pages.Editor.Views.Working exposing (view)
 
 import Colors
 import Css exposing (..)
-import Css.Foreign
+import Css.Global
 import Data.Replaceable as Replaceable
 import Ellie.Ui.SplitPane as SplitPane
 import Ellie.Ui.Theme as Theme
@@ -189,11 +189,13 @@ viewWorkbench model =
         , onCompile =
             if model.connected then
                 Just WorkingState.CompileRequested
+
             else
                 Nothing
         , onSave =
             if model.connected && WorkingState.hasChanged model then
                 Just WorkingState.SaveRequested
+
             else
                 Nothing
         , compilerVersion = WorkingState.compilerVersion model
@@ -209,8 +211,8 @@ viewWorkbench model =
 
 viewStyles : WorkingState.Model -> Html msg
 viewStyles model =
-    Css.Foreign.global
-        [ Css.Foreign.selector ":root"
+    Css.Global.global
+        [ Css.Global.selector ":root"
             [ property "--editor-font-size" model.user.settings.fontSize
             , property "--theme-font-family-editor" model.user.settings.fontFamily
             ]

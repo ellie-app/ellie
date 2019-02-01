@@ -1,4 +1,4 @@
-module Pages.Embed.State.App exposing (..)
+module Pages.Embed.State.App exposing (DebugState(..), Flags, Model(..), Msg(..), OutputState(..), WorkingState, flags, init, subscriptions, update)
 
 import Effect.Command as Command exposing (Command)
 import Effect.Subscription as Subscription exposing (Subscription)
@@ -49,7 +49,7 @@ flags =
 
 
 init : Flags -> Route -> ( Model, Command Msg )
-init flags route =
+init _ route =
     case route of
         Route.NotFound ->
             ( Failure, Command.none )
@@ -76,7 +76,7 @@ type Msg
 
 
 update : Flags -> Msg -> Model -> ( Model, Command Msg )
-update flags msg model =
+update _ msg model =
     case ( model, msg ) of
         ( _, RouteChanged route ) ->
             init {} route
@@ -94,12 +94,14 @@ update flags msg model =
                     }
                 , Command.none
                 )
+
             else
                 ( model, Command.none )
 
         ( Loading rid panel, RevisionLoaded revisionId (Err error) ) ->
             if rid == revisionId then
                 ( Failure, Command.none )
+
             else
                 ( model, Command.none )
 
@@ -114,6 +116,7 @@ update flags msg model =
                     | debug =
                         if canDebug then
                             NotDebugging
+
                         else
                             DebuggerUnavailable
                 }

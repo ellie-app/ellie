@@ -12,6 +12,7 @@ viewIf : Bool -> Html msg -> Html msg
 viewIf predicate content =
     if predicate then
         content
+
     else
         none
 
@@ -20,6 +21,7 @@ viewIfLazy : Bool -> (() -> Html msg) -> Html msg
 viewIfLazy predicate thunk =
     if predicate then
         thunk ()
+
     else
         none
 

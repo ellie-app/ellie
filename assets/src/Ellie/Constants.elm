@@ -1,4 +1,4 @@
-module Ellie.Constants exposing (..)
+module Ellie.Constants exposing (apiBase, editorBase, embedBase, headerHeight, hostname, iframeId, isProduction, packageSite, sansFont, scriptFont, secure, serverOrigin, sidebarWidth, socketOrigin)
 
 
 packageSite : String
@@ -35,6 +35,7 @@ serverOrigin : String
 serverOrigin =
     if secure then
         "https://" ++ hostname
+
     else
         "http://" ++ hostname
 
@@ -53,6 +54,7 @@ socketOrigin : String
 socketOrigin =
     if secure then
         "wss://" ++ hostname
+
     else
         "ws://" ++ hostname
 

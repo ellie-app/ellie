@@ -1,4 +1,4 @@
-module Data.Replaceable exposing (..)
+module Data.Replaceable exposing (Replaceable(..), fromMaybe, inject, loading, reset, toMaybe)
 
 
 type Replaceable k v

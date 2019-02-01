@@ -1,11 +1,10 @@
-module Pages.Editor.State.App
-    exposing
-        ( Model(..)
-        , Msg(..)
-        , init
-        , subscriptions
-        , update
-        )
+module Pages.Editor.State.App exposing
+    ( Model(..)
+    , Msg(..)
+    , init
+    , subscriptions
+    , update
+    )
 
 import Data.Jwt as Jwt exposing (Jwt)
 import Data.Transition as Transition exposing (Transition(..))
@@ -65,8 +64,8 @@ update flags msg_ model =
     case ( model, msg_ ) of
         ( _, RouteChanged route ) ->
             case model of
-                Initial flags _ ->
-                    init flags route
+                Initial initFlags _ ->
+                    init initFlags route
 
                 Setup setupState ->
                     update flags (SetupMsg (Setup.RouteChanged route)) model

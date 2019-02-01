@@ -1,4 +1,4 @@
-module Extra.Maybe exposing (..)
+module Extra.Maybe exposing (combine, eq, isJust, withDefaultLazy)
 
 
 combine : List (Maybe a) -> Maybe (List a)

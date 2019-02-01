@@ -71,6 +71,7 @@ view config =
                 , color <|
                     if config.connected then
                         Theme.connectionStatusConnected
+
                     else
                         Theme.connectionStatusDisconnected
                 ]
@@ -83,10 +84,11 @@ view config =
                 , color Theme.primaryForeground
                 ]
                 [ Attributes.title <|
-                    toString config.notificationCount
+                    String.fromInt config.notificationCount
                         ++ " notification"
                         ++ (if config.notificationCount == 1 then
                                 ""
+
                             else
                                 "s"
                            )
@@ -102,7 +104,8 @@ view config =
                     Html.styled Html.div
                         [ paddingLeft (px 4) ]
                         []
-                        [ Html.text <| toString config.notificationCount ]
+                        [ Html.text <| String.fromInt config.notificationCount ]
+
                   else
                     Html.text ""
                 ]

@@ -1,6 +1,5 @@
-module Pages.Embed.Types.Revision exposing (..)
+module Pages.Embed.Types.Revision exposing (Id, Revision, editorLink, embedLink, outputLink)
 
-import Data.Url as Url exposing (Url)
 import Ellie.Constants as Constants
 import Elm.Package as Package exposing (Package)
 import Elm.Version as Version exposing (Version)
@@ -19,16 +18,16 @@ type alias Revision =
     }
 
 
-editorLink : Id -> Url
+editorLink : Id -> String
 editorLink id =
-    Url.fromString <| Constants.editorBase ++ "/" ++ id
+    Constants.editorBase ++ "/" ++ id
 
 
-embedLink : Id -> Url
+embedLink : Id -> String
 embedLink id =
-    Url.fromString <| Constants.embedBase ++ "/" ++ id
+    Constants.embedBase ++ "/" ++ id
 
 
-outputLink : Id -> Url
+outputLink : Id -> String
 outputLink id =
-    Url.fromString <| Constants.serverOrigin ++ "/r/embed/" ++ id
+    Constants.serverOrigin ++ "/r/embed/" ++ id

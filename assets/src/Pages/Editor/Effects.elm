@@ -1,4 +1,4 @@
-module Pages.Editor.Effects exposing (..)
+module Pages.Editor.Effects exposing (attachToWorkspace, authenticate, compile, createRevision, delay, downloadZip, escapePressed, formatCode, getDocs, getRevision, keyCombos, moveElmCursor, navigate, networkStatus, openInNewTab, redirect, reloadOutput, saveToken, searchPackages, updateRecoveryRevision, updateUser, workspaceUpdates)
 
 import Data.Jwt as Jwt exposing (Jwt)
 import Effect.Command as Command exposing (Command)
@@ -22,9 +22,9 @@ import Elm.Package as Package exposing (Package)
 import Elm.Project as Project exposing (Project)
 import Elm.Version as Version exposing (Version)
 import Extra.Json.Encode as Encode
-import Graphqelm.Http
-import Graphqelm.OptionalArgument as OptionalArgument
-import Graphqelm.SelectionSet as SelectionSet exposing (SelectionSet(..), hardcoded, with)
+import Graphql.Http
+import Graphql.OptionalArgument as OptionalArgument
+import Graphql.SelectionSet as SelectionSet exposing (SelectionSet(..), hardcoded, with)
 import Json.Decode as Decode exposing (Decoder)
 import Json.Encode as Encode exposing (Value)
 import Pages.Editor.Types.EditorAction as EditorAction exposing (EditorAction)
@@ -33,7 +33,7 @@ import Pages.Editor.Types.User as User exposing (User)
 import Pages.Editor.Types.WorkspaceUpdate as WorkspaceUpdate exposing (WorkspaceUpdate(..))
 
 
-getRevision : Revision.Id -> Command (Result (Graphqelm.Http.Error ()) Revision)
+getRevision : Revision.Id -> Command (Result (Graphql.Http.Error ()) Revision)
 getRevision revisionId =
     let
         query =
@@ -61,7 +61,7 @@ getRevision revisionId =
         }
 
 
-searchPackages : String -> Command (Result (Graphqelm.Http.Error ()) (List Package))
+searchPackages : String -> Command (Result (Graphql.Http.Error ()) (List Package))
 searchPackages queryString =
     let
         query =
@@ -86,7 +86,7 @@ searchPackages queryString =
         }
 
 
-formatCode : Jwt -> Version -> String -> Command (Result (Graphqelm.Http.Error ()) String)
+formatCode : Jwt -> Version -> String -> Command (Result (Graphql.Http.Error ()) String)
 formatCode token version code =
     let
         mutation =
@@ -107,7 +107,7 @@ formatCode token version code =
         }
 
 
-compile : Jwt -> Version -> String -> List Package -> Command (Result (Graphqelm.Http.Error ()) ())
+compile : Jwt -> Version -> String -> List Package -> Command (Result (Graphql.Http.Error ()) ())
 compile token elmVersion elmCode packages =
     let
         mutation =
@@ -134,7 +134,7 @@ compile token elmVersion elmCode packages =
         }
 
 
-authenticate : Command (Result (Graphqelm.Http.Error ()) Jwt)
+authenticate : Command (Result (Graphql.Http.Error ()) Jwt)
 authenticate =
     Command.GraphqlMutation
         { url = "/api"
@@ -168,17 +168,18 @@ workspaceUpdates token =
                 ]
     in
     Subscription.AbsintheSubscription
-        (Constants.socketOrigin ++ "/api/sockets/websocket?vsn=2.0.0&token=" ++ Jwt.toString token)
+        { url = Constants.socketOrigin ++ "/api/sockets", token = Just (Jwt.toString token) }
         selection
         (\connected ->
             if connected then
                 Connected
+
             else
                 Disconnected
         )
 
 
-attachToWorkspace : Jwt -> Version -> Command (Result (Graphqelm.Http.Error ()) ())
+attachToWorkspace : Jwt -> Version -> Command (Result (Graphql.Http.Error ()) ())
 attachToWorkspace token version =
     let
         selection =
@@ -202,11 +203,11 @@ updateUser user =
     Command.PortSend
         { channel = "UpdateUser"
         , debounce = Nothing
-        , data = Encode.list [ User.localStorageEncoder user ]
+        , data = Encode.list User.localStorageEncoder [ user ]
         }
 
 
-createRevision : Jwt -> Int -> Revision -> Command (Result (Graphqelm.Http.Error ()) Revision.Id)
+createRevision : Jwt -> Int -> Revision -> Command (Result (Graphql.Http.Error ()) Revision.Id)
 createRevision token termsVersion revision =
     let
         selection =
@@ -268,7 +269,7 @@ getDocs packages =
         { url = "/api"
         , token = Nothing
         , selection = SelectionSet.map identity selection
-        , onError = Debug.log "e" >> always []
+        , onError = always []
         , debounce = Nothing
         , cache = Command.Permanent
         }
@@ -280,9 +281,9 @@ moveElmCursor position =
         { channel = "MoveElmCursor"
         , debounce = Nothing
         , data =
-            Encode.list
-                [ Encode.int position.line
-                , Encode.int position.column
+            Encode.list Encode.int
+                [ position.line
+                , position.column
                 ]
         }
 
@@ -293,7 +294,7 @@ downloadZip elm html project =
         { channel = "DownloadZip"
         , debounce = Nothing
         , data =
-            Encode.list
+            Encode.list identity
                 [ Encode.string <| Encode.encode 2 (Project.encoder project)
                 , Encode.string elm
                 , Encode.string html
@@ -306,7 +307,7 @@ openInNewTab url =
     Command.PortSend
         { channel = "OpenInNewTab"
         , debounce = Nothing
-        , data = Encode.list [ Encode.string url ]
+        , data = Encode.list Encode.string [ url ]
         }
 
 
@@ -320,7 +321,7 @@ saveToken token =
     Command.PortSend
         { channel = "SaveToken"
         , debounce = Nothing
-        , data = Encode.list [ Jwt.encoder token ]
+        , data = Encode.list Jwt.encoder [ token ]
         }
 
 
@@ -374,6 +375,6 @@ updateRecoveryRevision : Maybe Revision -> Command msg
 updateRecoveryRevision revision =
     Command.PortSend
         { channel = "UpdateRecoveryRevision"
-        , data = Encode.list [ Encode.maybeNull Revision.localStorageEncoder revision ]
+        , data = Encode.list (Encode.maybeNull Revision.localStorageEncoder) [ revision ]
         , debounce = Just "UpdateRecoveryRevision"
         }

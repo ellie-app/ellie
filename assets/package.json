@@ -1,46 +1,41 @@
 {
   "name": "ellie",
   "description": "ellie-app.com",
-  "repository": "https://github.com/lukewestby/ellie.git",
+  "repository": "https://github.com/ellie-app/ellie.git",
   "version": "1.0.0",
   "license": "BSD-3-Clause",
+  "scripts": {
+    "build": "webpack --mode production --config webpack.prod.config.js",
+    "start": "webpack-dev-server --mode development --config webpack.dev.config.js",
+    "graphql": "elm-graphql --introspection-file ../priv/graphql/schema.json --base Ellie.Api --output ./elm-stuff/generated/dillonkearns/graphql"
+  },
   "dependencies": {
+    "@absinthe/socket": "^0.2.0",
     "@babel/core": "7.0.0-beta.46",
     "@babel/preset-env": "7.0.0-beta.46",
     "@babel/preset-stage-2": "7.0.0-beta.46",
+    "@dillonkearns/elm-graphql": "^1.0.7",
     "@webcomponents/custom-elements": "1.1.0",
     "babel-loader": "8.0.0-beta.4",
-    "babel-plugin-elm-pre-minify": "0.1.2",
     "codemirror": "5.27.4",
-    "compression-webpack-plugin": "1.1.11",
+    "compression-webpack-plugin": "^1.1.11",
     "copy-webpack-plugin": "4.5.1",
     "css-loader": "0.28.4",
-    "elm": "0.18.0",
-    "elm-webpack-loader": "https://github.com/lukewestby/elm-webpack-loader.git",
-    "graphqelm": "3.1.11",
+    "elm": "^0.19.0-bugfix6",
+    "elm-format": "^0.8.1",
+    "elm-webpack-loader": "^5.0.0",
     "jszip": "3.1.5",
-    "marked": "0.3.17",
     "newless": "0.3.0",
     "opbeat-js": "3.1.4",
     "phoenix": "1.3.0",
-    "ric": "1.3.0",
-    "serviceworker-loader": "0.1.0",
     "string-replace-webpack-plugin": "0.1.3",
     "style-loader": "0.18.2",
     "svg-inline-loader": "0.8.0",
     "sw-toolbox": "3.6.0",
-    "uglify-js": "git+https://github.com/mishoo/UglifyJS2.git#harmony-v2.8.22",
-    "webpack": "3.3.0",
-    "webpack-dev-server": "2.5.1",
-    "webpack-manifest-plugin": "2.0.2"
-  },
-  "scripts": {
-    "start": "yarn run watch",
-    "watch": "MIX_ENV=dev webpack-dev-server --watch --config ./webpack.dev.config.js",
-    "build": "webpack --config ./webpack.prod.config.js",
-    "graphql": "graphqelm --introspection-file ../priv/graphql/schema.json --base Ellie.Api --output elm-stuff/generated/dillonkearns/graphqelm"
-  },
-  "devDependencies": {
-    "chokidar-cli": "1.2.0"
+    "terser-webpack-plugin": "^1.1.0",
+    "webpack": "^4.20.2",
+    "webpack-cli": "^3.2.1",
+    "webpack-dev-server": "^3.1.9",
+    "webpack-manifest-plugin": "^2.0.4"
   }
 }

@@ -1,4 +1,4 @@
-module Pages.Embed.Types.Panel exposing (..)
+module Pages.Embed.Types.Panel exposing (Panel(..), eq, fromString, toString)
 
 
 type Panel

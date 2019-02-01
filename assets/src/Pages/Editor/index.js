@@ -15,34 +15,33 @@
  *    topological order of module imports.
  */
 
-import NetworkSocket from '../../Network/Socket'
-import EffectProgram from '../../Effect/Program'
-import EllieUiIcon from '../../Ellie/Ui/Icon'
-import EllieUiMenu from '../../Ellie/Ui/Menu'
-import EllieUiCopyText from '../../Ellie/Ui/CopyText'
-import EllieUiSplitPane from '../../Ellie/Ui/SplitPane'
-import EllieUiCodeEditor from '../../Ellie/Ui/CodeEditor'
-import EllieUiOutput from '../../Ellie/Ui/Output'
-import '../../Ellie/Ui/CodeEditor.css'
-import './Views/Setup.css'
-import './Main.css'
-import Main from './Main'
+import NetworkAbsintheSocket from "../../Network/Absinthe/Socket";
+import EffectProgram from "../../Effect/Program";
+import EllieUiIcon from "../../Ellie/Ui/Icon";
+import EllieUiMenu from "../../Ellie/Ui/Menu";
+import EllieUiCopyText from "../../Ellie/Ui/CopyText";
+import EllieUiSplitPane from "../../Ellie/Ui/SplitPane";
+import EllieUiCodeEditor from "../../Ellie/Ui/CodeEditor";
+import EllieUiOutput from "../../Ellie/Ui/Output";
+import "../../Ellie/Ui/CodeEditor.css";
+import "./Views/Setup.css";
+import "./Main.css";
+import Main from "./Main";
+import { Elm } from "./Main.elm";
 
-const Elm = require('./Main.elm')
+document.addEventListener("DOMContentLoaded", () => {
+  let flags = {};
+  flags = Main.flags(flags);
 
-document.addEventListener('DOMContentLoaded', () => {
-  let flags = {}
-  flags = Main.flags(flags)
+  const app = Elm.Pages.Editor.Main.init({ flags });
 
-  const app = Elm.Pages.Editor.Main.fullscreen(flags)
-
-  NetworkSocket.start(app)
-  EffectProgram.start(app)
-  EllieUiIcon.start(app)
-  EllieUiMenu.start(app)
-  EllieUiCopyText.start(app)
-  EllieUiSplitPane.start(app)
-  EllieUiCodeEditor.start(app)
-  EllieUiOutput.start(app)
-  Main.start(app)
-})
+  NetworkAbsintheSocket.start(app);
+  EffectProgram.start(app);
+  EllieUiIcon.start(app);
+  EllieUiMenu.start(app);
+  EllieUiCopyText.start(app);
+  EllieUiSplitPane.start(app);
+  EllieUiCodeEditor.start(app);
+  EllieUiOutput.start(app);
+  Main.start(app);
+});

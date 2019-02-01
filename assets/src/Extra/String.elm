@@ -1,4 +1,4 @@
-module Extra.String exposing (..)
+module Extra.String exposing (fromFloat, fromInt, replace)
 
 import Regex exposing (Regex)
 

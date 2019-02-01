@@ -1,17 +1,15 @@
-module Pages.Editor.Types.Notification
-    exposing
-        ( Action(..)
-        , Notification
-        , Severity(..)
-        , eq
-        )
+module Pages.Editor.Types.Notification exposing
+    ( Action(..)
+    , Notification
+    , Severity(..)
+    , eq
+    )
 
-import Data.Url as Url exposing (Url)
 import Pages.Editor.Types.EditorAction as EditorAction exposing (EditorAction)
 
 
 type Action
-    = CopyLink Url
+    = CopyLink String
     | GoToLink String
     | PerformAction String EditorAction
 

@@ -1,4 +1,4 @@
-module Colors exposing (..)
+module Colors exposing (BoxShadow, blue, boxShadow, darkGray, darkMediumGray, green, lightGray, lightMediumGray, mediumGray, pink, red, yellow)
 
 import Css exposing (..)
 

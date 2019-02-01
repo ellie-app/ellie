@@ -1,4 +1,4 @@
-module Pages.Editor.State.Actions exposing (..)
+module Pages.Editor.State.Actions exposing (Model(..), Msg(..), PackagesModel, packages, subscriptions, update)
 
 import Effect.Command as Command exposing (Command)
 import Effect.Subscription as Subscription exposing (Subscription)
@@ -42,10 +42,12 @@ update msg model =
                 ( Packages { packagesModel | query = query, searchedPackages = Nothing, awaitingSearch = False }
                 , Command.none
                 )
+
             else if String.length query < 4 then
                 ( Packages { packagesModel | query = query }
                 , Command.none
                 )
+
             else
                 ( Packages { packagesModel | query = query, awaitingSearch = True }
                 , Effects.searchPackages query
@@ -53,11 +55,12 @@ update msg model =
                     |> Command.map SearchedPackagesReceived
                 )
 
-        ( Packages packagesModel, SearchedPackagesReceived packages ) ->
+        ( Packages packagesModel, SearchedPackagesReceived searchedPackages ) ->
             if packagesModel.awaitingSearch then
-                ( Packages { packagesModel | searchedPackages = packages, awaitingSearch = False }
+                ( Packages { packagesModel | searchedPackages = searchedPackages, awaitingSearch = False }
                 , Command.none
                 )
+
             else
                 ( model, Command.none )
 

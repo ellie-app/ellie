@@ -1,10 +1,9 @@
-module Pages.Embed.Effects
-    exposing
-        ( embedUpdates
-        , getRevision
-        , goToPosition
-        , runEmbed
-        )
+module Pages.Embed.Effects exposing
+    ( embedUpdates
+    , getRevision
+    , goToPosition
+    , runEmbed
+    )
 
 import Effect.Command as Command exposing (Command)
 import Effect.Subscription as Subscription exposing (Subscription)
@@ -20,14 +19,14 @@ import Ellie.Api.Union.EmbedUpdate as ApiEmbedUpdate
 import Ellie.Constants as Constants
 import Elm.Error as Error exposing (Error)
 import Elm.Package as Package exposing (Package)
-import Graphqelm.Http
-import Graphqelm.SelectionSet as SelectionSet exposing (SelectionSet(..), hardcoded, with)
+import Graphql.Http
+import Graphql.SelectionSet as SelectionSet exposing (SelectionSet(..), hardcoded, with)
 import Json.Encode as Encode exposing (Value)
 import Pages.Embed.Types.EmbedUpdate as EmbedUpdate exposing (EmbedUpdate)
 import Pages.Embed.Types.Revision as Revision exposing (Revision)
 
 
-getRevision : Revision.Id -> Command (Result (Graphqelm.Http.Error ()) Revision)
+getRevision : Revision.Id -> Command (Result (Graphql.Http.Error ()) Revision)
 getRevision revisionId =
     let
         query =
@@ -56,7 +55,7 @@ getRevision revisionId =
         }
 
 
-runEmbed : Revision.Id -> Command (Result (Graphqelm.Http.Error ()) (Maybe (Maybe Error)))
+runEmbed : Revision.Id -> Command (Result (Graphql.Http.Error ()) (Maybe (Maybe Error)))
 runEmbed revisionId =
     let
         selection =
@@ -102,11 +101,12 @@ embedUpdates revisionId =
                 ]
     in
     Subscription.AbsintheSubscription
-        (Constants.socketOrigin ++ "/api/sockets/websocket?vsn=2.0.0")
+        { url = Constants.socketOrigin ++ "/api/sockets", token = Nothing }
         selection
         (\connected ->
             if connected then
                 EmbedUpdate.Connected
+
             else
                 EmbedUpdate.Disconnected
         )
@@ -118,8 +118,8 @@ goToPosition position =
         { channel = "GoToPosition"
         , debounce = Nothing
         , data =
-            Encode.list
-                [ Encode.int position.line
-                , Encode.int position.column
+            Encode.list Encode.int
+                [ position.line
+                , position.column
                 ]
         }
