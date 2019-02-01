@@ -11,7 +11,7 @@ help:
 
 compile: ## Build the application
 	mix do deps.get, compile
-	mix do loadpaths, absinthe.schema.json priv/graphql/schema.json
+	mix generate_schema
 	cd assets && \
 		npm install && \
 		npm run graphql && \
@@ -32,7 +32,7 @@ image: ## Mimic CodeBuild build
 
 release: ## Build a release of the application with MIX_ENV=prod
 	MIX_ENV=prod mix do deps.get, compile
-	MIX_ENV=prod mix do loadpaths, absinthe.schema.json priv/graphql/schema.json
+	mix generate_schema
 	cd assets && \
 		NODE_ENV=production npm install && \
 		NODE_ENV=production npm run graphql && \
