@@ -20,6 +20,7 @@ compile: ## Build the application
 
 clean: ## Clean up generated artifacts
 	@rm -rf \
+		_build \
 		assets/node_modules \
 		assets/elm-stuff \
 		priv/graphql \
