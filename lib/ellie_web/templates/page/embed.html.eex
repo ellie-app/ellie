@@ -2,6 +2,7 @@
 <html>
   <head>
     <meta charset="utf-8" />
+    <meta name="public_path" content="<%= static_url(@conn, "/assets/") %>" />
     <link rel="icon" href="<%= static_url(@conn, "/assets/images/favicon.ico") %>" />
     <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1" />
     <%= render("polyfills.html") %>

@@ -23,11 +23,14 @@ import EllieUiCopyText from "../../Ellie/Ui/CopyText";
 import EllieUiSplitPane from "../../Ellie/Ui/SplitPane";
 import EllieUiCodeEditor from "../../Ellie/Ui/CodeEditor";
 import EllieUiOutput from "../../Ellie/Ui/Output";
+import EllieConstants from "../../Ellie/Constants";
 import "../../Ellie/Ui/CodeEditor.css";
 import "./Views/Setup.css";
 import "./Main.css";
 import Main from "./Main";
 import { Elm } from "./Main.elm";
+
+__webpack_public_path__ = EllieConstants.publicPath();
 
 document.addEventListener("DOMContentLoaded", () => {
   let flags = {};
