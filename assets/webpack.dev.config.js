@@ -21,9 +21,9 @@ module.exports = {
   },
 
   output: {
-    path: path.resolve(__dirname, "../priv/static"),
-    publicPath: "http://localhost:8080/assets/",
-    filename: "[name].js"
+    path: path.resolve(__dirname + "/../priv/static"),
+    filename: "[name].js",
+    publicPath: "http://localhost:8080/assets/"
   },
 
   module: {
