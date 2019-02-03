@@ -4,9 +4,6 @@ import { Socket as PhoenixSocket } from "phoenix";
 const createPhoenixSocket = (address, params) =>
   new PhoenixSocket(address, { params });
 
-const createAbsintheSocket = phoenixSocket =>
-  AbsintheSocket.create(phoenixSocket);
-
 export default {
   start(app) {
     const onOpen = () => {
@@ -25,8 +22,8 @@ export default {
       app.ports.absintheSocketInbound.send({ tag: "Error" });
     };
 
-    const onResult = res => {
-      app.ports.absintheSocketInbound.send({ tag: "Data", data: res });
+    const onResult = data => {
+      app.ports.absintheSocketInbound.send({ tag: "Data", data });
     };
 
     app.ports.absintheSocketOutbound.subscribe(data => {
@@ -35,7 +32,7 @@ export default {
           const phoenixSocket = createPhoenixSocket(data.url, {
             token: data.token
           });
-          const absintheSocket = createAbsintheSocket(phoenixSocket);
+          const absintheSocket = AbsintheSocket.create(phoenixSocket);
 
           phoenixSocket.onOpen(onOpen);
 
