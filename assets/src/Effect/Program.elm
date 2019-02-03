@@ -1,4 +1,4 @@
-port module Effect.Program exposing (Config, Model(..), Msg(..), Program, State, debounceConfig, effectProgramKeyDowns, effectProgramTitle, includeTitle, initialState, keyDownDecoder, maybeWithDebounce, maybeWithToken, program, runCmd, runSub, withCaching, wrapInit, wrapSubscriptions, wrapUpdate, wrapView)
+port module Effect.Program exposing (Config, Model(..), Msg(..), Program, State, debounceConfig, effectProgramKeyDowns, initialState, keyDownDecoder, maybeWithDebounce, maybeWithToken, program, runCmd, runSub, withCaching, wrapInit, wrapSubscriptions, wrapUpdate, wrapView)
 
 import Browser
 import Browser.Events
@@ -29,9 +29,6 @@ import Url exposing (Url)
 
 
 port effectProgramKeyDowns : (Decode.Value -> a) -> Sub a
-
-
-port effectProgramTitle : String -> Cmd a
 
 
 type alias Config flags route model msg =
@@ -163,11 +160,6 @@ runCmd config state cmd =
                                 UserMsg (onError str)
                     )
                 |> maybeWithDebounce state debounce
-
-        Command.SetTitle title ->
-            ( state
-            , effectProgramTitle title
-            )
 
         Command.PortSend stuff ->
             config.outbound ( stuff.channel, stuff.data )
@@ -318,7 +310,7 @@ wrapInit config flagsValue url navKey =
                     runCmd config (initialState navKey) userCmd
             in
             ( Running state flags userModel
-            , Cmd.batch [ cmd, effectProgramTitle (config.title userModel) ]
+            , cmd
             )
 
         Err _ ->
@@ -329,85 +321,72 @@ wrapInit config flagsValue url navKey =
 
 wrapUpdate : Config flags route model msg -> Msg msg -> Model flags model msg -> ( Model flags model msg, Cmd (Msg msg) )
 wrapUpdate config msg model =
-    includeTitle config.title <|
-        case model of
-            StartupFailure ->
-                ( model, Cmd.none )
-
-            Running state flags m ->
-                case msg of
-                    Debounce name debounceMsg ->
-                        state.debouncers
-                            |> Dict.get name
-                            |> Maybe.map (Debounce.update (debounceConfig (Debounce name)) (Debounce.takeLast identity) debounceMsg)
-                            |> Maybe.map (Tuple.mapFirst (\debouncer -> Running { state | debouncers = Dict.insert name debouncer state.debouncers } flags m))
-                            |> Maybe.withDefault ( model, Cmd.none )
-
-                    NoOp ->
-                        ( model, Cmd.none )
-
-                    KeyDown key ->
-                        ( Running { state | keysDown = Set.insert key state.keysDown } flags m
-                        , Cmd.none
-                        )
-
-                    KeyUp key ->
-                        ( Running { state | keysDown = Set.remove key state.keysDown } flags m
-                        , Cmd.none
-                        )
-
-                    UserMsg userMsg ->
-                        let
-                            ( userModel, userCmd ) =
-                                config.update flags userMsg m
-
-                            ( newState, cmd ) =
-                                runCmd config state userCmd
-                        in
-                        ( Running newState flags userModel
-                        , cmd
-                        )
-
-                    SetupSocket key socketConfig selection ->
-                        let
-                            ( absinthe, absintheCmd ) =
-                                Absinthe.init socketConfig always selection
-                        in
-                        ( Running
-                            { state | sockets = Dict.insert key absinthe state.sockets }
-                            flags
-                            m
-                        , absintheCmd
-                        )
-
-                    SubscriptionMsg key socketMsg ->
-                        case Dict.get key state.sockets of
-                            Just socket ->
-                                let
-                                    ( newSocket, socketCmd ) =
-                                        Absinthe.update socketMsg socket
-                                in
-                                ( Running
-                                    { state | sockets = Dict.insert key newSocket state.sockets }
-                                    flags
-                                    m
-                                , Cmd.map (SubscriptionMsg key) socketCmd
-                                )
-
-                            Nothing ->
-                                ( model, Cmd.none )
-
-
-includeTitle : (model -> String) -> ( Model flags model msg, Cmd (Msg msg) ) -> ( Model flags model msg, Cmd (Msg msg) )
-includeTitle produceTitle ( model, cmd ) =
     case model of
         StartupFailure ->
-            ( model, cmd )
+            ( model, Cmd.none )
 
-        Running _ _ m ->
-            ( model
-            , Cmd.batch [ cmd, effectProgramTitle (produceTitle m) ]
-            )
+        Running state flags m ->
+            case msg of
+                Debounce name debounceMsg ->
+                    state.debouncers
+                        |> Dict.get name
+                        |> Maybe.map (Debounce.update (debounceConfig (Debounce name)) (Debounce.takeLast identity) debounceMsg)
+                        |> Maybe.map (Tuple.mapFirst (\debouncer -> Running { state | debouncers = Dict.insert name debouncer state.debouncers } flags m))
+                        |> Maybe.withDefault ( model, Cmd.none )
+
+                NoOp ->
+                    ( model, Cmd.none )
+
+                KeyDown key ->
+                    ( Running { state | keysDown = Set.insert key state.keysDown } flags m
+                    , Cmd.none
+                    )
+
+                KeyUp key ->
+                    ( Running { state | keysDown = Set.remove key state.keysDown } flags m
+                    , Cmd.none
+                    )
+
+                UserMsg userMsg ->
+                    let
+                        ( userModel, userCmd ) =
+                            config.update flags userMsg m
+
+                        ( newState, cmd ) =
+                            runCmd config state userCmd
+                    in
+                    ( Running newState flags userModel
+                    , cmd
+                    )
+
+                SetupSocket key socketConfig selection ->
+                    let
+                        ( absinthe, absintheCmd ) =
+                            Absinthe.init socketConfig always selection
+                    in
+                    ( Running
+                        { state | sockets = Dict.insert key absinthe state.sockets }
+                        flags
+                        m
+                    , absintheCmd
+                    )
+
+                SubscriptionMsg key socketMsg ->
+                    case Dict.get key state.sockets of
+                        Just socket ->
+                            let
+                                ( newSocket, socketCmd ) =
+                                    Absinthe.update socketMsg socket
+                            in
+                            ( Running
+                                { state | sockets = Dict.insert key newSocket state.sockets }
+                                flags
+                                m
+                            , Cmd.map (SubscriptionMsg key) socketCmd
+                            )
+
+                        Nothing ->
+                            ( model, Cmd.none )
 
 
 wrapView : Config flags route model msg -> Model flags model msg -> Browser.Document (Msg msg)

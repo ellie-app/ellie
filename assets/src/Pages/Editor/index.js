@@ -16,7 +16,6 @@
  */
 
 import NetworkAbsintheSocket from "../../Network/Absinthe/Socket";
-import EffectProgram from "../../Effect/Program";
 import EllieUiIcon from "../../Ellie/Ui/Icon";
 import EllieUiMenu from "../../Ellie/Ui/Menu";
 import EllieUiCopyText from "../../Ellie/Ui/CopyText";
@@ -39,7 +38,6 @@ document.addEventListener("DOMContentLoaded", () => {
   const app = Elm.Pages.Editor.Main.init({ flags });
 
   NetworkAbsintheSocket.start(app);
-  EffectProgram.start(app);
   EllieUiIcon.start(app);
   EllieUiMenu.start(app);
   EllieUiCopyText.start(app);

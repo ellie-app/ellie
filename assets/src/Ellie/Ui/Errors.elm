@@ -19,6 +19,8 @@ view config =
     Html.styled Html.div
         [ padding2 zero (px 2)
         , width (pct 100)
+        , overflow scroll
+        , backgroundColor Theme.primaryBackground
         ]
         []
         [ case config.error of
@@ -26,7 +28,6 @@ view config =
                 Html.styled Html.div
                     [ padding (px 12)
                     , marginBottom (px 2)
-                    , backgroundColor Theme.primaryBackground
                     , color Theme.primaryForeground
                     ]
                     []
@@ -62,7 +63,6 @@ viewProblem config problem =
     Html.styled Html.div
         [ padding (px 12)
         , marginBottom (px 2)
-        , backgroundColor Theme.primaryBackground
         , color Theme.primaryForeground
         ]
         []
