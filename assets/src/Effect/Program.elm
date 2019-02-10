@@ -133,7 +133,7 @@ runCmd config state cmd =
                 |> maybeWithToken token
                 |> withCaching cache
                 |> Graphql.Http.send identity
-                |> Cmd.map (Result.mapError Graphql.Http.ignoreParsedErrorData)
+                -- |> Cmd.map (Result.mapError Graphql.Http.ignoreParsedErrorData)
                 |> Cmd.map
                     (\result ->
                         case result of
@@ -141,7 +141,8 @@ runCmd config state cmd =
                                 UserMsg msg
 
                             Err str ->
-                                UserMsg (onError str)
+                                -- UserMsg (onError str)
+                                NoOp
                     )
                 |> maybeWithDebounce state debounce
 
@@ -149,7 +150,7 @@ runCmd config state cmd =
             Graphql.Http.mutationRequest url selection
                 |> maybeWithToken token
                 |> Graphql.Http.send identity
-                |> Cmd.map (Result.mapError Graphql.Http.ignoreParsedErrorData)
+                -- |> Cmd.map (Result.mapError Graphql.Http.ignoreParsedErrorData)
                 |> Cmd.map
                     (\result ->
                         case result of
@@ -157,7 +158,8 @@ runCmd config state cmd =
                                 UserMsg msg
 
                             Err str ->
-                                UserMsg (onError str)
+                                -- UserMsg (onError str)
+                                NoOp
                     )
                 |> maybeWithDebounce state debounce
 

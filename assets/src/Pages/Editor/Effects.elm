@@ -24,7 +24,7 @@ import Elm.Version as Version exposing (Version)
 import Extra.Json.Encode as Encode
 import Graphql.Http
 import Graphql.OptionalArgument as OptionalArgument
-import Graphql.SelectionSet as SelectionSet exposing (SelectionSet(..), hardcoded, with)
+import Graphql.SelectionSet as SelectionSet exposing (SelectionSet(..))
 import Json.Decode as Decode exposing (Decoder)
 import Json.Encode as Encode exposing (Value)
 import Pages.Editor.Types.EditorAction as EditorAction exposing (EditorAction)
@@ -37,19 +37,19 @@ getRevision : Revision.Id -> Command (Result (Graphql.Http.Error ()) Revision)
 getRevision revisionId =
     let
         query =
-            ApiQuery.selection identity
-                |> with (ApiQuery.revision arguments revisionQuery)
+            SelectionSet.succeed identity
+                |> SelectionSet.with (ApiQuery.revision arguments revisionQuery)
 
         arguments =
             { id = ApiScalar.PrettyId revisionId }
 
         revisionQuery =
-            ApiRevision.selection Revision
-                |> with ApiRevision.htmlCode
-                |> with ApiRevision.elmCode
-                |> with (ApiRevision.packages Package.selection)
-                |> with (ApiHelpers.defaultField "" ApiRevision.title)
-                |> with (ApiHelpers.versionField ApiRevision.elmVersion)
+            SelectionSet.succeed Revision
+                |> SelectionSet.with ApiRevision.htmlCode
+                |> SelectionSet.with ApiRevision.elmCode
+                |> SelectionSet.with (ApiRevision.packages Package.selection)
+                |> SelectionSet.with (ApiHelpers.defaultField "" ApiRevision.title)
+                |> SelectionSet.with (ApiHelpers.versionField ApiRevision.elmVersion)
     in
     Command.GraphqlQuery
         { url = "/api"
@@ -65,16 +65,16 @@ searchPackages : String -> Command (Result (Graphql.Http.Error ()) (List Package
 searchPackages queryString =
     let
         query =
-            ApiQuery.selection identity
-                |> with (ApiQuery.packageSearch arguments packageQuery)
+            SelectionSet.succeed identity
+                |> SelectionSet.with (ApiQuery.packageSearch arguments packageQuery)
 
         arguments =
             { query = queryString }
 
         packageQuery =
-            ApiPackage.selection Package
-                |> with (ApiHelpers.nameField ApiPackage.name)
-                |> with (ApiHelpers.versionField ApiPackage.version)
+            SelectionSet.succeed Package
+                |> SelectionSet.with (ApiHelpers.nameField ApiPackage.name)
+                |> SelectionSet.with (ApiHelpers.versionField ApiPackage.version)
     in
     Command.GraphqlQuery
         { url = "/api"
@@ -90,8 +90,8 @@ formatCode : Jwt -> Version -> String -> Command (Result (Graphql.Http.Error ())
 formatCode token version code =
     let
         mutation =
-            ApiMutation.selection identity
-                |> with (ApiMutation.formatCode arguments)
+            SelectionSet.succeed identity
+                |> SelectionSet.with (ApiMutation.formatCode arguments)
 
         arguments =
             { code = code
@@ -111,8 +111,8 @@ compile : Jwt -> Version -> String -> List Package -> Command (Result (Graphql.H
 compile token elmVersion elmCode packages =
     let
         mutation =
-            ApiMutation.selection (\_ -> ())
-                |> with (ApiMutation.compile arguments)
+            SelectionSet.succeed (\_ -> ())
+                |> SelectionSet.with (ApiMutation.compile arguments)
 
         arguments =
             { elmCode = elmCode
@@ -142,8 +142,8 @@ authenticate =
         , onError = Err
         , debounce = Nothing
         , selection =
-            ApiMutation.selection (Jwt.fromString >> Ok)
-                |> with ApiMutation.authenticate
+            SelectionSet.succeed (Jwt.fromString >> Ok)
+                |> SelectionSet.with ApiMutation.authenticate
         }
 
 
@@ -151,21 +151,21 @@ workspaceUpdates : Jwt -> Subscription WorkspaceUpdate
 workspaceUpdates token =
     let
         selection =
-            ApiSubscription.selection identity
-                |> with (ApiSubscription.workspace workspaceUpdateSelection)
+            SelectionSet.succeed identity
+                |> SelectionSet.with (ApiSubscription.workspace workspaceUpdateSelection)
 
         workspaceUpdateSelection =
-            ApiWorkspaceUpdate.selection (Maybe.withDefault Disconnected)
-                [ ApiWorkspaceAttached.selection Attached
-                    |> with (ApiWorkspaceAttached.packages Package.selection)
-                    |> ApiWorkspaceUpdate.onWorkspaceAttached
-                , ApiCompileCompleted.selection CompileCompleted
-                    |> with (ApiCompileCompleted.error Error.selection)
-                    |> ApiWorkspaceUpdate.onCompileCompleted
-                , ApiWorkspaceError.selection (\_ -> Disconnected)
-                    |> with ApiWorkspaceError.message
-                    |> ApiWorkspaceUpdate.onWorkspaceError
-                ]
+            ApiWorkspaceUpdate.fragments
+                { onWorkspaceAttached =
+                    SelectionSet.succeed Attached
+                        |> SelectionSet.with (ApiWorkspaceAttached.packages Package.selection)
+                , onCompileCompleted =
+                    SelectionSet.succeed CompileCompleted
+                        |> SelectionSet.with (ApiCompileCompleted.error Error.selection)
+                , onWorkspaceError =
+                    SelectionSet.succeed (\_ -> Disconnected)
+                        |> SelectionSet.with ApiWorkspaceError.message
+                }
     in
     Subscription.AbsintheSubscription
         { url = Constants.socketOrigin ++ "/api/sockets", token = Just (Jwt.toString token) }
@@ -183,8 +183,8 @@ attachToWorkspace : Jwt -> Version -> Command (Result (Graphql.Http.Error ()) ()
 attachToWorkspace token version =
     let
         selection =
-            ApiMutation.selection (\_ -> ())
-                |> with (ApiMutation.attachToWorkspace arguments)
+            SelectionSet.succeed (\_ -> ())
+                |> SelectionSet.with (ApiMutation.attachToWorkspace arguments)
 
         arguments =
             { elmVersion = ApiScalar.ElmVersion <| Version.toString version }
@@ -211,8 +211,8 @@ createRevision : Jwt -> Int -> Revision -> Command (Result (Graphql.Http.Error (
 createRevision token termsVersion revision =
     let
         selection =
-            ApiMutation.selection identity
-                |> with (ApiMutation.createRevision arguments revisionSelection)
+            SelectionSet.succeed identity
+                |> SelectionSet.with (ApiMutation.createRevision arguments revisionSelection)
 
         arguments =
             { inputs =
@@ -231,8 +231,8 @@ createRevision token termsVersion revision =
             }
 
         revisionSelection =
-            ApiRevision.selection identity
-                |> with (ApiHelpers.projectIdField ApiRevision.id)
+            SelectionSet.succeed identity
+                |> SelectionSet.with (ApiHelpers.projectIdField ApiRevision.id)
     in
     Command.GraphqlMutation
         { url = "/api"
@@ -247,8 +247,8 @@ getDocs : List Package -> Command (List Docs.Module)
 getDocs packages =
     let
         selection =
-            ApiQuery.selection List.concat
-                |> with (ApiQuery.packages { packages = List.map makeArgs packages } docsSelection)
+            SelectionSet.succeed List.concat
+                |> SelectionSet.with (ApiQuery.packages { packages = List.map makeArgs packages } docsSelection)
 
         makeArgs package =
             { name = ApiScalar.ElmName <| Name.toString package.name
@@ -256,14 +256,14 @@ getDocs packages =
             }
 
         packageSelection =
-            ApiPackage.selection Package
-                |> with (ApiHelpers.nameField ApiPackage.name)
-                |> with (ApiHelpers.versionField ApiPackage.version)
+            SelectionSet.succeed Package
+                |> SelectionSet.with (ApiHelpers.nameField ApiPackage.name)
+                |> SelectionSet.with (ApiHelpers.versionField ApiPackage.version)
 
         docsSelection =
             packageSelection
                 |> SelectionSet.map (\p d -> List.map ((|>) p) d)
-                |> with (ApiPackage.docs Docs.selection)
+                |> SelectionSet.with (ApiPackage.docs Docs.selection)
     in
     Command.GraphqlQuery
         { url = "/api"

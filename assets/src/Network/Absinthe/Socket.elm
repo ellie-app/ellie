@@ -15,9 +15,6 @@ import Graphql.Operation exposing (RootSubscription)
 import Graphql.SelectionSet exposing (SelectionSet)
 import Json.Decode as Decode exposing (Decoder)
 import Json.Encode as Encode exposing (Value)
-import Process
-import Task
-import Time
 
 
 port absintheSocketOutbound : Value -> Cmd msg

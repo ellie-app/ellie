@@ -41,8 +41,7 @@ import Ellie.Api.Object.ElmDocsUnion as ElmDocsUnion
 import Ellie.Api.Object.ElmDocsValue as ElmDocsValue
 import Ellie.Api.Scalar as Scalar
 import Elm.Package as Package exposing (Package)
-import Graphql.Field as Field
-import Graphql.SelectionSet exposing (SelectionSet, hardcoded, with)
+import Graphql.SelectionSet as SelectionSet exposing (SelectionSet)
 
 
 
@@ -194,46 +193,46 @@ selection : SelectionSet (Package -> Module) ElmDocsModule
 selection =
     let
         selection_ =
-            ElmDocsModule.selection Module
-                |> with ElmDocsModule.name
-                |> with ElmDocsModule.comment
-                |> with (ElmDocsModule.unions unionSelection)
-                |> with (ElmDocsModule.aliases aliasSelection)
-                |> with (ElmDocsModule.values valueSelection)
-                |> with (ElmDocsModule.binops binopSelection)
+            SelectionSet.succeed Module
+                |> SelectionSet.with ElmDocsModule.name
+                |> SelectionSet.with ElmDocsModule.comment
+                |> SelectionSet.with (ElmDocsModule.unions unionSelection)
+                |> SelectionSet.with (ElmDocsModule.aliases aliasSelection)
+                |> SelectionSet.with (ElmDocsModule.values valueSelection)
+                |> SelectionSet.with (ElmDocsModule.binops binopSelection)
 
         unionSelection =
-            ElmDocsUnion.selection Union
-                |> with ElmDocsUnion.name
-                |> with ElmDocsUnion.comment
-                |> with ElmDocsUnion.args
-                |> with (ElmDocsUnion.tags tagSelection)
+            SelectionSet.succeed Union
+                |> SelectionSet.with ElmDocsUnion.name
+                |> SelectionSet.with ElmDocsUnion.comment
+                |> SelectionSet.with ElmDocsUnion.args
+                |> SelectionSet.with (ElmDocsUnion.tags tagSelection)
 
         aliasSelection =
-            ElmDocsAlias.selection Alias
-                |> with ElmDocsAlias.name
-                |> with ElmDocsAlias.comment
-                |> with ElmDocsAlias.args
-                |> with (Field.map (\(Scalar.ElmDocsType t) -> t) ElmDocsAlias.type_)
+            SelectionSet.succeed Alias
+                |> SelectionSet.with ElmDocsAlias.name
+                |> SelectionSet.with ElmDocsAlias.comment
+                |> SelectionSet.with ElmDocsAlias.args
+                |> SelectionSet.with (SelectionSet.map (\(Scalar.ElmDocsType t) -> t) ElmDocsAlias.type_)
 
         valueSelection =
-            ElmDocsValue.selection Value
-                |> with ElmDocsValue.name
-                |> with ElmDocsValue.comment
-                |> with (Field.map (\(Scalar.ElmDocsType t) -> t) ElmDocsValue.type_)
+            SelectionSet.succeed Value
+                |> SelectionSet.with ElmDocsValue.name
+                |> SelectionSet.with ElmDocsValue.comment
+                |> SelectionSet.with (SelectionSet.map (\(Scalar.ElmDocsType t) -> t) ElmDocsValue.type_)
 
         binopSelection =
-            ElmDocsBinop.selection Binop
-                |> with ElmDocsBinop.name
-                |> with ElmDocsBinop.comment
-                |> with (Field.map (\(Scalar.ElmDocsType t) -> t) ElmDocsBinop.type_)
-                |> with (Field.map makeAssociativity ElmDocsBinop.associativity)
-                |> with ElmDocsBinop.precedence
+            SelectionSet.succeed Binop
+                |> SelectionSet.with ElmDocsBinop.name
+                |> SelectionSet.with ElmDocsBinop.comment
+                |> SelectionSet.with (SelectionSet.map (\(Scalar.ElmDocsType t) -> t) ElmDocsBinop.type_)
+                |> SelectionSet.with (SelectionSet.map makeAssociativity ElmDocsBinop.associativity)
+                |> SelectionSet.with ElmDocsBinop.precedence
 
         tagSelection =
-            ElmDocsTag.selection (\a b -> ( a, b ))
-                |> with ElmDocsTag.name
-                |> with (Field.map (List.map (\(Scalar.ElmDocsType t) -> t)) ElmDocsTag.args)
+            SelectionSet.succeed Tuple.pair
+                |> SelectionSet.with ElmDocsTag.name
+                |> SelectionSet.with (SelectionSet.map (List.map (\(Scalar.ElmDocsType t) -> t)) ElmDocsTag.args)
 
         makeAssociativity a =
             case a of

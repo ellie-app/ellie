@@ -20,7 +20,7 @@ import Ellie.Constants as Constants
 import Elm.Error as Error exposing (Error)
 import Elm.Package as Package exposing (Package)
 import Graphql.Http
-import Graphql.SelectionSet as SelectionSet exposing (SelectionSet(..), hardcoded, with)
+import Graphql.SelectionSet as SelectionSet exposing (SelectionSet(..), with)
 import Json.Encode as Encode exposing (Value)
 import Pages.Embed.Types.EmbedUpdate as EmbedUpdate exposing (EmbedUpdate)
 import Pages.Embed.Types.Revision as Revision exposing (Revision)
@@ -30,20 +30,20 @@ getRevision : Revision.Id -> Command (Result (Graphql.Http.Error ()) Revision)
 getRevision revisionId =
     let
         query =
-            ApiQuery.selection identity
-                |> with (ApiQuery.revision arguments revisionQuery)
+            SelectionSet.succeed identity
+                |> SelectionSet.with (ApiQuery.revision arguments revisionQuery)
 
         arguments =
             { id = ApiScalar.PrettyId revisionId
             }
 
         revisionQuery =
-            ApiRevision.selection Revision
-                |> with ApiRevision.htmlCode
-                |> with ApiRevision.elmCode
-                |> with (ApiRevision.packages Package.selection)
-                |> with (ApiHelpers.defaultField "" ApiRevision.title)
-                |> with (ApiHelpers.versionField ApiRevision.elmVersion)
+            SelectionSet.succeed Revision
+                |> SelectionSet.with ApiRevision.htmlCode
+                |> SelectionSet.with ApiRevision.elmCode
+                |> SelectionSet.with (ApiRevision.packages Package.selection)
+                |> SelectionSet.with (ApiHelpers.defaultField "" ApiRevision.title)
+                |> SelectionSet.with (ApiHelpers.versionField ApiRevision.elmVersion)
     in
     Command.GraphqlQuery
         { url = "/api"
@@ -59,12 +59,12 @@ runEmbed : Revision.Id -> Command (Result (Graphql.Http.Error ()) (Maybe (Maybe 
 runEmbed revisionId =
     let
         selection =
-            ApiMutation.selection identity
-                |> with (ApiMutation.runEmbed arguments embedReadySelection)
+            SelectionSet.succeed identity
+                |> SelectionSet.with (ApiMutation.runEmbed arguments embedReadySelection)
 
         embedReadySelection =
-            ApiEmbedReady.selection identity
-                |> with (ApiEmbedReady.error Error.selection)
+            SelectionSet.succeed identity
+                |> SelectionSet.with (ApiEmbedReady.error Error.selection)
 
         arguments =
             { id = ApiScalar.PrettyId revisionId
@@ -83,22 +83,22 @@ embedUpdates : Revision.Id -> Subscription EmbedUpdate
 embedUpdates revisionId =
     let
         selection =
-            ApiSubscription.selection identity
-                |> with (ApiSubscription.embed arguments embedUpdateSelection)
+            SelectionSet.succeed identity
+                |> SelectionSet.with (ApiSubscription.embed arguments embedUpdateSelection)
 
         arguments =
             { id = ApiScalar.PrettyId revisionId
             }
 
         embedUpdateSelection =
-            ApiEmbedUpdate.selection (Maybe.withDefault (EmbedUpdate.Failed "Missing data"))
-                [ ApiEmbedReady.selection EmbedUpdate.Compiled
-                    |> with (ApiEmbedReady.error Error.selection)
-                    |> ApiEmbedUpdate.onEmbedReady
-                , ApiEmbedFailed.selection EmbedUpdate.Failed
-                    |> with ApiEmbedFailed.message
-                    |> ApiEmbedUpdate.onEmbedFailed
-                ]
+            ApiEmbedUpdate.fragments
+                { onEmbedReady =
+                    SelectionSet.succeed EmbedUpdate.Compiled
+                        |> SelectionSet.with (ApiEmbedReady.error Error.selection)
+                , onEmbedFailed =
+                    SelectionSet.succeed EmbedUpdate.Failed
+                        |> SelectionSet.with ApiEmbedFailed.message
+                }
     in
     Subscription.AbsintheSubscription
         { url = Constants.socketOrigin ++ "/api/sockets", token = Nothing }

@@ -1,10 +1,10 @@
 module Graphql.Http exposing
-    ( Request, Error(..)
+    ( Request, HttpError(..), Error, RawError(..)
     , queryRequest, mutationRequest, queryRequestWithHttpGet
     , QueryRequestMethod(..)
     , withHeader, withTimeout, withCredentials, withQueryParams
-    , send, toTask
-    , mapError, ignoreParsedErrorData, fromHttpError, discardParsedErrorData
+    , send, sendWithTracker, toTask
+    , mapError, discardParsedErrorData, withSimpleHttpError
     , parseableErrorAsSuccess
     )
 
@@ -17,7 +17,7 @@ The builder syntax is inspired by Luke Westby's
 
 ## Data Types
 
-@docs Request, Error
+@docs Request, HttpError, Error, RawError
 
 
 ## Begin `Request` Pipeline
@@ -33,12 +33,12 @@ The builder syntax is inspired by Luke Westby's
 
 ## Perform `Request`
 
-@docs send, toTask
+@docs send, sendWithTracker, toTask
 
 
 ## Map `Error`s
 
-@docs mapError, ignoreParsedErrorData, fromHttpError, discardParsedErrorData
+@docs mapError, discardParsedErrorData, withSimpleHttpError
 
 
 ## Error Handling Strategies
@@ -85,6 +85,16 @@ type Request decodesTo
         , withCredentials : Bool
         , queryParams : List ( String, String )
         }
+
+
+type alias ReadyRequest decodesTo =
+    { method : String
+    , headers : List Http.Header
+    , url : String
+    , body : Http.Body
+    , timeout : Maybe Float
+    , decoder : Json.Decode.Decoder (DataResult decodesTo)
+    }
 
 
 {-| Union type to pass in to `queryRequestWithHttpGet`. Only applies to queries.
@@ -162,12 +172,55 @@ mutationRequest baseUrl mutationSelectionSet =
         |> Request
 
 
+{-| An alias for the default kind of Error. See the `RawError` for the full
+type.
+-}
+type alias Error parsedData =
+    RawError parsedData HttpError
+
+
 {-| Represents the two types of errors you can get, an Http error or a GraphQL error.
 See the `Graphql.Http.GraphqlError` module docs for more details.
 -}
-type Error parsedData
+type RawError parsedData httpError
     = GraphqlError (GraphqlError.PossiblyParsedData parsedData) (List GraphqlError.GraphqlError)
-    | HttpError Http.Error
+    | HttpError httpError
+
+
+toSimpleHttpError : HttpError -> Http.Error
+toSimpleHttpError httpError =
+    case httpError of
+        BadUrl url ->
+            Http.BadUrl url
+
+        Timeout ->
+            Http.Timeout
+
+        NetworkError ->
+            Http.NetworkError
+
+        BadStatus metadata body ->
+            Http.BadStatus metadata.statusCode
+
+        BadPayload jsonError ->
+            Http.BadBody (Json.Decode.errorToString jsonError)
+
+
+{-| An Http Error. A Request can fail in a few ways:
+
+  - `BadUrl` means you did not provide a valid URL.
+  - `Timeout` means it took too long to get a response.
+  - `NetworkError` means the user turned off their wifi, went in a cave, etc.
+  - `BadStatus` means you got a response back, but the status code indicates failure. The second argument in the payload is the response body.
+  - `BadPayload` means you got a response back with a nice status code, but the body of the response was something unexpected. The String in this case is a debugging message that explains what went wrong with your JSON decoder or whatever.
+
+-}
+type HttpError
+    = BadUrl String
+    | Timeout
+    | NetworkError
+    | BadStatus Http.Metadata String
+    | BadPayload Json.Decode.Error
 
 
 {-| Map the error data if it is `ParsedData`.
@@ -187,19 +240,44 @@ mapError mapFn error =
             HttpError httpError
 
 
-{-| Turn an `Http.Error` into a `Graphql.Http.Error`.
--}
-fromHttpError : Http.Error -> Error ()
-fromHttpError httpError =
-    HttpError httpError
+{-| Useful when you want to combine together an Http response with a Graphql
+request response.
 
+    -- this is just the type that our query decodes to
+    type alias Response =
+        { hello : String }
 
-{-| Useful when you don't want to deal with the recovered data if there is `ParsedData`.
-Just a shorthand for `mapError` that will turn any `ParsedData` into `()`.
+    type Msg
+        = GotResponse (RemoteData (Graphql.Http.RawError Response Http.Error) Response)
+
+    request =
+        query
+            |> Graphql.Http.queryRequest "https://some-graphql-api.com"
+            |> Graphql.Http.send
+                (Graphql.Http.withSimpleHttpError
+                    >> RemoteData.fromResult
+                    >> GotResponse
+                )
+
+    combinedResponses =
+        RemoteData.map2 Tuple.pair
+            model.graphqlResponse
+            (model.plainHttpResponse |> RemoteData.mapError Graphql.Http.HttpError)
+
 -}
-ignoreParsedErrorData : Error parsedData -> Error ()
-ignoreParsedErrorData error =
-    mapError (\_ -> ()) error
+withSimpleHttpError : Result (Error parsedData) decodesTo -> Result (RawError parsedData Http.Error) decodesTo
+withSimpleHttpError result =
+    case result of
+        Ok decodesTo ->
+            Ok decodesTo
+
+        Err error ->
+            case error of
+                HttpError httpError ->
+                    httpError |> toSimpleHttpError |> HttpError |> Err
+
+                GraphqlError possiblyParsed graphqlErrorList ->
+                    GraphqlError possiblyParsed graphqlErrorList |> Err
 
 
 {-| Useful when you don't want to deal with the recovered data if there is `ParsedData`.
@@ -288,7 +366,7 @@ type alias DataResult parsedData =
     Result ( GraphqlError.PossiblyParsedData parsedData, List GraphqlError.GraphqlError ) parsedData
 
 
-convertResult : Result Http.Error (DataResult decodesTo) -> Result (Error decodesTo) decodesTo
+convertResult : Result HttpError (DataResult decodesTo) -> Result (Error decodesTo) decodesTo
 convertResult httpResult =
     case httpResult of
         Ok successOrError ->
@@ -331,15 +409,118 @@ any data that made it through in the response.
 
 -}
 send : (Result (Error decodesTo) decodesTo -> msg) -> Request decodesTo -> Cmd msg
-send resultToMessage elmGraphqlRequest =
-    elmGraphqlRequest
-        |> toRequest
-        |> Http.send (convertResult >> resultToMessage)
+send resultToMessage ((Request request) as fullRequest) =
+    fullRequest
+        |> toHttpRequestRecord resultToMessage
+        |> (if request.withCredentials then
+                Http.riskyRequest
+
+            else
+                Http.request
+           )
 
 
-toRequest : Request decodesTo -> Http.Request (DataResult decodesTo)
-toRequest (Request request) =
-    (case request.details of
+{-| Exactly like `Graphql.Http.request` except it allows you to use the `String`
+passed in as the tracker to [`track`](https://package.elm-lang.org/packages/elm/http/2.0.0/Http#track)
+and [`cancel`](https://package.elm-lang.org/packages/elm/http/2.0.0/Http#cancel)
+requests using the core Elm `Http` package (see
+[the `Http.request` docs](https://package.elm-lang.org/packages/elm/http/2.0.0/Http#request))
+-}
+sendWithTracker : String -> (Result (Error decodesTo) decodesTo -> msg) -> Request decodesTo -> Cmd msg
+sendWithTracker tracker resultToMessage ((Request request) as fullRequest) =
+    fullRequest
+        |> toHttpRequestRecord resultToMessage
+        |> (\requestRecord -> { requestRecord | tracker = Just tracker })
+        |> (if request.withCredentials then
+                Http.riskyRequest
+
+            else
+                Http.request
+           )
+
+
+toHttpRequestRecord :
+    (Result (Error decodesTo) decodesTo -> msg)
+    -> Request decodesTo
+    ->
+        { method : String
+        , headers : List Http.Header
+        , url : String
+        , body : Http.Body
+        , expect : Http.Expect msg
+        , timeout : Maybe Float
+        , tracker : Maybe String
+        }
+toHttpRequestRecord resultToMessage ((Request request) as fullRequest) =
+    fullRequest
+        |> toReadyRequest
+        |> (\readyRequest ->
+                { method = readyRequest.method
+                , headers = readyRequest.headers
+                , url = readyRequest.url
+                , body = readyRequest.body
+                , expect = expectJson (convertResult >> resultToMessage) readyRequest.decoder
+                , timeout = readyRequest.timeout
+                , tracker = Nothing
+                }
+           )
+
+
+expectJson : (Result HttpError decodesTo -> msg) -> Json.Decode.Decoder decodesTo -> Http.Expect msg
+expectJson toMsg decoder =
+    Http.expectStringResponse toMsg <|
+        \response ->
+            case response of
+                Http.BadUrl_ url ->
+                    BadUrl url |> Err
+
+                Http.Timeout_ ->
+                    Timeout |> Err
+
+                Http.NetworkError_ ->
+                    NetworkError |> Err
+
+                Http.BadStatus_ metadata body ->
+                    BadStatus metadata body |> Err
+
+                Http.GoodStatus_ metadata body ->
+                    case Json.Decode.decodeString decoder body of
+                        Ok value ->
+                            Ok value
+
+                        Err err ->
+                            BadPayload err |> Err
+
+
+jsonResolver : Json.Decode.Decoder decodesTo -> Http.Resolver HttpError decodesTo
+jsonResolver decoder =
+    Http.stringResolver <|
+        \response ->
+            case response of
+                Http.BadUrl_ url ->
+                    BadUrl url |> Err
+
+                Http.Timeout_ ->
+                    Timeout |> Err
+
+                Http.NetworkError_ ->
+                    NetworkError |> Err
+
+                Http.BadStatus_ metadata body ->
+                    BadStatus metadata body |> Err
+
+                Http.GoodStatus_ metadata body ->
+                    case Json.Decode.decodeString decoder body of
+                        Ok value ->
+                            Ok value
+
+                        Err err ->
+                            BadPayload err |> Err
+
+
+toReadyRequest : Request decodesTo -> ReadyRequest decodesTo
+toReadyRequest (Request request) =
+    case request.details of
         Query forcedRequestMethod querySelectionSet ->
             let
                 queryRequestDetails =
@@ -368,9 +549,8 @@ toRequest (Request request) =
             , headers = request.headers
             , url = queryRequestDetails.url
             , body = queryRequestDetails.body
-            , expect = Http.expectJson (decoderOrError request.expect)
+            , decoder = decoderOrError request.expect
             , timeout = request.timeout
-            , withCredentials = request.withCredentials
             }
 
         Mutation mutationSelectionSet ->
@@ -385,24 +565,43 @@ toRequest (Request request) =
                           )
                         ]
                     )
-            , expect = Http.expectJson (decoderOrError request.expect)
+            , decoder = decoderOrError request.expect
             , timeout = request.timeout
-            , withCredentials = request.withCredentials
             }
-    )
-        |> Http.request
 
 
 {-| Convert a Request to a Task. See `Graphql.Http.send` for an example of
 how to build up a Request.
 -}
 toTask : Request decodesTo -> Task (Error decodesTo) decodesTo
-toTask request =
-    request
-        |> toRequest
-        |> Http.toTask
+toTask ((Request request) as fullRequest) =
+    fullRequest
+        |> toReadyRequest
+        |> (\readyRequest ->
+                (if request.withCredentials then
+                    Http.riskyTask
+
+                 else
+                    Http.task
+                )
+                    { method = readyRequest.method
+                    , headers = readyRequest.headers
+                    , url = readyRequest.url
+                    , body = readyRequest.body
+                    , resolver = resolver fullRequest
+                    , timeout = readyRequest.timeout
+                    }
+           )
         |> Task.mapError HttpError
         |> Task.andThen failTaskOnHttpSuccessWithErrors
+
+
+resolver : Request decodesTo -> Http.Resolver HttpError (DataResult decodesTo)
+resolver request =
+    request
+        |> toReadyRequest
+        |> .decoder
+        |> jsonResolver
 
 
 failTaskOnHttpSuccessWithErrors : DataResult decodesTo -> Task (Error decodesTo) decodesTo
@@ -473,7 +672,12 @@ withTimeout timeout (Request request) =
     Request { request | timeout = Just timeout }
 
 
-{-| Set with credentials to true.
+{-| Set with credentials to true. See [the `XMLHttpRequest/withCredentials` docs](https://developer.mozilla.org/en-US/docs/Web/API/XMLHttpRequest/withCredentials)
+to understand exactly what happens.
+
+Under the hood, this will use either [`Http.riskyRequest`](https://package.elm-lang.org/packages/elm/http/latest/Http#riskyRequest)
+or [`Http.riskyTask`](https://package.elm-lang.org/packages/elm/http/latest/Http#riskyTask).
+
 -}
 withCredentials : Request decodesTo -> Request decodesTo
 withCredentials (Request request) =

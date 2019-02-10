@@ -36,8 +36,7 @@ import Ellie.Api.Object.ElmErrorRegion as ElmErrorRegion
 import Ellie.Api.Object.ElmErrorStyle as ElmErrorStyle
 import Ellie.Api.Union as ApiUnion
 import Ellie.Api.Union.ElmError as ElmError
-import Graphql.Field as Field
-import Graphql.SelectionSet exposing (SelectionSet, with)
+import Graphql.SelectionSet as SelectionSet exposing (SelectionSet)
 
 
 type Error
@@ -106,31 +105,31 @@ selection : SelectionSet Error ApiUnion.ElmError
 selection =
     let
         badModuleSelection =
-            ElmErrorBadModule.selection BadModule
-                |> with ElmErrorBadModule.path
-                |> with ElmErrorBadModule.name
-                |> with (ElmErrorBadModule.problems problemSelection)
+            SelectionSet.succeed BadModule
+                |> SelectionSet.with ElmErrorBadModule.path
+                |> SelectionSet.with ElmErrorBadModule.name
+                |> SelectionSet.with (ElmErrorBadModule.problems problemSelection)
 
         problemSelection =
-            ElmErrorProblem.selection Problem
-                |> with ElmErrorProblem.title
-                |> with (ElmErrorProblem.region regionSelection)
-                |> with (ElmErrorProblem.message chunkSelection)
+            SelectionSet.succeed Problem
+                |> SelectionSet.with ElmErrorProblem.title
+                |> SelectionSet.with (ElmErrorProblem.region regionSelection)
+                |> SelectionSet.with (ElmErrorProblem.message chunkSelection)
 
         regionSelection =
-            ElmErrorRegion.selection Region
-                |> with (ElmErrorRegion.start positionSelection)
-                |> with (ElmErrorRegion.end positionSelection)
+            SelectionSet.succeed Region
+                |> SelectionSet.with (ElmErrorRegion.start positionSelection)
+                |> SelectionSet.with (ElmErrorRegion.end positionSelection)
 
         positionSelection =
-            ElmErrorPosition.selection Position
-                |> with ElmErrorPosition.line
-                |> with ElmErrorPosition.column
+            SelectionSet.succeed Position
+                |> SelectionSet.with ElmErrorPosition.line
+                |> SelectionSet.with ElmErrorPosition.column
 
         chunkSelection =
-            ElmErrorChunk.selection makeChunk
-                |> with ElmErrorChunk.string
-                |> with (ElmErrorChunk.style styleSelection)
+            SelectionSet.succeed makeChunk
+                |> SelectionSet.with ElmErrorChunk.string
+                |> SelectionSet.with (ElmErrorChunk.style styleSelection)
 
         makeChunk string maybeStyle =
             case maybeStyle of
@@ -141,10 +140,10 @@ selection =
                     Unstyled string
 
         styleSelection =
-            ElmErrorStyle.selection Style
-                |> with ElmErrorStyle.bold
-                |> with ElmErrorStyle.underline
-                |> with (Field.map (Maybe.map makeColor) ElmErrorStyle.color)
+            SelectionSet.succeed Style
+                |> SelectionSet.with ElmErrorStyle.bold
+                |> SelectionSet.with ElmErrorStyle.underline
+                |> SelectionSet.with (SelectionSet.map (Maybe.map makeColor) ElmErrorStyle.color)
 
         makeColor color =
             case color of
@@ -196,13 +195,13 @@ selection =
                 ElmErrorColor.VividBlack ->
                     BLACK
     in
-    ElmError.selection (Maybe.withDefault (ModuleProblems []))
-        [ ElmErrorGeneralProblem.selection (\path title message -> GeneralProblem { path = path, title = title, message = message })
-            |> with ElmErrorGeneralProblem.path
-            |> with ElmErrorGeneralProblem.title
-            |> with (ElmErrorGeneralProblem.message chunkSelection)
-            |> ElmError.onElmErrorGeneralProblem
-        , ElmErrorModuleProblems.selection ModuleProblems
-            |> with (ElmErrorModuleProblems.errors badModuleSelection)
-            |> ElmError.onElmErrorModuleProblems
-        ]
+    ElmError.fragments
+        { onElmErrorGeneralProblem =
+            SelectionSet.succeed (\path title message -> GeneralProblem { path = path, title = title, message = message })
+                |> SelectionSet.with ElmErrorGeneralProblem.path
+                |> SelectionSet.with ElmErrorGeneralProblem.title
+                |> SelectionSet.with (ElmErrorGeneralProblem.message chunkSelection)
+        , onElmErrorModuleProblems =
+            SelectionSet.succeed ModuleProblems
+                |> SelectionSet.with (ElmErrorModuleProblems.errors badModuleSelection)
+        }
