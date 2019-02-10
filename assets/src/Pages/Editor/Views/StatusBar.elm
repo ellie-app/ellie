@@ -42,14 +42,18 @@ view config =
                 , textDecoration none
                 , fontSize (px 16)
                 ]
-                [ Attributes.href "/a/terms/2#privacy" ]
+                [ Attributes.href "/a/terms/3#privacy"
+                , Attributes.target "_self"
+                ]
                 [ Html.text "Privacy" ]
             , Html.styled Html.a
                 [ color Theme.primaryForeground
                 , textDecoration none
                 , fontSize (px 16)
                 ]
-                [ Attributes.href "/a/terms/2#terms" ]
+                [ Attributes.href "/a/terms/3#terms"
+                , Attributes.target "_self"
+                ]
                 [ Html.text "Terms" ]
             ]
         , Html.styled Html.div
