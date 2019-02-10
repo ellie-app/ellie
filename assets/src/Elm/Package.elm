@@ -18,7 +18,7 @@ import Ellie.Api.Object.ElmPackage as ApiPackage
 import Ellie.Api.Scalar as ApiScalar
 import Elm.Name as Name exposing (Name)
 import Elm.Version as Version exposing (Version)
-import Graphql.SelectionSet exposing (SelectionSet, with)
+import Graphql.SelectionSet as SelectionSet exposing (SelectionSet)
 import Json.Decode as Decode exposing (Decoder)
 import Json.Encode as Encode exposing (Value)
 
@@ -93,9 +93,9 @@ codeLink { name, version } =
 
 selection : SelectionSet Package ApiObject.ElmPackage
 selection =
-    ApiPackage.selection Package
-        |> with (ApiHelpers.nameField ApiPackage.name)
-        |> with (ApiHelpers.versionField ApiPackage.version)
+    SelectionSet.succeed Package
+        |> SelectionSet.with (ApiHelpers.nameField ApiPackage.name)
+        |> SelectionSet.with (ApiHelpers.versionField ApiPackage.version)
 
 
 toInputObject : Package -> ApiInputObject.ElmPackageInput

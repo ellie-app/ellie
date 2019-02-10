@@ -3,36 +3,36 @@ module Ellie.Api.Helpers exposing (defaultField, nameField, projectIdField, unit
 import Ellie.Api.Scalar as ApiScalar
 import Elm.Name as Name exposing (Name)
 import Elm.Version as Version exposing (Version)
-import Graphql.Field as Field exposing (Field)
 import Graphql.Http exposing (Request)
+import Graphql.SelectionSet as SelectionSet exposing (SelectionSet)
 
 
-versionField : Field ApiScalar.ElmVersion a -> Field Version a
+versionField : SelectionSet ApiScalar.ElmVersion a -> SelectionSet Version a
 versionField =
-    Field.mapOrFail <|
+    SelectionSet.mapOrFail <|
         \(ApiScalar.ElmVersion string) -> Version.fromString string
 
 
-unitField : Field ApiScalar.Unit a -> Field () a
+unitField : SelectionSet ApiScalar.Unit a -> SelectionSet () a
 unitField =
-    Field.map <| \_ -> ()
+    SelectionSet.map <| \_ -> ()
 
 
-projectIdField : Field ApiScalar.PrettyId a -> Field String a
+projectIdField : SelectionSet ApiScalar.PrettyId a -> SelectionSet String a
 projectIdField =
-    Field.map <|
+    SelectionSet.map <|
         \(ApiScalar.PrettyId string) -> string
 
 
-nameField : Field ApiScalar.ElmName a -> Field Name a
+nameField : SelectionSet ApiScalar.ElmName a -> SelectionSet Name a
 nameField =
-    Field.mapOrFail <|
+    SelectionSet.mapOrFail <|
         \(ApiScalar.ElmName string) -> Name.fromString string
 
 
-defaultField : a -> Field (Maybe a) b -> Field a b
+defaultField : a -> SelectionSet (Maybe a) b -> SelectionSet a b
 defaultField default =
-    Field.map (Maybe.withDefault default)
+    SelectionSet.map (Maybe.withDefault default)
 
 
 withMaybe : (a -> Request b -> Request b) -> Maybe a -> Request b -> Request b

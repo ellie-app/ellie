@@ -1,7 +1,7 @@
 module Data.Jwt exposing (Jwt, decoder, encoder, field, fromString, toString, withTokenHeader)
 
-import Graphql.Field
 import Graphql.Http
+import Graphql.SelectionSet as SelectionSet exposing (SelectionSet)
 import Json.Decode as Decode exposing (Decoder)
 import Json.Encode as Encode exposing (Value)
 
@@ -35,6 +35,6 @@ withTokenHeader (Jwt token) =
     Graphql.Http.withHeader "authorization" ("Bearer " ++ token)
 
 
-field : Graphql.Field.Field String a -> Graphql.Field.Field Jwt a
+field : SelectionSet String a -> SelectionSet Jwt a
 field stringField =
-    Graphql.Field.map Jwt stringField
+    SelectionSet.map Jwt stringField
