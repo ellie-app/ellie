@@ -2,27 +2,38 @@
 
 ## Development
 
-Ellie is a web application with an Elixir backend and an Elm frontend. It runs inside Docker.
-For development we use docker-compose to install all of the software and start up the
-various programs in the correct order. To begin developing Ellie, all you need to do is:
+Ellie is a web application with an Elixir backend and an Elm frontend.
+For development we rely on the Mix and Phoenix development cylce tasks.
+The development environment requires:
 
-1. Install Docker
+- [Elixir](https://elixir-lang.org/install.html) 1.7
+- [PostgreSQL](https://www.postgresql.org/) 10
+- [Node](https://nodejs.org) LTS
 
-[Official installation instructions](https://docs.docker.com/install/)
+Provided the local postgres server is running and `createuser -s postgres` has been run, to setup and then start the dev
+server, run the following:
 
-2. Start with docker-compose
-
+```sh
+$ make bootstrap
+$ make serve
 ```
-$ docker-compose up
-```
 
-The first time you run this it will download the images for our base operating system, install
-all of the software for building and running, and compile everything. It attaches the project
-directory as a volume, so all of the build artifacts will be written to your file system. 
+## Production
 
-If you are using Docker for Mac you may need to make adjustments to your file sharing permissions
-under Preferences > File Sharing.
+To build the AWS infrastructure that Ellie can be deployed to, run the folling:
 
 > **⚠️ WARNING**
-> It's important to be careful about editor tools that modify these build artifacts! They are
-> generated on a Linux operating system and might be incompatible with your machine.
+> This does not operate in the Free Tier, running the following script will incur a cost from AWS.
+
+```sh
+$ GITHUB_TOKEN=<github token> SSH_KEY_NAME=<ssh key name> scripts/cfn create
+```
+
+After this is done, you will need to manually setup the public listener(s) on the load balancer and ensure the webhook
+has been correctly configured. The pipeline will now kick off after a new release has been tagged.
+
+The following script can be used to tear down the AWS infrastructure:
+
+```sh
+$ GITHUB_TOKEN=<github token> SSH_KEY_NAME=<ssh key name> scripts/cfn destroy
+```

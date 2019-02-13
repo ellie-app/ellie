@@ -124,8 +124,8 @@ terms state =
         , Html.text "Report abuse or request removal of personal information at "
         , Html.styled Html.a
             [ color Theme.accent ]
-            [ Attributes.href <| "mailto:ellie@lukewestby.com" ]
-            [ Html.text "ellie@lukewestby.com" ]
+            [ Attributes.href <| "mailto:ellie@tba.sh" ]
+            [ Html.text "ellie@tba.sh" ]
         , Html.text ". See our "
         , Html.styled Html.a
             [ color Theme.accent ]
