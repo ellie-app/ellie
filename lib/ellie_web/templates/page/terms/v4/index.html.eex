@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <style>
+        #whatsnew:target { display: block; }
+        #whatsnew:not(:target) { display: none; }
+
+        #terms:target { display: block; }
+        #terms:not(:target) { display: none; }
+
+        #privacy:target { display: block; }
+        #privacy:not(:target) { display: none; }
+
+        .tab {
+            font-size: 18px;
+            margin: 16px;
+        }
+
+        nav {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        a {
+            color: #FC6ECC;
+        }
+
+        html {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            color: #252525;
+            background-color: #DDDDDD;
+            padding: 16px;
+        }
+    </style>
+</head>
+<body>
+    <nav>
+        <a class="tab" href="#whatsnew">What's New?</a>
+        <a class="tab" href="#terms">Terms</a>
+        <a class="tab" href="#privacy">Privacy</a>
+    </nav>
+    <main>
+        <div id="whatsnew">
+            Ellie is now running on Amazon Web Services (AWS). A new cookie is introduced with the name
+            <strong>AWSALB</strong>, this encrypts information to direct traffic for maintaining sticky
+            sessions. Any previously stored cookies are no longer in use. The cookie is only used for the
+            purpose of expected behavior for subsequent requests and is refreshed after every response.
+            You can read more about this cookie in our <a href="#privacy">Privacy Notice</a>.
+        </div>
+        <div id="terms">
+            <%= render("terms/v4/terms_content.html") %>
+        </div>
+        <div id="privacy">
+            <%= render("terms/v4/privacy_content.html") %>
+        </div>
+    </main>
+     <script>
+        document
+            .querySelectorAll("a[href^='#']")
+            .forEach(function (link, i) {
+                link.addEventListener("click", function (event) {
+                    event.preventDefault()
+                    history.pushState({}, "", link.href)
+                    history.pushState({}, "", link.href)
+                    history.back()
+                })
+                if (i === 0 && window.location.hash === '') link.click()
+            })
+    </script>
+</body>
+</html>

@@ -1,5 +1,5 @@
 <script>
     window.ellieConfig = {
-        latestTerms: 3
+        latestTerms: 4
     }
 </script>

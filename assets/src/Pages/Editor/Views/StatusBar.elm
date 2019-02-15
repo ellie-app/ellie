@@ -42,7 +42,7 @@ view config =
                 , textDecoration none
                 , fontSize (px 16)
                 ]
-                [ Attributes.href "/a/terms/3#privacy"
+                [ Attributes.href "/a/terms/4#privacy"
                 , Attributes.target "_self"
                 ]
                 [ Html.text "Privacy" ]
@@ -51,7 +51,7 @@ view config =
                 , textDecoration none
                 , fontSize (px 16)
                 ]
-                [ Attributes.href "/a/terms/3#terms"
+                [ Attributes.href "/a/terms/4#terms"
                 , Attributes.target "_self"
                 ]
                 [ Html.text "Terms" ]
