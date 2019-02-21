@@ -6,7 +6,7 @@ Ellie is fully capable of respecting your data privacy while providing its servi
 
 ## Ellie's creators and operators
 
-Ellie is the sole property of Luke Westby. Luke operates Ellie from the state of California in the United States. Luke can be reached for inquiries regarding ellie at the email address ellie@lukewestby.com. Ellie is open source and supported by the Elm language community. The source code for Ellie is located at https://github.com/ellie-app/ellie.
+Ellie was created by Luke Westby and is now the owned and maintained by Brandon Ashley. Brandon operates Ellie from the state of Florida in the United States. Brandon can be reached for inquiries regarding ellie at the email address ellie@tba.sh. Ellie is open source and supported by the Elm language community. The source code for Ellie is located at https://github.com/ellie-app/ellie.
 
 ## Data Ellie collects
 

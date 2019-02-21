@@ -46,8 +46,8 @@
             Ellie is now running on Amazon Web Services (AWS). A new cookie is introduced with the name
             <strong>AWSALB</strong>, this encrypts information to direct traffic for maintaining sticky
             sessions. Any previously stored cookies are no longer in use. The cookie is only used for the
-            purpose of expected behavior for subsequent requests and is refreshed after every response.
-            You can read more about this cookie in our <a href="#privacy">Privacy Notice</a>.
+            purpose of maintaining expected behavior for subsequent requests and is refreshed with every
+            response.  You can read more about this cookie in our <a href="#privacy">Privacy Notice</a>.
         </div>
         <div id="terms">
             <%= render("terms/v4/terms_content.html") %>
