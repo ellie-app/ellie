@@ -870,6 +870,7 @@ subscriptions model =
                     else
                         OnlineStatusChanged False
                 )
+        , Subscription.map EditorActionPerformed Effects.keyCombos
         ]
 
 
