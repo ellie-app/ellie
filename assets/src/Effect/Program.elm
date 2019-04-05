@@ -1,4 +1,4 @@
-port module Effect.Program exposing (Config, Model(..), Msg(..), Program, State, debounceConfig, effectProgramKeyDowns, initialState, keyDownDecoder, maybeWithDebounce, maybeWithToken, program, runCmd, runSub, withCaching, wrapInit, wrapSubscriptions, wrapUpdate, wrapView)
+module Effect.Program exposing (Config, Model(..), Msg(..), Program, State, debounceConfig, initialState, keyDownDecoder, maybeWithDebounce, maybeWithToken, program, runCmd, runSub, withCaching, wrapInit, wrapSubscriptions, wrapUpdate, wrapView)
 
 import Browser
 import Browser.Events
@@ -26,9 +26,6 @@ import Set exposing (Set)
 import Task
 import Time
 import Url exposing (Url)
-
-
-port effectProgramKeyDowns : (Decode.Value -> a) -> Sub a
 
 
 type alias Config flags route model msg =
@@ -204,19 +201,21 @@ runCmd config state cmd =
 
 keyDownDecoder : Bool -> Bool -> String -> msg -> Decoder (Msg msg)
 keyDownDecoder needsShift needsMeta key msg =
-    Decode.map3
-        (\actualKey shift meta ->
+    Decode.andThen
+        (\( actualKey, shift, meta ) ->
             if shift == needsShift && meta == needsMeta && key == actualKey then
-                UserMsg msg
+                Decode.succeed (UserMsg msg)
 
             else
-                NoOp
+                Decode.fail ""
         )
-        (Decode.field "key" Decode.string)
-        (Decode.field "shiftKey" Decode.bool)
-        (Decode.map2 (||)
-            (Decode.field "metaKey" Decode.bool)
-            (Decode.field "ctrlKey" Decode.bool)
+        (Decode.map3 (\actualKey shift meta -> ( actualKey, shift, meta ))
+            (Decode.field "key" Decode.string)
+            (Decode.field "shiftKey" Decode.bool)
+            (Decode.map2 (||)
+                (Decode.field "metaKey" Decode.bool)
+                (Decode.field "ctrlKey" Decode.bool)
+            )
         )
 
 
@@ -224,14 +223,7 @@ runSub : Config flags route model msg -> State msg -> Subscription msg -> Sub (M
 runSub config state sub =
     case sub of
         Subscription.KeyCombo combo msg ->
-            effectProgramKeyDowns <|
-                \value ->
-                    case Decode.decodeValue (keyDownDecoder combo.shift combo.meta combo.key msg) value of
-                        Ok wrappedMsg ->
-                            wrappedMsg
-
-                        Err _ ->
-                            NoOp
+            Browser.Events.onKeyDown (keyDownDecoder combo.shift combo.meta combo.key msg)
 
         Subscription.PortReceive channel callback ->
             config.inbound <|
