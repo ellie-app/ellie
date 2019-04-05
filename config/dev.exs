@@ -14,23 +14,13 @@ config :ellie, EllieWeb.Endpoint,
   code_reloader: true,
   check_origin: false,
   watchers: [
-    node: [
-      "node_modules/webpack-dev-server/bin/webpack-dev-server.js",
-      "--mode",
-      "development",
-      "--watch-stdin",
-      "--config",
-      "./webpack.dev.config.js",
+    npm: [
+      "start",
       cd: Path.expand("../assets", __DIR__)
     ],
-    node: [
-      "node_modules/@dillonkearns/elm-graphql/bin/elm-graphql",
-      "--introspection-file",
-      "../priv/graphql/schema.json",
-      "--base",
-      "Ellie.Api",
-      "--output",
-      "elm-stuff/generated/dillonkearns/graphql",
+    npm: [
+      "run",
+      "graphql",
       cd: Path.expand("../assets", __DIR__)
     ]
   ]

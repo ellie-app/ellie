@@ -1,13 +1,4 @@
-port module Network.Absinthe.Socket exposing
-    ( Info(..)
-    , Logger
-    , Msg
-    , Socket
-    , emptyLogger
-    , init
-    , listen
-    , update
-    )
+port module Network.Absinthe.Socket exposing (Info(..), Socket, init, listen)
 
 import Extra.Json.Encode as Encode
 import Graphql.Document as Document
@@ -23,8 +14,8 @@ port absintheSocketOutbound : Value -> Cmd msg
 port absintheSocketInbound : (Value -> msg) -> Sub msg
 
 
-socketListen : Socket -> Sub Info
-socketListen state =
+listen : Socket -> Sub Info
+listen state =
     absintheSocketInbound <|
         \input ->
             case Decode.decodeValue (infoDecoder state) input of
@@ -32,37 +23,20 @@ socketListen state =
                     info
 
                 Err _ ->
-                    Control SocketClosed
+                    Status False
 
 
 type alias Socket =
-    { connected : Bool
-    , url : String
+    { url : String
     , token : Maybe String
-    , logger : Logger
     , document : String
     }
 
 
-type alias Logger =
-    String -> String -> String
-
-
-emptyLogger : Logger
-emptyLogger a b =
-    b
-
-
-init :
-    { url : String, token : Maybe String }
-    -> Logger
-    -> SelectionSet a RootSubscription
-    -> ( Socket, Cmd msg )
-init { url, token } logger doc =
-    ( { connected = False
-      , url = url
+init : { url : String, token : Maybe String } -> SelectionSet a RootSubscription -> ( Socket, Cmd msg )
+init { url, token } doc =
+    ( { url = url
       , token = token
-      , logger = logger
       , document = Document.serializeSubscription doc
       }
     , absintheSocketOutbound <|
@@ -78,59 +52,6 @@ init { url, token } logger doc =
 type Info
     = Data Value
     | Status Bool
-    | Control Msg
-
-
-type Msg
-    = SocketOpened
-    | SocketClosed
-    | ProblemResponse String
-    | NoOp
-
-
-update : Msg -> Socket -> ( Socket, Cmd Msg )
-update msg state =
-    case msg of
-        SocketOpened ->
-            ( { state | connected = True }
-            , Cmd.none
-            )
-
-        SocketClosed ->
-            ( { state | connected = False }
-            , Cmd.none
-            )
-
-        ProblemResponse string ->
-            let
-                _ =
-                    state.logger "Malformed response" string
-            in
-            ( state, Cmd.none )
-
-        NoOp ->
-            ( state, Cmd.none )
-
-
-listen : Socket -> Sub Info
-listen state =
-    Sub.batch
-        [ Sub.map toStatus (socketListen state)
-        , socketListen state
-        ]
-
-
-toStatus : Info -> Info
-toStatus socketInfo =
-    case socketInfo of
-        Control SocketClosed ->
-            Status False
-
-        Control SocketOpened ->
-            Status True
-
-        _ ->
-            Control NoOp
 
 
 infoDecoder : Socket -> Decoder Info
@@ -140,11 +61,11 @@ infoDecoder state =
             (\tag ->
                 case tag of
                     "Open" ->
-                        Decode.succeed <| Control SocketOpened
+                        Decode.succeed <| Status True
 
                     "Data" ->
                         Decode.map Data <| Decode.field "data" Decode.value
 
                     _ ->
-                        Decode.succeed <| Control SocketClosed
+                        Decode.succeed <| Status False
             )

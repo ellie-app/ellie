@@ -68,7 +68,7 @@ defmodule Elm.Platform.Local18 do
 
   @spec format(String.t()) :: {:ok, String.t()} | :error
   def format(code) do
-    binary = Path.join(base_path, "elm-format")
+    binary = Path.join(base_path(), "elm-format")
     args = ["--stdin"]
     options = [in: code, out: :string, err: :string]
     result = Porcelain.exec(binary, args, options)
@@ -93,7 +93,7 @@ defmodule Elm.Platform.Local18 do
   end
 
   def handle_call({:elm_package, :init, root}, _from, state) do
-    binary = Path.join(base_path, "elm-package")
+    binary = Path.join(base_path(), "elm-package")
     args = ["--num", "1", binary, "install", "--yes"]
     options = [out: :string, err: :string, dir: root]
     result = Porcelain.exec("sysconfcpus", args, options)
@@ -108,7 +108,7 @@ defmodule Elm.Platform.Local18 do
   end
 
   def handle_call({:elm_make, root, entry, output}, _from, state) do
-    binary = Path.join(base_path, "elm-make")
+    binary = Path.join(base_path(), "elm-make")
 
     args = [
       "--num",

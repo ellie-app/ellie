@@ -1,24 +1,41 @@
-import * as AbsintheSocket from "@absinthe/socket";
-import { Socket as PhoenixSocket } from "phoenix";
-
-const createPhoenixSocket = (address, params) =>
-  new PhoenixSocket(address, { params });
-
 export default {
-  start(app) {
-    const onOpen = () => {
+  start: app => {
+    const initialize = ({ url, token, doc }) => {
+      return Promise.all([
+        import(/* webpackChunkName: "phoenix" */ "phoenix"),
+        import(/* webpackChunkName: "absinthe-socket" */ "@absinthe/socket")
+      ]).then(([Phoenix, AbsintheSocket]) => {
+        const phoenixSocket = new Phoenix.Socket(url, { params: { token } });
+        const absintheSocket = AbsintheSocket.create(phoenixSocket);
+
+        const notifier = AbsintheSocket.send(absintheSocket, {
+          operation: doc,
+          variables: {}
+        });
+
+        AbsintheSocket.observe(absintheSocket, notifier, {
+          onStart,
+          onAbort,
+          onError,
+          onCancel,
+          onResult
+        });
+      });
+    };
+
+    const onStart = _data => {
       app.ports.absintheSocketInbound.send({ tag: "Open" });
     };
 
-    const onAbort = data => {
+    const onAbort = _data => {
       app.ports.absintheSocketInbound.send({ tag: "Abort" });
     };
 
-    const onCancel = data => {
+    const onCancel = _data => {
       app.ports.absintheSocketInbound.send({ tag: "Cancel" });
     };
 
-    const onError = data => {
+    const onError = _data => {
       app.ports.absintheSocketInbound.send({ tag: "Error" });
     };
 
@@ -29,25 +46,7 @@ export default {
     app.ports.absintheSocketOutbound.subscribe(data => {
       switch (data.tag) {
         case "Initialize": {
-          const phoenixSocket = createPhoenixSocket(data.url, {
-            token: data.token
-          });
-          const absintheSocket = AbsintheSocket.create(phoenixSocket);
-
-          phoenixSocket.onOpen(onOpen);
-
-          const notifier = AbsintheSocket.send(absintheSocket, {
-            operation: data.doc,
-            variables: {}
-          });
-
-          AbsintheSocket.observe(absintheSocket, notifier, {
-            onAbort,
-            onError,
-            onCancel,
-            onResult
-          });
-
+          initialize(data);
           break;
         }
 

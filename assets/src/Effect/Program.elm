@@ -1,4 +1,4 @@
-port module Effect.Program exposing (Config, Model(..), Msg(..), Program, State, debounceConfig, effectProgramKeyDowns, initialState, keyDownDecoder, maybeWithDebounce, maybeWithToken, program, runCmd, runSub, withCaching, wrapInit, wrapSubscriptions, wrapUpdate, wrapView)
+module Effect.Program exposing (Config, Model(..), Msg(..), Program, State, debounceConfig, initialState, keyDownDecoder, maybeWithDebounce, maybeWithToken, program, runCmd, runSub, withCaching, wrapInit, wrapSubscriptions, wrapUpdate, wrapView)
 
 import Browser
 import Browser.Events
@@ -28,9 +28,6 @@ import Time
 import Url exposing (Url)
 
 
-port effectProgramKeyDowns : (Decode.Value -> a) -> Sub a
-
-
 type alias Config flags route model msg =
     { init : flags -> route -> ( model, Command msg )
     , url : Url -> route
@@ -56,7 +53,6 @@ debounceConfig debounceMsg =
 type Msg msg
     = UserMsg msg
     | SetupSocket String { url : String, token : Maybe String } (SelectionSet msg RootSubscription)
-    | SubscriptionMsg String Absinthe.Msg
     | KeyDown String
     | KeyUp String
     | Debounce String Debounce.Msg
@@ -133,7 +129,7 @@ runCmd config state cmd =
                 |> maybeWithToken token
                 |> withCaching cache
                 |> Graphql.Http.send identity
-                -- |> Cmd.map (Result.mapError Graphql.Http.ignoreParsedErrorData)
+                |> Cmd.map Graphql.Http.discardParsedErrorData
                 |> Cmd.map
                     (\result ->
                         case result of
@@ -141,8 +137,7 @@ runCmd config state cmd =
                                 UserMsg msg
 
                             Err str ->
-                                -- UserMsg (onError str)
-                                NoOp
+                                UserMsg (onError str)
                     )
                 |> maybeWithDebounce state debounce
 
@@ -150,7 +145,7 @@ runCmd config state cmd =
             Graphql.Http.mutationRequest url selection
                 |> maybeWithToken token
                 |> Graphql.Http.send identity
-                -- |> Cmd.map (Result.mapError Graphql.Http.ignoreParsedErrorData)
+                |> Cmd.map Graphql.Http.discardParsedErrorData
                 |> Cmd.map
                     (\result ->
                         case result of
@@ -158,8 +153,7 @@ runCmd config state cmd =
                                 UserMsg msg
 
                             Err str ->
-                                -- UserMsg (onError str)
-                                NoOp
+                                UserMsg (onError str)
                     )
                 |> maybeWithDebounce state debounce
 
@@ -207,19 +201,21 @@ runCmd config state cmd =
 
 keyDownDecoder : Bool -> Bool -> String -> msg -> Decoder (Msg msg)
 keyDownDecoder needsShift needsMeta key msg =
-    Decode.map3
-        (\actualKey shift meta ->
+    Decode.andThen
+        (\( actualKey, shift, meta ) ->
             if shift == needsShift && meta == needsMeta && key == actualKey then
-                UserMsg msg
+                Decode.succeed (UserMsg msg)
 
             else
-                NoOp
+                Decode.fail ""
         )
-        (Decode.field "key" Decode.string)
-        (Decode.field "shiftKey" Decode.bool)
-        (Decode.map2 (||)
-            (Decode.field "metaKey" Decode.bool)
-            (Decode.field "ctrlKey" Decode.bool)
+        (Decode.map3 (\actualKey shift meta -> ( actualKey, shift, meta ))
+            (Decode.field "key" Decode.string)
+            (Decode.field "shiftKey" Decode.bool)
+            (Decode.map2 (||)
+                (Decode.field "metaKey" Decode.bool)
+                (Decode.field "ctrlKey" Decode.bool)
+            )
         )
 
 
@@ -227,15 +223,7 @@ runSub : Config flags route model msg -> State msg -> Subscription msg -> Sub (M
 runSub config state sub =
     case sub of
         Subscription.KeyCombo combo msg ->
-            effectProgramKeyDowns
-                (\value ->
-                    case Decode.decodeValue (keyDownDecoder combo.shift combo.meta combo.key msg) value of
-                        Ok wrappedMsg ->
-                            wrappedMsg
-
-                        Err _ ->
-                            NoOp
-                )
+            Browser.Events.onKeyDown (keyDownDecoder combo.shift combo.meta combo.key msg)
 
         Subscription.PortReceive channel callback ->
             config.inbound <|
@@ -285,9 +273,6 @@ runSub config state sub =
 
                                     Absinthe.Status bool ->
                                         UserMsg (onStatus bool)
-
-                                    Absinthe.Control msg ->
-                                        SubscriptionMsg key msg
                             )
 
                 Nothing ->
@@ -364,7 +349,7 @@ wrapUpdate config msg model =
                 SetupSocket key socketConfig selection ->
                     let
                         ( absinthe, absintheCmd ) =
-                            Absinthe.init socketConfig always selection
+                            Absinthe.init socketConfig selection
                     in
                     ( Running
                         { state | sockets = Dict.insert key absinthe state.sockets }
@@ -372,23 +357,6 @@ wrapUpdate config msg model =
                         m
                     , absintheCmd
                     )
-
-                SubscriptionMsg key socketMsg ->
-                    case Dict.get key state.sockets of
-                        Just socket ->
-                            let
-                                ( newSocket, socketCmd ) =
-                                    Absinthe.update socketMsg socket
-                            in
-                            ( Running
-                                { state | sockets = Dict.insert key newSocket state.sockets }
-                                flags
-                                m
-                            , Cmd.map (SubscriptionMsg key) socketCmd
-                            )
-
-                        Nothing ->
-                            ( model, Cmd.none )
 
 
 wrapView : Config flags route model msg -> Model flags model msg -> Browser.Document (Msg msg)
