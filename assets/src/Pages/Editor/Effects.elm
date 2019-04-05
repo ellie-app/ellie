@@ -36,8 +36,8 @@ import Pages.Editor.Types.WorkspaceUpdate as WorkspaceUpdate exposing (Workspace
 getRevision : Revision.Id -> Command (Result (Graphql.Http.Error ()) Revision)
 getRevision revisionId =
     let
-        query =
-            SelectionSet.succeed identity
+        selection =
+            SelectionSet.succeed Ok
                 |> SelectionSet.with (ApiQuery.revision arguments revisionQuery)
 
         arguments =
@@ -54,7 +54,7 @@ getRevision revisionId =
     Command.GraphqlQuery
         { url = "/api"
         , token = Nothing
-        , selection = SelectionSet.map Ok query
+        , selection = selection
         , onError = Err
         , debounce = Nothing
         , cache = Command.Permanent
@@ -64,8 +64,8 @@ getRevision revisionId =
 searchPackages : String -> Command (Result (Graphql.Http.Error ()) (List Package))
 searchPackages queryString =
     let
-        query =
-            SelectionSet.succeed identity
+        selection =
+            SelectionSet.succeed Ok
                 |> SelectionSet.with (ApiQuery.packageSearch arguments packageQuery)
 
         arguments =
@@ -79,7 +79,7 @@ searchPackages queryString =
     Command.GraphqlQuery
         { url = "/api"
         , token = Nothing
-        , selection = SelectionSet.map Ok query
+        , selection = selection
         , onError = Err
         , debounce = Just "package-search"
         , cache = Command.Temporary
@@ -89,8 +89,8 @@ searchPackages queryString =
 formatCode : Jwt -> Version -> String -> Command (Result (Graphql.Http.Error ()) String)
 formatCode token version code =
     let
-        mutation =
-            SelectionSet.succeed identity
+        selection =
+            SelectionSet.succeed Ok
                 |> SelectionSet.with (ApiMutation.formatCode arguments)
 
         arguments =
@@ -101,7 +101,7 @@ formatCode token version code =
     Command.GraphqlMutation
         { url = "/api"
         , token = Just token
-        , selection = SelectionSet.map Ok mutation
+        , selection = selection
         , onError = Err
         , debounce = Just "format-code"
         }
@@ -111,7 +111,7 @@ compile : Jwt -> Version -> String -> List Package -> Command (Result (Graphql.H
 compile token elmVersion elmCode packages =
     let
         mutation =
-            SelectionSet.succeed (\_ -> ())
+            SelectionSet.succeed (\_ -> Ok ())
                 |> SelectionSet.with (ApiMutation.compile arguments)
 
         arguments =
@@ -128,7 +128,7 @@ compile token elmVersion elmCode packages =
     Command.GraphqlMutation
         { url = "/api"
         , token = Just token
-        , selection = SelectionSet.map Ok mutation
+        , selection = mutation
         , onError = Err
         , debounce = Nothing
         }
@@ -183,7 +183,7 @@ attachToWorkspace : Jwt -> Version -> Command (Result (Graphql.Http.Error ()) ()
 attachToWorkspace token version =
     let
         selection =
-            SelectionSet.succeed (\_ -> ())
+            SelectionSet.succeed (\_ -> Ok ())
                 |> SelectionSet.with (ApiMutation.attachToWorkspace arguments)
 
         arguments =
@@ -192,7 +192,7 @@ attachToWorkspace token version =
     Command.GraphqlMutation
         { url = "/api"
         , token = Just token
-        , selection = SelectionSet.map Ok selection
+        , selection = selection
         , onError = Err
         , debounce = Nothing
         }
@@ -211,7 +211,7 @@ createRevision : Jwt -> Int -> Revision -> Command (Result (Graphql.Http.Error (
 createRevision token termsVersion revision =
     let
         selection =
-            SelectionSet.succeed identity
+            SelectionSet.succeed Ok
                 |> SelectionSet.with (ApiMutation.createRevision arguments revisionSelection)
 
         arguments =
@@ -237,7 +237,7 @@ createRevision token termsVersion revision =
     Command.GraphqlMutation
         { url = "/api"
         , token = Just token
-        , selection = SelectionSet.map Ok selection
+        , selection = selection
         , onError = Err
         , debounce = Nothing
         }
@@ -268,8 +268,8 @@ getDocs packages =
     Command.GraphqlQuery
         { url = "/api"
         , token = Nothing
-        , selection = SelectionSet.map identity selection
-        , onError = always []
+        , selection = selection
+        , onError = \_ -> []
         , debounce = Nothing
         , cache = Command.Permanent
         }

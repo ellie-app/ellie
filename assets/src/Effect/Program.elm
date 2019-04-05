@@ -56,7 +56,6 @@ debounceConfig debounceMsg =
 type Msg msg
     = UserMsg msg
     | SetupSocket String { url : String, token : Maybe String } (SelectionSet msg RootSubscription)
-    | SubscriptionMsg String Absinthe.Msg
     | KeyDown String
     | KeyUp String
     | Debounce String Debounce.Msg
@@ -133,7 +132,7 @@ runCmd config state cmd =
                 |> maybeWithToken token
                 |> withCaching cache
                 |> Graphql.Http.send identity
-                -- |> Cmd.map (Result.mapError Graphql.Http.ignoreParsedErrorData)
+                |> Cmd.map Graphql.Http.discardParsedErrorData
                 |> Cmd.map
                     (\result ->
                         case result of
@@ -141,8 +140,7 @@ runCmd config state cmd =
                                 UserMsg msg
 
                             Err str ->
-                                -- UserMsg (onError str)
-                                NoOp
+                                UserMsg (onError str)
                     )
                 |> maybeWithDebounce state debounce
 
@@ -150,7 +148,7 @@ runCmd config state cmd =
             Graphql.Http.mutationRequest url selection
                 |> maybeWithToken token
                 |> Graphql.Http.send identity
-                -- |> Cmd.map (Result.mapError Graphql.Http.ignoreParsedErrorData)
+                |> Cmd.map Graphql.Http.discardParsedErrorData
                 |> Cmd.map
                     (\result ->
                         case result of
@@ -158,8 +156,7 @@ runCmd config state cmd =
                                 UserMsg msg
 
                             Err str ->
-                                -- UserMsg (onError str)
-                                NoOp
+                                UserMsg (onError str)
                     )
                 |> maybeWithDebounce state debounce
 
@@ -227,15 +224,14 @@ runSub : Config flags route model msg -> State msg -> Subscription msg -> Sub (M
 runSub config state sub =
     case sub of
         Subscription.KeyCombo combo msg ->
-            effectProgramKeyDowns
-                (\value ->
+            effectProgramKeyDowns <|
+                \value ->
                     case Decode.decodeValue (keyDownDecoder combo.shift combo.meta combo.key msg) value of
                         Ok wrappedMsg ->
                             wrappedMsg
 
                         Err _ ->
                             NoOp
-                )
 
         Subscription.PortReceive channel callback ->
             config.inbound <|
@@ -285,9 +281,6 @@ runSub config state sub =
 
                                     Absinthe.Status bool ->
                                         UserMsg (onStatus bool)
-
-                                    Absinthe.Control msg ->
-                                        SubscriptionMsg key msg
                             )
 
                 Nothing ->
@@ -364,7 +357,7 @@ wrapUpdate config msg model =
                 SetupSocket key socketConfig selection ->
                     let
                         ( absinthe, absintheCmd ) =
-                            Absinthe.init socketConfig always selection
+                            Absinthe.init socketConfig selection
                     in
                     ( Running
                         { state | sockets = Dict.insert key absinthe state.sockets }
@@ -372,23 +365,6 @@ wrapUpdate config msg model =
                         m
                     , absintheCmd
                     )
-
-                SubscriptionMsg key socketMsg ->
-                    case Dict.get key state.sockets of
-                        Just socket ->
-                            let
-                                ( newSocket, socketCmd ) =
-                                    Absinthe.update socketMsg socket
-                            in
-                            ( Running
-                                { state | sockets = Dict.insert key newSocket state.sockets }
-                                flags
-                                m
-                            , Cmd.map (SubscriptionMsg key) socketCmd
-                            )
-
-                        Nothing ->
-                            ( model, Cmd.none )
 
 
 wrapView : Config flags route model msg -> Model flags model msg -> Browser.Document (Msg msg)

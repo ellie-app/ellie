@@ -61,7 +61,7 @@ defmodule Elm.Platform.Local19 do
         File.mkdir_p!(Path.join(root, Path.dirname(entry)))
         File.write!(Path.join(root, entry), source)
 
-        binary = Path.join(base_path, "elm")
+        binary = Path.join(base_path(), "elm")
 
         args = [
           "--num",
@@ -101,7 +101,7 @@ defmodule Elm.Platform.Local19 do
 
   @spec format(String.t()) :: {:ok, String.t()} | :error
   def format(code) do
-    binary = Path.join(base_path, "elm-format")
+    binary = Path.join(base_path(), "elm-format")
     args = ["--stdin"]
     options = [in: code, out: :string, err: :string]
     result = Porcelain.exec(binary, args, options)
@@ -118,7 +118,7 @@ defmodule Elm.Platform.Local19 do
   # Helpers
 
   defp install_transitive_deps(root) do
-    binary = Path.join(base_path, "elm")
+    binary = Path.join(base_path(), "elm")
     args = ["--num", "1", binary, "make", "--report", "json"]
     options = [dir: root, out: :string, err: :string]
     result = Porcelain.exec("sysconfcpus", args, options)
@@ -236,7 +236,7 @@ defmodule Elm.Platform.Local19 do
   end
 
   defp elm_init(root) do
-    binary = Path.join(base_path, "elm")
+    binary = Path.join(base_path(), "elm")
     args = ["init"]
     options = [out: :string, err: :string, dir: root, in: "Y"]
     result = Porcelain.exec(binary, args, options)

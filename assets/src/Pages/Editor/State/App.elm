@@ -67,7 +67,7 @@ update flags msg_ model =
                 Initial initFlags _ ->
                     init initFlags route
 
-                Setup setupState ->
+                Setup _ ->
                     update flags (SetupMsg (Setup.RouteChanged route)) model
 
                 _ ->
