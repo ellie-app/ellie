@@ -40,6 +40,7 @@ export default {
       }
     
       // DEBUGGER
+      var isFirefox = typeof InstallTrigger !== 'undefined'
       var debuggerWindowProxy = null
       var iframe = document.createElement('iframe')
       window.open = function () {
@@ -52,7 +53,7 @@ export default {
         iframe.style.left = 0
         iframe.style.border = 0
         iframe.style.backgroundColor = '#fff'
-        iframe.src = 'about:blank'
+        iframe.src = isFirefox ? 'javascript:void(0);' : 'about:blank'
         document.body.appendChild(iframe)
         var onClose = function () {}
         debuggerWindowProxy = Object.defineProperties({}, {
