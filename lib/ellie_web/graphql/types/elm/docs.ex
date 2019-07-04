@@ -16,6 +16,7 @@ defmodule EllieWeb.Graphql.Types.Elm.Docs do
     field :name, non_null(:string)
     field :comment, non_null(:string)
     field :args, good_list(:string)
+
     field :tags, good_list(:elm_docs_tag) do
       resolve fn union, _, _ ->
         {:ok, Enum.map(union.tags, fn {name, args} -> %{name: name, args: args} end)}
@@ -30,10 +31,11 @@ defmodule EllieWeb.Graphql.Types.Elm.Docs do
 
   scalar :elm_docs_type, name: "ElmDocsType" do
     serialize fn string -> string end
+
     parse fn
       %Absinthe.Blueprint.Input.String{value: value} -> {:ok, value}
       %Absinthe.Blueprint.Input.Null{} -> {:ok, nil}
-      _ ->:error
+      _ -> :error
     end
   end
 

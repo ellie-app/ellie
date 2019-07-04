@@ -9,25 +9,29 @@ defmodule Ellie.Tasks.Migrate do
     Application.put_env(:ellie, Ellie.Repo, repo_config)
 
     # Start requisite apps
-    IO.puts "==> Starting applications.."
+    IO.puts("==> Starting applications..")
+
     for app <- [:crypto, :ssl, :postgrex, :ecto] do
       {:ok, res} = Application.ensure_all_started(app)
-      IO.puts "==> Started #{app}: #{inspect res}"
+      IO.puts("==> Started #{app}: #{inspect(res)}")
     end
 
     # Start the repo
-    IO.puts "==> Starting repo"
+    IO.puts("==> Starting repo")
     {:ok, _pid} = Ellie.Repo.start_link(pool_size: 1, log: true, log_sql: true)
 
     # Run the migrations for the repo
-    IO.puts "==> Running migrations"
+    IO.puts("==> Running migrations")
     priv_dir = Application.app_dir(:ellie, "priv")
     migrations_dir = Path.join([priv_dir, "repo", "migrations"])
 
     opts = [all: true]
-    pool = Ellie.Repo.config[:pool]
+    pool = Ellie.Repo.config()[:pool]
+
     if function_exported?(pool, :unboxed_run, 2) do
-      pool.unboxed_run(Ellie.Repo, fn -> Ecto.Migrator.run(Ellie.Repo, migrations_dir, :up, opts) end)
+      pool.unboxed_run(Ellie.Repo, fn ->
+        Ecto.Migrator.run(Ellie.Repo, migrations_dir, :up, opts)
+      end)
     else
       Ecto.Migrator.run(Ellie.Repo, migrations_dir, :up, opts)
     end
@@ -36,4 +40,3 @@ defmodule Ellie.Tasks.Migrate do
     :init.stop()
   end
 end
-

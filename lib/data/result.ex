@@ -9,11 +9,11 @@ defmodule Data.Result do
   def map_error({:error, e}, f), do: {:error, f.(e)}
   def map_error(a, _), do: a
 
-  @spec map2(a :: t(e, a), b :: t(e, b), f :: (a, b -> c)) :: t(e, c) when a: var, b: var, c: var, e: var
+  @spec map2(a :: t(e, a), b :: t(e, b), f :: (a, b -> c)) :: t(e, c)
+        when a: var, b: var, c: var, e: var
   def map2(a, b, f) do
     with {:ok, aval} <- a,
-         {:ok, bval} <- b
-    do
+         {:ok, bval} <- b do
       {:ok, f.(aval, bval)}
     else
       e -> e
@@ -41,7 +41,8 @@ defmodule Data.Result do
   def ensure(:ok), do: {:ok, :unit}
   def ensure(a), do: a
 
-  @spec traverse(list :: list(t(e, a)), f :: (a -> b)) :: t(e, list(b)) when a: var, b: var, e: var
+  @spec traverse(list :: list(t(e, a)), f :: (a -> b)) :: t(e, list(b))
+        when a: var, b: var, e: var
   def traverse(list, func) do
     case Enum.reduce_while(list, {:ok, []}, fn a, b -> traverse_help(func.(a), b) end) do
       {:ok, list} -> {:ok, Enum.reverse(list)}

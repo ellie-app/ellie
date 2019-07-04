@@ -4,9 +4,10 @@ defmodule EllieWeb.Graphql.Plugins.Sentry do
 
   def before_resolution(execution), do: execution
   def after_resolution(execution), do: execution
+
   def pipeline(pipeline, execution) do
     if Map.has_key?(execution.context, :original) do
-      pipeline ++ [ __MODULE__ ]
+      pipeline ++ [__MODULE__]
     else
       pipeline
     end
@@ -16,9 +17,10 @@ defmodule EllieWeb.Graphql.Plugins.Sentry do
     case blueprint.execution.result.errors do
       [] ->
         {:ok, blueprint}
+
       errors ->
-        Enum.each errors, fn error ->
-          Sentry.capture_message error.message,
+        Enum.each(errors, fn error ->
+          Sentry.capture_message(error.message,
             extra: %{
               document: Map.get(blueprint.execution.context, :original),
               message: error.message,
@@ -26,7 +28,9 @@ defmodule EllieWeb.Graphql.Plugins.Sentry do
               path: error.path,
               extra: error.extra
             }
-        end
+          )
+        end)
+
         {:ok, blueprint}
     end
   end

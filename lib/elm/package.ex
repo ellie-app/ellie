@@ -4,5 +4,5 @@ defmodule Elm.Package do
 
   defstruct [:name, :version]
 
-  @type t :: %Elm.Package{name: Name.t, version: Version.t}
+  @type t :: %Elm.Package{name: Name.t(), version: Version.t()}
 end

@@ -4,7 +4,7 @@ defmodule Elm.Ecto.Package do
   @behaviour Ecto.Type
 
   def up do
-    Ecto.Migration.execute """
+    Ecto.Migration.execute("""
       do $$ begin
         if not exists (select 1 from pg_type where typname = 'elm_package') then
           create type elm_package as (
@@ -13,11 +13,11 @@ defmodule Elm.Ecto.Package do
           );
         end if;
       end $$;
-    """
+    """)
   end
 
   def down do
-    Ecto.Migration.execute "drop type if exists elm_package;"
+    Ecto.Migration.execute("drop type if exists elm_package;")
   end
 
   def type, do: :elm_package
@@ -27,23 +27,23 @@ defmodule Elm.Ecto.Package do
 
   def load({name_data, version_data}) do
     with {:ok, name} <- Elm.Ecto.Name.load(name_data),
-         {:ok, version} <- Elm.Ecto.Version.load(version_data)
-    do
+         {:ok, version} <- Elm.Ecto.Version.load(version_data) do
       {:ok, %Package{name: name, version: version}}
     else
       _ -> :error
     end
   end
+
   def load(_), do: :error
 
   def dump(%Package{name: name, version: version}) do
     with {:ok, name_data} <- Elm.Ecto.Name.dump(name),
-         {:ok, version_data} <- Elm.Ecto.Version.dump(version)
-    do
+         {:ok, version_data} <- Elm.Ecto.Version.dump(version) do
       {:ok, {name_data, version_data}}
     else
       _ -> :error
     end
   end
+
   def dump(_), do: :error
 end

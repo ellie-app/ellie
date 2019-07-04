@@ -21,7 +21,7 @@ defmodule Ellie.Types.PrettyId do
   def dump(%__MODULE__{value: value}), do: {:ok, value}
   def dump(_), do: :error
 
-  @spec to_string(pretty_id :: t) :: String.t
+  @spec to_string(pretty_id :: t) :: String.t()
   def to_string(pretty_id), do: serialize_help(pretty_id.value, "")
 
   defimpl String.Chars do
@@ -56,10 +56,10 @@ defmodule Ellie.Types.PrettyId do
     |> String.replace("a1", "")
     |> String.graphemes()
     |> Enum.reduce_while({:ok, 0}, fn char, {:ok, tracker} ->
-        case Map.fetch(@inverse_alphabet, char) do
-          {:ok, index} -> {:cont, {:ok, tracker * @base_length + index}}
-          _ -> {:halt, :error}
-        end
+      case Map.fetch(@inverse_alphabet, char) do
+        {:ok, index} -> {:cont, {:ok, tracker * @base_length + index}}
+        _ -> {:halt, :error}
+      end
     end)
     |> from_result()
   end

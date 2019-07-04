@@ -1,29 +1,28 @@
 defmodule Data.Json.Decode do
-
   @type value :: any
 
   @type error ::
-    {:field, String.t, error}
-    | {:index, integer, error}
-    | {:one_of, list(error)}
-    | {:failure, String.t, value}
+          {:field, String.t(), error}
+          | {:index, integer, error}
+          | {:one_of, list(error)}
+          | {:failure, String.t(), value}
 
   @type decoder(a) ::
-    :boolean
-    | :integer
-    | :float
-    | :string
-    | {:null, a}
-    | :value
-    | {:list, decoder(a)}
-    | {:field, String.t, decoder(a)}
-    | {:index, integer, decoder(a)}
-    | {:map, (any -> any), list(decoder(a))}
-    | {:and_map, decoder((any -> any)), decoder(a)}
-    | {:and_then, (any -> decoder(any)), decoder(a)}
-    | {:one_of, list(decoder(a))}
-    | {:fail, String.t}
-    | {:succeed, a}
+          :boolean
+          | :integer
+          | :float
+          | :string
+          | {:null, a}
+          | :value
+          | {:list, decoder(a)}
+          | {:field, String.t(), decoder(a)}
+          | {:index, integer, decoder(a)}
+          | {:map, (any -> any), list(decoder(a))}
+          | {:and_map, decoder((any -> any)), decoder(a)}
+          | {:and_then, (any -> decoder(any)), decoder(a)}
+          | {:one_of, list(decoder(a))}
+          | {:fail, String.t()}
+          | {:succeed, a}
 
   @spec boolean() :: decoder(boolean)
   def boolean(), do: :boolean
@@ -34,7 +33,7 @@ defmodule Data.Json.Decode do
   @spec float() :: decoder(float)
   def float(), do: :float
 
-  @spec string() :: decoder(String.t)
+  @spec string() :: decoder(String.t())
   def string(), do: :string
 
   @spec null(a) :: decoder(a) when a: var
@@ -46,7 +45,7 @@ defmodule Data.Json.Decode do
   @spec list(decoder(a)) :: decoder(list(a)) when a: var
   def list(decoder), do: {:list, decoder}
 
-  @spec field(String.t, decoder(a)) :: decoder(a) when a: var
+  @spec field(String.t(), decoder(a)) :: decoder(a) when a: var
   def field(path, decoder), do: {:field, path, decoder}
 
   @spec index(integer, decoder(a)) :: decoder(a) when a: var
@@ -64,18 +63,23 @@ defmodule Data.Json.Decode do
   @spec one_of(list(decoder(a))) :: decoder(a) when a: var
   def one_of(ds), do: {:one_of, ds}
 
-  @spec fail(String.t) :: decoder(any)
+  @spec fail(String.t()) :: decoder(any)
   def fail(message), do: {:fail, message}
 
   @spec succeed(a) :: decoder(a) when a: var
   def succeed(a), do: {:succeed, a}
 
-  @spec decode_string(String.t, decoder(a)) :: {:ok, a} | {:error, error} when a: var
+  @spec decode_string(String.t(), decoder(a)) :: {:ok, a} | {:error, error} when a: var
   def decode_string(input, decoder) do
     case Poison.decode(input) do
-      {:ok, stuff} -> run_help(decoder, stuff)
-      {:error, :invalid, _} -> {:error, {:failure, "This is not valid JSON!", input}}
-      {:error, {:invalid, message, _}} -> {:error, {:failure, "This is not valid JSON! #{message}", input}}
+      {:ok, stuff} ->
+        run_help(decoder, stuff)
+
+      {:error, :invalid, _} ->
+        {:error, {:failure, "This is not valid JSON!", input}}
+
+      {:error, {:invalid, message, _}} ->
+        {:error, {:failure, "This is not valid JSON! #{message}", input}}
     end
   end
 
@@ -86,29 +90,47 @@ defmodule Data.Json.Decode do
 
   defp run_help(decoder, value) do
     case {decoder, value} do
-      {:boolean, v} when is_boolean(v) -> {:ok, v}
-      {:boolean, v} -> {:error, {:failure, "Expecting a Boolean", v}}
+      {:boolean, v} when is_boolean(v) ->
+        {:ok, v}
 
-      {:integer, v} when is_integer(v) -> {:ok, v}
-      {:integer, v} -> {:error, {:failure, "Expecting an Integer", v}}
+      {:boolean, v} ->
+        {:error, {:failure, "Expecting a Boolean", v}}
 
-      {:float, v} when is_float(v) -> {:ok, v}
-      {:float, v} -> {:error, {:failure, "Expecing a Float", v}}
+      {:integer, v} when is_integer(v) ->
+        {:ok, v}
 
-      {:string, v} when is_binary(v) -> {:ok, v}
-      {:string, v} -> {:error, {:failure, "Expecting a String", v}}
+      {:integer, v} ->
+        {:error, {:failure, "Expecting an Integer", v}}
 
-      {{:null, default}, v} when is_nil(v) -> {:ok, default}
-      {{:null, _}, v} -> {:error, {:failure, "Expecting null", v}}
+      {:float, v} when is_float(v) ->
+        {:ok, v}
 
-      {:value, v} -> {:ok, v}
+      {:float, v} ->
+        {:error, {:failure, "Expecing a Float", v}}
+
+      {:string, v} when is_binary(v) ->
+        {:ok, v}
+
+      {:string, v} ->
+        {:error, {:failure, "Expecting a String", v}}
+
+      {{:null, default}, v} when is_nil(v) ->
+        {:ok, default}
+
+      {{:null, _}, v} ->
+        {:error, {:failure, "Expecting null", v}}
+
+      {:value, v} ->
+        {:ok, v}
 
       {{:list, inner}, v} when is_list(v) ->
         case run_array_decoder(inner, v) do
           {:ok, list} -> {:ok, Enum.reverse(list)}
           {:error, reason} -> {:error, reason}
         end
-      {{:list, _}, v} -> {:error, {:failure, "Expecting a list", v}}
+
+      {{:list, _}, v} ->
+        {:error, {:failure, "Expecting a list", v}}
 
       {{:field, field, inner}, v} ->
         if not is_map(v) || not Map.has_key?(v, field) do
@@ -124,8 +146,13 @@ defmodule Data.Json.Decode do
         cond do
           not is_list(v) ->
             {:error, {:failure, "Expecting an Array", v}}
+
           index >= Enum.count(v) ->
-            {:error, {:failure, "Expecting a longer Array. Need index #{index} but only see #{Enum.count(v)} entries", v}}
+            {:error,
+             {:failure,
+              "Expecting a longer Array. Need index #{index} but only see #{Enum.count(v)} entries",
+              v}}
+
           true ->
             case run_help(inner, Enum.at(v, index)) do
               {:ok, output} -> {:ok, output}
@@ -153,16 +180,19 @@ defmodule Data.Json.Decode do
         end
 
       {{:one_of, decoders}, v} ->
-        Enum.reduce_while(decoders, {:error, {:one_of, []}}, fn inner, {:error, {:one_of, errors}} ->
+        Enum.reduce_while(decoders, {:error, {:one_of, []}}, fn inner,
+                                                                {:error, {:one_of, errors}} ->
           case run_help(inner, v) do
             {:ok, out} -> {:halt, {:ok, out}}
             {:error, reason} -> {:cont, {:error, {:one_of, [reason | errors]}}}
           end
         end)
 
-      {{:fail, message}, v} -> {:error, {:failure, message, v}}
+      {{:fail, message}, v} ->
+        {:error, {:failure, message, v}}
 
-      {{:succeed, a}, _} -> {:ok, a}
+      {{:succeed, a}, _} ->
+        {:ok, a}
     end
   end
 
@@ -175,6 +205,7 @@ defmodule Data.Json.Decode do
             {:ok, thing} -> {:cont, {:ok, [thing | stuff]}}
             {:error, reason} -> {:halt, {:error, reason}}
           end
+
         {:error, reason} ->
           {:halt, {:error, reason}}
       end

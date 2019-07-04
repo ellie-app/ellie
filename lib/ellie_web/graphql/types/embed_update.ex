@@ -11,6 +11,7 @@ defmodule EllieWeb.Graphql.Types.EmbedUpdate do
 
   union :embed_update do
     types [:embed_ready, :embed_failed]
+
     resolve_type fn
       %{error: _}, _ -> :embed_ready
       %{message: _}, _ -> :embed_failed

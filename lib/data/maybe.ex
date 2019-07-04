@@ -5,12 +5,10 @@ defmodule Data.Maybe do
   def map(:nothing), do: :nothing
   def map({:just, a}, f), do: {:just, f.(a)}
 
-
   @spec map2(a :: t(a), b :: t(b), f :: (a, b -> c)) :: t(c) when a: var, b: var, c: var
   def map2(a, b, f) do
     with {:just, aval} <- a,
-         {:just, bval} <- b
-    do
+         {:just, bval} <- b do
       {:just, f.(aval, bval)}
     else
       _ -> :nothing

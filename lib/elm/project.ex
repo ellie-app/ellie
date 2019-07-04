@@ -5,9 +5,9 @@ defmodule Elm.Project do
   defstruct [:elm_version, :dependencies]
 
   @type t :: %Elm.Project{
-    elm_version: Version.t,
-    dependencies: MapSet.t(Package.t)
-  }
+          elm_version: Version.t(),
+          dependencies: MapSet.t(Package.t())
+        }
 
   # def to_json(%Ellie.Elm.Project{} = project) do
   #   %{

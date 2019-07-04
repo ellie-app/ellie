@@ -10,6 +10,7 @@ defmodule EllieWeb.Graphql.Types.Elm.Error do
 
   union :elm_error do
     types [:elm_error_general_problem, :elm_error_module_problems]
+
     resolve_type fn
       {:general_problem, _}, _ -> :elm_error_general_problem
       {:module_problems, _}, _ -> :elm_error_module_problems
@@ -20,9 +21,11 @@ defmodule EllieWeb.Graphql.Types.Elm.Error do
     field :path, :string do
       resolve fn {_, a}, _, _ -> {:ok, a.path} end
     end
+
     field :title, non_null(:string) do
       resolve fn {_, a}, _, _ -> {:ok, a.title} end
     end
+
     field :message, non_null(list_of(non_null(:elm_error_chunk))) do
       resolve fn {_, a}, _, _ ->
         {:ok, format_message(a.message)}
@@ -45,6 +48,7 @@ defmodule EllieWeb.Graphql.Types.Elm.Error do
   object :elm_error_problem do
     field :title, non_null(:string)
     field :region, non_null(:elm_error_region)
+
     field :message, non_null(list_of(non_null(:elm_error_chunk))) do
       resolve fn problem, _args, _ctx -> {:ok, format_message(problem.message)} end
     end
