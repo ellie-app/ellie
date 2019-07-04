@@ -120,6 +120,7 @@ defmodule EllieWeb.Graphql.Loaders.Ecto do
     def fetch(%{results: results} = source, batch, item) do
       batch = normalize_key(batch, source.default_params)
       {batch_key, item_key, _item} = get_keys(batch, item)
+
       with {:ok, batch} <- Map.fetch(results, batch_key) do
         Map.fetch(batch, item_key)
       end
@@ -195,6 +196,7 @@ defmodule EllieWeb.Graphql.Loaders.Ecto do
       case normalize_value(queryable, value) do
         {:primary, col, value} ->
           {{:queryable, self(), queryable, :one, {:typed, col, structure}, opts}, value, value}
+
         _ ->
           raise "cardinality required unless using primary key"
       end
@@ -255,12 +257,12 @@ defmodule EllieWeb.Graphql.Loaders.Ecto do
     @cardinalities [:one, :many]
 
     defp normalize_key({cardinality, queryable}, default_params)
-          when cardinality in @cardinalities do
+         when cardinality in @cardinalities do
       normalize_key({{cardinality, queryable}, []}, default_params)
     end
 
     defp normalize_key({cardinality, queryable, params}, default_params)
-          when cardinality in @cardinalities do
+         when cardinality in @cardinalities do
       normalize_key({{cardinality, queryable}, params}, default_params)
     end
 
@@ -273,9 +275,9 @@ defmodule EllieWeb.Graphql.Loaders.Ecto do
     end
 
     defp run_batch(
-            {{:queryable, pid, queryable, cardinality, col, opts} = key, entries},
-            source
-          ) do
+           {{:queryable, pid, queryable, cardinality, col, opts} = key, entries},
+           source
+         ) do
       inputs = Enum.map(entries, &elem(&1, 0))
 
       query = source.query.(queryable, opts)

@@ -12,7 +12,6 @@ defmodule Data.Json do
     _ -> {:error, nil}
   end
 
-
   @spec encode(any()) :: Result.t(String.t() | nil, String.t())
   def encode(data) do
     case Poison.encode(data) do

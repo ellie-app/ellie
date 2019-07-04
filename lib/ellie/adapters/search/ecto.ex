@@ -18,8 +18,9 @@ defmodule Ellie.Adapters.Search.Ecto do
   end
 
   def search(query) do
-    sub = from s in Searchable,
-      select: %{ s | score: compute_score(^query) }
+    sub =
+      from s in Searchable,
+        select: %{s | score: compute_score(^query)}
 
     Repo.all(
       from e in subquery(sub),
@@ -33,14 +34,17 @@ defmodule Ellie.Adapters.Search.Ecto do
   def reload() do
     case Platform.search() do
       {:ok, searchables} ->
-        Repo.transaction fn ->
+        Repo.transaction(fn ->
           now = DateTime.utc_now()
           Repo.delete_all(Searchable)
+
           searchables
           |> Enum.map(&Map.put(Map.from_struct(&1), :inserted_at, now))
           |> (&Repo.insert_all(Searchable, &1, on_conflict: :nothing)).()
+
           Repo.one(from s in Searchable, select: count(s.name))
-        end
+        end)
+
       :error ->
         :error
     end

@@ -1,10 +1,10 @@
 defmodule Ellie.Domain.Search do
   alias Elm.Package
 
-  @callback search(query :: String.t) :: list(Package.t)
+  @callback search(query :: String.t()) :: list(Package.t())
   @callback reload() :: :ok | :error
 
-  @spec search(query :: String.t) :: list(Package.t)
+  @spec search(query :: String.t()) :: list(Package.t())
   def search(query) do
     adapter().search(query)
   end

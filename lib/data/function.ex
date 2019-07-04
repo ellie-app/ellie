@@ -5,7 +5,7 @@ defmodule Data.Function do
   end
 
   defp curry_help(fun, 0, arguments) do
-    apply(fun, Enum.reverse arguments)
+    apply(fun, Enum.reverse(arguments))
   end
 
   defp curry_help(fun, arity, arguments) do

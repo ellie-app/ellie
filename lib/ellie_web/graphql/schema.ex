@@ -30,6 +30,7 @@ defmodule EllieWeb.Graphql.Schema do
   query do
     field :revision, non_null(:revision) do
       arg :id, non_null(:project_id)
+
       resolve fn %{id: id}, _ctx ->
         {:ok, Api.retrieve_revision(id)}
       end
@@ -37,6 +38,7 @@ defmodule EllieWeb.Graphql.Schema do
 
     field :package_search, non_null(list_of(non_null(:elm_package))) do
       arg :query, non_null(:string)
+
       resolve fn %{query: query}, _ctx ->
         {:ok, Search.search(query)}
       end
@@ -44,6 +46,7 @@ defmodule EllieWeb.Graphql.Schema do
 
     field :packages, non_null(list_of(non_null(:elm_package))) do
       arg :packages, non_null(list_of(non_null(:elm_package_input)))
+
       resolve fn %{packages: packages}, _ctx ->
         {:ok, Enum.map(packages, &EllieWeb.Graphql.Types.Elm.Package.from_input/1)}
       end
@@ -63,11 +66,15 @@ defmodule EllieWeb.Graphql.Schema do
     field :create_revision, non_null(:revision) do
       middleware EllieWeb.Graphql.Middleware.RequireWorkspace
       arg :inputs, non_null(:revision_input)
+
       resolve fn %{inputs: revision}, _ctx ->
         inputs =
           revision
           |> Map.to_list()
-          |> Keyword.update!(:packages, fn ps -> Enum.map(ps, &EllieWeb.Graphql.Types.Elm.Package.from_input/1) end)
+          |> Keyword.update!(:packages, fn ps ->
+            Enum.map(ps, &EllieWeb.Graphql.Types.Elm.Package.from_input/1)
+          end)
+
         case Api.create_revision(inputs) do
           {:ok, revision} -> {:ok, revision}
           :error -> {:error, "failed to create revision"}
@@ -78,6 +85,7 @@ defmodule EllieWeb.Graphql.Schema do
     field :attach_to_workspace, non_null(:unit) do
       middleware EllieWeb.Graphql.Middleware.RequireWorkspace
       arg :elm_version, non_null(:elm_version)
+
       resolve fn
         %{elm_version: version}, %{context: %{workspace: workspace}} ->
           Task.start(fn ->
@@ -85,12 +93,15 @@ defmodule EllieWeb.Graphql.Schema do
               {:ok, packages} ->
                 data = %{packages: MapSet.to_list(packages)}
                 Subscription.publish(EllieWeb.Endpoint, data, workspace: workspace)
+
               :error ->
                 data = %{message: "Failed to attach to workspace"}
                 Subscription.publish(EllieWeb.Endpoint, data, workspace: workspace)
             end
           end)
+
           {:ok, :unit}
+
         _args, _ctx ->
           {:error, "Attach to workspace must run on socket connection"}
       end
@@ -100,6 +111,7 @@ defmodule EllieWeb.Graphql.Schema do
       middleware EllieWeb.Graphql.Middleware.RequireWorkspace
       arg :elm_version, non_null(:elm_version)
       arg :code, non_null(:string)
+
       resolve fn %{elm_version: version, code: code}, _ctx ->
         Helpers.async(fn ->
           case Platform.format(code, version) do
@@ -115,23 +127,29 @@ defmodule EllieWeb.Graphql.Schema do
       arg :elm_version, non_null(:elm_version)
       arg :elm_code, non_null(:string)
       arg :packages, non_null(list_of(non_null(:elm_package_input)))
+
       resolve fn
-        %{elm_version: elm_version, elm_code: elm_code, packages: packages}, %{context: %{workspace: workspace}} ->
+        %{elm_version: elm_version, elm_code: elm_code, packages: packages},
+        %{context: %{workspace: workspace}} ->
           real_packages =
             packages
             |> Enum.map(&EllieWeb.Graphql.Types.Elm.Package.from_input/1)
             |> MapSet.new()
+
           Task.start(fn ->
             case Workspace.compile(workspace, elm_version, elm_code, real_packages) do
               {:ok, error} ->
                 data = %{error: error}
                 Subscription.publish(EllieWeb.Endpoint, data, workspace: workspace)
+
               :error ->
                 data = %{message: "Could not compile"}
                 Subscription.publish(EllieWeb.Endpoint, data, workspace: workspace)
             end
           end)
+
           {:ok, :unit}
+
         _args, _ctx ->
           {:error, "Compile must run on socket connection"}
       end
@@ -139,26 +157,38 @@ defmodule EllieWeb.Graphql.Schema do
 
     field :run_embed, :embed_ready do
       arg :id, non_null(:project_id)
+
       resolve fn %{id: id}, _ctx ->
         case Api.retrieve_revision(id) do
           nil ->
             {:error, "no revision"}
+
           revision ->
             case Embed.compile(revision) do
               {:finished, error} ->
                 {:ok, %{error: error}}
+
               :working ->
                 {:ok, nil}
+
               {:started, task_fn} ->
-                Task.start fn ->
+                Task.start(fn ->
                   case Task.await(task_fn.(), :infinity) do
-                    {:ok, error} -> Subscription.publish(EllieWeb.Endpoint, %{error: error}, embed: to_string(id))
-                    :error -> Subscription.publish(EllieWeb.Endpoint, %{message: "Could not compile"}, embed: to_string(id))
+                    {:ok, error} ->
+                      Subscription.publish(EllieWeb.Endpoint, %{error: error},
+                        embed: to_string(id)
+                      )
+
+                    :error ->
+                      Subscription.publish(EllieWeb.Endpoint, %{message: "Could not compile"},
+                        embed: to_string(id)
+                      )
                   end
-                end
+                end)
+
                 {:ok, nil}
             end
-          end
+        end
       end
     end
   end
@@ -173,9 +203,11 @@ defmodule EllieWeb.Graphql.Schema do
 
     field :embed, non_null(:embed_update) do
       arg :id, non_null(:project_id)
+
       config fn
         %{id: id}, _stuff ->
           {:ok, topic: to_string(id)}
+
         _args, _stuff ->
           {:error, "Insufficient info"}
       end

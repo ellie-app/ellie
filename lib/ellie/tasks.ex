@@ -5,4 +5,3 @@ defmodule Ellie.Tasks do
 
   defdelegate migrate(args), to: __MODULE__.Migrate
 end
-

@@ -7,6 +7,7 @@ defmodule EllieWeb.Graphql.Types.Elm.Package do
   object :elm_package do
     field :name, non_null(:elm_name)
     field :version, non_null(:elm_version)
+
     field :docs, non_null(list_of(non_null(:elm_docs_module))) do
       resolve fn package, _args, _ctx ->
         case Platform.docs(package) do

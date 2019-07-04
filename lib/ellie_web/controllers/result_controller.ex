@@ -11,9 +11,9 @@ defmodule EllieWeb.ResultController do
     with {:ok, token} <- Map.fetch(params, "token"),
          {:ok, workspace_string} <- Token.verify(token),
          {:ok, workspace} <- Uuid.parse(workspace_string),
-         {:ok, {path, hash}} <- Workspace.result(workspace)
-    do
+         {:ok, {path, hash}} <- Workspace.result(workspace) do
       etag = "W/" <> Integer.to_string(hash, 16)
+
       if etag in get_req_header(conn, "if-none-match") do
         send_resp(conn, 304, "")
       else
@@ -31,13 +31,13 @@ defmodule EllieWeb.ResultController do
 
   def embed(conn, %{"id" => id_param}) do
     etag = "W/" <> id_param
+
     if etag in get_req_header(conn, "if-none-match") do
       send_resp(conn, 304, "")
     else
       with {:ok, id} <- PrettyId.cast(id_param),
            revision when not is_nil(revision) <- Api.retrieve_revision(id),
-           {:ok, path} <- Embed.result(revision)
-      do
+           {:ok, path} <- Embed.result(revision) do
         conn
         |> delete_resp_header("cache-control")
         |> put_resp_header("cache-control", "public, max-age=600")

@@ -6,7 +6,7 @@ defmodule Data.Uuid do
     Ecto.UUID.bingenerate()
   end
 
-  @spec to_string(t) :: String.t
+  @spec to_string(t) :: String.t()
   def to_string(uuid) do
     case Ecto.UUID.load(uuid) do
       {:ok, string} -> string
@@ -14,12 +14,13 @@ defmodule Data.Uuid do
     end
   end
 
-  @spec parse(string :: String.t) :: {:ok, t} | :error
+  @spec parse(string :: String.t()) :: {:ok, t} | :error
   def parse(string) when is_binary(string) do
     case Ecto.UUID.dump(string) do
       {:ok, uuid} -> {:ok, uuid}
       _error -> :error
     end
   end
+
   def parse(_input), do: :error
 end

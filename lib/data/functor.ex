@@ -5,7 +5,6 @@ defprotocol Data.Functor do
   def map(value, fun)
 end
 
-
 defimpl Data.Functor, for: Any do
   def map(nil, fun) when is_function(fun, 1), do: nil
 

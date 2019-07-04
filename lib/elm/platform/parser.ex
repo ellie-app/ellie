@@ -25,7 +25,7 @@ defmodule Elm.Platform.Parser do
     choice([
       ignore(string("module")),
       ignore(string("port")) |> ignore(spaces()) |> ignore(string("module")),
-      ignore(string("effect")) |> ignore(spaces()) |> ignore(string("module")),
+      ignore(string("effect")) |> ignore(spaces()) |> ignore(string("module"))
     ])
     |> ignore(spaces())
     |> map(sep_by1(word_of(~r/[A-Z][a-zA-Z0-9_]+/), char(".")), &Enum.join(&1, "."))
@@ -47,7 +47,7 @@ defmodule Elm.Platform.Parser do
 
   def searchables_decoder() do
     version =
-      Decode.and_then(Decode.string, fn string ->
+      Decode.and_then(Decode.string(), fn string ->
         case Version.from_string(string) do
           {:ok, version} -> Decode.succeed(version)
           :error -> Decode.fail("Expecting a version MAJOR.MINOR.PATCH")
@@ -55,7 +55,7 @@ defmodule Elm.Platform.Parser do
       end)
 
     name =
-      Decode.and_then(Decode.string, fn string ->
+      Decode.and_then(Decode.string(), fn string ->
         case Name.from_string(string) do
           {:ok, name} -> Decode.succeed(name)
           :error -> Decode.fail("Expecting a name USER/PROJECT")
@@ -65,7 +65,7 @@ defmodule Elm.Platform.Parser do
     searchable =
       Decode.succeed(Function.curry(&%Searchable{name: &1, summary: &2, versions: &3}))
       |> Decode.and_map(Decode.field("name", name))
-      |> Decode.and_map(Decode.field("summary", Decode.string))
+      |> Decode.and_map(Decode.field("summary", Decode.string()))
       |> Decode.and_map(Decode.field("versions", Decode.list(version)))
 
     Decode.list(searchable)
@@ -85,50 +85,52 @@ defmodule Elm.Platform.Parser do
   defp docs_decoder_18() do
     cased =
       Decode.succeed(Function.curry(&{&1, &2}))
-      |> Decode.and_map(Decode.index(0, Decode.string))
-      |> Decode.and_map(Decode.index(1, Decode.list(Decode.string)))
+      |> Decode.and_map(Decode.index(0, Decode.string()))
+      |> Decode.and_map(Decode.index(1, Decode.list(Decode.string())))
 
     associativity =
-      Decode.and_then(Decode.string, fn
-        "left" -> Decode.succeed :left
-        "non" -> Decode.succeed :none
-        "right" -> Decode.succeed :right
-        _ -> Decode.fail "expecting one of the following values: left, non, right"
+      Decode.and_then(Decode.string(), fn
+        "left" -> Decode.succeed(:left)
+        "non" -> Decode.succeed(:none)
+        "right" -> Decode.succeed(:right)
+        _ -> Decode.fail("expecting one of the following values: left, non, right")
       end)
 
     fix =
       Decode.one_of([
         Decode.succeed(Function.curry(&{&1, &2}))
         |> Decode.and_map(Decode.field("associativity", associativity))
-        |> Decode.and_map(Decode.field("precedence", Decode.integer)),
+        |> Decode.and_map(Decode.field("precedence", Decode.integer())),
         Decode.succeed(nil)
       ])
 
     value =
       Decode.succeed(Function.curry(&%{name: &1, comment: &2, type: &3, fix: &4}))
-      |> Decode.and_map(Decode.field("name", Decode.string))
-      |> Decode.and_map(Decode.field("comment", Decode.string))
-      |> Decode.and_map(Decode.field("type", Decode.string))
+      |> Decode.and_map(Decode.field("name", Decode.string()))
+      |> Decode.and_map(Decode.field("comment", Decode.string()))
+      |> Decode.and_map(Decode.field("type", Decode.string()))
       |> Decode.and_map(fix)
 
     union =
       Decode.succeed(Function.curry(&%{name: &1, comment: &2, args: &3, cases: &4}))
-      |> Decode.and_map(Decode.field("name", Decode.string))
-      |> Decode.and_map(Decode.field("comment", Decode.string))
-      |> Decode.and_map(Decode.field("args", Decode.list(Decode.string)))
+      |> Decode.and_map(Decode.field("name", Decode.string()))
+      |> Decode.and_map(Decode.field("comment", Decode.string()))
+      |> Decode.and_map(Decode.field("args", Decode.list(Decode.string())))
       |> Decode.and_map(Decode.field("cases", Decode.list(cased)))
 
     aliasd =
       Decode.succeed(Function.curry(&%{name: &1, comment: &2, args: &3, type: &4}))
-      |> Decode.and_map(Decode.field("name", Decode.string))
-      |> Decode.and_map(Decode.field("comment", Decode.string))
-      |> Decode.and_map(Decode.field("args", Decode.list(Decode.string)))
-      |> Decode.and_map(Decode.field("type", Decode.string))
+      |> Decode.and_map(Decode.field("name", Decode.string()))
+      |> Decode.and_map(Decode.field("comment", Decode.string()))
+      |> Decode.and_map(Decode.field("args", Decode.list(Decode.string())))
+      |> Decode.and_map(Decode.field("type", Decode.string()))
 
     old_docs =
-      Decode.succeed(Function.curry(&%{name: &1, comment: &2, aliases: &3, types: &4, values: &5}))
-      |> Decode.and_map(Decode.field("name", Decode.string))
-      |> Decode.and_map(Decode.field("comment", Decode.string))
+      Decode.succeed(
+        Function.curry(&%{name: &1, comment: &2, aliases: &3, types: &4, values: &5})
+      )
+      |> Decode.and_map(Decode.field("name", Decode.string()))
+      |> Decode.and_map(Decode.field("comment", Decode.string()))
       |> Decode.and_map(Decode.field("aliases", Decode.list(aliasd)))
       |> Decode.and_map(Decode.field("types", Decode.list(union)))
       |> Decode.and_map(Decode.field("values", Decode.list(value)))
@@ -142,22 +144,24 @@ defmodule Elm.Platform.Parser do
     %Module{
       name: old_docs.name,
       comment: old_docs.comment,
-      unions: Enum.map(old_docs.types, fn t ->
-        %Union{
-          name: t.name,
-          comment: t.comment,
-          args: t.args,
-          tags: t.cases
-        }
-      end),
-      aliases: Enum.map(old_docs.aliases, fn a ->
-        %Alias{
-          name: a.name,
-          comment: a.comment,
-          args: a.args,
-          type: a.type
-        }
-      end),
+      unions:
+        Enum.map(old_docs.types, fn t ->
+          %Union{
+            name: t.name,
+            comment: t.comment,
+            args: t.args,
+            tags: t.cases
+          }
+        end),
+      aliases:
+        Enum.map(old_docs.aliases, fn a ->
+          %Alias{
+            name: a.name,
+            comment: a.comment,
+            args: a.args,
+            type: a.type
+          }
+        end),
       values:
         old_docs.values
         |> Enum.filter(fn v -> is_nil(v.fix) end)
@@ -165,56 +169,72 @@ defmodule Elm.Platform.Parser do
       binops:
         old_docs.values
         |> Enum.filter(fn v -> not is_nil(v.fix) end)
-        |> Enum.map(fn v -> %Binop{name: v.name, comment: v.name, type: v.type, associativity: elem(v.fix, 0), precedence: elem(v.fix, 1)} end)
+        |> Enum.map(fn v ->
+          %Binop{
+            name: v.name,
+            comment: v.name,
+            type: v.type,
+            associativity: elem(v.fix, 0),
+            precedence: elem(v.fix, 1)
+          }
+        end)
     }
   end
 
   defp docs_decoder_19() do
     associativity =
-      Decode.and_then(Decode.string, fn
-        "left" -> Decode.succeed :left
-        "non" -> Decode.succeed :none
-        "right" -> Decode.succeed :right
-        _ -> Decode.fail "expecting one of the following values: left, non, right"
+      Decode.and_then(Decode.string(), fn
+        "left" -> Decode.succeed(:left)
+        "non" -> Decode.succeed(:none)
+        "right" -> Decode.succeed(:right)
+        _ -> Decode.fail("expecting one of the following values: left, non, right")
       end)
 
     binop =
-      Decode.succeed(Function.curry(&%Binop{name: &1, comment: &2, type: &3, associativity: &4, precedence: &5}))
-      |> Decode.and_map(Decode.field("name", Decode.string))
-      |> Decode.and_map(Decode.field("comment", Decode.string))
-      |> Decode.and_map(Decode.field("type", Decode.string))
+      Decode.succeed(
+        Function.curry(
+          &%Binop{name: &1, comment: &2, type: &3, associativity: &4, precedence: &5}
+        )
+      )
+      |> Decode.and_map(Decode.field("name", Decode.string()))
+      |> Decode.and_map(Decode.field("comment", Decode.string()))
+      |> Decode.and_map(Decode.field("type", Decode.string()))
       |> Decode.and_map(Decode.field("associativity", associativity))
-      |> Decode.and_map(Decode.field("precedence", Decode.integer))
+      |> Decode.and_map(Decode.field("precedence", Decode.integer()))
 
     value =
       Decode.succeed(Function.curry(&%Value{name: &1, comment: &2, type: &3}))
-      |> Decode.and_map(Decode.field("name", Decode.string))
-      |> Decode.and_map(Decode.field("comment", Decode.string))
-      |> Decode.and_map(Decode.field("type", Decode.string))
+      |> Decode.and_map(Decode.field("name", Decode.string()))
+      |> Decode.and_map(Decode.field("comment", Decode.string()))
+      |> Decode.and_map(Decode.field("type", Decode.string()))
 
     tag =
       Decode.succeed(Function.curry(&{&1, &2}))
-      |> Decode.and_map(Decode.index(0, Decode.string))
-      |> Decode.and_map(Decode.index(1, Decode.list(Decode.string)))
+      |> Decode.and_map(Decode.index(0, Decode.string()))
+      |> Decode.and_map(Decode.index(1, Decode.list(Decode.string())))
 
     union =
       Decode.succeed(Function.curry(&%Union{name: &1, comment: &2, args: &3, tags: &4}))
-      |> Decode.and_map(Decode.field("name", Decode.string))
-      |> Decode.and_map(Decode.field("comment", Decode.string))
-      |> Decode.and_map(Decode.field("args", Decode.list(Decode.string)))
+      |> Decode.and_map(Decode.field("name", Decode.string()))
+      |> Decode.and_map(Decode.field("comment", Decode.string()))
+      |> Decode.and_map(Decode.field("args", Decode.list(Decode.string())))
       |> Decode.and_map(Decode.field("cases", Decode.list(tag)))
 
     aliasd =
       Decode.succeed(Function.curry(&%Alias{name: &1, comment: &2, args: &3, type: &4}))
-      |> Decode.and_map(Decode.field("name", Decode.string))
-      |> Decode.and_map(Decode.field("comment", Decode.string))
-      |> Decode.and_map(Decode.field("args", Decode.list(Decode.string)))
-      |> Decode.and_map(Decode.field("type", Decode.string))
+      |> Decode.and_map(Decode.field("name", Decode.string()))
+      |> Decode.and_map(Decode.field("comment", Decode.string()))
+      |> Decode.and_map(Decode.field("args", Decode.list(Decode.string())))
+      |> Decode.and_map(Decode.field("type", Decode.string()))
 
     moduled =
-      Decode.succeed(Function.curry(&%Module{name: &1, comment: &2, unions: &3, aliases: &4, values: &5, binops: &6}))
-      |> Decode.and_map(Decode.field("name", Decode.string))
-      |> Decode.and_map(Decode.field("comment", Decode.string))
+      Decode.succeed(
+        Function.curry(
+          &%Module{name: &1, comment: &2, unions: &3, aliases: &4, values: &5, binops: &6}
+        )
+      )
+      |> Decode.and_map(Decode.field("name", Decode.string()))
+      |> Decode.and_map(Decode.field("comment", Decode.string()))
       |> Decode.and_map(Decode.field("unions", Decode.list(union)))
       |> Decode.and_map(Decode.field("aliases", Decode.list(aliasd)))
       |> Decode.and_map(Decode.field("values", Decode.list(value)))

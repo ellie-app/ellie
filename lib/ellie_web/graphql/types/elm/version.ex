@@ -14,9 +14,12 @@ defmodule EllieWeb.Graphql.Types.Elm.Version do
 
   defp cast_from_string(%Absinthe.Blueprint.Input.String{value: value}) do
     with [major, minor, patch] <- String.split(value, ".") do
-      {:ok, %Version{major: String.to_integer(major),
-                               minor: String.to_integer(minor),
-                               patch: String.to_integer(patch)}}
+      {:ok,
+       %Version{
+         major: String.to_integer(major),
+         minor: String.to_integer(minor),
+         patch: String.to_integer(patch)
+       }}
     else
       _ -> :error
     end

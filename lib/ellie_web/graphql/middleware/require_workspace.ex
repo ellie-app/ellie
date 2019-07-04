@@ -7,9 +7,10 @@ defmodule EllieWeb.Graphql.Middleware.RequireWorkspace do
 
   def call(resolution, _config) do
     resolution
-    |> Absinthe.Resolution.put_result({:error, %{code: :not_authenticated,
-                                                 error: "Not authenticated",
-                                                 message: "Not authenticated"}})
+    |> Absinthe.Resolution.put_result(
+      {:error,
+       %{code: :not_authenticated, error: "Not authenticated", message: "Not authenticated"}}
+    )
     |> Kernel.struct!(state: :resolved)
   end
 end
