@@ -37,7 +37,7 @@ function do_install(){
     yum install -y -q unixODBC-devel || exit 1
 
     echo "==> Installing Erlang ${ERL_VERSION}.."
-    wget --no-verbose -P /tmp/ "https://packages.erlang-solutions.com/erlang/esl-erlang/FLAVOUR_1_general/esl-erlang_${ERL_VERSION}-1~centos~7_amd64.rpm"
+    wget --no-verbose -P /tmp/ "https://packages.erlang-solutions.com/erlang/rpm/centos/7/x86_64/esl-erlang_${ERL_VERSION}-1~centos~7_amd64.rpm"
     rpm -Uvh "/tmp/esl-erlang_${ERL_VERSION}-1~centos~7_amd64.rpm"
 
     echo "==> Installing Elixir ${ELIXIR_VERSION}"
