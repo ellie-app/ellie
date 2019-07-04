@@ -45,6 +45,7 @@ function do_install(){
     unzip /tmp/Precompiled.zip -d /usr/local
 
     echo "==> Installing git, node, npm"
+    yum clean all
     curl -sL https://rpm.nodesource.com/setup_10.x | bash -
     yum install -y git nodejs --enablerepo=epel
 }
