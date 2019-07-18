@@ -15,12 +15,12 @@ config :ellie, EllieWeb.Endpoint,
   check_origin: false,
   watchers: [
     npm: [
-      "start",
+      "run",
+      "graphql",
       cd: Path.expand("../assets", __DIR__)
     ],
     npm: [
-      "run",
-      "graphql",
+      "start",
       cd: Path.expand("../assets", __DIR__)
     ]
   ]
