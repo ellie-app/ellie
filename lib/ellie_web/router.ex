@@ -3,6 +3,7 @@ defmodule EllieWeb.Router do
 
   pipeline :browser do
     plug(:accepts, ["html"])
+    plug(EllieWeb.Plugs.Redirect)
     plug(:put_secure_browser_headers, %{"x-frame-options" => "ALLOWALL"})
     plug(:put_layout, false)
   end
