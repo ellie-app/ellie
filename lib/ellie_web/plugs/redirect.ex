@@ -7,7 +7,7 @@ defmodule EllieWeb.Plugs.Redirect do
 
   def call(conn, _) do
     case conn.host do
-      "www" <> bare_domain ->
+      "www." <> bare_domain ->
         conn
         |> put_status(:moved_permanently)
         |> Phoenix.Controller.redirect(
