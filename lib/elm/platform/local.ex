@@ -1,6 +1,7 @@
 defmodule Elm.Platform.Local do
   alias Elm.Platform.Local18
   alias Elm.Platform.Local19
+  alias Elm.Platform.Local191
   alias Elm.Version
   alias Elm.Platform.Parser
 
@@ -8,12 +9,14 @@ defmodule Elm.Platform.Local do
 
   def setup(root, %Version{major: 0, minor: 18, patch: 0}), do: Local18.setup(root)
   def setup(root, %Version{major: 0, minor: 19, patch: 0}), do: Local19.setup(root)
+  def setup(root, %Version{major: 0, minor: 19, patch: 1}), do: Local191.setup(root)
   def setup(_root, _version), do: :error
 
   def compile(root, options) do
     project = Keyword.fetch!(options, :project)
 
     case project.elm_version do
+      %Version{major: 0, minor: 19, patch: 1} -> Local191.compile(root, options)
       %Version{major: 0, minor: 19, patch: 0} -> Local19.compile(root, options)
       %Version{major: 0, minor: 18, patch: 0} -> Local18.compile(root, options)
       _ -> :error
@@ -22,6 +25,7 @@ defmodule Elm.Platform.Local do
 
   def format(code, %Version{major: 0, minor: 18, patch: 0}), do: Local18.format(code)
   def format(code, %Version{major: 0, minor: 19, patch: 0}), do: Local19.format(code)
+  def format(code, %Version{major: 0, minor: 19, patch: 1}), do: Local191.format(code)
   def format(_code, _version), do: :error
 
   defp dets_path, do: String.to_charlist(Path.join([:code.priv_dir(:ellie), "docs_table"]))

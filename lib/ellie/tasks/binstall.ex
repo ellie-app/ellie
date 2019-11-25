@@ -26,6 +26,16 @@ defmodule Ellie.Tasks.Binstall do
       "https://github.com/avh4/elm-format/releases/download/0.8.0-rc3/elm-format-0.19-0.8.0-rc3-linux-x64.tgz",
       "0.19.0/format.tar.gz"
     )
+
+    download_and_unpack(
+      "https://github.com/elm/compiler/releases/download/0.19.1/binary-for-linux-64-bit.gz",
+      "0.19.1/elm.tar.gz"
+    )
+
+    download_and_unpack(
+      "https://github.com/avh4/elm-format/releases/download/0.8.2/elm-format-0.8.2-linux-x64.tgz",
+      "0.19.1/format.tar.gz"
+    )
   end
 
   defp download_and_unpack(url, dest) do

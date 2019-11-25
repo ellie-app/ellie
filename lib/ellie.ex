@@ -15,7 +15,7 @@ defmodule Ellie do
       worker(Task, [&Ellie.Domain.Search.reload/0], restart: :temporary)
     ]
 
-    :ok = :error_logger.add_report_handler(Sentry.Logger)
+    {:ok, _} = Logger.add_backend(Sentry.LoggerBackend)
 
     opts = [strategy: :one_for_one, name: Ellie.Supervisor]
     Supervisor.start_link(children, opts)

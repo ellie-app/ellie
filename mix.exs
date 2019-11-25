@@ -4,8 +4,8 @@ defmodule Ellie.Mixfile do
   def project do
     [
       app: :ellie,
-      version: "0.0.1",
-      elixir: "1.7.2",
+      version: "0.0.2",
+      elixir: "~> 1.9",
       elixirc_paths: elixirc_paths(Mix.env()),
       compilers: [:phoenix] ++ Mix.compilers(),
       build_embedded: Mix.env() == :prod,
@@ -39,15 +39,15 @@ defmodule Ellie.Mixfile do
       {:absinthe_plug, "1.4.4"},
       {:absinthe_phoenix, "1.4.3"},
       {:combine, "~> 0.10"},
-      {:cowboy, "~> 1.0"},
+      {:plug_cowboy, "~> 2.0"},
       {:dataloader, "~> 1.0.0"},
       {:distillery, "~> 2.0.10"},
       {:httpoison, "~> 1.1"},
       {:murmur, "~> 1.0"},
-      {:phoenix, "~> 1.3.2"},
+      {:phoenix, "~> 1.4"},
       {:phoenix_pubsub, "~> 1.0"},
       {:phoenix_ecto, "~> 3.2"},
-      {:plug_proxy, "~> 0.3.0"},
+      {:plug_proxy, "~> 0.4"},
       {:postgrex, ">= 0.0.0"},
       {:phoenix_html, "~> 2.10.0"},
       {:phoenix_live_reload, "~> 1.0", only: :dev},
@@ -57,7 +57,8 @@ defmodule Ellie.Mixfile do
       {:quantum, "~> 2.2"},
       {:timex, "~> 3.0"},
       {:sweet_xml, "~> 0.6"},
-      {:sentry, "~> 6.2.1"}
+      {:sentry, "~> 7.0"},
+      {:jason, "~> 1.1"}
     ]
   end
 
