@@ -5,7 +5,7 @@
         "vendor",
         "elm-stuff/generated/dillonkearns/graphql"
     ],
-    "elm-version": "0.19.0",
+    "elm-version": "0.19.1",
     "dependencies": {
         "direct": {
             "Skinney/murmur3": "2.0.8",
@@ -21,7 +21,7 @@
             "elm-community/list-extra": "8.1.0",
             "folkertdev/elm-deque": "3.0.0",
             "jinjor/elm-debounce": "3.0.0",
-            "lukewestby/elm-string-interpolate": "1.0.3",
+            "lukewestby/elm-string-interpolate": "1.0.4",
             "rtfeldman/elm-css": "16.0.0"
         },
         "indirect": {
