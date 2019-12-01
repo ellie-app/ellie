@@ -27,13 +27,21 @@ code-editor .CodeMirror {
   color: #ff6cc9 !important;
 }
 
+.CodeMirror .cm-variable {
+  color: #82b1ff !important;
+}
+
+.CodeMirror .cm-def {
+  color: #decb6b !important;
+}
+
 .CodeMirror .cm-variable-2,
 .CodeMirror .cm-qualifier {
   color: inherit !important;
 }
 
 .CodeMirror .CodeMirror-linenumber {
-  color: #8D8D97 !important;
+  color: #8d8d97 !important;
 }
 
 .CodeMirror-lint-tooltip {
@@ -54,9 +62,9 @@ code-editor .CodeMirror {
 }
 
 .CodeMirror-lint-mark-error, .CodeMirror-lint-mark-warning {
-    background-image: none !important;
-    border-bottom-style: dashed;
-    border-bottom-width: 1px !important;
+  background-image: none !important;
+  border-bottom-style: dashed;
+  border-bottom-width: 1px !important;
 }
 
 .CodeMirror-lint-mark-error {
@@ -66,7 +74,6 @@ code-editor .CodeMirror {
 .CodeMirror-lint-mark-warning {
   border-bottom-color: #DECB6B;
 }
-
 
 .CodeMirror .cm-tag.cm-bracket {
   color: #82b1ff;
