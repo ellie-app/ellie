@@ -30,19 +30,14 @@ module.exports = {
       {
         test: /\.js$/,
         exclude: /node_modules/,
-        use: {
-          loader: "babel-loader",
-          options: {
-            presets: [
-              "@babel/preset-env",
-              ["@babel/preset-stage-2", { decoratorsLegacy: true }]
-            ]
-          }
+        loader: "babel-loader",
+        options: {
+          presets: ["@babel/preset-env"]
         }
       },
       {
         test: /\.css$/,
-        loader: "style-loader!css-loader"
+        use: ["style-loader", "css-loader"]
       },
       {
         test: /\.elm$/,
