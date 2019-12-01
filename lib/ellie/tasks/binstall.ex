@@ -18,13 +18,13 @@ defmodule Ellie.Tasks.Binstall do
     )
 
     download_and_unpack(
-      "https://github.com/elm/compiler/releases/download/0.19.0/binaries-for-linux.tar.gz",
-      "0.19.0/elm.tar.gz"
+      "https://github.com/elm/compiler/releases/download/0.19.1/binary-for-linux-64-bit.gz",
+      "0.19.1/elm.gz"
     )
 
     download_and_unpack(
-      "https://github.com/avh4/elm-format/releases/download/0.8.0-rc3/elm-format-0.19-0.8.0-rc3-linux-x64.tgz",
-      "0.19.0/format.tar.gz"
+      "https://github.com/avh4/elm-format/releases/download/0.8.2/elm-format-0.8.2-linux-x64.tgz",
+      "0.19.1/format.tar.gz"
     )
   end
 
@@ -36,9 +36,14 @@ defmodule Ellie.Tasks.Binstall do
       IO.puts("==> Starting download of #{dest}")
       dir = Path.dirname(path)
 
+      unpack_cmd =
+        if String.ends_with?(dest, "elm.gz"),
+          do: "gunzip #{path}",
+          else: "tar xvzC #{dir} -f #{path}"
+
       File.mkdir_p!(dir)
       System.cmd("sh", ["-c", "curl -L #{url} --output #{path}"])
-      System.cmd("sh", ["-c", "tar xvzC #{dir} -f #{path}"])
+      System.cmd("sh", ["-c", unpack_cmd])
       System.cmd("sh", ["-c", "chmod +x #{dir}/*"])
     else
       IO.puts("==> Binary already exists: #{dest}")

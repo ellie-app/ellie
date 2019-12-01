@@ -13,7 +13,7 @@ defmodule Elm.Platform do
   @callback docs(Package.t()) :: {:ok, list(Docs.Module.t())} | :error
   @callback search() :: {:ok, list(Searchable.t())} | :error
 
-  @latest_version Version.create(0, 19, 0)
+  @latest_version Version.create(0, 19, 1)
 
   @spec latest_version() :: Version.t()
   def latest_version() do

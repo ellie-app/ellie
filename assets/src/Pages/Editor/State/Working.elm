@@ -106,10 +106,13 @@ reset token user recovery external defaultPackages =
                     True
 
                 Revision.Example revision ->
-                    revision.elmVersion == Compiler.version
+                    -- Ignore patch version differences
+                    (revision.elmVersion.major == Compiler.version.major)
+                        && (revision.elmVersion.minor == Compiler.version.minor)
 
                 Revision.Remote ( _, revision ) ->
-                    revision.elmVersion == Compiler.version
+                    (revision.elmVersion.major == Compiler.version.major)
+                        && (revision.elmVersion.minor == Compiler.version.minor)
     in
     { elmCode = activeRevision.elmCode
     , htmlCode = activeRevision.htmlCode
