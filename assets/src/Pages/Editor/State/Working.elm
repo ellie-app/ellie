@@ -867,11 +867,11 @@ subscriptions model =
         , Effects.networkStatus
             |> Subscription.map
                 (\online ->
-                    if online then
+                    if online == model.connected then
                         NoOp
 
                     else
-                        OnlineStatusChanged False
+                        OnlineStatusChanged online
                 )
         , Subscription.map EditorActionPerformed Effects.keyCombos
         ]
