@@ -32,9 +32,7 @@ export default {
           var split = firstArg.split(': ')
           var label = split[0]
           var body = split.slice(1).join(': ')
-          parent.postMessage({ tag: 'LogReceived', contents: { label: label, body: body } }, '${
-            window.location.origin
-          }')
+          parent.postMessage({ tag: 'LogReceived', contents: { label: label, body: body } }, '${window.location.origin}')
         }
         oldLog.apply(this, arguments)
       }
@@ -74,11 +72,10 @@ export default {
         })
         return debuggerWindowProxy
       }
-      var buttonSelector = 'div[style*="z-index: 2147483647"][style*="background-color: rgb(61, 61, 61)"] > div[style*="cursor: pointer"], .elm-mini-controls-button'
-      var controlsSelector = 'div[style*="z-index: 2147483647"][style*="background-color: rgb(61, 61, 61)"], .elm-mini-controls'
+      var buttonSelector = 'div[style*="z-index: 2147483647"][style*="background-color: rgb(18, 147, 216)"]'
       var overlaySelector = 'div[style*="z-index: 2147483646"][style*="background-color: rgba(200, 200, 200, 0.7)"]'
       var styles = document.createElement('style')
-      styles.textContent = controlsSelector + ' { display: none !important; }'
+      styles.textContent = buttonSelector + ' { display: none !important; }'
       document.head.appendChild(styles)
       window.addEventListener('message', function (event) {
         switch(event.data.tag) {

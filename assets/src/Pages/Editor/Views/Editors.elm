@@ -78,7 +78,7 @@ view config =
             , minSize = 24
             , first =
                 Html.div [ containerStyles ]
-                    [ viewEditorHeader config "Elm" "Format Elm Code (⇧⌥F)" config.onFormat <| Icon.view Icon.Format
+                    [ viewEditorHeader config "Elm" "Format Elm Code" config.onFormat <| Icon.view Icon.Format
                     , Html.div [ editorStyles ]
                         [ CodeEditor.view
                             [ CodeEditor.value config.elmCode
