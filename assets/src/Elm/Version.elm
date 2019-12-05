@@ -1,4 +1,4 @@
-module Elm.Version exposing (Version, compare, decoder, encoder, eq, fromString, toString)
+module Elm.Version exposing (Version, compare, compatible, decoder, encoder, eq, fromString, toString)
 
 import Json.Decode as Decode exposing (Decoder)
 import Json.Encode as Encode exposing (Value)
@@ -23,6 +23,11 @@ fromString str =
 
         _ ->
             Err "Expecting a version like MAJOR.MINOR.PATCH"
+
+
+compatible : Version -> Version -> Bool
+compatible left right =
+    ( left.major, left.minor ) == ( left.major, left.minor )
 
 
 eq : Version -> Version -> Bool

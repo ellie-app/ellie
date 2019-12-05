@@ -174,7 +174,7 @@ viewErrorsHeader pane config =
                             _ ->
                                 Button.none
                     }
-                , if Version.eq config.compilerVersion Compiler.version then
+                , if Version.compatible config.compilerVersion Compiler.version then
                     Just
                         { label =
                             if config.saving then
@@ -236,7 +236,7 @@ viewFinishedHeader pane canDebug config =
                             _ ->
                                 Button.none
                     }
-                , if Version.eq config.compilerVersion Compiler.version then
+                , if Version.compatible config.compilerVersion Compiler.version then
                     Just
                         { icon = Just Icon.Upload
                         , label = "Save"
