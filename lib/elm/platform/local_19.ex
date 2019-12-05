@@ -6,6 +6,8 @@ defmodule Elm.Platform.Local19 do
   alias Elm.Version
   require Logger
 
+  @elm_json_binary System.cmd("which", ["elm-json"]) |> elem(0) |> String.trim()
+
   @spec setup(Path.t()) :: {:ok, Project.t()} | :error
   def setup(root) do
     with :ok <- elm_init(root) do
@@ -121,13 +123,13 @@ defmodule Elm.Platform.Local19 do
         :ok
 
       [head | tail] ->
-        binary = Path.join(base_path(), "elm")
-        package = "#{head.name.user}/#{head.name.project}"
-        args = ["install", package]
+        package = "#{head.name.user}/#{head.name.project}@#{Elm.Version.to_string(head.version)}"
+
+        args = ["install", "--yes", package]
         options = [out: :string, err: :string, dir: root, in: "Y"]
 
         result =
-          case Porcelain.exec(binary, args, options) do
+          case Porcelain.exec(@elm_json_binary, args, options) do
             %Porcelain.Result{status: 0} ->
               install_missing_deps(root, tail)
 
