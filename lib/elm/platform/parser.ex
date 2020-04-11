@@ -66,7 +66,7 @@ defmodule Elm.Platform.Parser do
       Decode.succeed(Function.curry(&%Searchable{name: &1, summary: &2, versions: &3}))
       |> Decode.and_map(Decode.field("name", name))
       |> Decode.and_map(Decode.field("summary", Decode.string()))
-      |> Decode.and_map(Decode.field("versions", Decode.list(version)))
+      |> Decode.and_map(Decode.map(Decode.field("version", version), fn val -> [val] end))
 
     Decode.list(searchable)
   end
