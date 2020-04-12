@@ -27,7 +27,7 @@ fromString str =
 
 compatible : Version -> Version -> Bool
 compatible left right =
-    ( left.major, left.minor ) == ( left.major, left.minor )
+    ( left.major, left.minor ) == ( right.major, right.minor )
 
 
 eq : Version -> Version -> Bool

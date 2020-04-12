@@ -1,4 +1,15 @@
-module Pages.Editor.State.Working exposing (ErrorsPane(..), Model, Msg(..), SuccessPane(..), Workbench(..), addNotification, addNotificationIf, canReplaceRevision, compilerVersion, fromEditorAction, hasChanged, init, reset, subscriptions, toRevision, update, withRecoveryUpdate)
+module Pages.Editor.State.Working exposing
+    ( ErrorsPane(..)
+    , Model
+    , Msg(..)
+    , SuccessPane(..)
+    , Workbench(..)
+    , compilerVersion
+    , hasChanged
+    , init
+    , subscriptions
+    , update
+    )
 
 import BoundedDeque exposing (BoundedDeque)
 import Data.Jwt exposing (Jwt)
@@ -106,13 +117,10 @@ reset token user recovery external defaultPackages =
                     True
 
                 Revision.Example revision ->
-                    -- Ignore patch version differences
-                    (revision.elmVersion.major == Compiler.version.major)
-                        && (revision.elmVersion.minor == Compiler.version.minor)
+                    Version.compatible revision.elmVersion Compiler.version
 
                 Revision.Remote ( _, revision ) ->
-                    (revision.elmVersion.major == Compiler.version.major)
-                        && (revision.elmVersion.minor == Compiler.version.minor)
+                    Version.compatible revision.elmVersion Compiler.version
     in
     { elmCode = activeRevision.elmCode
     , htmlCode = activeRevision.htmlCode
