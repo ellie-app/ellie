@@ -27,7 +27,8 @@ view config =
             , displayFlex
             , backgroundColor Theme.primaryBackground
             , padding2 zero (px 12)
-            , position relative
+            , position absolute
+            , bottom zero
             ]
         ]
         [ Html.styled Html.div
