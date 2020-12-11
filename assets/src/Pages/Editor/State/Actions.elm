@@ -43,7 +43,7 @@ update msg model =
                 , Command.none
                 )
 
-            else if String.length query < 4 then
+            else if String.length query < 3 then
                 ( Packages { packagesModel | query = query }
                 , Command.none
                 )
