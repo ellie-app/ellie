@@ -205,7 +205,7 @@ defmodule Elm.Platform.Local19 do
     root
     |> Path.join("elm.json")
     |> File.read!()
-    |> Poison.decode!()
+    |> Jason.decode!()
   end
 
   defp write_project!(project_json, root) do
@@ -235,7 +235,7 @@ defmodule Elm.Platform.Local19 do
     |> String.split("\n")
     |> Enum.flat_map(fn line ->
       if String.starts_with?(line, "{") do
-        data = Poison.decode!(line)
+        data = Jason.decode!(line)
 
         case Map.fetch!(data, "type") do
           "compile-errors" ->

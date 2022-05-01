@@ -69,7 +69,7 @@ defmodule Ellie.Adapters.Api.Ecto do
     url = "#{endpoint}/#{to_string(project_id)}/#{revision_number}.json"
 
     with {:ok, %HTTPoison.Response{status_code: 200, body: body}} <- HTTPoison.get(url),
-         {:ok, revision_data} <- Poison.decode(strip_utf(body)),
+         {:ok, revision_data} <- Jason.decode(strip_utf(body)),
          {:ok, package_combos} <- Map.fetch(revision_data, "packages"),
          {:ok, packages} <- EnumHelpers.traverse_result(package_combos, &parse_package/1),
          {:ok, html_code} <- Map.fetch(revision_data, "htmlCode"),

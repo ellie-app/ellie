@@ -159,7 +159,7 @@ defmodule Elm.Platform.Local18 do
     root
     |> Path.join("elm-package.json")
     |> File.read!()
-    |> Poison.decode!()
+    |> Jason.decode!()
   end
 
   defp make_deps_map(deps) do
@@ -192,7 +192,7 @@ defmodule Elm.Platform.Local18 do
       |> Enum.flat_map(fn line ->
         if String.starts_with?(line, "[") do
           line
-          |> Poison.decode!()
+          |> Jason.decode!()
           |> List.foldr(%{}, fn error, by_source ->
             case Map.get(error, "type") do
               "error" ->

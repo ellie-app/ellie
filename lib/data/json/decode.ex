@@ -71,7 +71,7 @@ defmodule Data.Json.Decode do
 
   @spec decode_string(String.t(), decoder(a)) :: {:ok, a} | {:error, error} when a: var
   def decode_string(input, decoder) do
-    case Poison.decode(input) do
+    case Jason.decode(input) do
       {:ok, stuff} ->
         run_help(decoder, stuff)
 

@@ -26,7 +26,7 @@ defmodule EllieWeb.Jobs.CleanupLogs do
 
     with {:ok, %HTTPoison.Response{status_code: 200, body: body}} <-
            HTTPoison.get(url, headers()),
-         {:ok, data} <- Poison.decode(body) do
+         {:ok, data} <- Jason.decode(body) do
       EnumHelpers.traverse_result(data, &Map.fetch(&1, "id"))
     else
       _error ->

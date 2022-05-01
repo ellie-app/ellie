@@ -3,7 +3,7 @@ defmodule Data.Json do
 
   @spec decode(json :: String.t()) :: Result.t(String.t() | nil, any())
   def decode(json) do
-    case Poison.decode(json, []) do
+    case Jason.decode(json, []) do
       {:error, :invalid, _} -> {:error, nil}
       {:error, {:invalid, reason, _}} -> {:error, reason}
       {:ok, stuff} -> {:ok, stuff}
@@ -14,7 +14,7 @@ defmodule Data.Json do
 
   @spec encode(any()) :: Result.t(String.t() | nil, String.t())
   def encode(data) do
-    case Poison.encode(data) do
+    case Jason.encode(data) do
       {:error, {:invalid, _}} -> {:error, nil}
       {:ok, string} -> {:ok, string}
     end
