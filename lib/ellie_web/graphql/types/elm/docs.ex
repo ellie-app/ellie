@@ -28,28 +28,13 @@ defmodule EllieWeb.Graphql.Types.Elm.Docs do
   end
 
   scalar :elm_docs_type, name: "ElmDocsType" do
-    serialize &encode/1
-    parse &decode/1
+    serialize fn string -> string end
+    parse fn
+      %Absinthe.Blueprint.Input.String{value: value} -> {:ok, value}
+      %Absinthe.Blueprint.Input.Null{}               -> {:ok, nil}
+      _                                              -> :error
+    end
   end
-  @spec decode(Absinthe.Blueprint.Input.String.t()) :: {:ok, term()} | :error
-  @spec decode(Absinthe.Blueprint.Input.Null.t()) :: {:ok, nil}
-  defp decode(%Absinthe.Blueprint.Input.String{value: value}) do
-    IO.puts value.inspect
-    {:ok, value}
-  end
-
-  defp decode(%Absinthe.Blueprint.Input.Null{}) do
-    {:ok, nil}
-  end
-
-  defp decode(_) do
-    :error
-  end
-
-  defp encode(value) do
-    value
-  end
-
 
   object :elm_docs_alias do
     field :name, non_null(:string)
