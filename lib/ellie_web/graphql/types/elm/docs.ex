@@ -1,23 +1,21 @@
 defmodule EllieWeb.Graphql.Types.Elm.Docs do
   use Absinthe.Schema.Notation
 
-  defp good_list(type), do: non_null(list_of(non_null(type)))
-
   object :elm_docs_module do
     field :name, non_null(:string)
     field :comment, non_null(:string)
-    field :unions, good_list(:elm_docs_union)
-    field :aliases, good_list(:elm_docs_alias)
-    field :values, good_list(:elm_docs_value)
-    field :binops, good_list(:elm_docs_binop)
+    field :unions, non_null(list_of(non_null(:elm_docs_union)))
+    field :aliases, non_null(list_of(non_null(:elm_docs_alias)))
+    field :values, non_null(list_of(non_null(:elm_docs_value)))
+    field :binops, non_null(list_of(non_null(:elm_docs_binop)))
   end
 
   object :elm_docs_union do
     field :name, non_null(:string)
     field :comment, non_null(:string)
-    field :args, good_list(:string)
+    field :args, non_null(list_of(non_null(:string)))
 
-    field :tags, good_list(:elm_docs_tag) do
+    field :tags, non_null(list_of(non_null(:elm_docs_tag))) do
       resolve fn union, _, _ ->
         {:ok, Enum.map(union.tags, fn {name, args} -> %{name: name, args: args} end)}
       end
@@ -26,23 +24,37 @@ defmodule EllieWeb.Graphql.Types.Elm.Docs do
 
   object :elm_docs_tag do
     field :name, non_null(:string)
-    field :args, good_list(:elm_docs_type)
+    field :args, non_null(list_of(non_null(:elm_docs_type)))
   end
 
   scalar :elm_docs_type, name: "ElmDocsType" do
-    serialize fn string -> string end
-
-    parse fn
-      %Absinthe.Blueprint.Input.String{value: value} -> {:ok, value}
-      %Absinthe.Blueprint.Input.Null{} -> {:ok, nil}
-      _ -> :error
-    end
+    serialize &encode/1
+    parse &decode/1
   end
+  @spec decode(Absinthe.Blueprint.Input.String.t()) :: {:ok, term()} | :error
+  @spec decode(Absinthe.Blueprint.Input.Null.t()) :: {:ok, nil}
+  defp decode(%Absinthe.Blueprint.Input.String{value: value}) do
+    IO.puts value.inspect
+    {:ok, value}
+  end
+
+  defp decode(%Absinthe.Blueprint.Input.Null{}) do
+    {:ok, nil}
+  end
+
+  defp decode(_) do
+    :error
+  end
+
+  defp encode(value) do
+    value
+  end
+
 
   object :elm_docs_alias do
     field :name, non_null(:string)
     field :comment, non_null(:string)
-    field :args, good_list(:string)
+    field :args, non_null(list_of(non_null(:string)))
     field :type, non_null(:elm_docs_type)
   end
 

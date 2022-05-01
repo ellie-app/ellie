@@ -5,7 +5,7 @@ defmodule Ellie.Mixfile do
     [
       app: :ellie,
       version: "0.0.1",
-      elixir: "1.7.2",
+      elixir: "1.13.4",
       elixirc_paths: elixirc_paths(Mix.env()),
       compilers: [:phoenix] ++ Mix.compilers(),
       build_embedded: Mix.env() == :prod,
@@ -35,29 +35,30 @@ defmodule Ellie.Mixfile do
   # Type `mix help deps` for examples and options.
   defp deps do
     [
-      {:absinthe, "1.4.13"},
-      {:absinthe_plug, "1.4.4"},
-      {:absinthe_phoenix, "1.4.3"},
+      {:absinthe, "1.7.0"},
+      {:absinthe_plug, "1.5.8"},
+      {:absinthe_phoenix, "2.0.2"},
       {:combine, "~> 0.10"},
-      {:cowboy, "~> 1.0"},
+      {:cowboy, "~> 2.4"},
       {:dataloader, "~> 1.0.0"},
       {:distillery, "~> 2.0.10"},
       {:httpoison, "~> 1.1"},
       {:murmur, "~> 1.0"},
-      {:phoenix, "~> 1.3.2"},
-      {:phoenix_pubsub, "~> 1.0"},
-      {:phoenix_ecto, "~> 3.2"},
-      {:plug_proxy, "~> 0.3.0"},
+      {:phoenix, "~> 1.6.7"},
+      {:phoenix_pubsub, "~> 2.1.1"},
+      {:phoenix_ecto, "~> 4.4.0"},
+      {:reverse_proxy_plug, "~> 2.1"},
+      {:ecto_sql, "~> 3.0"},
       {:postgrex, ">= 0.0.0"},
-      {:phoenix_html, "~> 2.10.0"},
+      {:phoenix_html, "~> 3.0.0"},
       {:phoenix_live_reload, "~> 1.0", only: :dev},
       {:phoenix_markdown, "~> 1.0"},
-      {:poison, "~> 3.1"},
+      {:jason, "~> 1.0"},
       {:porcelain, "~> 2.0.3"},
       {:quantum, "~> 2.2"},
       {:timex, "~> 3.0"},
       {:sweet_xml, "~> 0.6"},
-      {:sentry, "~> 6.2.1"}
+      {:sentry, "~> 7.0.6"}
     ]
   end
 

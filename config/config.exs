@@ -19,6 +19,8 @@ config :ellie, EllieWeb.Scheduler,
     {"*/30 * * * *", {EllieWeb.Jobs.CleanupWorkspaces, :run, []}}
   ]
 
+config :phoenix, :json_library, Jason
+
 config :phoenix, :template_engines,
   md: PhoenixMarkdown.Engine
 
