@@ -33,7 +33,7 @@
     "sw-toolbox": "3.6.0",
     "terser-webpack-plugin": "^1.1.0",
     "webpack": "^4.20.2",
-    "webpack-cli": "^3.2.1",
+    "webpack-cli": "^3.3.12",
     "webpack-dev-server": "^3.1.9",
     "webpack-manifest-plugin": "^2.0.4"
   }
